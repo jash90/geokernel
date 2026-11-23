@@ -1396,7 +1396,7 @@ impl<const M: bool> Ctx<'_, M> {
                 elem,
                 explicit,
             } => self.filter(list, condition, local, elem, explicit, true),
-            Node::ListOp(op, l, n) if op.makes_list() => commands::list_fn(self, op, l, n),
+            Node::ListOp(op, l, n) if op.makes_list() => commands::list_fn(self, i, op, l, n),
             // an element that is a list: its elements were built with the
             // list it belongs to
             Node::ListOp(op, l, n) => self.pick(op, l, n)?.run(),
@@ -1404,7 +1404,7 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Dilate(src, factor, center) => {
                 let (r, sx, sy) = self.dilation(factor, center);
                 let source = self.list(src)?;
-                commands::map_list(self, source, |value| {
+                commands::map_list(self, i, source, |value| {
                     crate::algo::transform::dilate_element(value, r, sx, sy)
                 })
             }

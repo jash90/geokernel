@@ -8,15 +8,15 @@ use std::collections::HashSet;
 pub(super) enum Bound {
     Literal(f64),
     Object(Id),
-    /// A live endpoint of the Slider command, created before its slider.
-    CommandObject(Id),
+    /// A direct self-reference is read during a set without a listener edge.
+    SelfReference(Id),
 }
 
 impl Bound {
     fn read(self, c: &Construction) -> Option<f64> {
         match self {
             Self::Literal(v) => Some(v),
-            Self::Object(id) | Self::CommandObject(id) => match c.value(id) {
+            Self::Object(id) | Self::SelfReference(id) => match c.value(id) {
                 Value::Number(v) if v.is_finite() => Some(v),
                 _ => None,
             },
@@ -25,7 +25,7 @@ impl Bound {
 
     pub(super) fn exists_before(self, len: usize) -> bool {
         match self {
-            Self::Object(id) | Self::CommandObject(id) => {
+            Self::Object(id) | Self::SelfReference(id) => {
                 id.index() < len || super::axis::get(id).is_some()
             }
             Self::Literal(_) => true,
@@ -109,10 +109,28 @@ impl Construction {
             Value::Number(v) => v,
             _ => f64::NAN,
         };
-        for parent in self.slider_bound_parents(id) {
-            if let Some(children) = self.children.get_mut(parent.0) {
-                children.remove(id);
+        let old_parents: Vec<_> = self.slider_bound_parents(id).collect();
+        let parents: Vec<_> = bound_parents(restored).collect();
+        if parents
+            .iter()
+            .any(|&parent| self.evaluation_rank(parent) >= self.evaluation_rank(id))
+        {
+            let result = self.locus_order_inputs().and_then(|loci| {
+                self.replacement_order(&[(id, parents.clone())].into(), &loci, self.len())
+            });
+            match result {
+                Ok(order) => self.evaluation_order = order,
+                Err(error) => {
+                    self.discard_since(checkpoint);
+                    return Err(error.into());
+                }
             }
+        }
+        for parent in old_parents {
+            self.children[parent.0].remove(id);
+        }
+        for parent in parents {
+            self.children[parent.0].insert(id);
         }
         self.saved_slider_bounds.insert(id, restored);
         let [min, max] = self.slider_bounds(id);
@@ -151,7 +169,10 @@ impl Construction {
         if let Some(v) = crate::expr::plain_number(source).filter(|v| v.is_finite()) {
             return Ok(Bound::Literal(v));
         }
-        let id = if let Some(id) = self.id(source) {
+        if let Some(owner) = owner.filter(|&id| source == self.label(id)) {
+            return Ok(Bound::SelfReference(owner));
+        }
+        let id = if let Some(id) = self.resolve_label(source) {
             id
         } else {
             let label = format!("\0bound{}", self.len());
@@ -164,22 +185,21 @@ impl Construction {
             return Err("endpoint is not a number".into());
         }
         let Some(owner) = owner else {
-            return Ok(Bound::CommandObject(id));
+            return Ok(Bound::Object(id));
         };
         let mut seen = HashSet::new();
         let mut parents = vec![id];
+        let mut remaining = super::MAX_REDEFINITION_EDGES;
         while let Some(id) = parents.pop() {
             if id == owner {
                 return Err("slider endpoint is circular".into());
             }
             if seen.insert(id) {
-                parents.extend(self.reads(id));
-                if let Some(bounds) = self.saved_slider_bounds.get(&id) {
-                    parents.extend(bounds.iter().filter_map(|bound| match bound {
-                        Some(Bound::Object(id) | Bound::CommandObject(id)) => Some(*id),
-                        _ => None,
-                    }));
-                }
+                let reads = self.reads(id);
+                remaining = remaining
+                    .checked_sub(reads.len())
+                    .ok_or("slider endpoint exceeds the dependency budget")?;
+                parents.extend(reads);
             }
         }
         Ok(Bound::Object(id))
@@ -192,7 +212,11 @@ impl Construction {
         label: &str,
         [min, max]: [&str; 2],
     ) -> Result<Id, String> {
-        let bounds = [self.slider_bound(None, min)?, self.slider_bound(None, max)?];
+        let owner = self.replacement_target;
+        let bounds = [
+            self.slider_bound(owner, min)?,
+            self.slider_bound(owner, max)?,
+        ];
         let id = self
             .add(label, Def::Number(0.0))
             .map_err(|e| e.to_string())?;
@@ -207,15 +231,12 @@ impl Construction {
     }
 
     pub(super) fn slider_bound_parents(&self, id: Id) -> impl Iterator<Item = Id> + use<> {
-        self.saved_slider_bounds
-            .get(&id)
-            .copied()
-            .into_iter()
-            .flatten()
-            .filter_map(|bound| match bound {
-                Some(Bound::CommandObject(id)) => Some(id),
-                _ => None,
-            })
+        bound_parents(
+            self.saved_slider_bounds
+                .get(&id)
+                .copied()
+                .unwrap_or([None; 2]),
+        )
     }
 
     /// `GeoNumeric.resolveMinMax` cascades only when the slider value changes.
@@ -232,6 +253,7 @@ impl Construction {
         if old.identical(&value) {
             return false;
         }
+        crate::expr::forget_decimal(self, id);
         self.values[id.0] = value;
         if let Value::Number(value) = value {
             self.defs[id.0] = Def::Number(value);
@@ -284,6 +306,13 @@ impl Construction {
     }
 }
 
+fn bound_parents(bounds: [Option<Bound>; 2]) -> impl Iterator<Item = Id> {
+    bounds.into_iter().filter_map(|bound| match bound {
+        Some(Bound::Object(id)) => Some(id),
+        _ => None,
+    })
+}
+
 fn clamp(value: f64, [min, max]: [Option<f64>; 2]) -> f64 {
     if let Some(min) = min.filter(|&min| value < min) {
         min
@@ -291,5 +320,20 @@ fn clamp(value: f64, [min, max]: [Option<f64>; 2]) -> f64 {
         max
     } else {
         value
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{script, Value};
+
+    #[test]
+    fn redefining_a_number_as_its_own_slider_ceiling_clamps_later_moves() {
+        let mut c = script::load("a = 3\nd = 2a").unwrap();
+        let [a, d] = ["a", "d"].map(|label| c.id(label).unwrap());
+        assert_eq!(script::exec(&mut c, "a = Slider(0, a)").unwrap(), Some(a));
+        c.set_number(a, 7.0).unwrap();
+        assert_eq!(c.value(a), Value::Number(3.0));
+        assert_eq!(c.value(d), Value::Number(6.0));
     }
 }

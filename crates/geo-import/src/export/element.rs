@@ -97,7 +97,9 @@ impl Writer<'_> {
             .split_once([':', '='])
             .and_then(|(_, rhs)| script::split_call(rhs.trim_start_matches('=').trim()))
         {
-            Some(("Slider", args)) if args.len() >= 2 && !c.reads(id).is_empty() => {
+            Some(("Slider", args))
+                if args.len() >= 2 && (!c.reads(id).is_empty() || args[..2].contains(&label)) =>
+            {
                 Some([Some(args[0]), Some(args[1])])
             }
             _ => None,
@@ -371,15 +373,19 @@ impl Writer<'_> {
             .copied()
             .or(saved.and_then(|style| style.animation.as_deref()));
         if bounded {
-            let command_step = line
+            let command_options = line
                 .split_once(['=', ':'])
                 .and_then(|(_, rhs)| {
-                    geo_kernel::script::split_call(geo_kernel::script::split_comment(rhs).0.trim())
+                    script::split_call(script::split_comment(rhs).0.trim_start_matches('=').trim())
                 })
-                .and_then(|(name, args)| match (name, args.as_slice()) {
-                    ("Slider", [_, _, step]) => Some(*step),
-                    _ => None,
-                });
+                .filter(|(name, _)| *name == "Slider")
+                .map(|(_, args)| args);
+            let option = |index, default| {
+                command_options
+                    .as_ref()
+                    .and_then(|args| args.get(index).copied())
+                    .unwrap_or(default)
+            };
             match animation {
                 // the construction knows whether the slider still plays
                 Some(animation) if c.animation(id).is_some() => {
@@ -412,10 +418,10 @@ impl Writer<'_> {
                 None => self.xml.tag(
                     "animation",
                     &[
-                        ("speed", "1"),
+                        ("speed", option(3, "1")),
                         ("type", "0"),
                         ("playing", "false"),
-                        ("step", command_step.unwrap_or("0.1")),
+                        ("step", option(2, "0.1")),
                     ],
                 )?,
             }

@@ -491,7 +491,7 @@ impl Saved {
             c.loci[slot].1 = data;
         }
         for &i in chain {
-            if !matches!(c.defs[i], Def::Discrete(_)) {
+            if !matches!(c.defs[i], Def::Discrete(_) | Def::Number(_)) {
                 recompute(c, i);
             }
         }
@@ -517,12 +517,17 @@ pub(crate) struct OptimizerCascade {
     mover: Id,
     descendants: Vec<usize>,
     running: Vec<Id>,
-    remaining: usize,
+    remaining: [usize; Self::MAX_DEPTH],
     start: u64,
     exhausted: bool,
 }
 
 impl OptimizerCascade {
+    const MAX_DEPTH: usize = 8;
+    // Count actual recomputations at each depth. Running optimizers
+    // return immediately in AlgoOptimize and consume no search visits.
+    const MAX_VISITS_PER_DEPTH: usize = 1_000_000;
+
     pub(crate) fn new(c: &Construction, owner: Id, mover: Id) -> Option<Self> {
         const MAX_EDGES: usize = 16_384;
         if !c.children(mover).take(MAX_EDGES).any(|id| {
@@ -549,7 +554,7 @@ impl OptimizerCascade {
             mover,
             descendants,
             running: Vec::new(),
-            remaining: 250_000,
+            remaining: [Self::MAX_VISITS_PER_DEPTH; Self::MAX_DEPTH],
             start: crate::expr::work_done(),
             exhausted,
         })
@@ -593,23 +598,30 @@ impl OptimizerCascade {
         if restore {
             recompute(c, self.mover.0);
         }
+        let depth = self.running.len() - 1;
         for index in 0..self.descendants.len() {
-            let Some(left) = self.remaining.checked_sub(1) else {
+            let i = self.descendants[index];
+            let def = c.defs[i];
+            if matches!(def, Def::Optimize(d)
+                if d.independent == self.mover && self.running.contains(&Id(i)))
+            {
+                continue;
+            }
+            let Some(left) = self.remaining[depth].checked_sub(1) else {
                 self.exhausted = true;
                 break;
             };
-            self.remaining = left;
+            self.remaining[depth] = left;
             if crate::expr::work_done() - self.start > crate::expr::MAX_EVALUATION_WORK {
                 self.exhausted = true;
                 break;
             }
-            let i = self.descendants[index];
-            if let Def::Optimize(def) = c.defs[i] {
+            if let Def::Optimize(def) = def {
                 let owner = Id(i);
-                if def.independent != self.mover || self.running.contains(&owner) {
+                if def.independent != self.mover {
                     continue;
                 }
-                if self.running.len() == 8 {
+                if self.running.len() == Self::MAX_DEPTH {
                     self.exhausted = true;
                     break;
                 }
@@ -619,7 +631,7 @@ impl OptimizerCascade {
                 if self.exhausted {
                     break;
                 }
-            } else if !matches!(c.defs[i], Def::Prove(_) | Def::ImplicitCurve(_)) {
+            } else if !matches!(def, Def::Prove(_) | Def::ImplicitCurve(_)) {
                 recompute(c, i);
             }
         }
@@ -1439,7 +1451,12 @@ impl<M: Moving> Run<'_, M> {
             None => {
                 copy.apply(c);
                 for &i in self.chain {
-                    recompute(c, i);
+                    // ConsElementXMLHandler.handleSlider skips slider tags
+                    // in the macro construction. The mover still takes
+                    // its sampled value, but other sliders keep theirs.
+                    if !matches!(c.defs[i], Def::Number(_)) {
+                        recompute(c, i);
+                    }
                 }
                 let q = c.point(self.q);
                 self.cache.put(key, q);
@@ -1777,8 +1794,68 @@ fn parse_hull(c: &Construction, list: &str, number: &str) -> Result<LocusDef, St
 }
 
 #[cfg(test)]
-mod stuck_tests {
-    use crate::{script, Value};
+mod tests {
+    use super::OptimizerCascade;
+    use crate::{script, Def, Value};
+
+    #[test]
+    fn optimizer_visit_limit_restores_values() {
+        let mut c =
+            script::load("a = Slider(0, 6)\nf = (a - 3)^2\nm = Minimize(f, a)\nn = Minimize(f, a)")
+                .unwrap();
+        let [a, f, m, n] = ["a", "f", "m", "n"].map(|label| c.id(label).unwrap());
+        c.set_number(a, 4.0).unwrap();
+
+        let Def::Optimize(def) = c.def(n) else {
+            panic!("expected an optimizer");
+        };
+        let mut cascade = OptimizerCascade::new(&c, n, a).unwrap();
+        // Spend the last visit at this depth, then stop before the next.
+        assert_eq!(cascade.remaining[0], OptimizerCascade::MAX_VISITS_PER_DEPTH);
+        cascade.remaining[0] = 1;
+        assert_eq!(cascade.run(&mut c, n, def), Value::Undefined);
+        assert!(cascade.exhausted);
+        assert_eq!(cascade.remaining[0], 0);
+        assert_eq!(cascade.remaining[1], OptimizerCascade::MAX_VISITS_PER_DEPTH);
+        assert_eq!(c.value(a), Value::Number(4.0));
+        assert_eq!(c.value(f), Value::Number(1.0));
+        assert_eq!(c.value(m), Value::Number(3.0));
+    }
+
+    #[test]
+    fn slider_bounds_do_not_clamp_a_second_slider_during_a_trace() {
+        for (source, mover, endpoint, coordinate) in [
+            ("t = Slider(0, 4)", "t", "t", "t"),
+            (
+                "A = (0, 0)\nB = (4, 0)\ng = Segment(A, B)\nP = Point(g)",
+                "P",
+                "x(P)",
+                "x(P)",
+            ),
+        ] {
+            let mut c = script::load(&format!("{source}\ns = Slider(0, {endpoint})")).unwrap();
+            let driver = c.id(mover).unwrap();
+            let s = c.id("s").unwrap();
+            if mover == "t" {
+                c.set_number(driver, 4.0).unwrap();
+            } else {
+                c.move_point(driver, 4.0, 0.0).unwrap();
+            }
+            c.set_number(s, 3.0).unwrap();
+            script::exec(&mut c, &format!("Q = ({coordinate}, s)")).unwrap();
+            script::exec(&mut c, &format!("L = Locus(Q, {mover})")).unwrap();
+            let points = &c.locus(c.id("L").unwrap()).unwrap().points;
+            assert!(points.len() > 1);
+            assert!(points.iter().all(|p| p.y == 3.0));
+            assert_eq!(c.value(s), Value::Number(3.0));
+            if mover == "t" {
+                c.set_number(driver, 2.0).unwrap();
+            } else {
+                c.move_point(driver, 2.0, 0.0).unwrap();
+            }
+            assert_eq!(c.value(s), Value::Number(2.0));
+        }
+    }
 
     /// A locus samples a copy of the construction in the reference: a
     /// sample where the `SVD` input is undefined must not make the live

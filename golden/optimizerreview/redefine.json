@@ -1,0 +1,65 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-redefine-001",
+      "group": "optimizerreview",
+      "script": [
+        "a = 3",
+        "b = 6",
+        "d = 2a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "a = Slider(0, b)" },
+        { "action": "set_number", "label": "b", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "d": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "d": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "optimizerreview-redefine-002",
+      "group": "optimizerreview",
+      "script": [
+        "a = 3",
+        "d = 2a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "a = Slider(0, a)" },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "d": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "d": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDistancePointObject.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/Derivative.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/LengthFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoLengthCurve.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoCurveCartesianND.java
@@ -126,7 +127,9 @@ pub(crate) fn closest(c: &Construction, id: Id, (px, py): (f64, f64)) -> Option<
         } else {
             right
         };
-    } else if distance > 0.0 {
+    } else if distance > 0.0 && !crate::expr::is_sampled_function(c, id) {
+        // The fast derivative of a sampled function is undefined, so the
+        // reference has no stationary roots to replace the point at px.
         let radius = distance.sqrt();
         let steps = (20.0 * radius).clamp(200.0, 10_000.0) as usize;
         let left = px - radius;

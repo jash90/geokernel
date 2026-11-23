@@ -1011,7 +1011,10 @@ pub struct Construction {
     /// when the construction is rebuilt by a redefinition.
     intersection_swaps: BTreeSet<(Id, Id)>,
     by_label: HashMap<String, Id>,
-    replacement_label: Option<String>,
+    replacement_target: Option<Id>,
+    optimizers: Vec<Id>,
+    /// The optimizer updating the rest of the construction after its search.
+    optimizer_final_update: Option<(Id, u64)>,
     images: image::Images,
     charts: std::collections::BTreeMap<Id, algo::charts::ChartData>,
     proofs: std::collections::BTreeMap<Id, algo::prover::ProofData>,
@@ -1801,6 +1804,8 @@ impl Construction {
             .truncate(self.controls.partition_point(|(id, _)| id.0 < at.len));
         self.images.discard_since(at.len, at.image_assets);
         self.charts.split_off(&Id(at.len));
+        self.optimizers
+            .truncate(self.optimizers.partition_point(|id| id.0 < at.len));
         self.proofs.split_off(&Id(at.len));
         self.segment_carriers.split_off(&Id(at.len));
         self.strokes.split_off(&Id(at.len));
@@ -1835,12 +1840,22 @@ impl Construction {
                 self.object_scripts.remove(&label);
             }
         }
-        self.saved_slider_bounds.retain(|id, bounds| {
-            id.0 < at.len
+        self.saved_slider_bounds.retain(|&id, bounds| {
+            let keep = id.0 < at.len
                 && bounds
                     .iter()
                     .flatten()
-                    .all(|bound| bound.exists_before(at.len))
+                    .all(|bound| bound.exists_before(at.len));
+            if !keep && id.0 < at.len {
+                for bound in bounds.iter().flatten() {
+                    if let slider::Bound::Object(parent) = bound {
+                        if let Some(children) = self.children.get_mut(parent.0) {
+                            children.remove(id);
+                        }
+                    }
+                }
+            }
+            keep
         });
         self.evaluation_order.discard_since(at.len);
         // A removed object may have opened an element before a surviving
@@ -2013,7 +2028,7 @@ impl Construction {
         let checkpoint = self.checkpoint();
         let scripts = self.object_scripts.remove(&label);
         self.by_label.remove(&label);
-        self.replacement_label = Some(label.clone());
+        self.replacement_target = Some(id);
         let result = define(self);
 
         let replacement = (|| {
@@ -2026,9 +2041,18 @@ impl Construction {
                     }
                 })?
                 .ok_or_else(|| refuse("a replacement must define an object"))?;
+            let new_bounds = self.saved_slider_bounds.get(&new).copied().or_else(|| {
+                self.slider_interval(new).map(|(min, max)| {
+                    [
+                        Some(slider::Bound::Literal(min)),
+                        Some(slider::Bound::Literal(max)),
+                    ]
+                })
+            });
+            let old_bounds = self.saved_slider_bounds.get(&id).copied();
             if !supported(old)
-                || self.slider_interval(id).is_some()
-                || self.saved_slider_bounds.contains_key(&id)
+                || ((self.slider_interval(id).is_some() || old_bounds.is_some())
+                    && new_bounds.is_none())
             {
                 return Err(refuse("this definition cannot be replaced in place"));
             }
@@ -2068,6 +2092,9 @@ impl Construction {
             // must account for new indirect reads as well as the replacement's
             // own inputs, so a rejected cycle leaves the live graph intact.
             self.defs[id.0] = def;
+            if let Some(bounds) = new_bounds {
+                self.saved_slider_bounds.insert(id, bounds);
+            }
             let changed: BTreeMap<_, _> = old_reads
                 .iter()
                 .filter_map(|(&child, old_reads)| {
@@ -2078,6 +2105,10 @@ impl Construction {
                 })
                 .collect();
             self.defs[id.0] = old;
+            match old_bounds {
+                Some(bounds) => self.saved_slider_bounds.insert(id, bounds),
+                None => self.saved_slider_bounds.remove(&id),
+            };
             let order = changed
                 .iter()
                 .any(|(&child, parents)| {
@@ -2089,11 +2120,11 @@ impl Construction {
                 .then(|| self.replacement_order(&changed, &locus_inputs, new.0))
                 .transpose()
                 .map_err(refuse)?;
-            Ok((new, def, changed, order))
+            Ok((new, def, new_bounds, changed, order))
         })();
-        self.replacement_label = None;
+        self.replacement_target = None;
 
-        let (new, mut def, changed, order) = match replacement {
+        let (new, mut def, bounds, changed, order) = match replacement {
             Ok(staged) => staged,
             Err(error) => {
                 self.discard_since(checkpoint);
@@ -2105,7 +2136,11 @@ impl Construction {
             }
         };
 
-        let value = self.values[new.0];
+        let mut value = self.values[new.0];
+        if bounds.is_some() && matches!(old, Def::Number(_)) {
+            def = old;
+            value = self.values[id.0];
+        }
         let hint = self.hints[new.0];
         let path = self.path_state(new);
         let mut source = self.construction_sources.remove(&new);
@@ -2141,6 +2176,10 @@ impl Construction {
         self.defs[id.0] = def;
         self.values[id.0] = value;
         self.hints[id.0] = hint;
+        if let Some(bounds) = bounds {
+            self.saved_slider_bounds.insert(id, bounds);
+            self.update_slider_bounds(id);
+        }
         for (child, new) in changed {
             let old = &old_reads[&child];
             for &parent in old {
@@ -2347,7 +2386,7 @@ impl Construction {
     }
 
     pub(crate) fn predecessor_storage_len(&self, id: Id) -> usize {
-        if self.evaluation_order.ids.is_empty() && self.replacement_label.is_none() {
+        if self.evaluation_order.ids.is_empty() && self.replacement_target.is_none() {
             id.0 + 1
         } else {
             self.len()
@@ -2599,7 +2638,7 @@ impl Construction {
             Def::Optimize(d) => {
                 let d = algo::optimize::disabled(self, d).unwrap_or(d);
                 def = Def::Optimize(d);
-                algo::optimize::record(self, id, d)
+                self.record_optimizer(id, d)
             }
             Def::Calculus(d) if d.has_record() => {
                 let (value, record) = algo::calculus::initialize(self, &d);
@@ -2625,6 +2664,9 @@ impl Construction {
         }
         self.defs.push(def);
         self.values.push(value);
+        if matches!(def, Def::Optimize(_)) {
+            self.optimizers.push(id);
+        }
         if def.kind() == Kind::Image {
             self.register_transformed_image(id, def);
         }
@@ -2637,7 +2679,11 @@ impl Construction {
         self.by_label.insert(label.to_string(), id);
         let element = if let Some(owner) = owner {
             self.output_entry(owner)
-        } else if label.starts_with('\0') || self.replacement_label.as_deref() == Some(label) {
+        } else if label.starts_with('\0')
+            || self
+                .replacement_target
+                .is_some_and(|target| self.label(target) == label)
+        {
             ProtocolEntry::Hidden
         } else {
             let index = self.step;
@@ -3031,6 +3077,44 @@ impl Construction {
         self.propagate_dirty(dirty, self.evaluation_rank(start), false)
     }
 
+    /// After restoring its mover, AlgoOptimize updates the construction
+    /// while its own recursion guard is set. The local search already
+    /// handles peers on this mover. Refresh the optimizers on other movers
+    /// and propagate changes through their ordinary children.
+    fn record_optimizer(&mut self, owner: Id, d: OptimizeDef) -> Value {
+        const MAX_OPTIMIZERS: usize = 256;
+        let value = algo::optimize::record(self, owner, d);
+        if self.optimizer_final_update.is_some()
+            || self.optimizers.is_empty()
+            || !d.updates_construction(self)
+        {
+            return value;
+        }
+        let mut dirty = DirtySet::default();
+        for &id in self.optimizers.iter().take(MAX_OPTIMIZERS) {
+            if id != owner
+                && matches!(self.def(id), Def::Optimize(other) if other.independent != d.independent)
+            {
+                if dirty.len == 0 {
+                    dirty.fit(self.len());
+                }
+                dirty.insert(self.evaluation_rank(id));
+            }
+        }
+        if dirty.len == 0 {
+            return value;
+        }
+        if let Some(slot) = self.values.get_mut(owner.0) {
+            *slot = value;
+        }
+        self.optimizer_final_update = Some((owner, expr::work_done()));
+        let changed_root = self.last_update_changed_automatic_root;
+        self.propagate_dirty(dirty, 0, false);
+        self.last_update_changed_automatic_root |= changed_root;
+        self.optimizer_final_update = None;
+        value
+    }
+
     fn propagate_dirty(
         &mut self,
         mut dirty: DirtySet,
@@ -3175,6 +3259,11 @@ impl Construction {
                     }
                 }
                 Def::Optimize(d) => {
+                    if self.optimizer_final_update.is_some_and(|(owner, start)| {
+                        owner == Id(i) || expr::work_done() - start > expr::MAX_EVALUATION_WORK
+                    }) {
+                        continue;
+                    }
                     let d = match algo::optimize::disabled(self, d) {
                         Some(disabled) => {
                             self.defs[i] = Def::Optimize(disabled);
@@ -3183,7 +3272,7 @@ impl Construction {
                         None => d,
                     };
                     let old = self.values[i];
-                    let new = algo::optimize::record(self, Id(i), d);
+                    let new = self.record_optimizer(Id(i), d);
                     if new.identical(&old) {
                         continue;
                     }

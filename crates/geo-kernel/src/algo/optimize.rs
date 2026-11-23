@@ -100,6 +100,12 @@ impl OptimizeDef {
         self.watch = Watch::Attached(c.store_list(&watched)?);
         Ok(self)
     }
+
+    pub(crate) fn updates_construction(self, c: &Construction) -> bool {
+        !self.disabled
+            && self.watch != Watch::OverBudget
+            && (self.point || c.has_slider_bounds(self.independent))
+    }
 }
 
 impl Group for OptimizeDef {
@@ -530,7 +536,7 @@ mod cascade_tests {
     use crate::{script, Value};
 
     #[test]
-    fn nested_searches_stop_at_the_work_budget_and_restore_the_mover() {
+    fn nested_searches_stop_at_the_nesting_limit_and_restore_the_mover() {
         let mut c = script::load("a = Slider(0, 6)\nf = (a - 3)^2").unwrap();
         let a = c.id("a").unwrap();
         let f = c.id("f").unwrap();
@@ -546,6 +552,21 @@ mod cascade_tests {
         assert_eq!(c.value(last), Value::Undefined);
         assert_eq!(c.value(a), Value::Number(1.0));
         assert_eq!(c.value(f), Value::Number(4.0));
+    }
+
+    #[test]
+    fn final_update_recomputes_an_optimizer_on_another_mover() {
+        let mut c = script::load(
+            "b = 36\na = Slider(0, sqrt(b))\nm = Minimize((a - 3)^2, a)\n\
+             t = Slider(0, 6)\nd = 2m",
+        )
+        .unwrap();
+        let [b, m, d] = ["b", "m", "d"].map(|label| c.id(label).unwrap());
+        c.set_number(b, -1.0).unwrap();
+        assert_eq!(c.value(m), Value::Number(3.0));
+        script::exec(&mut c, "n = Minimize((t - 2)^2, t)").unwrap();
+        assert_eq!(c.value(m), Value::Undefined);
+        assert_eq!(c.value(d), Value::Undefined);
     }
 
     #[test]

@@ -1,0 +1,141 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-transform-001",
+      "group": "optimizerreview",
+      "script": [
+        "t = 1",
+        "L = If(t > 0, {(1, 2)}, {1})",
+        "M = Dilate(L, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 0.0 },
+        { "action": "set_number", "label": "t", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+            ]
+          }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+            ]
+          }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "optimizerreview-transform-002",
+      "group": "optimizerreview",
+      "script": [
+        "t = 1",
+        "L = If(t > 0, {(1, 2)}, {1})",
+        "M = ApplyMatrix({{2, 0}, {0, 2}}, L)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 0.0 },
+        { "action": "set_number", "label": "t", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+            ]
+          }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+            ]
+          }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

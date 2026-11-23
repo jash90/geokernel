@@ -682,16 +682,19 @@ fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
             | "UnitVector"
             | "Tangent"
     );
+    let point_arguments = matches!(
+        command,
+        "Circle" | "Polygon" | "PolyLine" | "Arc" | "Sector"
+    ) || (command == "ClosestPoint"
+        && args.len() == 2
+        && args.iter().any(|arg| c.id(arg).is_some()));
     let mut rewritten = false;
     let args = args
         .iter()
         .map(|&arg| {
             let inline = c.id(arg).is_none()
                 && (equations && crate::expr::equation::split_equation(arg).is_ok()
-                    || matches!(
-                        command,
-                        "Circle" | "Polygon" | "PolyLine" | "Arc" | "Sector"
-                    ) && arg.starts_with('(')
+                    || point_arguments && arg.starts_with('(')
                     || matches!(
                         (command, split_call(arg).map(|(name, _)| name)),
                         ("PathParameter", Some("Point")) | ("Centroid", Some("Polygon"))
@@ -1185,25 +1188,25 @@ fn define(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
     c.add(name, def).map_err(|e| e.to_string())
 }
 
-/// `Slider(min, max)` and `Slider(min, max, increment)` with numeric endpoints
-/// (`CmdSlider`); the increment only matters for dragging, which
-/// the kernel does not do, so it is checked and dropped.
+/// Numeric `Slider` overloads with optional animation increment and speed.
 fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
-    let number = |arg| {
+    let number = |c: &Construction, arg| {
         crate::expr::constant_number(c, arg)
             .filter(|&(_, angle)| !angle)
             .map(|(value, _)| value)
-            .ok_or_else(|| format!("expected a constant number, got `{arg}`"))
     };
-    let (min, max) = match args {
-        [min, max] => (*min, *max),
-        [min, max, step] => {
-            number(step)?;
-            (*min, *max)
+    let [min, max, options @ ..] = args else {
+        return Err(format!("`Slider` does not take {} argument(s)", args.len()));
+    };
+    if options.len() > 2 {
+        return Err(format!("`Slider` does not take {} argument(s)", args.len()));
+    }
+    for &arg in options {
+        if c.numeric_value(arg).is_none() {
+            return Err(format!("expected a number, got `{arg}`"));
         }
-        _ => return Err(format!("`Slider` does not take {} argument(s)", args.len())),
-    };
-    if let (Ok(min), Ok(max)) = (number(min), number(max)) {
+    }
+    if let (Some(min), Some(max)) = (number(c, min), number(c, max)) {
         return c.add_slider(name, min, max).map_err(|e| e.to_string());
     }
     c.add_expression_slider(name, [min, max])
