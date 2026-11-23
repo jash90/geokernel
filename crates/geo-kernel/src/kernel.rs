@@ -2234,10 +2234,16 @@ impl Construction {
             }),
         ) = (old, replacement)
         {
-            let constant = |id| self.label(id).starts_with('\0') && independent(self.def(id));
-            // AlgoPointOnPath supports an in-place parameter edit when the
-            // path stays the same and neither parameter is a dynamic object.
-            return path != new_path || !constant(param) || !constant(new_param);
+            if path != new_path {
+                return true;
+            }
+            let anonymous = |id| self.label(id).starts_with('\0');
+            // The command's XML shows the definition of an anonymous input.
+            // Its freshly allocated slot does not change that definition.
+            return !(anonymous(param)
+                && anonymous(new_param)
+                && (expr::same_definition(self, self.def(param), self.def(new_param))
+                    || (independent(self.def(param)) && independent(self.def(new_param)))));
         }
         true
     }
@@ -2993,20 +2999,26 @@ impl Construction {
     /// Changes a free number and recomputes everything that depends on it.
     /// Returns how many dependent objects were recomputed.
     pub fn set_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
+        Ok(self.set_number_if_changed(id, v)?.unwrap_or(0))
+    }
+
+    /// Sets the number, returning the number of recomputed objects when the
+    /// value or its definition changed.
+    pub fn set_number_if_changed(&mut self, id: Id, v: f64) -> Result<Option<usize>, Error> {
         self.update_number(id, v, true)
     }
 
     /// A numeric assignment to a slider sets its value outside the drag interval too.
     pub(crate) fn assign_slider_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
-        self.update_number(id, v, false)
+        Ok(self.update_number(id, v, false)?.unwrap_or(0))
     }
 
-    pub(crate) fn update_number(
+    fn update_number(
         &mut self,
         id: Id,
         v: f64,
         clamp_slider: bool,
-    ) -> Result<usize, Error> {
+    ) -> Result<Option<usize>, Error> {
         self.last_update_changed_automatic_root = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
@@ -3050,13 +3062,13 @@ impl Construction {
             && old.to_bits() == v.to_bits()
             && self.values[id.0].is_defined()
         {
-            return Ok(0);
+            return Ok(None);
         }
         self.defs[id.0] = new_def;
         self.values[id.0] = self.compute(new_def, id.0);
         // a value set by hand is where an animation goes on from
         self.reset_animation_position(id);
-        Ok(self.propagate(id))
+        Ok(Some(self.propagate(id)))
     }
 
     /// True when the last coordinate or value update moved an automatic

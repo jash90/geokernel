@@ -135,4 +135,13 @@ cases.case("occupied", circle + [
     "s = Segment(A, B)", "q = IntersectPath(s, k)",
 ], [mv("B", 1, 1)])
 
+# Overlay points and edges use the next free labels in their own families.
+cases.case("overlaylabels", [
+    pt("P0", -1, -1), pt("P1", 1, -1), pt("P2", 1, 1), pt("P3", -1, 1),
+    "p = Polygon(P0, P1, P2, P3)",
+    pt("S0", -2, -2), pt("S1", 2, -2), pt("S2", 2, 2), pt("S3", -2, 2),
+    "s = Polygon(S0, S1, S2, S3)",
+    "B = 1", "C = 1", "b = 1", "c = 1", "r = IntersectPath(p, s)",
+], [])
+
 cases.write()

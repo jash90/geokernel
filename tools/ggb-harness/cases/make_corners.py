@@ -357,4 +357,18 @@ for setup, redefine in (
         setn("n", 0.5), {"action": "redefine", "line": redefine},
     ])
 
+# XML definition comparison retains the spelling of a decimal literal.
+cases.case("reviewthree", base + ["a = 3*n", "b = a + 1"], [
+    setn("n", 0.5), {"action": "redefine", "line": "a = 3.0*n"},
+])
+# A dependent point can have a fresh internal parameter with unchanged text.
+cases.case("reviewthree", base + [
+    pt("A", 0, 0), pt("B", 2, 0), "s = Segment(A, B)", "m = 0.25",
+    "T = Point(s, 2*m)", "u = x(T)",
+], [setn("n", 0.5), {"action": "redefine", "line": "T = Point(s, 2*m)"}])
+# The XML reload observes the current value and fresh vertex helpers.
+cases.case("reviewthree", base + ["a = 1", "W = Vertex(y > x^n && x > 4 && y > 0)"], [
+    setn("n", 0.5), setn("a", 1), {"action": "reload"}, {"action": "reload"},
+])
+
 cases.write()

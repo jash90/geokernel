@@ -1649,12 +1649,14 @@ impl Log {
             }
         };
         let result = match to {
-            Setting::Point(x, y) => c.move_point(id, x, y),
-            Setting::Number(v) => c.set_number(id, v),
-            Setting::Boolean(v) => c.set_boolean(id, v),
-            Setting::AngleStyle(style) => c.set_angle_style(id, style),
+            Setting::Point(x, y) => c.move_point(id, x, y).map(Some),
+            Setting::Number(v) => c.set_number_if_changed(id, v),
+            Setting::Boolean(v) => c.set_boolean(id, v).map(Some),
+            Setting::AngleStyle(style) => c.set_angle_style(id, style).map(Some),
         };
-        result.map_err(|e| format!("`{label}`: {e}"))?;
+        if result.map_err(|e| format!("`{label}`: {e}"))?.is_none() {
+            return Ok(Vec::new());
+        }
         if matches!(to, Setting::AngleStyle(_)) {
             self.push_set(label, to, true);
         } else {

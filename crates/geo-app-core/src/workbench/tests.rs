@@ -2001,6 +2001,51 @@ fn adjacent_reset_markers_cost_one_reset_in_a_snapshot() {
 }
 
 #[test]
+fn same_value_edits_do_not_repeat_snapshot_helper_resets() {
+    use std::fmt::Write;
+
+    let mut text = format!("# geokernel snapshot {}\n", SNAPSHOT_VERSION);
+    text.push_str(concat!(
+        "a = 1\nn = 2\n",
+        "q(x,y) = y > x^n && x > 4 && y > 0 # labels: q\n",
+    ));
+    for i in 0..1000 {
+        writeln!(text, "P{i} = Vertex(q) # labels: P{i}_{{1}}").unwrap();
+    }
+    // The first assignment drops the literal's exact decimal. Later ones
+    // leave the value and definition unchanged.
+    text.push_str("SetValue(n, 0.5)\nSetValue(a, 1)\n$resetInequalityHelpers()\n");
+    let restore = |text: &str| {
+        let mut w = Workbench::default();
+        let before = geo_kernel::expr::work_done();
+        assert!(w.restore_text(text).unwrap().is_empty());
+        let work = geo_kernel::expr::work_done() - before;
+        let c = w.construction();
+        assert_eq!(c.value(c.id("a").unwrap()), Value::Number(1.0));
+        for i in 0..1000 {
+            assert_eq!(
+                c.value(c.id(&format!("P{i}_{{1}}")).unwrap()),
+                Value::Undefined
+            );
+        }
+        assert_eq!(w.snapshot_text().matches("SetValue(a, 1)").count(), 1);
+        assert_eq!(
+            w.snapshot_text()
+                .matches("$resetInequalityHelpers()")
+                .count(),
+            1
+        );
+        work
+    };
+    let single = restore(&text);
+    let no_op = "SetValue(a, 1)\n$resetInequalityHelpers()\n";
+    text.push_str(no_op);
+    assert_eq!(restore(&text), single);
+    text.push_str(&no_op.repeat(99_998));
+    assert_eq!(restore(&text), single);
+}
+
+#[test]
 fn undo_redo_and_snapshot_reload_rebuild_inequality_vertex_helpers() {
     let mut w = Workbench::from_script(
         "n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)\nZ = (0, 0)",

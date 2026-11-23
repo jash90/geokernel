@@ -1190,6 +1190,40 @@ mod tests {
     }
 
     #[test]
+    fn a_differently_written_coefficient_rebuilds_inequality_helpers() {
+        let mut c = script::load(concat!(
+            "n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)\n",
+            "a = 3*n\nb = a + 1",
+        ))
+        .unwrap();
+        let p = c.id("P_{1}").unwrap();
+        c.set_number(c.id("n").unwrap(), 0.5).unwrap();
+        assert_eq!(c.value(p), Value::Point { x: 4.0, y: 2.0 });
+        script::exec(&mut c, "a = 3.0 * n").unwrap();
+        assert_eq!(c.value(p), Value::Undefined);
+    }
+
+    #[test]
+    fn an_identical_point_parameter_keeps_inequality_helpers() {
+        let mut c = script::load(concat!(
+            "n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)\n",
+            "A = (0, 0)\nB = (2, 0)\ns = Segment(A, B)\nm = 0.25\n",
+            "T = Point(s, 2*m)\nu = x(T)",
+        ))
+        .unwrap();
+        let p = c.id("P_{1}").unwrap();
+        c.set_number(c.id("n").unwrap(), 0.5).unwrap();
+        let vertex = Value::Point { x: 4.0, y: 2.0 };
+        assert_eq!(c.value(p), vertex);
+        script::exec(&mut c, "T = Point(s, 2*m)").unwrap();
+        assert_eq!(c.value(p), vertex);
+        c.set_number(c.id("m").unwrap(), 0.375).unwrap();
+        assert_eq!(c.value(c.id("u").unwrap()), Value::Number(1.5));
+        script::exec(&mut c, "T = Point(s, 3*m)").unwrap();
+        assert_eq!(c.value(p), Value::Undefined);
+    }
+
+    #[test]
     fn redefining_the_inequality_rebuilds_its_polynomial_helper() {
         let mut c =
             script::load("n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)").unwrap();

@@ -717,18 +717,20 @@ impl Raw {
 pub(crate) enum Lit {
     #[default]
     Plain,
-    Special(Option<Dec>),
+    // XML definitions preserve the spelling of input literals, including
+    // trailing zeros that the exact decimal representation normalizes away.
+    Special(Option<Dec>, Option<std::sync::Arc<str>>),
     Text(std::sync::Arc<str>),
 }
 
 impl Lit {
     fn special(&self) -> bool {
-        matches!(self, Self::Special(_))
+        matches!(self, Self::Special(..))
     }
 
     fn decimal(&self) -> Option<&Dec> {
         match self {
-            Self::Special(decimal) => decimal.as_ref(),
+            Self::Special(decimal, _) => decimal.as_ref(),
             _ => None,
         }
     }
@@ -1243,7 +1245,8 @@ pub(crate) fn independent_definition(c: &Construction, def: Def) -> bool {
     }
 }
 
-/// Equality of definitions materialized in different expression slots.
+/// Equality of parsed definitions in different expression slots. Ignore
+/// source formatting, but retain the literal spelling used by XML definitions.
 pub(crate) fn same_definition(c: &Construction, a: Def, b: Def) -> bool {
     match (a, b) {
         (Def::Expr(a), Def::Expr(b)) if a.kind == b.kind && a.angle_style == b.angle_style => {
