@@ -45,6 +45,46 @@ which builds `common-jre` and its test fixtures and writes their runtime class
 path to `build/classpath.txt` (ignored by git, it holds local paths). The
 harness is then compiled with plain `javac` into `build/classes`.
 
+### Where the data is recorded
+
+`GoldenGenerator` runs GeoGebra's Java code, and two systems need not give
+the same bits. HotSpot's intrinsics for `Math.exp`, `Math.pow`, `Math.sin`
+and `Math.cos` give other last bits elsewhere (`Math.exp(1)` is
+`2.718281828459045` on Linux x86_64 and `2.7182818284590455` on macOS
+arm64). Record on Linux x86_64, where the committed data comes from. On
+another system, run the harness in a container of that system:
+
+```sh
+tools/ggb-harness/harness.sh build
+GEOGEBRA_SRC=<path to the GeoGebra checkout> tools/ggb-harness/linux-x86_64.sh golden lines
+```
+
+`linux-x86_64.sh` runs every command of `harness.sh` except `build` in a
+Linux x86_64 container with JDK 17. It needs a container runtime that runs
+x86_64 images: `GGB_HARNESS_RUNTIME` names it (default `docker`) and
+`GGB_HARNESS_IMAGE` the image. `GRADLE_USER_HOME` is Gradle's directory
+with the dependency jars.
+
+After a run, check with `git diff` that the files whose outcome does not
+change are byte-identical, and commit only the files the change is about.
+A full run at the reference commit (November 2026) rewrote every file of
+`golden/` byte for byte except:
+
+- `axes/functions`, `calculus/degree` and `algebraedge/integer`, which are
+  still in schema 2 and come out in schema 4 (`algebraedge/integer` also
+  holds `Math.pow` results that HotSpot's intrinsics change by a unit in
+  the last place);
+- ten files whose numbers are printed with one digit more or less and parse
+  to the same values (`cas/factor`, `cas/magnitude`, `calculus/coefficients`,
+  `conics/transform`, `conicpaths/locus`, `expr/apply`, `infinity/outputs`,
+  `locus/polygon`, `locus/segment`, `locusequation/boolean`);
+- four that depend on the JVM: the order of identity-hashed sets and maps
+  in `discrete/path`, `discrete/tree` and `discrete/upstream`, and the
+  seeded search in `intersections/boundaryseed`.
+
+The bounds of a text depend on the fonts of the system and are not
+recorded this way.
+
 ### Native CAS oracle
 
 On macOS arm64 and Linux x86_64, `build` also downloads the published
