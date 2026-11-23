@@ -32,7 +32,7 @@
               [8.0, 9.0]
             ]
           },
-          "R": { "type": "point", "defined": false }
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
         }
       ]
     },
@@ -65,7 +65,8 @@
               [8.0, 1.0]
             ]
           },
-          "R": { "type": "point", "defined": false }
+          "R_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
         }
       ]
     },
@@ -131,7 +132,7 @@
               [8.0, 0.12366978082792272]
             ]
           },
-          "R": { "type": "point", "defined": false }
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 }
         }
       ]
     },
@@ -164,7 +165,7 @@
               [8.0, 0.017898438028259585]
             ]
           },
-          "R": { "type": "point", "defined": false }
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.5 }
         }
       ]
     },
@@ -197,7 +198,7 @@
               [8.0, 7.0]
             ]
           },
-          "R": { "type": "point", "defined": false }
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
         }
       ]
     },
