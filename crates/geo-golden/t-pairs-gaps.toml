@@ -159,18 +159,6 @@ reason = "the kernel refuses the input: geometric objects cannot be used as arit
 mismatches = ["step"]
 
 [[gap]]
-id = "arithmetic/ArithmeticTest.java:224"
-category = "incomplete-context"
-reason = "the kernel refuses the input: `1..2` is not a number"
-mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/ArithmeticTest.java:225"
-category = "incomplete-context"
-reason = "the kernel refuses the input: `1..5` is not a number"
-mismatches = ["step"]
-
-[[gap]]
 id = "arithmetic/ArithmeticTest.java:226"
 category = "incomplete-context"
 reason = "the kernel refuses the input: `1..5` is not a number"
