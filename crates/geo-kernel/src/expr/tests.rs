@@ -782,6 +782,20 @@ fn arithmetic_is_told_from_trees_the_evaluation_does_not_run() {
 }
 
 #[test]
+fn shared_deadline_counts_plain_scalar_expression_visits() {
+    let c = crate::script::load("a = 2").unwrap();
+    let before = super::work_done();
+    super::with_work_deadline(before, || {
+        assert!(c.arithmetic_value("sqrt(a) + sqrt(a)").unwrap().is_nan());
+    });
+    assert!(super::work_done() > before);
+    assert_eq!(
+        c.arithmetic_value("sqrt(a) + sqrt(a)"),
+        Some(2.0_f64.sqrt() * 2.0)
+    );
+}
+
+#[test]
 fn defined_function_with_small_work_limit() {
     let mut c = crate::script::load("f(x) = x + x").unwrap();
     let result = super::eval::with_work_limit(1, || crate::script::exec(&mut c, "b = Defined(f)"))

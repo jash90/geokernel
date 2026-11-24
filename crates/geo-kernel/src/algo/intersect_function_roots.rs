@@ -167,8 +167,8 @@ pub(in crate::algo) fn interval_roots(
     }
 }
 
-/// The same root scan with a fixed sample count, as used for Cartesian curves.
-pub(super) fn fixed_steps_roots(
+/// The same root scan with a fixed sample count, as used for curves and function projection.
+pub(in crate::algo) fn fixed_steps_roots(
     f: &impl Fn(f64) -> f64,
     left: f64,
     right: f64,

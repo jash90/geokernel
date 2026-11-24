@@ -134,6 +134,10 @@ impl VertexHelpers {
         *self.changed.get_mut() = false;
     }
 
+    pub(crate) fn restore_changed(&mut self, changed: bool) {
+        *self.changed.get_mut() = changed;
+    }
+
     pub(crate) fn changed(&self) -> bool {
         self.changed.load(Ordering::Relaxed)
     }

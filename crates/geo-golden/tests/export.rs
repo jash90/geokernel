@@ -48,6 +48,12 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
     ("implicit-equations-003", 2),
     ("lists-objects-001", 0),
     ("locus-slider-001", 0),
+    ("optimizerreview-reload-001", 1),
+    ("optimizerreview-roundtrip-001", 4),
+    ("optimizerreview-redefine-001", 2),
+    ("optimizerreview-redefine-002", 1),
+    ("optimizerreview-forms-001", 1),
+    ("optimizerreview-forms-002", 0),
     ("paths-chain-001", 1),
     ("polygon-polyline-001", 0),
     ("polygon-regular-001", 0),
@@ -211,9 +217,14 @@ fn corpus() -> Vec<Case> {
                     wb.set_number(id, *value);
                 }
                 Step::Add { line } | Step::Redefine { line } => wb.run_line(line).unwrap(),
+                Step::ReloadGgb => {
+                    let bytes = wb.export_ggb(None).unwrap();
+                    wb.load_for_export(&bytes, name).unwrap();
+                }
                 Step::Reject { .. }
                 | Step::Delete { .. }
                 | Step::SetSliderBounds { .. }
+                | Step::SliderAnimation { .. }
                 | Step::Append { .. }
                 | Step::AnchorText { .. }
                 | Step::Undo
@@ -1346,21 +1357,27 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
                 let moving = &actual["animation"];
                 let animation = presentation.slider_animation.get(label);
                 // A slider made by its command keeps the step of the command.
-                let command_step = wb
+                let command_options = wb
                     .definition(label)
                     .and_then(geo_kernel::script::split_call)
-                    .and_then(|(name, args)| match (name, args.as_slice()) {
-                        ("Slider", [_, _, step]) => Some(*step),
-                        _ => None,
-                    });
+                    .filter(|(name, _)| *name == "Slider")
+                    .map(|(_, args)| args);
+                let option = |index| {
+                    command_options
+                        .as_ref()
+                        .and_then(|args| args.get(index).copied())
+                };
                 let from_file = presentation.object_styles.contains_key(label);
                 let step = match animation {
                     Some(animation) => number_or_reference(c, animation.step.as_deref()),
                     // A file slider without the tag steps automatically.
                     None if from_file => Value::Null,
-                    None => number_or_reference(c, command_step.or(Some("0.1"))),
+                    None => number_or_reference(c, option(2).or(Some("0.1"))),
                 };
-                let speed = animation.and_then(|a| a.speed.as_deref()).or(Some("1"));
+                let speed = animation
+                    .and_then(|a| a.speed.as_deref())
+                    .or_else(|| option(3))
+                    .or(Some("1"));
                 assert_json(&step, &moving["step"], &format!("{where_}.step"));
                 // The reference reports the speed of an undefined
                 // expression as 0 (`GeoElement.getAnimationSpeed`).
@@ -1746,6 +1763,42 @@ fn exported_xml(wb: &Workbench) -> String {
     geo_import::archive::extract_xml(&bytes)
         .unwrap()
         .into_owned()
+}
+
+#[test]
+fn export_keeps_live_slider_endpoints_with_a_colon_label() {
+    let mut wb = Workbench::default();
+    wb.run_line("b = 36").unwrap();
+    wb.run_line("a: Slider(0, If(b == 36, 6, 2))").unwrap();
+    let xml = exported_xml(&wb);
+    assert!(xml.contains("max=\"If(b == 36, 6, 2)\""), "{xml}");
+
+    let mut reloaded = Workbench::default();
+    reloaded.load_for_export(xml.as_bytes(), "slider").unwrap();
+    let c = reloaded.construction();
+    assert_eq!(c.slider_interval(c.id("a").unwrap()), Some((0.0, 6.0)));
+}
+
+#[test]
+fn reloaded_slider_responds_to_an_edit_of_its_expression_endpoint() {
+    let cases = load_all(&repo_root()).unwrap();
+    let name = "optimizerreview-reload-001";
+    let case = cases.iter().find(|case| case.id == name).unwrap();
+    let mut wb = Workbench::from_script(&case.script.join("\n")).unwrap();
+    let set = |wb: &mut Workbench, step: &Step| {
+        let Step::SetNumber { label, value } = step else {
+            panic!("expected a numeric edit");
+        };
+        assert!(wb.set_number(wb.construction().id(label).unwrap(), *value));
+    };
+    set(&mut wb, &case.steps[1]);
+    let (_, mut reloaded) = round_trip(name, &wb, None);
+    set(&mut reloaded, &case.steps[2]);
+    let c = reloaded.construction();
+    for (label, expected) in &case.snapshots[2] {
+        compare_construction_object(expected, c, c.id(label).unwrap())
+            .unwrap_or_else(|why| panic!("{label}: {why}"));
+    }
 }
 
 fn hostile_export() -> (Workbench, String) {

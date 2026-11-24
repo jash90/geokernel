@@ -1,0 +1,88 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-animationoptions-001",
+      "group": "optimizerreview",
+      "script": [
+        "h = 0.2",
+        "a = Slider(0, 6, h, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "a = Slider(0, 8)" },
+        {
+          "action": "slider_animation",
+          "label": "a",
+          "options": { "step": "0.2", "speed": "2" }
+        },
+        { "action": "redefine", "line": "a = Slider(0, 9, 0.4)" },
+        {
+          "action": "slider_animation",
+          "label": "a",
+          "options": { "step": "0.4", "speed": "2" }
+        }
+      ],
+      "snapshots": [
+        {
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "optimizerreview-animationoptions-002",
+      "group": "optimizerreview",
+      "script": [
+        "h = 0.2",
+        "a = Slider(0, 6, h, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "a = Slider(0, 8)" },
+        { "action": "set_number", "label": "h", "value": 0.4 },
+        {
+          "action": "slider_animation",
+          "label": "a",
+          "options": { "step": "0.2", "speed": "2" }
+        }
+      ],
+      "snapshots": [
+        {
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.4 },
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.4 },
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    }
+  ]
+}

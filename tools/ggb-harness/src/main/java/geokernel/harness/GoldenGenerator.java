@@ -232,6 +232,15 @@ public final class GoldenGenerator {
                     outStep.put("line", line);
                     break;
                 }
+                case "reload_ggb":
+                    session.reloadGgb();
+                    break;
+                case "slider_animation": {
+                    String label = (String) step.get("label");
+                    outStep.put("label", label);
+                    outStep.put("options", session.sliderAnimation(label));
+                    break;
+                }
                 case "set_slider_bounds": {
                     String label = (String) step.get("label");
                     double min = number(step.get("min"));
@@ -265,7 +274,7 @@ public final class GoldenGenerator {
                 default:
                     throw new IllegalArgumentException("unknown action " + action);
             }
-            if (outStep.size() != step.size()) {
+            if (outStep.size() != step.size() + ("slider_animation".equals(action) ? 1 : 0)) {
                 throw new IllegalArgumentException("unexpected fields in step " + step);
             }
             if (undo && i > 0 && !Set.of("undo", "redo", "reload").contains(action)) {

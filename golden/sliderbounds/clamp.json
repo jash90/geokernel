@@ -1,0 +1,63 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "sliderbounds-clamp-001",
+      "group": "sliderbounds",
+      "script": [
+        "lo = 2",
+        "hi = 6",
+        "s = Slider(lo, hi)",
+        "d = 2s"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "s", "value": 5.0 },
+        { "action": "set_number", "label": "hi", "value": 4.0 },
+        { "action": "set_number", "label": "lo", "value": 7.0 },
+        { "action": "set_number", "label": "hi", "value": 9.0 },
+        { "action": "set_number", "label": "lo", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "lo": { "type": "number", "defined": true, "value": 2.0 },
+          "hi": { "type": "number", "defined": true, "value": 6.0 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "lo": { "type": "number", "defined": true, "value": 2.0 },
+          "hi": { "type": "number", "defined": true, "value": 6.0 },
+          "s": { "type": "number", "defined": true, "value": 5.0 },
+          "d": { "type": "number", "defined": true, "value": 10.0 }
+        },
+        {
+          "lo": { "type": "number", "defined": true, "value": 2.0 },
+          "hi": { "type": "number", "defined": true, "value": 4.0 },
+          "s": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "lo": { "type": "number", "defined": true, "value": 7.0 },
+          "hi": { "type": "number", "defined": true, "value": 4.0 },
+          "s": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "lo": { "type": "number", "defined": true, "value": 7.0 },
+          "hi": { "type": "number", "defined": true, "value": 9.0 },
+          "s": { "type": "number", "defined": true, "value": 7.0 },
+          "d": { "type": "number", "defined": true, "value": 14.0 }
+        },
+        {
+          "lo": { "type": "number", "defined": true, "value": 0.0 },
+          "hi": { "type": "number", "defined": true, "value": 9.0 },
+          "s": { "type": "number", "defined": true, "value": 7.0 },
+          "d": { "type": "number", "defined": true, "value": 14.0 }
+        }
+      ]
+    }
+  ]
+}

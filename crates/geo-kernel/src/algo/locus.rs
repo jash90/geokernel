@@ -51,9 +51,11 @@
 
 use crate::algo::conic_nd::ConicType;
 use crate::algo::path::{self, inf_function, inverse_inf_function, Geom, PathDef, PathState};
+use crate::algo::point::PointDef;
 use crate::algo::{Group, Parents, NUMBER, POINT};
 use crate::expr::fraction::FunctionFraction;
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 /// `PathMover.MIN_STEPS`.
@@ -313,10 +315,15 @@ fn path_of(c: &Construction, id: Id) -> Option<Id> {
 
 /// Every object `q` depends on, `q` excluded, as flags by index
 /// (`GeoElement.getAllPredecessors`).
-fn ancestors(c: &Construction, q: Id) -> Vec<bool> {
+fn ancestors(c: &Construction, q: Id, follow_slider_bounds: bool) -> Vec<bool> {
     let mut seen = vec![false; c.predecessor_storage_len(q)];
     let mut stack = vec![q];
     while let Some(id) = stack.pop() {
+        // Interval listeners change the slider's value separately from the
+        // value dependencies that a slider locus uses for invalidation.
+        if !follow_slider_bounds && matches!(c.def(id), Def::Number(_)) {
+            continue;
+        }
         for parent in c.reads(id) {
             if parent.0 < seen.len() && !seen[parent.0] {
                 seen[parent.0] = true;
@@ -329,7 +336,7 @@ fn ancestors(c: &Construction, q: Id) -> Vec<bool> {
 
 /// `GeoElement.isParentOf`: whether `b` depends on `a`.
 fn is_ancestor(c: &Construction, a: Id, b: Id) -> bool {
-    c.evaluation_rank(a) < c.evaluation_rank(b) && ancestors(c, b)[a.0]
+    c.evaluation_rank(a) < c.evaluation_rank(b) && ancestors(c, b, true)[a.0]
 }
 
 /// `isPointerChangeable`: a free object, or a point that can be moved on a
@@ -369,7 +376,10 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
     if let LocusDef::Path { mover, .. } = d {
         ids.extend(path_of(c, mover));
     }
-    for (i, &is) in ancestors(c, point).iter().enumerate() {
+    for (i, &is) in ancestors(c, point, !matches!(d, LocusDef::Slider { .. }))
+        .iter()
+        .enumerate()
+    {
         let id = Id(i);
         let reads = match d {
             LocusDef::Path { mover, .. } => id != mover && pointer_changeable(c, id),
@@ -389,7 +399,7 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
 /// The objects that depend on `mover` and that `q` depends on, `q`
 /// included, in dependency order: what a sample recomputes.
 pub(crate) fn chain(c: &Construction, q: Id, mover: Id) -> Vec<usize> {
-    let anc = ancestors(c, q);
+    let anc = ancestors(c, q, true);
     let mut desc = vec![false; anc.len()];
     let last = c.evaluation_rank(q);
     let mut stack = vec![mover];
@@ -441,6 +451,8 @@ pub(crate) struct Saved {
     conics: Vec<(usize, crate::algo::conic_nd::ConicData)>,
     arcs: Vec<(usize, crate::algo::arc::ArcData)>,
     discrete: Vec<(usize, LocusData)>,
+    inequality_helpers: BTreeMap<Id, Option<crate::expr::inequality::Helpers>>,
+    inequality_helpers_changed: bool,
 }
 
 impl Saved {
@@ -452,10 +464,17 @@ impl Saved {
             conics: Vec::new(),
             arcs: Vec::new(),
             discrete: Vec::new(),
+            inequality_helpers: BTreeMap::new(),
+            inequality_helpers_changed: c.inequality_helpers.changed(),
         };
         for &i in ids {
             s.values.push((i, c.values[i]));
             s.defs.push((i, c.defs[i]));
+            if let Def::Point(PointDef::InequalityVertex { owner, .. }) = c.defs[i] {
+                s.inequality_helpers
+                    .entry(owner)
+                    .or_insert_with(|| c.inequality_helpers.history(owner));
+            }
             if let Some(slot) = c.path_slot(i) {
                 s.paths.push((slot, c.paths[slot].1));
             }
@@ -490,8 +509,21 @@ impl Saved {
         for (slot, data) in self.discrete {
             c.loci[slot].1 = data;
         }
+        // Each output's saved value is already back. Recomputing it could
+        // choose a helper using the temporary history of a sample.
+        if !self.inequality_helpers.is_empty() {
+            c.inequality_helpers
+                .restore_changed(self.inequality_helpers_changed);
+            for (owner, history) in self.inequality_helpers {
+                c.inequality_helpers.restore_history(owner, history);
+                c.function_roots.remove_inequality(owner);
+            }
+        }
         for &i in chain {
-            if !matches!(c.defs[i], Def::Discrete(_)) {
+            if !matches!(
+                c.defs[i],
+                Def::Discrete(_) | Def::Number(_) | Def::Point(PointDef::InequalityVertex { .. })
+            ) {
                 recompute(c, i);
             }
         }
@@ -507,6 +539,173 @@ impl Saved {
         for (slot, r) in self.arcs {
             c.arcs[slot].1 = r;
         }
+    }
+}
+
+/// The live cascade shared by optimizers affected by a trial. Each active
+/// search cascades from its own mover, with a guard for each optimizer.
+pub(crate) struct OptimizerCascade {
+    descendants: BTreeMap<Id, Vec<usize>>,
+    running: Vec<(Id, Id)>,
+    remaining: [usize; Self::MAX_DEPTH],
+    end: u64,
+    exhausted: bool,
+}
+
+impl OptimizerCascade {
+    const MAX_DEPTH: usize = 8;
+    // Count actual recomputations at each depth. Running optimizers
+    // return immediately in AlgoOptimize and consume no search visits.
+    const MAX_VISITS_PER_DEPTH: usize = 1_000_000;
+
+    pub(crate) fn new(c: &Construction, owner: Id, mover: Id) -> Option<Self> {
+        const MAX_EDGES: usize = 16_384;
+        if !c
+            .children(mover)
+            .take(MAX_EDGES)
+            .any(|id| id != owner && matches!(c.def(id), Def::Optimize(_)))
+        {
+            return None;
+        }
+
+        let mut descendants = BTreeMap::new();
+        let mut movers = vec![mover];
+        let mut remaining = MAX_EDGES;
+        let mut exhausted = false;
+        while let Some(mover) = movers.pop() {
+            if descendants.contains_key(&mover) {
+                continue;
+            }
+            let mut seen = std::collections::HashSet::new();
+            let mut pending = vec![mover];
+            while let Some(id) = pending.pop() {
+                let Some(left) = remaining.checked_sub(c.child_count(id)) else {
+                    exhausted = true;
+                    break;
+                };
+                remaining = left;
+                for child in c.children(id).filter(|&child| seen.insert(child.0)) {
+                    pending.push(child);
+                    if let Def::Optimize(d) = c.def(child) {
+                        if child != owner {
+                            movers.push(d.independent);
+                        }
+                    }
+                }
+            }
+            if exhausted {
+                break;
+            }
+            let mut children: Vec<_> = seen.into_iter().collect();
+            children.sort_unstable_by_key(|&i| c.evaluation_rank(Id(i)));
+            descendants.insert(mover, children);
+        }
+        Some(Self {
+            descendants,
+            running: Vec::new(),
+            remaining: [Self::MAX_VISITS_PER_DEPTH; Self::MAX_DEPTH],
+            end: crate::expr::work_done()
+                .saturating_add(crate::expr::MAX_EVALUATION_WORK)
+                .min(crate::expr::work_deadline()),
+            exhausted,
+        })
+    }
+
+    pub(crate) fn run(
+        &mut self,
+        c: &mut Construction,
+        owner: Id,
+        def: crate::algo::optimize::OptimizeDef,
+    ) -> Value {
+        if self.exhausted {
+            return Value::Undefined;
+        }
+        let mut ids: Vec<_> = self.descendants.values().flatten().copied().collect();
+        ids.extend(self.descendants.keys().map(|mover| mover.0));
+        ids.sort_unstable_by_key(|&i| c.evaluation_rank(Id(i)));
+        ids.dedup();
+        crate::expr::with_work_deadline(self.end, || {
+            if !crate::expr::reserve_work(2 * ids.len() as u64) {
+                return Value::Undefined;
+            }
+            let mut expressions = Vec::new();
+            for &i in &ids {
+                if let Def::Expr(d) = c.defs[i] {
+                    let Some(state) = crate::expr::SavedResult::of(c, d) else {
+                        return Value::Undefined;
+                    };
+                    expressions.push((d, state));
+                }
+            }
+            let saved = Saved::of(c, &ids);
+            self.running.push((owner, def.independent));
+            let result = crate::algo::optimize::search(c, def, Some(self));
+            self.running.pop();
+            if self.exhausted {
+                saved.restore(c, &[]);
+                for (def, state) in expressions {
+                    state.restore(c, def);
+                }
+                return Value::Undefined;
+            }
+            result
+        })
+    }
+
+    pub(crate) fn set_result(&self, c: &mut Construction, value: Value) {
+        let &(owner, _) = self.running.last().expect("active optimizer");
+        if let Some(slot) = c.values.get_mut(owner.0) {
+            *slot = value;
+        }
+    }
+
+    pub(crate) fn update(&mut self, c: &mut Construction, restore: bool) -> bool {
+        if self.exhausted || crate::expr::work_done() >= self.end {
+            self.exhausted = true;
+            return false;
+        }
+        let depth = self.running.len() - 1;
+        let (_, mover) = self.running[depth];
+        if restore {
+            recompute(c, mover.0);
+        }
+        for index in 0..self.descendants[&mover].len() {
+            let i = self.descendants[&mover][index];
+            let def = c.defs[i];
+            if matches!(def, Def::Optimize(_))
+                && (self.running.iter().any(|&(owner, _)| owner == Id(i))
+                    || c.optimizer_final_update
+                        .is_some_and(|(owner, _)| owner == Id(i)))
+            {
+                continue;
+            }
+            let Some(left) = self.remaining[depth].checked_sub(1) else {
+                self.exhausted = true;
+                break;
+            };
+            self.remaining[depth] = left;
+            if crate::expr::work_done() >= self.end {
+                self.exhausted = true;
+                break;
+            }
+            crate::expr::charge(1);
+            if let Def::Optimize(def) = def {
+                if self.running.len() == Self::MAX_DEPTH {
+                    self.exhausted = true;
+                    break;
+                }
+                self.running.push((Id(i), def.independent));
+                c.values[i] = crate::algo::optimize::search(c, def, Some(self));
+                self.running.pop();
+                if self.exhausted {
+                    break;
+                }
+            } else if !matches!(def, Def::Prove(_) | Def::ImplicitCurve(_)) {
+                recompute(c, i);
+            }
+        }
+        self.exhausted |= crate::expr::work_done() >= self.end;
+        !self.exhausted
     }
 }
 
@@ -549,6 +748,9 @@ pub(crate) fn recompute(c: &mut Construction, i: usize) {
         Def::Expr(d) => {
             c.update_expr(i, d);
         }
+        Def::Number(_) if c.slider_bound_parents(Id(i)).next().is_some() => {
+            c.update_slider_bounds(Id(i));
+        }
         Def::GeneralConic(d) => {
             c.update_conic(i, d, false);
         }
@@ -560,9 +762,8 @@ pub(crate) fn recompute(c: &mut Construction, i: usize) {
         }
         // a locus is never between a moving object and the point of a locus
         Def::Locus(_) => {}
-        // Locus and optimizer sampling keep the existing optimum. A live
-        // optimizer would cascade from its own slider into the construction
-        // being sampled. The general construction update still reruns it.
+        // The locus copy and an isolated optimizer keep existing optima.
+        // A shared optimizer cascade handles this definition separately.
         Def::Optimize(_) => {}
         Def::Discrete(d) => {
             c.update_locus(i, |c| d.record(c, c.locus(Id(i))));
@@ -1325,7 +1526,12 @@ impl<M: Moving> Run<'_, M> {
             None => {
                 copy.apply(c);
                 for &i in self.chain {
-                    recompute(c, i);
+                    // ConsElementXMLHandler.handleSlider skips slider tags
+                    // in the macro construction. The mover still takes
+                    // its sampled value, but other sliders keep theirs.
+                    if !matches!(c.defs[i], Def::Number(_)) {
+                        recompute(c, i);
+                    }
                 }
                 let q = c.point(self.q);
                 self.cache.put(key, q);
@@ -1663,8 +1869,68 @@ fn parse_hull(c: &Construction, list: &str, number: &str) -> Result<LocusDef, St
 }
 
 #[cfg(test)]
-mod stuck_tests {
-    use crate::{script, Value};
+mod tests {
+    use super::OptimizerCascade;
+    use crate::{script, Def, Value};
+
+    #[test]
+    fn optimizer_visit_limit_restores_values() {
+        let mut c =
+            script::load("a = Slider(0, 6)\nf = (a - 3)^2\nm = Minimize(f, a)\nn = Minimize(f, a)")
+                .unwrap();
+        let [a, f, m, n] = ["a", "f", "m", "n"].map(|label| c.id(label).unwrap());
+        c.set_number(a, 4.0).unwrap();
+
+        let Def::Optimize(def) = c.def(n) else {
+            panic!("expected an optimizer");
+        };
+        let mut cascade = OptimizerCascade::new(&c, n, a).unwrap();
+        // Spend the last visit at this depth, then stop before the next.
+        assert_eq!(cascade.remaining[0], OptimizerCascade::MAX_VISITS_PER_DEPTH);
+        cascade.remaining[0] = 1;
+        assert_eq!(cascade.run(&mut c, n, def), Value::Undefined);
+        assert!(cascade.exhausted);
+        assert_eq!(cascade.remaining[0], 0);
+        assert_eq!(cascade.remaining[1], OptimizerCascade::MAX_VISITS_PER_DEPTH);
+        assert_eq!(c.value(a), Value::Number(4.0));
+        assert_eq!(c.value(f), Value::Number(1.0));
+        assert_eq!(c.value(m), Value::Number(3.0));
+    }
+
+    #[test]
+    fn slider_bounds_do_not_clamp_a_second_slider_during_a_trace() {
+        for (source, mover, endpoint, coordinate) in [
+            ("t = Slider(0, 4)", "t", "t", "t"),
+            (
+                "A = (0, 0)\nB = (4, 0)\ng = Segment(A, B)\nP = Point(g)",
+                "P",
+                "x(P)",
+                "x(P)",
+            ),
+        ] {
+            let mut c = script::load(&format!("{source}\ns = Slider(0, {endpoint})")).unwrap();
+            let driver = c.id(mover).unwrap();
+            let s = c.id("s").unwrap();
+            if mover == "t" {
+                c.set_number(driver, 4.0).unwrap();
+            } else {
+                c.move_point(driver, 4.0, 0.0).unwrap();
+            }
+            c.set_number(s, 3.0).unwrap();
+            script::exec(&mut c, &format!("Q = ({coordinate}, s)")).unwrap();
+            script::exec(&mut c, &format!("L = Locus(Q, {mover})")).unwrap();
+            let points = &c.locus(c.id("L").unwrap()).unwrap().points;
+            assert!(points.len() > 1);
+            assert!(points.iter().all(|p| p.y == 3.0));
+            assert_eq!(c.value(s), Value::Number(3.0));
+            if mover == "t" {
+                c.set_number(driver, 2.0).unwrap();
+            } else {
+                c.move_point(driver, 2.0, 0.0).unwrap();
+            }
+            assert_eq!(c.value(s), Value::Number(2.0));
+        }
+    }
 
     /// A locus samples a copy of the construction in the reference: a
     /// sample where the `SVD` input is undefined must not make the live

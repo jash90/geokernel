@@ -1089,7 +1089,10 @@ pub struct Construction {
     /// when the construction is rebuilt by a redefinition.
     intersection_swaps: BTreeSet<(Id, Id)>,
     by_label: HashMap<String, Id>,
-    replacement_label: Option<String>,
+    replacement_target: Option<Id>,
+    optimizers: Vec<Id>,
+    /// The optimizer updating the rest of the construction after its search.
+    optimizer_final_update: Option<(Id, u64)>,
     images: image::Images,
     charts: std::collections::BTreeMap<Id, algo::charts::ChartData>,
     proofs: std::collections::BTreeMap<Id, algo::prover::ProofData>,
@@ -1201,6 +1204,8 @@ pub struct Construction {
     /// each number, in creation order.
     sliders: Vec<(usize, f64, f64)>,
     saved_slider_bounds: HashMap<Id, [Option<slider::Bound>; 2]>,
+    slider_updates: Vec<Id>,
+    slider_animation_options: HashMap<Id, [Option<String>; 2]>,
     controls: Vec<(Id, control::Control)>,
     pub(crate) object_scripts: HashMap<String, Vec<control::ControlScript>>,
 }
@@ -1719,9 +1724,12 @@ impl Construction {
     pub fn reads(&self, id: Id) -> Vec<Id> {
         match self.defs.get(id.0) {
             Some(def) => {
-                let mut ids = self.read_ids(def);
-                ids.extend(self.saved_text_anchor(id));
-                ids
+                let mut parents = self.read_ids(def);
+                if matches!(def, Def::Number(_)) {
+                    parents.extend(self.slider_bound_parents(id));
+                }
+                parents.extend(self.saved_text_anchor(id));
+                parents
             }
             None => Vec::new(),
         }
@@ -1984,15 +1992,10 @@ impl Construction {
         debug_assert_eq!(at.generation, self.generation, "a checkpoint of this call");
         self.controls
             .truncate(self.controls.partition_point(|(id, _)| id.0 < at.len));
-        self.saved_slider_bounds.retain(|id, bounds| {
-            id.0 < at.len
-                && bounds
-                    .iter()
-                    .flatten()
-                    .all(|bound| bound.exists_before(at.len))
-        });
         self.images.discard_since(at.len, at.image_assets);
         self.charts.split_off(&Id(at.len));
+        self.optimizers
+            .truncate(self.optimizers.partition_point(|id| id.0 < at.len));
         self.proofs.split_off(&Id(at.len));
         self.proof_intersections.truncate(at.proof_intersections);
         self.segment_carriers.split_off(&Id(at.len));
@@ -2031,6 +2034,24 @@ impl Construction {
                 self.object_scripts.remove(&label);
             }
         }
+        self.slider_animation_options.retain(|id, _| id.0 < at.len);
+        self.saved_slider_bounds.retain(|&id, bounds| {
+            let keep = id.0 < at.len
+                && bounds
+                    .iter()
+                    .flatten()
+                    .all(|bound| bound.exists_before(at.len));
+            if !keep && id.0 < at.len {
+                for bound in bounds.iter().flatten() {
+                    if let slider::Bound::Object(parent) = bound {
+                        if let Some(children) = self.children.get_mut(parent.0) {
+                            children.remove(id);
+                        }
+                    }
+                }
+            }
+            keep
+        });
         self.evaluation_order.discard_since(at.len);
         if self
             .self_circle_outputs
@@ -2295,7 +2316,7 @@ impl Construction {
         let checkpoint = self.checkpoint();
         let scripts = self.object_scripts.remove(&label);
         self.by_label.remove(&label);
-        self.replacement_label = Some(label.clone());
+        self.replacement_target = Some(id);
         let result = define(self);
 
         let replacement = (|| {
@@ -2308,9 +2329,18 @@ impl Construction {
                     }
                 })?
                 .ok_or_else(|| refuse("a replacement must define an object"))?;
+            let new_bounds = self.saved_slider_bounds.get(&new).copied().or_else(|| {
+                self.slider_interval(new).map(|(min, max)| {
+                    [
+                        Some(slider::Bound::Literal(min)),
+                        Some(slider::Bound::Literal(max)),
+                    ]
+                })
+            });
+            let old_bounds = self.saved_slider_bounds.get(&id).copied();
             if !supported(old)
-                || self.slider_interval(id).is_some()
-                || self.saved_slider_bounds.contains_key(&id)
+                || ((self.slider_interval(id).is_some() || old_bounds.is_some())
+                    && new_bounds.is_none())
             {
                 return Err(refuse("this definition cannot be replaced in place"));
             }
@@ -2350,6 +2380,9 @@ impl Construction {
             // must account for new indirect reads as well as the replacement's
             // own inputs, so a rejected cycle leaves the live graph intact.
             self.defs[id.0] = def;
+            if let Some(bounds) = new_bounds {
+                self.saved_slider_bounds.insert(id, bounds);
+            }
             let changed: BTreeMap<_, _> = old_reads
                 .iter()
                 .filter_map(|(&child, old_reads)| {
@@ -2360,6 +2393,10 @@ impl Construction {
                 })
                 .collect();
             self.defs[id.0] = old;
+            match old_bounds {
+                Some(bounds) => self.saved_slider_bounds.insert(id, bounds),
+                None => self.saved_slider_bounds.remove(&id),
+            };
             let order = changed
                 .iter()
                 .any(|(&child, parents)| {
@@ -2371,11 +2408,11 @@ impl Construction {
                 .then(|| self.replacement_order(&changed, &locus_inputs, new.0))
                 .transpose()
                 .map_err(refuse)?;
-            Ok((new, def, changed, order))
+            Ok((new, def, new_bounds, changed, order))
         })();
-        self.replacement_label = None;
+        self.replacement_target = None;
 
-        let (new, mut def, changed, order) = match replacement {
+        let (new, mut def, bounds, changed, order) = match replacement {
             Ok(staged) => staged,
             Err(error) => {
                 self.discard_since(checkpoint);
@@ -2390,7 +2427,12 @@ impl Construction {
         let rebuilds = !self.inequality_helpers.outputs().is_empty()
             && self.replacement_rebuilds_construction(id, def);
 
-        let value = self.values[new.0];
+        let slider_options = self.slider_animation_options.remove(&new);
+        let mut value = self.values[new.0];
+        if bounds.is_some() && matches!(old, Def::Number(_)) {
+            def = old;
+            value = self.values[id.0];
+        }
         let hint = self.hints[new.0];
         let path = self.path_state(new);
         let mut source = self.construction_sources.remove(&new);
@@ -2427,6 +2469,29 @@ impl Construction {
         self.defs[id.0] = def;
         self.values[id.0] = value;
         self.hints[id.0] = hint;
+        let requires_replay = if let Some(bounds) = bounds {
+            let old_max = self.slider_upper_bound(id);
+            self.install_redefined_slider_bounds(id, bounds, old_max)
+        } else {
+            false
+        };
+        if bounds.is_some() {
+            let [step, speed] = slider_options.unwrap_or_default();
+            // Copying the old visual style preserves the step as a number.
+            let previous_step = self.slider_animation_options(id)[0];
+            let step = step.or_else(|| {
+                let source = previous_step?;
+                let value = self.numeric_value(source).filter(|value| value.is_finite());
+                Some(value.map_or_else(|| source.to_owned(), |value| value.to_string()))
+            });
+            if step.is_some() || speed.is_some() {
+                let options = self.slider_animation_options.entry(id).or_default();
+                options[0] = step;
+                if speed.is_some() {
+                    options[1] = speed;
+                }
+            }
+        }
         for (child, new) in changed {
             let old = &old_reads[&child];
             for &parent in old {
@@ -2509,6 +2574,7 @@ impl Construction {
         if rebuilds {
             self.inequality_helpers.pending.clear();
         }
+        self.last_update_requires_replay |= requires_replay;
         // A checkpoint cannot restore a changed definition.
         self.invalidate_checkpoints();
         Ok(Some(id))
@@ -2711,7 +2777,7 @@ impl Construction {
     }
 
     pub(crate) fn predecessor_storage_len(&self, id: Id) -> usize {
-        if self.evaluation_order.ids.is_empty() && self.replacement_label.is_none() {
+        if self.evaluation_order.ids.is_empty() && self.replacement_target.is_none() {
             id.0 + 1
         } else {
             self.len()
@@ -2954,7 +3020,7 @@ impl Construction {
             Def::Optimize(d) => {
                 let d = algo::optimize::disabled(self, d).unwrap_or(d);
                 def = Def::Optimize(d);
-                algo::optimize::record(self, d)
+                self.record_optimizer(id, d, &mut Propagation::Live, &mut || true)
             }
             Def::Calculus(d) if d.has_record() => {
                 let (value, record) = algo::calculus::initialize(self, &d);
@@ -2988,6 +3054,9 @@ impl Construction {
         }
         self.defs.push(def);
         self.values.push(value);
+        if matches!(def, Def::Optimize(_)) {
+            self.optimizers.push(id);
+        }
         if let Def::IntersectCircles { c1, c2, .. } = def {
             if c1 == c2 {
                 self.self_circle_outputs.push(id);
@@ -3006,7 +3075,11 @@ impl Construction {
         self.by_label.insert(label.to_string(), id);
         let element = if let Some(owner) = owner {
             self.output_entry(owner)
-        } else if label.starts_with('\0') || self.replacement_label.as_deref() == Some(label) {
+        } else if label.starts_with('\0')
+            || self
+                .replacement_target
+                .is_some_and(|target| self.label(target) == label)
+        {
             ProtocolEntry::Hidden
         } else {
             let index = self.step;
@@ -3478,7 +3551,7 @@ impl Construction {
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.len());
         self.restart_inequality_vertices(&mut dirty);
-        self.propagate_dirty_while(dirty, 0, Propagation::Live, || {
+        self.propagate_dirty_while(dirty, 0, Propagation::Live, &mut || {
             expr::work_done().wrapping_sub(start) <= *remaining
         })?;
         self.inequality_helpers.pending.clear();
@@ -3508,10 +3581,90 @@ impl Construction {
         // the set is lost, and `fit` gives a clean one on the next update.
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.defs.len());
-        for child in self.children[start.0].iter() {
-            dirty.insert(self.evaluation_rank(child));
-        }
+        self.enqueue_updated_children(start, &mut dirty);
         self.propagate_dirty(dirty, self.evaluation_rank(start))
+    }
+
+    fn enqueue_updated_children(&mut self, parent: Id, dirty: &mut DirtySet) {
+        if self.saved_slider_bounds.is_empty() {
+            for child in self.children[parent.0].iter() {
+                dirty.insert(self.evaluation_rank(child));
+            }
+            return;
+        }
+        // Endpoint listeners resolve the interval while the other bounds
+        // still have their current values. Their downstream objects retain
+        // the normal dependency order.
+        let mut sliders = std::mem::take(&mut self.slider_updates);
+        for child in self.children[parent.0].iter() {
+            if matches!(self.defs[child.0], Def::Number(_))
+                && self.saved_slider_bounds.contains_key(&child)
+            {
+                sliders.push(child);
+            } else {
+                dirty.insert(self.evaluation_rank(child));
+            }
+        }
+        for child in sliders.drain(..) {
+            if self.update_slider_bounds(child) {
+                dirty.insert(self.evaluation_rank(child));
+            }
+        }
+        self.slider_updates = sliders;
+    }
+
+    /// After restoring its mover, AlgoOptimize updates the construction
+    /// while its own recursion guard is set. The local search already
+    /// handles peers on this mover. Refresh the optimizers on other movers
+    /// and propagate changes through their ordinary children.
+    fn record_optimizer(
+        &mut self,
+        owner: Id,
+        d: OptimizeDef,
+        mode: &mut Propagation<'_>,
+        within_budget: &mut dyn FnMut() -> bool,
+    ) -> Value {
+        const MAX_OPTIMIZERS: usize = 256;
+        let value = algo::optimize::record(self, owner, d);
+        if self.optimizer_final_update.is_some()
+            || self.optimizers.is_empty()
+            || !d.updates_construction(self)
+        {
+            return value;
+        }
+        let mut dirty = DirtySet::default();
+        for &id in self.optimizers.iter().take(MAX_OPTIMIZERS) {
+            if id != owner
+                && matches!(self.def(id), Def::Optimize(other) if other.independent != d.independent)
+            {
+                if dirty.len == 0 {
+                    dirty.fit(self.len());
+                }
+                dirty.insert(self.evaluation_rank(id));
+            }
+        }
+        if dirty.len == 0 {
+            return value;
+        }
+        if let Some(slot) = self.values.get_mut(owner.0) {
+            *slot = value;
+        }
+        let end = expr::work_done().saturating_add(expr::MAX_EVALUATION_WORK);
+        self.optimizer_final_update = Some((owner, end));
+        let requires_replay = self.last_update_requires_replay || self.inequality_helpers.changed();
+        // The secondary sweep can reach retained geometry and inequality
+        // helpers outside the original dependency chain.
+        let mode = match mode {
+            Propagation::RecordProtocol(before) => Propagation::RecordProtocol(before),
+            Propagation::RestoreProtocol(restored) => Propagation::RestoreProtocol(restored),
+            _ => Propagation::Live,
+        };
+        expr::with_work_deadline(end, || {
+            self.propagate_dirty_while(dirty, 0, mode, within_budget)
+        });
+        self.last_update_requires_replay |= requires_replay;
+        self.optimizer_final_update = None;
+        value
     }
 
     fn propagate_dirty(&mut self, dirty: DirtySet, from: usize) -> usize {
@@ -3524,7 +3677,7 @@ impl Construction {
         from: usize,
         mode: Propagation<'_>,
     ) -> usize {
-        self.propagate_dirty_while(dirty, from, mode, || true)
+        self.propagate_dirty_while(dirty, from, mode, &mut || true)
             .expect("unlimited propagation")
     }
 
@@ -3533,7 +3686,7 @@ impl Construction {
         mut dirty: DirtySet,
         mut from: usize,
         mut mode: Propagation<'_>,
-        mut within_budget: impl FnMut() -> bool,
+        within_budget: &mut dyn FnMut() -> bool,
     ) -> Option<usize> {
         let rebuild_records = matches!(
             mode,
@@ -3550,9 +3703,19 @@ impl Construction {
         self.analysis.clear();
         let mut recomputed = 0;
         let mut restored_pairs = BTreeSet::new();
+        let final_update_end = self.optimizer_final_update.map(|(_, end)| end);
         while let Some(rank) = dirty.pop_first(from) {
             if !within_budget() {
                 return None;
+            }
+            if let Some(end) = final_update_end {
+                if expr::work_done() >= end {
+                    // The pending bits belong only to this sweep. Dropping
+                    // them keeps the reusable dirty set empty between edits.
+                    self.last_update_requires_replay |= self.inequality_helpers.changed();
+                    return Some(recomputed);
+                }
+                expr::charge(1);
             }
             from = rank + 1;
             let i = self.evaluation_id(rank);
@@ -3723,7 +3886,18 @@ impl Construction {
                         continue;
                     }
                 }
+                Def::Number(_) if self.slider_bound_parents(Id(i)).next().is_some() => {
+                    if refresh_definitions && !self.update_slider_bounds(Id(i)) {
+                        continue;
+                    }
+                }
                 Def::Optimize(d) => {
+                    if self
+                        .optimizer_final_update
+                        .is_some_and(|(owner, _)| owner == Id(i))
+                    {
+                        continue;
+                    }
                     let d = match algo::optimize::disabled(self, d) {
                         Some(disabled) => {
                             self.defs[i] = Def::Optimize(disabled);
@@ -3731,10 +3905,9 @@ impl Construction {
                         }
                         None => d,
                     };
-                    let new = algo::optimize::record(self, d);
-                    if new.identical(&self.values[i]) {
-                        // Nothing downstream can change because of this
-                        // object.
+                    let old = self.values[i];
+                    let new = self.record_optimizer(Id(i), d, &mut mode, within_budget);
+                    if new.identical(&old) {
                         continue;
                     }
                     self.values[i] = new;
@@ -3813,9 +3986,7 @@ impl Construction {
                 before.insert(i, saved);
             }
             if !refresh_definitions {
-                for child in self.children[i].iter() {
-                    dirty.insert(self.evaluation_rank(child));
-                }
+                self.enqueue_updated_children(Id(i), &mut dirty);
             }
         }
 
@@ -6134,6 +6305,28 @@ t = AreEqual(k, j)
         c.rollback(checkpoint).unwrap();
         assert_eq!(c.number(c.id("n").unwrap()), Some(0.0));
         c.set_number(a, 2.0).unwrap();
+        assert_eq!(c.point(p), Some((4.0, 8.0)));
+    }
+
+    #[test]
+    fn rollback_restores_inequality_helpers_changed_in_an_optimizer_sweep() {
+        let mut c = crate::script::load(concat!(
+            "s = ConstructionStep()\nb = 36\na = Slider(0, sqrt(b))\n",
+            "m = Minimize((a - 3)^2, a)\ng = 0\n",
+            "n = If(g > 0, g, If(IsDefined(m), 0, 0.5))\n",
+            "q(x,y) = n*y > x^n && x > 4 && y > 0\nP = Vertex(q)\n",
+            "t = Slider(0, 6)\no = Minimize((t - 1 - s/100)^2, t)",
+        ))
+        .unwrap();
+        let [b, m, g, n, p] = ["b", "m", "g", "n", "P_{1}"].map(|label| c.id(label).unwrap());
+        c.set_number(b, -1.0).unwrap();
+        assert_eq!(c.number(m), Some(3.0));
+        let checkpoint = c.checkpoint();
+
+        crate::script::exec(&mut c, "Z = (1, 1)").unwrap();
+        assert_eq!(c.number(n), Some(0.5));
+        c.rollback(checkpoint).unwrap();
+        c.set_number(g, 2.0).unwrap();
         assert_eq!(c.point(p), Some((4.0, 8.0)));
     }
 

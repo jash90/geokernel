@@ -12,7 +12,7 @@
 //! the numerator and denominator separately at each sample.
 
 use super::equation::Builder;
-use super::eval::{Ctx, Env, Lists, Local, Val};
+use super::eval::{sample_subtree, Ctx, Env, Lists, Local, Val};
 use super::{entry, types, Bin, Entry, Lit, Node, Ty};
 use crate::kernel::{Construction, Def, Id, Value};
 use std::borrow::Cow;
@@ -298,7 +298,7 @@ fn split(c: &Construction, tree: &mut Entry, node: u32) -> (u32, Option<u32>) {
         Node::Bin(Bin::Pow | Bin::RootPow, base, exponent) => {
             let (num, den) = split(c, tree, base);
             // A deep copy gives each FunctionVariable its initial value, 0.
-            let value = Ctx::<false>::new(c, tree, &Env::Pair(0.0, 0.0)).fast(exponent);
+            let value = sample_subtree(c, tree, exponent, 0.0);
             if value < 0.0 {
                 let exponent = negate(tree, exponent);
                 let numerator = match den {
