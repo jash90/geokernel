@@ -165,8 +165,11 @@ impl Workbench {
             .into_iter()
             .filter_map(|group| {
                 let owner = c.id(group.labels.first()?)?;
-                c.inputs(owner)
-                    .any(|id| c.kind(id) == Kind::Curve)
+                let point_rows = matches!(
+                    c.def(owner),
+                    geo_kernel::Def::Point(geo_kernel::algo::point::PointDef::Coordinates { .. })
+                );
+                (point_rows || c.inputs(owner).any(|id| c.kind(id) == Kind::Curve))
                     .then_some((c.label(owner), group.labels))
             })
             .collect();

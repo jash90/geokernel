@@ -378,7 +378,7 @@ impl Construction {
             let old_anchor = self.saved_text_anchor(id);
             let new_anchor = position.point();
             if new_anchor != old_anchor {
-                let mut parents = self.read_ids_with_hint(&self.def(id), Some(self.hints[id.0]));
+                let mut parents = self.read_ids(&self.def(id));
                 let remove = old_anchor.filter(|old| !parents.contains(old));
                 let add = new_anchor.filter(|new| !parents.contains(new));
                 if let Some(anchor) = add {

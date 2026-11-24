@@ -608,7 +608,9 @@ mod cascade_tests {
 
     #[test]
     fn cascade_exhaustion_restores_expensive_readers_within_the_shared_budget() {
-        let mut c = script::load("a = Slider(0, 6)").unwrap();
+        let mut c =
+            script::load("a = Slider(0, 6)\nb = 0\nt = Take({1, 2, 3}, If(b > 0 && a > 0, 2, 4))")
+                .unwrap();
         for i in 1..=20 {
             script::exec(
                 &mut c,
@@ -617,6 +619,9 @@ mod cascade_tests {
             .unwrap();
         }
         script::exec(&mut c, "m = Minimize((a - 3)^2, a)").unwrap();
+        // A positive trial gives Take two slots. A failed cascade must
+        // leave its initially invalid result with no retained slots.
+        c.set_number(c.id("b").unwrap(), 1.0).unwrap();
         let reader = c.id("d_{1}").unwrap();
         let old = c.value(reader);
         let before = crate::expr::work_done();
@@ -629,6 +634,10 @@ mod cascade_tests {
         assert_eq!(c.value(reader), old);
         let check = script::exec(&mut c, "check = d_{1}").unwrap().unwrap();
         assert_eq!(c.value(check), old);
+        let length = script::exec(&mut c, "length = Length(t + 1)")
+            .unwrap()
+            .unwrap();
+        assert_eq!(c.value(length), Value::Number(0.0));
         assert!(
             work <= crate::expr::MAX_EVALUATION_WORK + crate::expr::MAX_OVERRUN + 4096,
             "exhausted search and rollback visited {work} work units",

@@ -128,8 +128,8 @@ impl DiscreteDef {
             work.charge(1)?;
             match item {
                 Element::Value(Kind::Point, Value::Point { x, y })
-                    if graph == PointGraph::Hull && (!x.is_finite() || !y.is_finite()) => {}
-                Element::Value(Kind::Point, Value::Point { x, y }) => {
+                    if x.is_finite() && y.is_finite() =>
+                {
                     // The first pair looks up both endpoints before adding
                     // them, even when both names refer to the same point.
                     if graph != PointGraph::SpanningTree
@@ -593,7 +593,7 @@ fn add(
                 if points_only
                     && items.iter().any(|item| {
                         !matches!(item, Element::Value(Kind::Point, value)
-                        if graph != PointGraph::Tour || matches!(value, Value::Point { .. }))
+                        if graph != PointGraph::Tour || matches!(value, Value::Point { x, y } if x.is_finite() && y.is_finite()))
                     })
                 {
                     return Err(format!("`{name}` needs points"));

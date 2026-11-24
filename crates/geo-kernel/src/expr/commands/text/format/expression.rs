@@ -13,6 +13,7 @@ use crate::expr::{self, Bin, Entry, Lit, Node, Un, NONE};
 enum Printed {
     Zero,
     Question,
+    NegativeQuestion,
     Other,
 }
 
@@ -21,6 +22,7 @@ impl Printed {
         match text {
             "0" => Self::Zero,
             "?" => Self::Question,
+            "-?" => Self::NegativeQuestion,
             _ => Self::Other,
         }
     }
@@ -31,13 +33,39 @@ impl Format {
     /// string is "?". Keep just the outcomes that its simplifications can
     /// expose, so large formulas need not be rendered.
     pub(super) fn has_value<const M: bool>(self, ctx: &Ctx<'_, M>, i: u32) -> Option<bool> {
-        self.printed(ctx, i)
+        self.printed(ctx, i, expr::parse::MAX_DEPTH)
             .map(|printed| printed != Printed::Question)
     }
 
-    fn printed<const M: bool>(self, ctx: &Ctx<'_, M>, i: u32) -> Option<Printed> {
+    fn printed<const M: bool>(self, ctx: &Ctx<'_, M>, i: u32, depth: u32) -> Option<Printed> {
+        if depth == 0 {
+            return Some(Printed::Other);
+        }
         let node = ctx.node(i);
         match node {
+            Node::Un(Un::X | Un::Y, _) if ctx.e.vars == 0 => {
+                if ctx.stop(1) {
+                    return None;
+                }
+                return Some(Printed::of(&self.number(ctx.full_number(i))));
+            }
+            Node::Apply(id, _) => {
+                if ctx.stop(1) {
+                    return None;
+                }
+                if let (crate::Def::Expr(def), crate::Value::Function) =
+                    (ctx.c.def(id), ctx.c.value(id))
+                {
+                    let entry = expr::entry(ctx.c, def);
+                    let nested = Ctx {
+                        e: entry,
+                        env: &Env::None,
+                        ..*ctx
+                    };
+                    return self.printed(&nested, entry.root, depth - 1);
+                }
+                return Some(Printed::Other);
+            }
             Node::Var
             | Node::VarY
             | Node::MinusOne
@@ -49,7 +77,6 @@ impl Format {
             | Node::If(..)
             | Node::List(..)
             | Node::Un(..)
-            | Node::Apply(..)
             | Node::Apply2(..) => {
                 return Some(Printed::Other);
             }
@@ -60,8 +87,8 @@ impl Format {
         }
         Some(match node {
             Node::Bin(op @ (Bin::Add | Bin::Sub), a, b) => {
-                let right = self.printed(ctx, b)?;
-                let left = self.printed(ctx, a)?;
+                let right = self.printed(ctx, b, depth - 1)?;
+                let left = self.printed(ctx, a, depth - 1)?;
                 match (left, right) {
                     (_, Printed::Zero) => left,
                     (Printed::Zero, _) if op == Bin::Add => right,
@@ -72,7 +99,12 @@ impl Format {
             // `binary()`: 0° prints as 0°, not as the dropped factor 0.
             Node::Bin(Bin::Mul, _, b) if matches!(ctx.node(b), Node::Degree) => Printed::Other,
             Node::Bin(Bin::Mul, a, b) => match self.multiplier(ctx, a, b)? {
-                Some("1") => self.printed(ctx, b)?,
+                Some("1") => self.printed(ctx, b, depth - 1)?,
+                Some("-1") => match self.printed(ctx, b, depth - 1)? {
+                    Printed::Question => Printed::NegativeQuestion,
+                    Printed::NegativeQuestion if cancels_negative(ctx, b) => Printed::Question,
+                    _ => Printed::Other,
+                },
                 Some("0") => Printed::Zero,
                 _ => Printed::Other,
             },
@@ -81,7 +113,7 @@ impl Format {
                 ctx.full_number(b),
             ))),
             Node::Bin(..) => Printed::Other,
-            Node::Item(a) => self.printed(ctx, a)?,
+            Node::Item(a) => self.printed(ctx, a, depth - 1)?,
             _ => Printed::of(&self.expression(ctx, i, true, 0)?),
         })
     }
@@ -94,6 +126,7 @@ impl Format {
     ) -> Option<Option<&'static str>> {
         let value = match ctx.node(a) {
             Node::Num(value) => value,
+            Node::MinusOne => -1.0,
             Node::Obj(id) => match ctx.c.value(id) {
                 crate::Value::Number(value) => value,
                 _ => return Some(None),
@@ -255,7 +288,7 @@ impl Format {
             }
             Bin::Mul if matches!(ctx.node(a), Node::MinusOne) => (6, format!("-{}", term(b, 6)?)),
             Bin::Div if self.latex => (8, format!(r"\frac{{{}}}{{{}}}", term(a, 0)?, term(b, 0)?)),
-            Bin::Pow => {
+            Bin::Pow | Bin::RootPow => {
                 let x = term(a, 8)?;
                 let exponent = term(b, 0)?;
                 let power = if self.latex {
@@ -269,7 +302,7 @@ impl Format {
             }
             Bin::Mul => {
                 let base = match ctx.node(b) {
-                    Node::Bin(Bin::Pow, base, _) => ctx.node(base),
+                    Node::Bin(Bin::Pow | Bin::RootPow, base, _) => ctx.node(base),
                     node => node,
                 };
                 let variable = matches!(base, Node::Var | Node::VarY);
@@ -361,6 +394,16 @@ impl Format {
     }
 }
 
+// StringTemplate strips a printed minus when the right operand's
+// first multiplier is exactly -1.
+fn cancels_negative<const M: bool>(ctx: &Ctx<'_, M>, i: u32) -> bool {
+    matches!(ctx.node(i), Node::Bin(Bin::Mul, a, _) if match ctx.node(a) {
+        Node::MinusOne | Node::Num(-1.0) => true,
+        Node::Obj(id) => ctx.c.value(id) == crate::Value::Number(-1.0),
+        _ => false,
+    })
+}
+
 /// StringTemplate accepts constant subexpressions and leaves, and checks
 /// the operations that combine variables separately.
 fn polynomial_expression<const M: bool>(ctx: &Ctx<'_, M>, i: u32) -> Option<bool> {
@@ -374,8 +417,8 @@ fn polynomial_expression<const M: bool>(ctx: &Ctx<'_, M>, i: u32) -> Option<bool
         Node::Bin(Bin::Div | Bin::Pow, a, b) => {
             polynomial_expression(ctx, a)? && constant_expression(ctx, b)?
         }
-        Node::If(..) => false,
-        Node::Bin(..) | Node::Un(..) => constant_expression(ctx, i)?,
+        Node::Apply(..) | Node::Apply2(..) => false,
+        Node::Bin(..) | Node::Un(..) | Node::If(..) => constant_expression(ctx, i)?,
         _ => true,
     })
 }
@@ -388,6 +431,11 @@ fn constant_expression<const M: bool>(ctx: &Ctx<'_, M>, i: u32) -> Option<bool> 
         Node::Num(_) | Node::MinusOne | Node::Degree | Node::Bool(_) => true,
         Node::Bin(_, a, b) => constant_expression(ctx, a)? && constant_expression(ctx, b)?,
         Node::Un(_, a) => constant_expression(ctx, a)?,
+        Node::If(crate::expr::IfMode::Algo | crate::expr::IfMode::AlgoNext, test, yes, no) => {
+            constant_expression(ctx, test)?
+                && constant_expression(ctx, yes)?
+                && (no == NONE || constant_expression(ctx, no)?)
+        }
         _ => false,
     })
 }
@@ -437,6 +485,7 @@ fn unary_name(op: Un) -> &'static str {
         Un::Sqrt => "sqrt",
         Un::Cbrt => "cbrt",
         Un::Abs => "abs",
+        Un::Length => "Length",
         Un::Sgn => "sgn",
         Un::Floor => "floor",
         Un::Ceil => "ceil",

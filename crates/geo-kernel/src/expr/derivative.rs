@@ -113,6 +113,13 @@ impl Walker<'_> {
             // tree has none for the operations behind them.
             Node::Financial(..) => f64::NAN,
             Node::Un(Un::Floor | Un::Ceil | Un::Round, _) => 0.0,
+            Node::Un(Un::Length, arg) => {
+                if self.reads_variable(arg)? {
+                    f64::NAN
+                } else {
+                    0.0
+                }
+            }
             // The rule is the tree `0 / x`, regardless of the argument.
             Node::Un(Un::Sgn, _) => 0.0 / self.x,
             Node::Un(op, arg) => {
@@ -226,7 +233,7 @@ impl Walker<'_> {
             Un::Sqrt => (du * math::java_pow(u, -0.5)) / 2.0,
             Un::Cbrt => (du / math::cbrt(squared(u))) / 3.0,
             Un::Abs => (du * u) / u.abs(),
-            Un::Floor | Un::Ceil | Un::Round | Un::Sgn => unreachable!(),
+            Un::Floor | Un::Ceil | Un::Round | Un::Sgn | Un::Length => unreachable!(),
             Un::Exp => du * u.exp(),
             Un::Ln => du / u,
             Un::Log10 => (du / u) / LN_10,
@@ -286,6 +293,16 @@ impl Walker<'_> {
                 } else {
                     self.quotient(a, b, depth)?
                 }
+            }
+            Bin::RootPow => {
+                if let Node::Bin(Bin::Div, _, degree) = self.node(b) {
+                    if !self.reads_variable(degree)? {
+                        let (base, n) = (self.value(a), self.value(degree));
+                        let root = math::nth_root(base, n);
+                        return Some((self.gradient(a, depth)? * root) / (base * n));
+                    }
+                }
+                self.power(a, b, depth)?
             }
             Bin::Pow => self.power(a, b, depth)?,
             Bin::Round2 | Bin::FoldCount => 0.0,

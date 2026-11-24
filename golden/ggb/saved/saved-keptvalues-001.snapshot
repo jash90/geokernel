@@ -1,0 +1,27 @@
+{
+  "schema": 2,
+  "id": "saved-keptvalues-001",
+  "script": [
+    "a = 1",
+    "l = If(a > 0, {{a, 2}}, {{a, 2}, {3, 4}})",
+    "P = Point(l)"
+  ],
+  "objects": {
+    "a": { "type": "number", "defined": true, "value": 1.0 },
+    "l": {
+      "type": "list",
+      "defined": true,
+      "elements": [
+        {
+          "type": "list",
+          "defined": true,
+          "elements": [
+            { "type": "number", "defined": true, "value": 1.0 },
+            { "type": "number", "defined": true, "value": 2.0 }
+          ]
+        }
+      ]
+    },
+    "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+  }
+}

@@ -6,6 +6,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyVecNode.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec2D.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyVecNode.java
 //   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/MyMath.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/DoubleOperation.java
@@ -68,7 +69,7 @@ use super::commands;
 use super::decimal::Dec;
 use super::list::{copy_tree, List, Slot};
 use super::math::{self, PI_180};
-use super::{Bin, CallOp, Elem, Entry, ListOp, Node, Raw, Ty, Un};
+use super::{Bin, CallOp, Elem, Entry, IfMode, ListOp, Node, Raw, Ty, Un};
 use crate::algo::intersect::Hint;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use crate::tol::STANDARD_PRECISION;
@@ -175,7 +176,7 @@ pub(super) fn with_command_budget<T>(meter: Option<&Lists>, f: impl FnOnce() -> 
             COMMAND_END.with(|end| end.set(self.0));
         }
     }
-    let _restore = Restore(COMMAND_END.with(|end| end.replace(end.get().min(meter.end))));
+    let _restore = Restore(COMMAND_END.with(|end| end.replace(end.get().min(meter.end.get()))));
     f()
 }
 
@@ -210,8 +211,8 @@ pub(crate) fn reserve_work(units: u64) -> bool {
 
 /// The evaluation work done on this thread so far, in units of about 3.5
 /// ns of a release build: a node of an expression tree visited in an
-/// metered evaluation (functions sampled or expanded included, only the
-/// branch of an `If` that is taken), a loop step of the list code (an
+/// metered evaluation (including sampled or expanded functions and the
+/// list helpers of inactive `If` branches), a loop step of the list code (an
 /// element built, copied or read, a step of counting a range), and every
 /// exact decimal operation by its measured cost. Only the difference
 /// between two readings means anything; tests use it to check that an
@@ -250,7 +251,10 @@ pub(super) struct Lists {
     nested_transforms: RefCell<super::NestedTransforms>,
     pub(super) invalid_transform_list: Cell<bool>,
     /// The reading of [`work_done`] past which the evaluation is over.
-    end: u64,
+    end: Cell<u64>,
+    helper_remaining: Cell<u64>,
+    helper_built: Cell<u64>,
+    updating_helpers: Cell<bool>,
 }
 
 impl Lists {
@@ -262,7 +266,10 @@ impl Lists {
             built: Cell::new(0),
             nested_transforms: RefCell::new(super::NestedTransforms::new()),
             invalid_transform_list: Cell::new(false),
-            end: carrier_deadline(),
+            end: Cell::new(carrier_deadline()),
+            helper_remaining: Cell::new(limit()),
+            helper_built: Cell::new(0),
+            updating_helpers: Cell::new(false),
         }
     }
 
@@ -280,6 +287,33 @@ impl Lists {
         } else {
             self.nested_transforms.take()
         }
+    }
+
+    /// Independently updated AlgoIf arguments share a helper budget across
+    /// the whole expression, including nested If commands.
+    pub(super) fn update_helpers(&self, update: impl FnOnce()) {
+        // A command that lends its allowance to an inner evaluation
+        // also pays for that evaluation's inactive list helpers.
+        if self.updating_helpers.get() || COMMAND_END.with(Cell::get) != u64::MAX {
+            update();
+            return;
+        }
+        if self.helper_remaining.get() == 0 || self.helper_built.get() > MAX_ELEMENTS {
+            return;
+        }
+        self.updating_helpers.set(true);
+        let start = work_done();
+        let end = self
+            .end
+            .replace(start.saturating_add(self.helper_remaining.get()));
+        let built = self.built.replace(self.helper_built.get());
+        update();
+        let spent = work_done().saturating_sub(start);
+        self.helper_remaining
+            .set(self.helper_remaining.get().saturating_sub(spent));
+        self.helper_built.set(self.built.replace(built));
+        self.end.set(end.saturating_add(spent));
+        self.updating_helpers.set(false);
     }
 
     pub(super) fn into_arena(self) -> Vec<Slot> {
@@ -450,7 +484,7 @@ impl Lists {
     fn step(&self, n: u64) -> bool {
         WORK.with(|w| {
             let done = w.get();
-            let over = done > self.end || self.built.get() > MAX_ELEMENTS;
+            let over = done > self.end.get() || self.built.get() > MAX_ELEMENTS;
             if !over {
                 w.set(done.wrapping_add(n));
             }
@@ -461,7 +495,7 @@ impl Lists {
     /// Charges a loop of the list code of `n` units before it runs; false,
     /// and the evaluation is over, when it would go past the bound.
     pub(super) fn charge(&self, n: u64) -> bool {
-        if self.over() || work_done().saturating_add(n) > self.end {
+        if self.over() || work_done().saturating_add(n) > self.end.get() {
             self.give_up();
             return false;
         }
@@ -472,7 +506,7 @@ impl Lists {
     /// Whether this evaluation went past [`MAX_ELEMENTS`] or [`MAX_EVALUATION_WORK`]:
     /// its result is undefined, so nothing more is built or evaluated.
     pub(super) fn over(&self) -> bool {
-        self.built.get() > MAX_ELEMENTS || work_done() > self.end
+        self.built.get() > MAX_ELEMENTS || work_done() > self.end.get()
     }
 
     /// Puts this evaluation past its bound.
@@ -1036,7 +1070,7 @@ impl<const M: bool> Ctx<'_, M> {
                 Ex::plain(V(r * phi.cos(), r * phi.sin()))
             }
             Node::Un(op, a) => self.unary(op, a),
-            Node::Bin(Bin::Pow, a, b) => self.power(a, b),
+            Node::Bin(op @ (Bin::Pow | Bin::RootPow), a, b) => self.power(op, a, b),
             Node::Bin(Bin::Round2, a, b) => self.round2(a, b),
             // only a tree with lists has a list operand
             Node::Bin(Bin::Sub, a, b)
@@ -1416,12 +1450,17 @@ impl<const M: bool> Ctx<'_, M> {
 
     /// `ExpressionNodeEvaluator.handlePower` and `MyDouble.pow`: a whole
     /// exponent from 0 to below 10^6 is `DoubleOperation.INT_POWER`.
-    fn power(&self, a: u32, b: u32) -> Ex {
+    fn power(&self, op: Bin, a: u32, b: u32) -> Ex {
         self.charge(POWER);
         let (l, r) = (self.operand(a), self.operand(b));
         match (l.val, r.val) {
             (Val::N(base), Val::N(e)) => {
                 let (special, dec) = l.left();
+                if op == Bin::RootPow {
+                    if let Node::Bin(Bin::Div, _, degree) = self.node(b) {
+                        return Ex::kept(special, math::nth_root(base, self.fast(degree)));
+                    }
+                }
                 if math::is_euler(base) {
                     // `exponent.getNumber().exp()`
                     return Ex::kept(r.left().0, e.exp());
@@ -1496,6 +1535,7 @@ impl<const M: bool> Ctx<'_, M> {
                 return Ex::plain(Val::N(match op {
                     Un::X => x,
                     Un::Y => y,
+                    Un::Length => length(x, y),
                     Un::Abs => complex_abs(x, y),
                     _ => f64::NAN,
                 }))
@@ -1546,7 +1586,61 @@ impl<const M: bool> Ctx<'_, M> {
         if lists.over() {
             return None;
         }
-        match self.node(i) {
+        let node = self.node(i);
+        let run = self.list_node(i, node);
+        match node {
+            Node::Call(CallOp::Take, ..) => {
+                if let Some(run) = run {
+                    self.remember_list_shape(i, run);
+                }
+            }
+            Node::If(IfMode::Algo, ..) => {
+                let mark = lists.len();
+                let initial = run.is_none()
+                    && !lists.over()
+                    && !self.e.list_history.records().shapes.contains_key(&i);
+                if let Some(run) = run {
+                    self.remember_list_shape(i, run);
+                } else if initial {
+                    let template = self
+                        .if_list_template(i)
+                        .and_then(|branch| self.list_for_arithmetic(branch));
+                    self.remember_list_shape(i, template.unwrap_or((mark, 0)));
+                    lists.truncate(mark);
+                }
+            }
+            _ => {}
+        }
+        run
+    }
+
+    fn remember_list_shape(&self, node: u32, (start, len): (u32, u32)) {
+        let Some(lists) = self.lists else {
+            return;
+        };
+        let mut history = self.e.list_history.records();
+        let old = history.shapes.get(&node).map_or(0, |shape| shape.len());
+        let total = history.elements - old + len as usize;
+        if total <= MAX_ELEMENTS as usize && lists.charge(2 * u64::from(len)) {
+            let kinds = (start..start + len).map(|j| lists.read(self.c, j).kind);
+            if !history
+                .shapes
+                .get(&node)
+                .is_some_and(|s| s.iter().copied().eq(kinds.clone()))
+            {
+                history.shapes.insert(node, kinds.collect());
+                history.revision = history.revision.wrapping_add(1);
+            }
+            history.elements = total;
+        } else if history.shapes.remove(&node).is_some() {
+            history.elements -= old;
+            history.revision = history.revision.wrapping_add(1);
+        }
+    }
+
+    fn list_node(&self, i: u32, node: Node) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        match node {
             // `AlgoDependentList`: one element per item
             Node::List(first, len) => {
                 let start = lists.reserve(len)?;
@@ -1559,6 +1653,7 @@ impl<const M: bool> Ctx<'_, M> {
                 }
                 Some((start, len))
             }
+            Node::Tuple(a, b) => self.list_coordinates(a, b),
             Node::Item(a) => self.list(a),
             Node::Local(depth, Elem::List) => self.local(depth)?.run,
             Node::Obj(id) => self.object_list(id),
@@ -1605,6 +1700,42 @@ impl<const M: bool> Ctx<'_, M> {
         }
     }
 
+    /// MyVecNode.evaluate broadcasts a scalar coordinate and pairs two
+    /// lists only as far as their common length.
+    fn list_coordinates(&self, a: u32, b: u32) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        let mut runs = [None; 2];
+        let mut scalars = [0.0; 2];
+        for (index, node) in [a, b].into_iter().enumerate() {
+            if self.is_list(node) {
+                runs[index] = Some(self.list(node)?);
+            } else {
+                let mark = lists.len();
+                scalars[index] = self.fast(node);
+                lists.truncate(mark);
+            }
+        }
+        let len = runs.into_iter().flatten().map(|(_, len)| len).min()?;
+        if !lists.charge(u64::from(len)) {
+            return None;
+        }
+        let start = lists.reserve(len)?;
+        for i in 0..len {
+            let coordinate = |index: usize| match runs[index] {
+                Some((from, _)) => number_of(lists.read(self.c, from + i)).unwrap_or(f64::NAN),
+                None => scalars[index],
+            };
+            let (x, y) = (coordinate(0), coordinate(1));
+            let point = if x.is_finite() && y.is_finite() {
+                Slot::coords(Kind::Point, x, y)
+            } else {
+                Slot::undefined(Kind::Point)
+            };
+            lists.set(start + i, point);
+        }
+        Some((start, len))
+    }
+
     /// One element of a list being built. A list element is built after
     /// what is there and kept; anything else is evaluated, and what that
     /// built is dropped.
@@ -1634,6 +1765,7 @@ impl<const M: bool> Ctx<'_, M> {
                 }
             }
         }
+        let literal_item = matches!(self.node(i), Node::Item(_));
         let i = match self.node(i) {
             Node::Item(a) => a,
             Node::ItemObject(id) => return Slot::object(self.c, id),
@@ -1642,7 +1774,13 @@ impl<const M: bool> Ctx<'_, M> {
         if self.is_list(i) {
             return match self.list(i) {
                 Some((start, len)) => Slot::list(start, len),
-                None => Slot::undefined(Kind::List),
+                None => match self.node(i) {
+                    Node::Obj(id) => Slot::object(self.c, id),
+                    _ => self
+                        .e
+                        .kept_list_shape(i)
+                        .map_or_else(|| Slot::undefined(Kind::List), Slot::undefined_list),
+                },
             };
         }
         if let Node::FunctionObject(id) = self.node(i) {
@@ -1697,7 +1835,15 @@ impl<const M: bool> Ctx<'_, M> {
                     }
                     _ => super::types::vec_kind(self.c, &self.e.nodes, &self.e.tys, i),
                 };
-                Slot::coords(kind, x, y)
+                if literal_item
+                    && kind == Kind::Point
+                    && (x.is_infinite() || y.is_infinite())
+                    && self.dependent_list_item(i)
+                {
+                    Slot::undefined(kind)
+                } else {
+                    Slot::coords(kind, x, y)
+                }
             }
             Val::B(false, false)
                 if matches!(self.node(i), Node::Algebra(super::AlgebraOp::IsPrime, ..)) =>
@@ -1706,6 +1852,20 @@ impl<const M: bool> Ctx<'_, M> {
             }
             Val::B(b, _) => Slot::boolean(b),
         }
+    }
+
+    // AlgebraProcessor creates the entries of a literal list individually.
+    // A point expression that reads objects is an AlgoDependentPoint.
+    pub(super) fn dependent_list_item(&self, i: u32) -> bool {
+        self.stop(1)
+            || match self.node(i) {
+                Node::Obj(_)
+                | Node::Apply(..)
+                | Node::Apply2(..)
+                | Node::Local(..)
+                | Node::Cmd(..) => true,
+                node => super::children(&node).any(|child| self.dependent_list_item(child)),
+            }
     }
 
     /// The elements of a list object: read in place, as `AlgoDependentList`
@@ -1735,6 +1895,41 @@ impl<const M: bool> Ctx<'_, M> {
         Some((base, len))
     }
 
+    pub(super) fn list_for_arithmetic(&self, i: u32) -> Option<(u32, u32)> {
+        if let Some(run) = self.list(i) {
+            return Some(run);
+        }
+        let kept = match self.node(i) {
+            Node::Obj(id) => super::kept_list_shape(self.c, id),
+            _ => self.e.kept_list_shape(i),
+        }?;
+        self.undefined_list_elements(&kept)
+    }
+
+    pub(super) fn transpose_row(&self, row: Slot) -> Option<(u32, u32)> {
+        if let Some(run) = row.run() {
+            return Some(run);
+        }
+        if let Some(shape) = row.list_shape() {
+            return self.undefined_list_elements(shape);
+        }
+        let shape = super::kept_list_shape(self.c, row.object_id()?)?;
+        self.undefined_list_elements(&shape)
+    }
+
+    fn undefined_list_elements(&self, kept: &[Kind]) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        if !lists.charge(kept.len() as u64) {
+            return None;
+        }
+        let len = kept.len() as u32;
+        let start = lists.reserve(len)?;
+        for (j, &kind) in (start..start + len).zip(kept.iter()) {
+            lists.set(j, Slot::undefined(kind));
+        }
+        Some((start, len))
+    }
+
     /// `MyList.apply` of a two-operand operation: element by element, or
     /// every element with the other operand. Lists of unequal length give
     /// an empty list; a point or vector result is a point.
@@ -1750,8 +1945,16 @@ impl<const M: bool> Ctx<'_, M> {
         let (la, lb) = (self.is_list(a), self.is_list(b));
         let left = (!la).then(|| scalar(a));
         let right = (!lb).then(|| scalar(b));
-        let ra = if la { Some(self.list(a)?) } else { None };
-        let rb = if lb { Some(self.list(b)?) } else { None };
+        let ra = if la {
+            Some(self.list_for_arithmetic(a)?)
+        } else {
+            None
+        };
+        let rb = if lb {
+            Some(self.list_for_arithmetic(b)?)
+        } else {
+            None
+        };
         let len = match (ra, rb) {
             (Some((_, n)), Some((_, m))) if n != m => return Some((lists.len(), 0)),
             (Some((_, n)), _) | (_, Some((_, n))) => n,
@@ -1822,7 +2025,7 @@ impl<const M: bool> Ctx<'_, M> {
     /// `MyList.apply` of a one-operand operation.
     fn list_unary(&self, op: Un, a: u32) -> Option<(u32, u32)> {
         let lists = self.lists?;
-        let (s, n) = self.list(a)?;
+        let (s, n) = self.list_for_arithmetic(a)?;
         let start = lists.reserve(n)?;
         if !lists.charge(u64::from(n)) {
             return None;
@@ -1909,7 +2112,7 @@ pub(super) fn number_of(slot: Slot) -> Option<f64> {
 pub(super) fn count(lists: &Lists, values: impl Fn(&mut dyn FnMut(f64) -> bool)) -> Option<u32> {
     let room = MAX_ELEMENTS
         .saturating_sub(lists.built.get())
-        .min(lists.end.saturating_sub(work_done()));
+        .min(lists.end.get().saturating_sub(work_done()));
     let mut n: u64 = 0;
     values(&mut |_| {
         n += 1;
@@ -1943,8 +2146,8 @@ pub(super) fn combine(op: Bin, x: Val, y: Val) -> Slot {
     };
     let (x, y) = (number(x), number(y));
     let r = match (op, x, y) {
-        (Bin::Pow, Val::N(a), Val::N(e)) => Val::N(math::my_pow(a, e)),
-        (Bin::Pow, Val::V(a, b), Val::N(e)) => {
+        (Bin::Pow | Bin::RootPow, Val::N(a), Val::N(e)) => Val::N(math::my_pow(a, e)),
+        (Bin::Pow | Bin::RootPow, Val::V(a, b), Val::N(e)) => {
             Val::N(if e == 2.0 { a * a + b * b } else { f64::NAN })
         }
         _ => binary(op, x, y, false),
@@ -1981,6 +2184,7 @@ pub(super) fn scalar(op: Un, x: f64, deg: bool) -> f64 {
         Un::Sqrt => x.sqrt(),
         Un::Cbrt => math::cbrt(x),
         Un::Abs => x.abs(),
+        Un::Length => f64::NAN,
         Un::Sgn => math::sgn(x),
         Un::Floor => math::floor(x, deg),
         Un::Ceil => math::ceil(x, deg),

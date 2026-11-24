@@ -68,6 +68,7 @@ One JSON object per file, stored under `golden/<group>/`.
 | `set_number` | `label`, `value` or `infinity` | Set a free number. Use `infinity: 1` or `infinity: -1` for an infinite value. |
 | `set_slider_bounds` | `label`, `min`, `max` | Edit the endpoints of a free number's slider. |
 | `add` | `line` | Run an assignment to a new label after the initial script. |
+| `undo` | none | Undo the immediately preceding addition using GeoGebra's construction snapshot. |
 | `redefine` | `line` | Assign a new definition to an existing label. |
 | `delete` | `label` | Remove the object and its dependents from the construction. Subsequent snapshots omit the deleted labels. |
 | `reject` | `line`, optional `error` | Check that the command reports an error and creates no output. With `error`, the kernel's error must be exactly that text (GeoGebra's message is not recorded). |

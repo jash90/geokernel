@@ -266,6 +266,19 @@ impl<'a> Cartesian<'a> {
         Self::with_depth(c, id, 12)
     }
 
+    pub(super) fn retained_spline(
+        c: &Construction,
+        id: Id,
+        input: super::analysis::SplineInput,
+    ) -> Option<Self> {
+        Some(Self {
+            source: CurveSource::Spline(c.analysis.retained_spline(id, input)?),
+            start: 0.0,
+            end: 1.0,
+            work_at_start: crate::expr::work_done(),
+        })
+    }
+
     fn with_depth(c: &'a Construction, id: Id, depth: u8) -> Option<Self> {
         use super::{analysis::AnalysisDef, measure::MeasureDef, vector::VectorDef};
         use crate::{Def, Kind};

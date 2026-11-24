@@ -120,7 +120,7 @@ pub(super) fn get_fraction(b: &mut Builder, i: u32, expand: bool) -> (Option<u32
             let den = multiply_check(b, den_l, Some(num_r));
             (num, den)
         }
-        Bin::Pow => {
+        Bin::Pow | Bin::RootPow => {
             let exponent = b.constant_value(right);
             let power_check = |b: &mut Builder, base: Option<u32>, e: u32| -> Option<u32> {
                 base.map(|base| b.push(Node::Bin(Bin::Pow, base, e)))
@@ -185,7 +185,7 @@ impl<'a> FunctionFraction<'a> {
         let symbolic = source.cas_quotient(root);
         let mut tree = Cow::Borrowed(source);
         let (numerator, denominator) = match source.nodes[root as usize] {
-            Node::Bin(Bin::Mul | Bin::Div | Bin::Pow, ..) => {
+            Node::Bin(Bin::Mul | Bin::Div | Bin::Pow | Bin::RootPow, ..) => {
                 split(construction, tree.to_mut(), root)
             }
             _ => (root, None),
@@ -295,7 +295,7 @@ fn split(c: &Construction, tree: &mut Entry, node: u32) -> (u32, Option<u32>) {
                 Some(ad.map_or(bn, |d| multiply(tree, bn, d))),
             )
         }
-        Node::Bin(Bin::Pow, base, exponent) => {
+        Node::Bin(Bin::Pow | Bin::RootPow, base, exponent) => {
             let (num, den) = split(c, tree, base);
             // A deep copy gives each FunctionVariable its initial value, 0.
             let value = sample_subtree(c, tree, exponent, 0.0);

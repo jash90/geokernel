@@ -40,16 +40,6 @@ mismatches = ["0:A", "0:D", "0:E", "0:F", "0:f", "0:g", "0:h", "0:i", "0:r_{1}"]
 
 # intersect
 
-[[gap]]
-id = "intersect-itself-004"
-reason = "Intersect(k, k, 1) is the earlier intersection point X of k (AlgoIntersectConics.getPointFrom1on2), but X is not an input of the algorithm, so GeoGebra does not recompute P when only X moves (here the line f moves and k stays) and keeps the old position until k changes; the kernel reads X as a hidden parent and always shows the current X"
-mismatches = ["1:P", "3:P"]
-
-[[gap]]
-id = "intersect-itself-005"
-reason = "as intersect-itself-004: P = Intersect(k, k, 1) and R = Intersect(c, c, 1) are the earlier point X = Intersect(c, k, 2); GeoGebra keeps P at its old position while only c changes and R while only k changes, the kernel always shows the current X"
-mismatches = ["1:P", "2:P", "3:P", "4:P", "5:R"]
-
 # vector
 
 [[gap]]
@@ -94,23 +84,11 @@ mismatches = ["0:R", "2:R", "3:R"]
 # expr
 
 [[gap]]
-id = "expr-fnundef-008"
-reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps a function defined (every value undefined) when it reads a point at infinity, here the intersection of two parallel lines; the kernel has no points at infinity and makes the function undefined"
-mismatches = ["1:f", "1:g"]
-
-[[gap]]
 id = "expr-decimal-027"
 reason = "intended difference, recorded in DIFFERENCES.md: aligning 1E-100001 with 1 needs 100002 digits, past the kernel's bound on the work of one decimal operation, so it computes with doubles from there on and (... + 0.1 + 0.2 - 0.3) is 5.55E-17 instead of 0"
 mismatches = ["0:c"]
 
 # polygon
-
-# lists
-
-[[gap]]
-id = "lists-if-014"
-reason = "arithmetic on `If(a > 0, l)` with a false condition: GeoGebra's undefined helper list keeps the elements of the branch it last copied, each set undefined, and the sum is a defined list of undefined numbers; the kernel gives an undefined list"
-mismatches = ["1:p", "6:p"]
 
 [[gap]]
 id = "geomclip-difference-001"
@@ -159,11 +137,6 @@ mismatches = [
 
 # intersectgrowth
 
-[[gap]]
-id = "geomextras-pointlist-007"
-reason = "GeoGebra appends point A as the list gains a row and retains it undefined when the list shrinks. The kernel only creates output slots for the initial rows."
-mismatches = ["1:A", "2:A"]
-
 # Matrix and dilation forms that need new object representations.
 # ApplyMatrix(list,curve) and ApplyMatrix(list,function) produce a parametric
 # curve. For a function, GeoGebra first builds the curve (t, f(t)) over the
@@ -183,26 +156,6 @@ mismatches = ["1:A", "2:A"]
 # List transforms handle points, vectors, and the scalar entries interleaved
 # with them. Lists of other geometry need corresponding element
 # representations, including curve and conic records.
-
-[[gap]]
-id = "matrixdilate-elimination-009"
-reason = "AlgoTranspose clears its output on empty input but preserves the defined flag from the previous update. After a ragged matrix, the reference keeps the empty transpose undefined until it sees a valid nonempty matrix. The kernel computes the empty list from the current input."
-mismatches = ["2:a"]
-
-[[gap]]
-id = "lists-take-016"
-reason = "intended difference, recorded in DIFFERENCES.md: Take(l, m) with m past the end of the list makes an undefined list, but GeoGebra keeps the elements of the last defined one, and + 1 maps over them, giving one undefined number per stale element. The undefined value of the kernel has no elements"
-mismatches = ["5:p", "6:p", "7:p"]
-
-[[gap]]
-id = "lists-undef-003"
-reason = "intended difference, recorded in DIFFERENCES.md: a point with an infinite coordinate is defined in GeoGebra, so RemoveUndefined keeps it; the kernel has no infinity and drops it like an undefined point"
-mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
-
-[[gap]]
-id = "lists-undef-005"
-reason = "intended difference, recorded in DIFFERENCES.md: a point with an infinite coordinate is defined in GeoGebra, so RemoveUndefined keeps it; the kernel has no infinity and drops it like an undefined point"
-mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
 
 [[gap]]
 id = "algebralogic-logic-022"
@@ -2608,11 +2561,6 @@ mismatches = ["0:script line 2"]
 failure = "expected up to three distinct solving variables"
 
 [[gap]]
-id = "georestintersect-spline-001"
-reason = "IntersectLineSpline leaves the previous point defined when adjacent spline inputs coincide, while the kernel propagates the undefined spline to the intersection"
-mismatches = ["2:P_{1}"]
-
-[[gap]]
 id = "georestclip-overlay-001"
 reason = "The polygon overlay traces contours with the interior on the left and chooses its own start vertex. Labelled vertices and edges follow that order."
 mismatches = [
@@ -2725,25 +2673,6 @@ mismatches = [
 
 # infinity
 
-[[gap]]
-id = "infinity-inputs-034"
-reason = "intended difference, recorded in DIFFERENCES.md: a vector with an infinite coordinate is defined in GeoGebra, so Length((1, c)) with c infinite is infinity; the kernel shows such a vector as undefined, and Length of it is undefined"
-mismatches = ["1:r", "3:r"]
-
-[[gap]]
-id = "infinity-functions-064"
-reason = "intended difference, recorded in DIFFERENCES.md: nroot(-Infinity, 2) is Infinity in GeoGebra, whose NROOT operation hands a negative base with an even degree to Math.pow; the kernel reads nroot(a, n) as a^(1/n), where a negative base with an even root is undefined"
-mismatches = ["0:c"]
-
-[[gap]]
-id = "infinity-functions-097"
-reason = "intended difference, recorded in DIFFERENCES.md: nroot(-Infinity, 4) is Infinity in GeoGebra, whose NROOT operation hands a negative base with an even degree to Math.pow; the kernel reads nroot(a, n) as a^(1/n), where a negative base with an even root is undefined"
-mismatches = ["0:c"]
-
-[[gap]]
-id = "calculus-sums-012"
-reason = "UpperSum of a constant function over an infinite interval is positive infinity in the reference, recorded as `infinity: 1` for u in the signed recording of this file. The first rectangle then starts at 0 + 0 * Infinity, which is NaN, and the reference's minimum search still returns a height on that bracket. The kernel's search requires a finite bracket and leaves the sum undefined. The reference search is third-party code that cannot be consulted, and this one constant function does not determine its behaviour on other functions. LeftSum, d, agrees."
-mismatches = ["0:u"]
 
 [[gap]]
 id = "georestsmall-matrixcurve-005"
@@ -2759,21 +2688,6 @@ mismatches = ["0:q"]
 id = "georestsmall-matrixfunction-002"
 reason = "The reference simplifies the transformed expression symbolically; the kernel uses plain arithmetic as on main. ApplyMatrix({{1, 0}, {1, 2}}, f) for f = Function(sin(x) + x(A), -1, 2): outside its domain f is NaN, and the reference builds x = t * 1 + f(t) * 0 with the zero term left out, so the signed recording keeps x = t finite. Plain arithmetic computes 0 * NaN = NaN, so x is NaN. Main compared this case with its schema 2 recording, which wrote the whole coordinate pair as null."
 mismatches = ["0:c", "3:c"]
-
-[[gap]]
-id = "georestsmall-ifgeometry-003"
-reason = "The selected circle has an infinite radius, which Radius returns as positive infinity in the reference: the recording has d as `infinity: 1` at step 1. The kernel represents that circle as undefined and Radius is undefined."
-mismatches = ["1:d"]
-
-[[gap]]
-id = "infinity-outputs-039"
-reason = "LowerSum of a constant function up to an infinite bound is positive or negative infinity in the reference, with the sign of the step. The first rectangle starts at 1 + 0 * Infinity, which is NaN, and the reference's minimum search still returns a height on that bracket. The kernel's search requires a finite bracket and leaves the sum undefined, as for UpperSum in calculus-sums-012. The other sums of infinity-outputs-032 to infinity-outputs-045 agree."
-mismatches = ["1:s", "2:s", "4:s"]
-
-[[gap]]
-id = "infinity-outputs-040"
-reason = "UpperSum of a constant function up to an infinite bound is positive or negative infinity in the reference, with the sign of the step. The first rectangle starts at 1 + 0 * Infinity, which is NaN, and the kernel's minimum search requires a finite bracket, as in calculus-sums-012."
-mismatches = ["1:s", "2:s", "4:s"]
 
 # odesymbolic
 
@@ -2931,6 +2845,30 @@ id = "cas-literal-001"
 reason = "Without the giac feature the kernel's own solver reads Solve(x+y=-0.75, y) with the free x in the place of the solving variable y and answers the line y = -0.375; the reference's CAS answers y = -x - 3/4 (recorded with Giac). The case was added to check typed decimals between -1 and 0 in the Giac input, and agrees with the feature (known-gaps-giac.toml)."
 mismatches = ["0:r4"]
 
+[[gap]]
+id = "keptvalues-pointgrowth-003"
+reason = "The journal owns the group by its first output label. Deleting P invalidates A's recorded slot, although GeoGebra keeps A at (3, 4). Keeping A live requires a growth-group owner independent of P."
+mismatches = ["2:A"]
+
+[[gap]]
+id = "keptvalues-pointpath-001"
+reason = "The list literal rejects the inline CircumcircleArc. A list of paths also needs stable element identities and a composite path parameter, which the coordinate-row Point machinery does not store."
+mismatches = ["0:script line 6"]
+
+# List dilation
+
+[[gap]]
+id = "matrixdilate-dilateleaves-001"
+reason = "GeoGebra allocates a dilated polygon as a list element. The kernel's expression list slots cannot store the transformed polygon vertices, so the dilation is undefined."
+mismatches = ["0:n"]
+undefined = true
+
+[[gap]]
+id = "matrixdilate-dilateleaves-002"
+reason = "GeoGebra allocates a dilated Cartesian curve as a list element. The kernel's expression list slots cannot store the transformed curve definition and parameter interval, so the dilation is undefined."
+mismatches = ["0:n"]
+undefined = true
+
 # Slider and optimizer update order
 
 [[gap]]
@@ -2947,34 +2885,3 @@ mismatches = ["2:N"]
 id = "optimizerreview-redefine-008"
 reason = "The upper endpoint reads its own slider through d. GeoGebra clamps a when b lowers that endpoint, both before and after reload in the recorded construction. During reload, the XML endpoint pass rejects the circular upper endpoint and retains the lower one (ConsElementXMLHandler.java:2647). The kernel has no cyclic listener edge and retains a = 3 and d = 6."
 mismatches = ["2:a", "2:d", "3:a", "3:d", "4:a", "4:d"]
-
-# Function value printing
-
-[[gap]]
-id = "logic-definedproducts-001"
-reason = "StringTemplate cancels two printed negative multipliers (outer -1.001 prints as -1, inner -1 is exact), so AlgoDefined sees exactly ?. The kernel's definedness scan does not cancel the signs across nested products."
-mismatches = ["0:d"]
-
-[[gap]]
-id = "logic-definedproducts-002"
-reason = "StringTemplate drops the zero product with the constant-condition If helper, so AlgoDefined sees exactly ?. The kernel's polynomial check sees the If operation and keeps the product."
-mismatches = ["0:d"]
-
-[[gap]]
-id = "logic-definedproducts-003"
-reason = "StringTemplate retains the zero product with the function application, so the printed value contains more than ?. The kernel's polynomial check accepts the application node as a leaf and drops the product."
-mismatches = ["0:d"]
-
-# List dilation
-
-[[gap]]
-id = "matrixdilate-dilateleaves-001"
-reason = "GeoGebra allocates a dilated polygon as a list element. The kernel's expression list slots cannot store the transformed polygon vertices, so the dilation is undefined."
-mismatches = ["0:n"]
-undefined = true
-
-[[gap]]
-id = "matrixdilate-dilateleaves-002"
-reason = "GeoGebra allocates a dilated Cartesian curve as a list element. The kernel's expression list slots cannot store the transformed curve definition and parameter interval, so the dilation is undefined."
-mismatches = ["0:n"]
-undefined = true

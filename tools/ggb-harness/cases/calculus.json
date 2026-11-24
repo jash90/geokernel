@@ -160,6 +160,8 @@
     {"id": "calculus-curvederivative-022", "group": "calculus", "script": ["c = Curve(t^2, t^3, t, -2, 2)", "a = ApplyMatrix({{1, 0, 0}, {0, 1, 0}, {1, 0, 2}}, c)", "d = NDerivative(a)"], "steps": [{"action": "initial"}], "sample_curves": true},
     {"id": "calculus-curvederivative-023", "group": "calculus", "script": ["f(x) = x^3", "a = ApplyMatrix({{2, 0}, {0, 3}}, f)", "d = Derivative(a)"], "steps": [{"action": "initial"}], "sample_curves": true},
     {"id": "calculus-curvederivative-024", "group": "calculus", "script": ["f(x) = x^3", "a = ApplyMatrix({{2, 0}, {0, 3}}, f)", "d = Derivative(a, t)"], "steps": [{"action": "initial"}, {"action": "reject", "line": "e = Derivative(a, x)"}], "sample_curves": true},
-    {"id": "calculus-curvederivative-025", "group": "calculus", "script": ["n = 1", "k = 1 / n", "c = Curve(t^2, t^3, t, -2, 2)", "d = Derivative(c, k)", "e = NDerivative(c, t, k)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "n", "value": 0.0}, {"action": "set_number", "label": "n", "value": 0.5}], "sample_curves": true}
+    {"id": "calculus-curvederivative-025", "group": "calculus", "script": ["n = 1", "k = 1 / n", "c = Curve(t^2, t^3, t, -2, 2)", "d = Derivative(c, k)", "e = NDerivative(c, t, k)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "n", "value": 0.0}, {"action": "set_number", "label": "n", "value": 0.5}], "sample_curves": true},
+    {"id": "calculus-rootpower-001", "group": "calculus", "script": ["f(x) = nroot(x, 3)", "g(x) = nroot(x, 2)", "h = NDerivative(f)", "i = NDerivative(g)", "j = Integral(f)", "k = Derivative(f)", "a = IntegralBetween(f, 1, 8)", "m = NIntegral(f)"], "steps": [{"action": "initial"}]},
+    {"id": "calculus-rootpower-002", "group": "calculus", "script": ["c = Curve(t, nroot(t, 3), t, 0, 1)", "d = Derivative(c)"], "steps": [{"action": "initial"}], "sample_curves": true}
   ]
 }

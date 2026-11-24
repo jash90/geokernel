@@ -226,7 +226,7 @@ cases = ["expr-syntax-013", "expr-twonum-002", "expr-twonum-007"]
 [[form]]
 command = "Element"
 form = "list,number"
-cases = ["lists-index-003", "lists-index-004", "lists-index-013"]
+cases = ["lists-index-003", "lists-index-004", "lists-index-013", "keptvalues-cartesian-006", "keptvalues-cartesian-009"]
 
 [[form]]
 command = "Element"
@@ -1018,7 +1018,7 @@ cases = ["geomextras-tangentfunction-001", "geomextras-tangentfunction-003", "ge
 [[form]]
 command = "Tangent"
 form = "point,function"
-cases = ["geomextras-tangentfunction-001", "geomextras-tangentfunction-002"]
+cases = ["geomextras-tangentfunction-001", "geomextras-tangentfunction-002", "keptvalues-root-003"]
 
 [[form]]
 command = "Vertex"
@@ -1250,23 +1250,6 @@ form = "function,number,point"
 cases = ["matrixdilate-dilatefunction-001", "matrixdilate-dilatefunction-002", "matrixdilate-dilatefunction-003"]
 
 [[form]]
-command = "ApplyMatrix"
-form = "list,list"
-cases = [
-  "matrixdilate-applylist-001",
-  "matrixdilate-applylist-002",
-  "matrixdilate-applylist-003",
-  "matrixdilate-applylist-004",
-  "matrixdilate-applylist-005",
-  "matrixdilate-applylist-006",
-  "optimizerreview-transform-002",
-  "optimizerreview-transform-004",
-  "optimizerreview-transform-007",
-  "optimizerreview-transform-008",
-  "vectorforms-inlineimages-001",
-]
-
-[[form]]
 command = "Dilate"
 form = "list,number,point"
 cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-003", "matrixdilate-dilatereview-003"]
@@ -1367,6 +1350,22 @@ form = "function,number,number"
 cases = ["algebralogic-extrema-006", "algebralogic-extrema-013", "algebraedge-maximum-001", "algebraedge-maximum-002", "algebraedge-maximum-003", "algebraedge-maximum-004", "algebraedge-maximum-005", "algebraedge-maximum-006"]
 
 [[form]]
+command = "Defined"
+form = "any"
+cases = [
+  "logic-defined-001",
+  "logic-defined-002",
+  "logic-defined-009",
+  "logic-definedproducts-001",
+  "logic-definedproducts-002",
+  "logic-definedproducts-003",
+  "logic-definedreview-004",
+  "keptvalues-defined-001",
+  "keptvalues-defined-003",
+  "keptvalues-cartesian-007",
+]
+
+[[form]]
 command = "CountIf"
 form = "function,list"
 cases = ["algebralogic-logic-001", "algebralogic-logic-011", "algebralogic-logic-015"]
@@ -1454,7 +1453,7 @@ cases = ["calculus-fraction-001", "cas-projection-002", "cas-projection-006"]
 [[form]]
 command = "Derivative"
 form = "function"
-cases = ["calculus-derivative-001"]
+cases = ["calculus-derivative-001", "calculus-rootpower-001", "keptvalues-vectorlength-003", "keptvalues-vectorlength-004"]
 
 [[form]]
 command = "Derivative"
@@ -1521,7 +1520,7 @@ cases = ["calculus-curvederivative-015"]
 [[form]]
 command = "Integral"
 form = "function"
-cases = ["calculus-integral-001"]
+cases = ["calculus-integral-001", "calculus-rootpower-001"]
 
 [[form]]
 command = "Integral"
@@ -1531,7 +1530,7 @@ difference = "calculus-commands: The variable forms `Derivative(function, any)`,
 [[form]]
 command = "Integral"
 form = "function,number,number"
-cases = ["calculus-integral-002"]
+cases = ["calculus-integral-002", "keptvalues-vectorlength-001", "keptvalues-vectorlength-002", "keptvalues-vectorlength-003", "keptvalues-vectorlength-004"]
 
 [[form]]
 command = "Integral"
@@ -1566,7 +1565,7 @@ difference = "calculus-commands: The variable forms `Derivative(function, any)`,
 [[form]]
 command = "IntegralBetween"
 form = "function,number,number"
-cases = ["calculus-between-007"]
+cases = ["calculus-between-007", "calculus-rootpower-001"]
 
 [[form]]
 command = "IntegralBetween"
@@ -1591,7 +1590,7 @@ cases = ["calculus-between-002"]
 [[form]]
 command = "NDerivative"
 form = "function"
-cases = ["calculus-derivative-001"]
+cases = ["calculus-derivative-001", "calculus-rootpower-001", "keptvalues-vectorlength-001", "keptvalues-vectorlength-002", "keptvalues-vectorlength-003", "keptvalues-vectorlength-004"]
 
 [[form]]
 command = "NDerivative"
@@ -1601,7 +1600,7 @@ cases = ["calculus-derivative-003", "funcrest-derivative-001"]
 [[form]]
 command = "NIntegral"
 form = "function"
-cases = ["calculus-integral-001"]
+cases = ["calculus-integral-001", "calculus-rootpower-001", "keptvalues-vectorlength-001", "keptvalues-vectorlength-002", "keptvalues-vectorlength-003", "keptvalues-vectorlength-004"]
 
 [[form]]
 command = "NIntegral"
@@ -1981,6 +1980,8 @@ cases = ["misc-sum-006"]
 command = "Sum"
 form = "text,..."
 cases = ["misc-sum-004"]
+
+# english
 
 [[form]]
 command = "BarChart"
@@ -3547,8 +3548,22 @@ cases = [
 # matrixdilate-dilatelist-001, -002, -004, -005, -006 and
 # optimizerreview-transform-001, -003, -005, -006.
 
-# Defined(any) is open. Printed product simplification has gaps in logic-definedproducts.
-
+[[form]]
+command = "ApplyMatrix"
+form = "list,list"
+cases = [
+  "matrixdilate-applylist-001",
+  "matrixdilate-applylist-002",
+  "matrixdilate-applylist-003",
+  "matrixdilate-applylist-004",
+  "matrixdilate-applylist-005",
+  "matrixdilate-applylist-006",
+  "optimizerreview-transform-002",
+  "optimizerreview-transform-004",
+  "optimizerreview-transform-007",
+  "optimizerreview-transform-008",
+  "vectorforms-inlineimages-001",
+]
 
 [[form]]
 command = "Vertex"
@@ -3758,42 +3773,6 @@ cases = [
     "conics-transform-033",
     "export-conics-001",
     "matrixdilate-applyconic-001",
-]
-
-[[form]]
-command = "CircumcircleArc"
-form = "point,point,point"
-cases = [
-    "arcs-circum-001",
-    "arcs-circum-002",
-    "arcs-circum-005",
-    "arcs-circum-006",
-    "arcs-circum-009",
-    "arcs-circum-010",
-    "arcs-circum-011",
-    "arcs-circum-012",
-    "arcs-circum-013",
-    "arcs-keptpart-001",
-    "arcs-keptpart-003",
-    "arcs-points-003",
-    "arcs-points-004",
-    "arcs-undefined-003",
-    "arcs-undefined-007",
-    "export-conics-001",
-    "locus-arc-003",
-    "transform-anglearg-007",
-    "transform-arcchain-002",
-    "transform-circumarc-001",
-    "transform-circumarc-002",
-    "transform-circumarc-003",
-    "transform-circumarc-004",
-    "transform-circumarc-005",
-    "transform-circumarc-006",
-    "transform-circumarc-007",
-    "transform-circumarc-008",
-    "transform-circumarc-009",
-    "transform-circumarc-010",
-    "arcs-keptpart-006",
 ]
 
 [[form]]
@@ -4597,3 +4576,53 @@ cases = [
     "polygon-vertexidx-002",
     "polygon-vertexidx-003",
 ]
+
+[[form]]
+command = "Take"
+form = "list,number"
+cases = ["lists-take-001", "lists-take-016", "keptvalues-replay-001", "keptvalues-redefinition-001"]
+
+[[form]]
+command = "RemoveUndefined"
+form = "list"
+cases = ["lists-undef-003", "lists-undef-005", "keptvalues-cartesian-007"]
+
+[[form]]
+command = "Length"
+form = "vector"
+cases = ["infinity-inputs-034", "keptvalues-defined-001", "keptvalues-vectorlength-001", "keptvalues-vectorlength-002", "keptvalues-vectorlength-003"]
+
+[[form]]
+command = "LowerSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-001", "infinity-outputs-039", "keptvalues-areasums-001", "keptvalues-areasums-002"]
+
+[[form]]
+command = "UpperSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-012", "infinity-outputs-040", "keptvalues-areasums-001", "keptvalues-areasums-002"]
+
+[[form]]
+command = "LeftSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-012"]
+
+[[form]]
+command = "Radius"
+form = "conic"
+cases = ["geomforms-area-001", "geomforms-area-003"]
+
+[[form]]
+command = "Transpose"
+form = "list"
+cases = ["matrixdilate-elimination-009", "keptvalues-transpose-001", "keptvalues-transpose-002", "keptvalues-transpose-003"]
+
+[[form]]
+command = "Intersect"
+form = "line,curve"
+cases = ["georestintersect-spline-001", "georestintersect-trig-001", "keptvalues-spline-001", "keptvalues-spline-002"]
+
+[[form]]
+command = "Distance"
+form = "point,point"
+cases = ["expr-cmd-001", "expr-fnundef-008", "keptvalues-cartesian-001", "keptvalues-cartesian-002", "keptvalues-cartesian-003", "keptvalues-cartesian-004", "keptvalues-cartesian-006"]

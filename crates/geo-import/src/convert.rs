@@ -73,6 +73,15 @@ pub(crate) fn convert_with_assets(
                 inputs,
                 outputs,
             } => {
+                if let ("Intersect", [a, b, selector], [label]) =
+                    (name.as_str(), inputs.as_slice(), outputs.as_slice())
+                {
+                    if a == b && selector == "1" && !label.is_empty() {
+                        c.self_circle_first
+                            .entry(a.clone())
+                            .or_insert_with(|| label.clone());
+                    }
+                }
                 if name == "Polygon" && inputs.len() >= 3 {
                     if let Some(label) = outputs.first() {
                         polygon_inputs.insert(label.as_str(), inputs.as_slice());
@@ -415,6 +424,8 @@ struct Converter {
     /// Sliders whose expression endpoints were restored right after their
     /// element, before the objects that read them.
     early_bounds: BTreeSet<String>,
+    self_circle_first: BTreeMap<String, String>,
+    self_circle_swaps: BTreeMap<Id, bool>,
 }
 
 /// One script line and the labels it has to create.
@@ -750,6 +761,51 @@ impl Converter {
                 }
             }
         }
+        if let ("Point", [list]) = (name, args.as_slice()) {
+            if self
+                .kernel
+                .id(list)
+                .is_some_and(|id| self.kernel.kind(id) == Kind::List)
+            {
+                let count = multi_output_count(&self.kernel, &format!("Point({list})"))
+                    .and_then(Result::ok)
+                    .unwrap_or(0);
+                if outputs.len() > count {
+                    // The XML handler runs Point with the rows present on
+                    // load. Surplus element labels are restored separately.
+                    let (active, surplus) = outputs.split_at(count);
+                    let mut steps = Vec::new();
+                    if active.iter().any(|label| !label.is_empty()) {
+                        steps.push(Step {
+                            line: format!("{{{}}} = Point({list})", active.join(", ")),
+                            labels: active.iter().filter(|l| !l.is_empty()).cloned().collect(),
+                            auto: false,
+                        });
+                    }
+                    steps.extend(surplus.iter().filter(|l| !l.is_empty()).map(|label| Step {
+                        line: format!("{label} = (?, ?)"),
+                        labels: vec![label.clone()],
+                        auto: false,
+                    }));
+                    return Ok(steps);
+                }
+            }
+        }
+        if let ("Intersect", [a, b, selector], [_]) = (name, args.as_mut_slice(), outputs) {
+            if a == b {
+                if let Some(id) = self
+                    .kernel
+                    .id(a)
+                    .filter(|&id| self.kernel.kind(id) == Kind::Circle)
+                {
+                    if matches!(selector.as_str(), "1" | "2")
+                        && self.saved_self_circle_swap(id, a, elements)?
+                    {
+                        *selector = if selector == "1" { "2" } else { "1" }.into();
+                    }
+                }
+            }
+        }
         // GeoGebra saves `Intersect(a, b)` of a line and a conic (or two
         // conics) without an index and lists both points as outputs; the
         // kernel takes the n-th point as `Intersect(a, b, n)`.
@@ -835,6 +891,45 @@ impl Converter {
             labels: labelled,
             auto: false,
         }])
+    }
+
+    /// Loading an indexed self-intersection seeds the shared solver from
+    /// the saved first position. If that position is stale, the incident
+    /// point moves to the second output on the first update.
+    fn saved_self_circle_swap(
+        &mut self,
+        circle: Id,
+        name: &str,
+        elements: &BTreeMap<&str, &Element>,
+    ) -> Result<bool, String> {
+        if let Some(&swap) = self.self_circle_swaps.get(&circle) {
+            return Ok(swap);
+        }
+        let Some((label, [x, y, z])) = self
+            .self_circle_first
+            .get(name)
+            .and_then(|label| Some((label, coords3(elements.get(label.as_str())?)?)))
+        else {
+            return Ok(false);
+        };
+        let saved = [x / z, y / z];
+        if !saved.iter().all(|v| v.is_finite()) {
+            return Ok(false);
+        }
+        let checkpoint = self.kernel.checkpoint();
+        let actual = exec(
+            &mut self.kernel,
+            &format!("{label} = Intersect({name}, {name}, 1)"),
+        )
+        .ok()
+        .flatten()
+        .map(|id| self.kernel.value(id));
+        self.kernel
+            .rollback(checkpoint)
+            .map_err(|e| e.to_string())?;
+        let swap = matches!(actual, Some(Value::Point { x, y }) if !close(saved[0], x) || !close(saved[1], y));
+        self.self_circle_swaps.insert(circle, swap);
+        Ok(swap)
     }
 
     /// A saved pair can keep the permutation from an earlier edit. Select
@@ -1121,13 +1216,23 @@ impl Converter {
                     }
                 }
             }
-            if let Some((saved, computed)) = cross_check(el, &self.kernel, id, expression, polygon)
-            {
-                self.out.mismatched.push(Mismatch {
-                    label: el.label.clone(),
-                    saved,
-                    computed,
-                });
+            // A restored self-intersection can exchange its output slots
+            // on load. Its live coordinates then differ from the saved ones.
+            let restored_self_intersection = matches!(
+                self.kernel.def(id),
+                Def::IntersectCircles { c1, c2, .. }
+                    if c1 == c2 && self.self_circle_swaps.get(&c1) == Some(&true)
+            );
+            if !restored_self_intersection {
+                if let Some((saved, computed)) =
+                    cross_check(el, &self.kernel, id, expression, polygon)
+                {
+                    self.out.mismatched.push(Mismatch {
+                        label: el.label.clone(),
+                        saved,
+                        computed,
+                    });
+                }
             }
             // Without a `<show>` tag the object stays visible in the editor.
             if el.shown == Some(false) {
