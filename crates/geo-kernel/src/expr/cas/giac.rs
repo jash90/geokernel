@@ -508,7 +508,7 @@ impl<'a> Printer<'a> {
             }
             _ => match self.c.value(id) {
                 Value::Number(v) => {
-                    self.number(v, out);
+                    self.object_number(id, v, out);
                     Some(())
                 }
                 // `GeoLine.toValueString` of an undefined line.
@@ -565,6 +565,19 @@ impl<'a> Printer<'a> {
             numeric_number(v, out);
         } else {
             number(v, out);
+        }
+    }
+
+    fn object_number(&self, id: crate::Id, value: f64, out: &mut String) {
+        // The rewrite keeps the decimal of an unchanged typed GeoNumeric.
+        // The solving templates print the computed numeric value.
+        if let Some(decimal) = self
+            .parameter
+            .and_then(|_| crate::expr::free_decimal(self.c, id))
+        {
+            self.literal(decimal, out);
+        } else {
+            self.number(value, out);
         }
     }
 
@@ -670,7 +683,7 @@ impl<'a> Printer<'a> {
             }
             Node::Obj(id) => match self.c.value(id) {
                 Value::Number(v) => {
-                    self.number(v, out);
+                    self.object_number(id, v, out);
                     Some(())
                 }
                 _ => None,
@@ -1338,7 +1351,7 @@ fn power(a: f64, b: f64) -> f64 {
         for d in (3..100).step_by(2) {
             let n = b * f64::from(d);
             if (n - n.round()).abs() < 1e-12 {
-                let magnitude = (-a).powf(b);
+                let magnitude = crate::expr::math::my_pow(-a, b);
                 return if (n.round() as i64) % 2 == 0 {
                     magnitude
                 } else {
@@ -1347,7 +1360,7 @@ fn power(a: f64, b: f64) -> f64 {
             }
         }
     }
-    a.powf(b)
+    crate::expr::math::my_pow(a, b)
 }
 
 fn has_name(e: &Expr, name: &str) -> bool {

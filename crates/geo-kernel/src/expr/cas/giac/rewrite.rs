@@ -519,6 +519,53 @@ mod tests {
     }
 
     #[test]
+    fn curve_rewrites_read_the_coordinate_as_a_dependency() {
+        // cas-curve-011 changes a, which must recompute each rewrite.
+        use crate::algo::measure::MeasureDef;
+        let mut c = crate::script::load("a = 2\nk = Curve(a*t^2, (t+a)^2, t, 0, a)").unwrap();
+        let Def::Measure(MeasureDef::CartesianCurve { coordinates, .. }) =
+            c.def(c.id("k").unwrap())
+        else {
+            panic!("expected a Cartesian curve");
+        };
+        let source = crate::Id(coordinates[0] as usize);
+        let result = coordinate(&mut c, "result", source, Op::Expand).unwrap();
+        assert_eq!(crate::expr::parents(&c, &c.def(result)), [source]);
+    }
+
+    #[test]
+    fn a_rewrite_preserves_the_original_text_of_typed_numbers() {
+        // cas-edge-013: rounding the two typed values adds 1e-6 to the result.
+        let c = crate::script::load(
+            "a = 1.000030517578125\nb = 1.000091552734375\nf(x) = x+10^8*(a+b-2.0001220703125)",
+        )
+        .unwrap();
+        let mut printer = Printer::new(&c, vec![], false);
+        printer.parameter = Some("x");
+        let mut printed = String::new();
+        printer.object(c.id("f").unwrap(), &mut printed).unwrap();
+        assert_eq!(
+            printed,
+            "(x)+(((10)^(8))*((((1000030517578125/1000000000000000))+((1000091552734375/1000000000000000)))-((20001220703125/10000000000000))))"
+        );
+    }
+
+    #[test]
+    fn curve_rewrites_sample_squares_like_the_reference() {
+        // cas-curve-024: GeoGebra rounds the square before the other operations.
+        let c = Construction::new();
+        let result = super::read_function(
+            &c,
+            "ggbtmpvart^2-200000000*ggbtmpvart+10000000000000000",
+            "t",
+        )
+        .unwrap();
+        for t in [99_999_999.0, 99_999_999.25, 1e8, 100_000_001.0] {
+            assert_eq!(result.value(&c, t, 0.0), 0.0, "at {t}");
+        }
+    }
+
+    #[test]
     fn recorded_curve_results_keep_the_printed_tree() {
         let c = Construction::new();
         // cas-curve-008, third command, first coordinate.

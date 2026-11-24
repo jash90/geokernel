@@ -850,7 +850,7 @@ impl Builder {
             }
             seen[i as usize] = true;
             match self.node(i) {
-                Node::Obj(id) => read(id, true),
+                Node::Obj(id) | Node::FunctionObject(id) => read(id, true),
                 Node::Apply(f, a) => {
                     read(f, true);
                     stack.push(a);
