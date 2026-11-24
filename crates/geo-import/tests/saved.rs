@@ -945,3 +945,17 @@ fn saved_projective_point_keeps_coordinates_when_cartesian_division_overflows() 
         },
     );
 }
+
+#[test]
+fn coordinate_read_after_reloading_an_overflowing_point() {
+    let (snapshot, imported) = fixture("saved-projectiveoverflow-002");
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    check_review_values(&snapshot, &c, &[]);
+
+    let (_, imported) = fixture("saved-projectiveoverflow-001");
+    let mut c = script::load(&imported.script.join("\n")).unwrap();
+    script::exec(&mut c, "q = y(P)").unwrap();
+    assert_eq!(c.value(c.id("q").unwrap()), Value::Number(0.0));
+}

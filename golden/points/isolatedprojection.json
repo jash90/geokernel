@@ -1,0 +1,99 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "points-isolatedprojection-001",
+      "group": "points",
+      "script": [
+        "a = Slider(0, 1, 0.01)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "add", "line": "C = (0, 1)" },
+        { "action": "add", "line": "D = (1, 1+a)" },
+        { "action": "add", "line": "m = Line(C, D)" },
+        { "action": "add", "line": "S = Intersect(xAxis, m)" },
+        { "action": "add", "line": "k = Circle((0,0),2)" },
+        { "action": "add", "line": "R = ClosestPoint(k,S)" },
+        { "action": "add", "line": "u = (a-0.5)^2+(x(R)+2)^2" },
+        { "action": "add", "line": "N = Minimize(u,a)" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "S": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "S": { "type": "point", "defined": false },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "S": { "type": "point", "defined": false },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "S": { "type": "point", "defined": false },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "u": { "type": "number", "defined": true, "value": 16.25 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "m": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "S": { "type": "point", "defined": false },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 2.4492935982947064E-16 },
+          "u": { "type": "number", "defined": true, "value": 0.25 },
+          "N": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    }
+  ]
+}

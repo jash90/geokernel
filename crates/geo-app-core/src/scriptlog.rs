@@ -799,13 +799,19 @@ impl Log {
     }
 
     fn push_set_with_angles(&mut self, label: &str, to: Setting, ordered: bool, angles: &[Id]) {
+        let previous = self.ops.last();
+        let coalesces = Self::sets_coalesce(previous, label, ordered, angles);
+        // An equivalent angle write can have no live change while still
+        // carrying the history that the replaced operation introduced.
+        let ordered =
+            ordered || coalesces && matches!(previous, Some(Op::Set { ordered: true, .. }));
         let set = Op::Set {
             label: label.to_owned(),
             to,
             ordered,
             replaced_angles: angles.into(),
         };
-        if Self::sets_coalesce(self.ops.last(), label, ordered, angles) {
+        if coalesces {
             self.ops.replace_last(set);
         } else {
             self.ops.push(set);
@@ -825,7 +831,8 @@ impl Log {
         // An angle write can replace a previous write to the same records
         // when neither edit needs earlier angles or other retained state.
         old_label == label
-            && (!ordered && !old_ordered || !angles.is_empty() && old_angles.as_ref() == angles)
+            && (!ordered && !old_ordered && old_angles.is_empty()
+                || !angles.is_empty() && old_angles.as_ref() == angles)
     }
 
     fn replay_angles<'a>(c: &'a Construction, ordered: bool, angles: &[Id]) -> &'a [Id] {

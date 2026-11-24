@@ -555,7 +555,7 @@ fn closest_list(list: crate::expr::List<'_>, p: (f64, f64)) -> Option<(f64, f64)
 }
 
 fn closest_point_value(c: &Construction, path: Id, p: (f64, f64)) -> Option<Value> {
-    match c.value(path) {
+    match c.stored_value(path) {
         Value::Line { a, b, c: z } => {
             let (foot, _) = project((a, b, z), (0.0, 0.0), p);
             Some(Value::Point {
@@ -585,7 +585,9 @@ fn closest_point_value(c: &Construction, path: Id, p: (f64, f64)) -> Option<Valu
         }
         Value::Ray { x, y, a, b, c: z } => {
             let (foot, t) = project((a, b, z), (x, y), p);
-            Some(if t < 0.0 {
+            // With a projective start at infinity the finite carrier is
+            // available without clamping to a Cartesian endpoint.
+            Some(if x.is_finite() && y.is_finite() && t < 0.0 {
                 Value::Point { x, y }
             } else {
                 Value::Point {
@@ -843,7 +845,7 @@ impl Group for PointDef {
                 if matches!(
                     c.value(path),
                     Value::Conic {
-                        ty: ConicType::Ellipse | ConicType::SinglePoint,
+                        ty: ConicType::Ellipse | ConicType::SinglePoint | ConicType::Hyperbola,
                     }
                 ) && c.point(point).is_none()
                 {

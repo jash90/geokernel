@@ -438,9 +438,14 @@ fn ray_value(start: (f64, f64), (x, y, z): (f64, f64, f64)) -> Option<Value> {
 /// off the source's value covers an image of an image the same way: the
 /// rebuilt ray is what the next transformation sees.
 fn ray_image(c: &Construction, def: &TransformDef, map: &Map) -> Option<Value> {
-    let Value::Ray { x, y, a, b, .. } = c.value(source_of(def)) else {
+    let Value::Ray { x, y, a, b, c: z } = c.stored_value(source_of(def)) else {
         return None;
     };
+    if !x.is_finite() || !y.is_finite() {
+        // The stored start marks a projective point. Its affine image still
+        // has no Cartesian start, and the image of the carrier is defined.
+        return ray_value((x, y), map.line(a, b, z));
+    }
     let start = map.point(x, y);
     // the direction `(b, -a)` of the raw line, turned by the map's linear
     // part (`GeoVector.rotate`, `mirror`, `matrixTransform`)

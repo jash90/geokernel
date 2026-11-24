@@ -743,11 +743,6 @@ cases = ["transform-stretch-001", "transform-stretch-002", "transform-stretch-00
 
 [[form]]
 command = "Sum"
-form = "list"
-cases = ["lists-objects-029", "lists-objects-031", "lists-stats-015"]
-
-[[form]]
-command = "Sum"
 form = "list,number"
 cases = ["lists-objects-030", "lists-stats-018", "lists-sum-005"]
 

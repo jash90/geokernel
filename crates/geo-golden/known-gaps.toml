@@ -2846,3 +2846,9 @@ mismatches = ["2:N"]
 id = "optimizerreview-redefine-008"
 reason = "The upper endpoint reads its own slider through d. GeoGebra clamps a when b lowers that endpoint, both before and after reload in the recorded construction. During reload, the XML endpoint pass rejects the circular upper endpoint and retains the lower one (ConsElementXMLHandler.java:2647). The kernel has no cyclic listener edge and retains a = 3 and d = 6."
 mismatches = ["2:a", "2:d", "3:a", "3:d", "4:a", "4:d"]
+
+[[gap]]
+id = "locus-samplingbudget-002"
+reason = "GeoGebra completes the finite diagonal locus with 149 samples. The kernel returns L undefined after repeated evaluation of the 200,000-element Sequence exhausts the shared 80,000,000-unit sampling meter (crates/geo-kernel/src/algo/locus.rs:1578)."
+mismatches = ["0:L"]
+undefined = true

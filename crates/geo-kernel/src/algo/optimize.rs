@@ -180,7 +180,7 @@ pub(crate) fn disabled(c: &Construction, d: OptimizeDef) -> Option<OptimizeDef> 
 /// number at the optimum, or undefined when it has no bounds or the search
 /// fails (`AlgoOptimize.compute`).
 pub(crate) fn record(c: &mut Construction, owner: Id, d: OptimizeDef) -> Value {
-    let mut cascade = OptimizerCascade::new(c, owner, d.independent);
+    let mut cascade = OptimizerCascade::new(c, owner, d.independent, d.dependent);
     if let Some(cascade) = &mut cascade {
         return cascade.run(c, owner, d);
     }

@@ -857,16 +857,6 @@ impl Stuck {
     }
 }
 
-/// The nodes of `d`'s tree that went undefined for good (see [`Stuck`]).
-pub(crate) fn stuck_nodes(c: &Construction, d: ExprDef) -> Vec<u32> {
-    entry(c, d).stuck.nodes().clone()
-}
-
-/// Puts back what [`stuck_nodes`] returned for `d`.
-pub(crate) fn restore_stuck_nodes(c: &Construction, d: ExprDef, nodes: Vec<u32>) {
-    *entry(c, d).stuck.nodes() = nodes;
-}
-
 impl Clone for Stuck {
     fn clone(&self) -> Self {
         Self(std::sync::Mutex::new(self.nodes().clone()))

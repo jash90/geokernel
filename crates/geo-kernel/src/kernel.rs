@@ -5289,8 +5289,10 @@ impl Construction {
 
     fn closest_point(&mut self, i: usize, path: Id, point: Id, track_replay: bool) -> Value {
         let Some(circle) = algo::point::circle_geometry(self, path) else {
-            if matches!(self.value(path), Value::Conic { .. })
-                && self.closest_circle_parameters.remove(&i).is_some()
+            if matches!(
+                self.value(path),
+                Value::Conic { ty } if !matches!(ty, ConicType::SinglePoint | ConicType::Empty)
+            ) && self.closest_circle_parameters.remove(&i).is_some()
                 && track_replay
             {
                 self.last_update_requires_replay = true;
