@@ -2972,3 +2972,13 @@ mismatches = ["0:r"]
 id = "cas-literal-001"
 reason = "Without the giac feature the kernel's own solver reads Solve(x+y=-0.75, y) with the free x in the place of the solving variable y and answers the line y = -0.375; the reference's CAS answers y = -x - 3/4 (recorded with Giac). The case was added to check typed decimals between -1 and 0 in the Giac input, and agrees with the feature (known-gaps-giac.toml)."
 mismatches = ["0:r4"]
+
+[[gap]]
+id = "keptvalues-pointgrowth-003"
+reason = "The journal owns the group by its first output label. Deleting P invalidates A's recorded slot, although GeoGebra keeps A at (3, 4). Keeping A live requires a growth-group owner independent of P."
+mismatches = ["2:A"]
+
+[[gap]]
+id = "keptvalues-pointpath-001"
+reason = "The list literal rejects the inline CircumcircleArc. A list of paths also needs stable element identities and a composite path parameter, which the coordinate-row Point machinery does not store."
+mismatches = ["0:script line 6"]

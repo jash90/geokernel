@@ -125,4 +125,79 @@ cases.case(
      "nf = NDerivative(f)", "j = Integral(f, 0, 3)", "q = NIntegral(f)"],
     [setn("a", 3)],
 )
+cases.case(
+    "cartesian",
+    ["P = (1/0, 0)", "O = (0, 0)", "k = Circle(P, 3)", "dp = IsDefined(P)",
+     "dk = IsDefined(k)", "nz = Length(RemoveUndefined({k}))", "r = Radius(k)",
+     "c = Circle(P, O)", "s = Radius(c)"],
+    [],
+)
+cases.case(
+    "redefinition",
+    ["m = 1", "n = 1", "t = Take({1, 2}, m)", "a = Length(t + 1)", "O = (0, 0)",
+     "k = Circle(O, If(m < 3, 2, -1))", "r = Radius(k)"],
+    [setn("m", 3), {"action": "redefine", "line": "m = 4*n"}],
+)
+cases.case(
+    "conditional",
+    ["m = 0", "u = If(m == 1, If(m == 0, {1, 2}, m == 2, {4}) + 1, {3})"],
+    [setn("m", 1)],
+)
+cases.case("conditional", ["u = If(false, Take(Sequence(600000), 1) + 1, {0})"], [])
+cases.case(
+    "transpose",
+    ["m = 1", "rows = {Take({1, 2}, m), {3, 4}}", "u = Transpose(rows)"],
+    [setn("m", 3)],
+)
+cases.case(
+    "pointgrowth",
+    ["m = 1", "l = If(m == 1, {{1, 2}}, {{1, 2}, {3, 4}})", "P = Point(l)"],
+    [setn("m", 2), {"action": "delete", "label": "P"}],
+)
+cases.cases[-1]["track_point_list_growth"] = True
+cases.case(
+    "selfintersect",
+    self_intersection[:-1] + ["Q = Intersect(k, k, 2)", "P = Intersect(k, k, 1)"],
+    [mv("C", -5, 2)],
+)
+cases.case(
+    "spline",
+    ["m = 1", "A = (0, 0)", "B = (1, 1)", "C = (2, 0)",
+     "q = Spline(If(m > 0, {A, B, C}), 3)", "v = 1", "g: y = v", "P = Intersect(g, q)"],
+    [setn("m", 0), setn("v", 0.5)],
+)
+cases.cases[-1]["track_boundary_growth"] = True
+cases.case("cartesian", ["s = Length(RemoveUndefined(Sequence((1/i, 2), i, 0, 2)))"], [])
+cases.case(
+    "cartesian",
+    ["P = (1/0, 0)", "Q = If(true, P, (0, 0))", "R = Element({P}, 1)", "a = x(Q)", "b = x(R)"],
+    [],
+)
+cases.case(
+    "defined",
+    ["g: y = 0", "h: y = 1", "S = Intersect(g, h)", "f(x) = x(S)", "j(x) = f(x)",
+     "k(x) = j(x) + 0", "d = IsDefined(f)", "e = IsDefined(j)", "b = IsDefined(k)"],
+    [],
+)
+cases.case("defined", ["u = (1/0, 1/0)", "f(x) = x + Length(u)", "d = IsDefined(f)"], [])
+cases.case("root", ["u = nroot(-1/0, 10000000001)"], [])
+cases.case("root", ["f(x) = 1/nroot(x, 3)", "P = (-8, -0.5)", "t = Tangent(P, f)", "m = Slope(t)"], [])
+cases.case("root", ["f(x) = nroot(x, 3)", "df = Derivative(f)", "q = Integral(f)"], [])
+cases.case(
+    "transpose",
+    ["m = 1", "rows = If(m == 1, {{1, 2}, {3, 4}}, m == 2, {{1}, {3, 4}}, {})",
+     "u = Transpose(rows)"],
+    [setn("m", 2), setn("m", 3), {"action": "add", "line": "Z = (7, 7)"}, {"action": "undo"}],
+)
+cases.case("root", ["df = Derivative(nroot(x, 3))", "q = Integral(nroot(x, 3))"], [])
+cases.case("conditional", ["m = 0", "u = If(m > 0, Take(Sequence(600000), 1) + 1, {0})"], [])
 cases.write()
+
+reference = Cases("keptvalues")
+reference.case(
+    "pointpath",
+    ["n = 1", "U = (-2, 0)", "A = If(n > 0, U)", "B = (0, 2)", "C = (2, 0)",
+     "paths = {CircumcircleArc(A, B, C)}", "P = Point(paths)"],
+    [setn("n", 0), setn("n", 1)],
+)
+reference.write("reference")

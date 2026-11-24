@@ -280,7 +280,7 @@ impl Walker<'_> {
                     } else {
                         self.gradient(a, depth)? / v
                     }
-                } else if let Node::Bin(Bin::Pow | Bin::RootPow, rl, rr) = self.node(b) {
+                } else if let Node::Bin(Bin::Pow, rl, rr) = self.node(b) {
                     // `(f / g^n)'` with a constant exponent `n`
                     if !self.reads_variable(rr)? {
                         let (r, n, u) = (self.value(rl), self.value(rr), self.value(a));
@@ -294,7 +294,17 @@ impl Walker<'_> {
                     self.quotient(a, b, depth)?
                 }
             }
-            Bin::Pow | Bin::RootPow => self.power(a, b, depth)?,
+            Bin::RootPow => {
+                if let Node::Bin(Bin::Div, _, degree) = self.node(b) {
+                    if !self.reads_variable(degree)? {
+                        let (base, n) = (self.value(a), self.value(degree));
+                        let root = math::nth_root(base, n);
+                        return Some((self.gradient(a, depth)? * root) / (base * n));
+                    }
+                }
+                self.power(a, b, depth)?
+            }
+            Bin::Pow => self.power(a, b, depth)?,
             Bin::Round2 | Bin::FoldCount => 0.0,
             Bin::Atan2 => {
                 let (u, v) = (self.value(a), self.value(b));

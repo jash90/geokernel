@@ -28,6 +28,8 @@ pub(crate) struct Slot {
 #[derive(Debug, PartialEq)]
 enum SlotExtra {
     Text(String),
+    ListShape(Arc<[Kind]>),
+    InfiniteCircle,
     Polynomial(crate::cas::Poly),
     Symbolic(String),
     /// A function the Giac backend read from its output (the `giac` feature).
@@ -55,6 +57,20 @@ impl Slot {
             object: NO_OBJECT,
             equation_revision: 0,
             extra: None,
+        }
+    }
+
+    pub(super) fn undefined_list(shape: Arc<[Kind]>) -> Slot {
+        Slot {
+            extra: Some(Arc::new(SlotExtra::ListShape(shape))),
+            ..Self::undefined(Kind::List)
+        }
+    }
+
+    pub(super) fn list_shape(&self) -> Option<&[Kind]> {
+        match self.extra.as_deref()? {
+            SlotExtra::ListShape(shape) => Some(shape),
+            _ => None,
         }
     }
 
@@ -215,8 +231,13 @@ impl Slot {
             start: 0,
             object: id,
             equation_revision,
-            extra: None,
+            extra: (kind == Kind::Circle && c.has_infinite_circle_center(id))
+                .then(|| Arc::new(SlotExtra::InfiniteCircle)),
         }
+    }
+
+    pub(super) fn is_defined(&self) -> bool {
+        self.value.is_defined() || matches!(self.extra.as_deref(), Some(SlotExtra::InfiniteCircle))
     }
 
     /// The run of a nested list, if this is one.

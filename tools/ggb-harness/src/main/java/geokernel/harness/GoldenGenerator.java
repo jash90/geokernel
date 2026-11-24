@@ -195,10 +195,21 @@ public final class GoldenGenerator {
                 }
                 case "add": {
                     String line = (String) step.get("line");
+                    boolean undoNext = i + 1 < steps.size()
+                            && "undo".equals(((Map<?, ?>) steps.get(i + 1)).get("action"));
+                    if (undoNext) {
+                        session.startUndo();
+                    }
                     session.run(line);
+                    if (undoNext) {
+                        session.kernel().storeUndoInfo();
+                    }
                     outStep.put("line", line);
                     break;
                 }
+                case "undo":
+                    session.undo();
+                    break;
                 case "redefine": {
                     String line = (String) step.get("line");
                     session.redefine(line);

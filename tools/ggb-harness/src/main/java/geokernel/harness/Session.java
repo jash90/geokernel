@@ -240,6 +240,21 @@ final class Session {
         growingPoints.putAll(liveGroups);
     }
 
+    void startUndo() {
+        app.setUndoActive(true);
+        kernel.storeUndoInfo();
+    }
+
+    void undo() {
+        if (!kernel.undoPossible()) {
+            throw new IllegalStateException("no construction snapshot to undo");
+        }
+        kernel.undo();
+        // Snapshot undo reloads the objects, invalidating the saved references.
+        objects.replaceAll((label, previous) -> kernel.lookupLabel(label));
+        objects.values().removeIf(java.util.Objects::isNull);
+    }
+
     void delete(String label) {
         lookup(label).remove();
         objects.entrySet().removeIf(entry -> kernel.lookupLabel(entry.getKey()) == null);

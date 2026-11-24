@@ -49,7 +49,7 @@ pub fn replay(case: &Case) -> CaseOutcome {
     if case
         .steps
         .iter()
-        .any(|step| matches!(step, Step::Delete { .. }))
+        .any(|step| matches!(step, Step::Delete { .. } | Step::Undo))
     {
         return replay_document(case);
     }
@@ -141,6 +141,10 @@ fn replay_document(case: &Case) -> CaseOutcome {
         let id = |label: &str| document.construction().id(label);
         let result = match step {
             Step::Initial => Ok(()),
+            Step::Undo => document
+                .undo()
+                .then_some(())
+                .ok_or_else(|| "nothing to undo".into()),
             Step::Add { line } | Step::Redefine { line } => document.run_line(line),
             Step::Reject { line, error } => match document.run_line(line) {
                 Ok(()) => Err("the document accepted the line".into()),
@@ -295,7 +299,7 @@ fn compare_snapshot(
 fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, String> {
     match step {
         Step::Initial => Ok(None),
-        Step::Delete { .. } => unreachable!("deletions replay on the document"),
+        Step::Delete { .. } | Step::Undo => unreachable!("document-only step"),
         Step::Move { label, x, y } => {
             let id = c.id(label).ok_or(format!("unknown object `{label}`"))?;
             c.move_point(id, *x, *y)

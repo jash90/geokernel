@@ -665,6 +665,7 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                     // The loaded self-intersection differs from its live
                     // snapshot; its file-load behaviour is tested separately.
                     "saved-keptvalues-002",
+                    "saved-keptvalues-003",
                     // Its numbers are rounded in the file; checked above.
                     "saved-strokes-001",
                     // `tests/export.rs` compares the visibility and the
@@ -851,12 +852,22 @@ fn an_undefined_regular_polygon_reloads_its_saved_vertices() {
 
 #[test]
 fn a_saved_self_intersection_follows_the_reference_load_order() {
-    let (_, imported) = fixture("saved-keptvalues-002");
-    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
-    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
-    let c = script::load(&imported.script.join("\n")).unwrap();
-    let value = |label| c.value(c.id(label).unwrap());
-    assert_eq!(value("P"), Value::Undefined);
-    assert!(value("X").is_defined());
-    assert_eq!(value("Q"), value("X"));
+    for name in ["saved-keptvalues-002", "saved-keptvalues-003"] {
+        let (_, imported) = fixture(name);
+        assert!(
+            imported.skipped.is_empty(),
+            "{name}: {:?}",
+            imported.skipped
+        );
+        assert!(
+            imported.mismatched.is_empty(),
+            "{name}: {:?}",
+            imported.mismatched
+        );
+        let c = script::load(&imported.script.join("\n")).unwrap();
+        let value = |label| c.value(c.id(label).unwrap());
+        assert_eq!(value("P"), Value::Undefined, "{name}");
+        assert!(value("X").is_defined(), "{name}");
+        assert_eq!(value("Q"), value("X"), "{name}");
+    }
 }

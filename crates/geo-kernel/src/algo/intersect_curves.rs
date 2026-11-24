@@ -221,9 +221,11 @@ fn retained_spline(c: &Construction, curve: Id) -> Option<Cartesian<'_>> {
     let Def::Analysis(AnalysisDef::Spline(input)) = c.def(curve) else {
         return None;
     };
-    // AlgoSpline leaves its functions in place when coincident points
-    // make the solve fail. AlgoIntersectLineCurve reads those functions.
-    let points = c.elements(input.points)?;
+    // AlgoSpline leaves its functions in place when the input list becomes
+    // undefined or coincident points make the solve fail.
+    let Some(points) = c.elements(input.points) else {
+        return Cartesian::retained_spline(c, curve, input);
+    };
     let work = IntersectionWork::new();
     let mut previous = None;
     for i in 0..points.len() {

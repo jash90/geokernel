@@ -17,6 +17,110 @@
           "u": { "type": "number", "defined": false }
         }
       ]
+    },
+    {
+      "id": "keptvalues-root-002",
+      "group": "keptvalues",
+      "script": [
+        "u = nroot(-1/0, 10000000001)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-root-003",
+      "group": "keptvalues",
+      "script": [
+        "f(x) = 1/nroot(x, 3)",
+        "P = (-8, -0.5)",
+        "t = Tangent(P, f)",
+        "m = Slope(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.5],
+              [-4.0, -0.6299605249474366],
+              [-2.0, -0.7937005259840997],
+              [-1.0, -1.0],
+              [-0.5, -1.259921049894873],
+              [0.0, { "infinity": 1 }],
+              [0.5, 1.259921049894873],
+              [1.0, 1.0],
+              [2.0, 0.7937005259840997],
+              [4.0, 0.6299605249474366],
+              [8.0, 0.5]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -8.0, "y": -0.5 },
+          "t": { "type": "line", "defined": true, "a": 0.020833333333333332, "b": 1.0, "c": 0.6666666666666666 },
+          "m": { "type": "number", "defined": true, "value": -0.020833333333333332 }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-root-004",
+      "group": "keptvalues",
+      "script": [
+        "f(x) = nroot(x, 3)",
+        "df = Derivative(f)",
+        "q = Integral(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -2.0],
+              [-4.0, -1.5874010519681994],
+              [-2.0, -1.2599210498948732],
+              [-1.0, -1.0],
+              [-0.5, -0.7937005259840998],
+              [0.0, 0.0],
+              [0.5, 0.7937005259840998],
+              [1.0, 1.0],
+              [2.0, 1.2599210498948732],
+              [4.0, 1.5874010519681994],
+              [8.0, 2.0]
+            ]
+          },
+          "df": { "type": "function", "defined": false },
+          "q": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-root-005",
+      "group": "keptvalues",
+      "script": [
+        "df = Derivative(nroot(x, 3))",
+        "q = Integral(nroot(x, 3))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "df": { "type": "function", "defined": false },
+          "q": { "type": "function", "defined": false }
+        }
+      ]
     }
   ]
 }

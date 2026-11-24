@@ -32,7 +32,7 @@ Slope,,geometry,P1,partial,2,1,"Slope(line, segment, ray or function)"
 Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
 InteriorAngles,,geometry,P1,done,1,1,InteriorAngles(polygon)
 Direction,,geometry,P1,partial,2,1,"Direction(line, segment or ray)"
-Point,,geometry,P1,partial,4,2,"Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter"
+Point,,geometry,P1,partial,4,1,"Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter"
 Midpoint,,geometry,P0,partial,4,3,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,partial,2,1,"LineBisector(point, point); LineBisector(segment)"
 Intersect,,geometry,P0,partial,79,71,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
@@ -47,7 +47,7 @@ Arc,,geometry,P1,done,2,2,Conic with point endpoints or numeric parameters
 Sector,,geometry,P1,done,2,2,Conic with point endpoints or numeric parameters
 CircleSector,,geometry,P1,done,1,1,"CircularSector(centre, point, point)"
 CircumcircleSector,,geometry,P1,done,1,1,"CircumcircularSector(point, point, point)"
-CircumcircleArc,,geometry,P1,done,1,1,"CircumcircularArc(point, point, point)"
+CircumcircleArc,,geometry,P1,todo,1,0,"CircumcircularArc(point, point, point)"
 Polygon,,geometry,P1,partial,3,1,"Live list of points, separate points, or two points and a regular polygon vertex count"
 RigidPolygon,,geometry,P1,done,3,3,Copy of a polygon with optional offsets or rigid polygon from three or more points
 Area,,geometry,P1,done,3,3,"Area(conic, arc, sector or polygon); Area of three or more points"
@@ -455,7 +455,7 @@ RandomBetween,Random,probability,,out_of_scope,,,
 TaylorPolynomial,TaylorSeries,function,,out_of_scope,,,
 AngleBisector,AngularBisector,geometry,P1,done,,,
 CircumcircularSector,CircumcircleSector,geometry,P1,done,,,
-CircumcircularArc,CircumcircleArc,geometry,P1,done,,,
+CircumcircularArc,CircumcircleArc,geometry,P1,todo,,,
 CircularSector,CircleSector,geometry,P1,done,,,
 CircularArc,CircleArc,geometry,P1,todo,,,
 Polyline,PolyLine,geometry,P1,partial,,,

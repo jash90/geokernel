@@ -50,6 +50,58 @@
           "P_{2}": { "type": "point", "defined": true, "x": 1.652703644666138, "y": 0.5000000000000031 }
         }
       ]
+    },
+    {
+      "id": "keptvalues-spline-002",
+      "group": "keptvalues",
+      "script": [
+        "m = 1",
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "C = (2, 0)",
+        "q = Spline(If(m > 0, {A, B, C}), 3)",
+        "v = 1",
+        "g: y = v",
+        "P = Intersect(g, q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": 0.0 },
+        { "action": "set_number", "label": "v", "value": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "q": { "type": "curve", "defined": true, "start": 0.0, "end": 1.0 },
+          "v": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.9999999999999998, "y": 1.0000000000000004 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "q": { "type": "curve", "defined": false },
+          "v": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.9999999999999998, "y": 1.0000000000000004 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "q": { "type": "curve", "defined": false },
+          "v": { "type": "number", "defined": true, "value": 0.5 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.5 },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.3472963553338606, "y": 0.49999999999999956 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.652703644666138, "y": 0.5000000000000031 }
+        }
+      ]
     }
   ]
 }

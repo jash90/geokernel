@@ -142,8 +142,8 @@ thread_local! {
 
 /// The evaluation work done on this thread so far, in units of about 3.5
 /// ns of a release build: a node of an expression tree visited in an
-/// evaluation with lists (functions sampled or expanded included, only the
-/// branch of an `If` that is taken), a loop step of the list code (an
+/// evaluation with lists (including sampled or expanded functions and the
+/// list helpers of inactive `If` branches), a loop step of the list code (an
 /// element built, copied or read, a step of counting a range), and every
 /// exact decimal operation by its measured cost. Only the difference
 /// between two readings means anything; tests use it to check that an
@@ -180,7 +180,10 @@ pub(super) struct Lists {
     objects: RefCell<([Id; MAX_OBJECTS], usize)>,
     built: Cell<u64>,
     /// The reading of [`work_done`] past which the evaluation is over.
-    end: u64,
+    end: Cell<u64>,
+    helper_remaining: Cell<u64>,
+    helper_built: Cell<u64>,
+    updating_helpers: Cell<bool>,
 }
 
 impl Lists {
@@ -190,8 +193,36 @@ impl Lists {
             arena: RefCell::new(arena),
             objects: RefCell::new(([Id(0); MAX_OBJECTS], 0)),
             built: Cell::new(0),
-            end: work_done().saturating_add(limit()),
+            end: Cell::new(work_done().saturating_add(limit())),
+            helper_remaining: Cell::new(limit()),
+            helper_built: Cell::new(0),
+            updating_helpers: Cell::new(false),
         }
+    }
+
+    /// Independently updated AlgoIf arguments share a helper budget across
+    /// the whole expression, including nested If commands.
+    pub(super) fn update_helpers(&self, update: impl FnOnce()) {
+        if self.updating_helpers.get() {
+            update();
+            return;
+        }
+        if self.helper_remaining.get() == 0 || self.helper_built.get() > MAX_ELEMENTS {
+            return;
+        }
+        self.updating_helpers.set(true);
+        let start = work_done();
+        let end = self
+            .end
+            .replace(start.saturating_add(self.helper_remaining.get()));
+        let built = self.built.replace(self.helper_built.get());
+        update();
+        let spent = work_done().saturating_sub(start);
+        self.helper_remaining
+            .set(self.helper_remaining.get().saturating_sub(spent));
+        self.helper_built.set(self.built.replace(built));
+        self.end.set(end.saturating_add(spent));
+        self.updating_helpers.set(false);
     }
 
     pub(super) fn into_arena(self) -> Vec<Slot> {
@@ -362,7 +393,7 @@ impl Lists {
     fn step(&self, n: u64) -> bool {
         WORK.with(|w| {
             let done = w.get();
-            let over = done > self.end || self.built.get() > MAX_ELEMENTS;
+            let over = done > self.end.get() || self.built.get() > MAX_ELEMENTS;
             if !over {
                 w.set(done.wrapping_add(n));
             }
@@ -373,7 +404,7 @@ impl Lists {
     /// Charges a loop of the list code of `n` units before it runs; false,
     /// and the evaluation is over, when it would go past the bound.
     pub(super) fn charge(&self, n: u64) -> bool {
-        if self.over() || work_done().saturating_add(n) > self.end {
+        if self.over() || work_done().saturating_add(n) > self.end.get() {
             self.give_up();
             return false;
         }
@@ -384,7 +415,7 @@ impl Lists {
     /// Whether this evaluation went past [`MAX_ELEMENTS`] or [`MAX_EVALUATION_WORK`]:
     /// its result is undefined, so nothing more is built or evaluated.
     pub(super) fn over(&self) -> bool {
-        self.built.get() > MAX_ELEMENTS || work_done() > self.end
+        self.built.get() > MAX_ELEMENTS || work_done() > self.end.get()
     }
 
     /// Puts this evaluation past its bound.
@@ -1233,13 +1264,9 @@ impl<const M: bool> Ctx<'_, M> {
         match (l.val, r.val) {
             (Val::N(base), Val::N(e)) => {
                 let (special, dec) = l.left();
-                if op == Bin::RootPow && base == f64::NEG_INFINITY {
-                    // Operation.NROOT delegates the even root to MyDouble.pow.
+                if op == Bin::RootPow {
                     if let Node::Bin(Bin::Div, _, degree) = self.node(b) {
-                        let n = self.fast(degree);
-                        if n != 0.0 && math::is_integer(n) && math::java_round(n) % 2 == 0 {
-                            return Ex::kept(special, math::my_pow(base, e));
-                        }
+                        return Ex::kept(special, math::nth_root(base, self.fast(degree)));
                     }
                 }
                 if math::is_euler(base) {
@@ -1555,7 +1582,10 @@ impl<const M: bool> Ctx<'_, M> {
                 Some((start, len)) => Slot::list(start, len),
                 None => match self.node(i) {
                     Node::Obj(id) => Slot::object(self.c, id),
-                    _ => Slot::undefined(Kind::List),
+                    _ => self
+                        .e
+                        .kept_list_shape(i)
+                        .map_or_else(|| Slot::undefined(Kind::List), Slot::undefined_list),
                 },
             };
         }
@@ -1632,7 +1662,7 @@ impl<const M: bool> Ctx<'_, M> {
 
     // AlgebraProcessor creates the entries of a literal list individually.
     // A point expression that reads objects is an AlgoDependentPoint.
-    fn dependent_list_item(&self, i: u32) -> bool {
+    pub(super) fn dependent_list_item(&self, i: u32) -> bool {
         self.stop(1)
             || match self.node(i) {
                 Node::Obj(_)
@@ -1685,6 +1715,9 @@ impl<const M: bool> Ctx<'_, M> {
     pub(super) fn transpose_row(&self, row: Slot) -> Option<(u32, u32)> {
         if let Some(run) = row.run() {
             return Some(run);
+        }
+        if let Some(shape) = row.list_shape() {
+            return self.undefined_list_elements(shape);
         }
         let shape = super::kept_list_shape(self.c, row.object_id()?)?;
         self.undefined_list_elements(&shape)
@@ -1885,7 +1918,7 @@ pub(super) fn number_of(slot: Slot) -> Option<f64> {
 pub(super) fn count(lists: &Lists, values: impl Fn(&mut dyn FnMut(f64) -> bool)) -> Option<u32> {
     let room = MAX_ELEMENTS
         .saturating_sub(lists.built.get())
-        .min(lists.end.saturating_sub(work_done()));
+        .min(lists.end.get().saturating_sub(work_done()));
     let mut n: u64 = 0;
     values(&mut |_| {
         n += 1;

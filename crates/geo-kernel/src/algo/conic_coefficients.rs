@@ -120,7 +120,7 @@ fn add_inline_list(
     c.exprs.entries.push(entry);
     let expression = ExprDef {
         kind: Kind::List,
-        independent: false,
+        allows_infinite_point: false,
         index,
         angle_style: AngleStyle::Unbounded,
     };

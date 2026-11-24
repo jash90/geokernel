@@ -60,6 +60,104 @@
           "d": { "type": "boolean", "defined": true, "value": false }
         }
       ]
+    },
+    {
+      "id": "keptvalues-defined-003",
+      "group": "keptvalues",
+      "script": [
+        "g: y = 0",
+        "h: y = 1",
+        "S = Intersect(g, h)",
+        "f(x) = x(S)",
+        "j(x) = f(x)",
+        "k(x) = j(x) + 0",
+        "d = IsDefined(f)",
+        "e = IsDefined(j)",
+        "b = IsDefined(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "S": { "type": "point", "defined": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "j": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "k": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "d": { "type": "boolean", "defined": true, "value": false },
+          "e": { "type": "boolean", "defined": true, "value": false },
+          "b": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-defined-004",
+      "group": "keptvalues",
+      "script": [
+        "u = (1/0, 1/0)",
+        "f(x) = x + Length(u)",
+        "d = IsDefined(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": false },
+          "f": { "type": "function", "defined": false },
+          "d": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
     }
   ]
 }

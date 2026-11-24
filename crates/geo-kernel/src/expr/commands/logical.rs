@@ -321,20 +321,30 @@ impl<const M: bool> Ctx<'_, M> {
         let mark = lists.len();
         let chosen = self.if_alternative(i);
         lists.truncate(mark);
-        if matches!(self.node(i), Node::If(IfMode::Algo, ..)) {
-            self.update_unchosen_takes(i, chosen);
+        let node = self.node(i);
+        if let Node::If(IfMode::Algo, test, branch, _) = node {
+            // A literal false can never select its branch. If the If needs
+            // that branch as its initial template, list() reads it there.
+            let inactive = matches!(self.node(test), Node::Bool(false)).then_some(branch);
+            lists.update_helpers(|| {
+                for child in children(&node).filter(|&child| Some(child) != inactive) {
+                    self.update_unchosen_helpers(child, chosen);
+                }
+            });
         }
         self.list(chosen?)
     }
 
-    // Inline Take commands are independently updated inputs of AlgoIf.
+    // Inline list helpers are independently updated inputs of AlgoIf.
     // Traverse the unchosen alternatives without evaluating ordinary operations.
-    fn update_unchosen_takes(&self, node: u32, chosen: Option<u32>) {
+    fn update_unchosen_helpers(&self, node: u32, chosen: Option<u32>) {
         if Some(node) == chosen || self.stop(1) {
             return;
         }
         match self.node(node) {
-            Node::Call(crate::expr::CallOp::Take, ..) => {
+            Node::Call(crate::expr::CallOp::Take, ..) | Node::If(IfMode::Algo, ..)
+                if self.is_list(node) =>
+            {
                 let lists = self.lists.expect("list evaluation");
                 let mark = lists.len();
                 self.list(node);
@@ -344,7 +354,7 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Seq(..) | Node::Filter { .. } => {}
             node => {
                 for child in children(&node) {
-                    self.update_unchosen_takes(child, chosen);
+                    self.update_unchosen_helpers(child, chosen);
                 }
             }
         }

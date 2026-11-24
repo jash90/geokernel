@@ -200,6 +200,14 @@ fn derivative(ctx: &Ctx<'_, true>, i: u32, depth: u32) -> Option<f64> {
             match op {
                 Bin::Add => da + db,
                 Bin::Sub => da - db,
+                Bin::RootPow if !has_variable(ctx, b)? => {
+                    let root = ctx.full_number(i);
+                    if let Node::Bin(Bin::Div, _, degree) = ctx.node(b) {
+                        da * root / (ctx.full_number(a) * ctx.full_number(degree))
+                    } else {
+                        da * root * ctx.full_number(b) / ctx.full_number(a)
+                    }
+                }
                 _ => {
                     let (a, b) = (ctx.full_number(a), ctx.full_number(b));
                     match op {

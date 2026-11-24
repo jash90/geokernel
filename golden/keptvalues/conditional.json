@@ -92,6 +92,85 @@
           }
         }
       ]
+    },
+    {
+      "id": "keptvalues-conditional-003",
+      "group": "keptvalues",
+      "script": [
+        "m = 0",
+        "u = If(m == 1, If(m == 0, {1, 2}, m == 2, {4}) + 1, {3})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "u": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "u": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-conditional-004",
+      "group": "keptvalues",
+      "script": [
+        "u = If(false, Take(Sequence(600000), 1) + 1, {0})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "u": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-conditional-005",
+      "group": "keptvalues",
+      "script": [
+        "m = 0",
+        "u = If(m > 0, Take(Sequence(600000), 1) + 1, {0})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "u": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

@@ -73,7 +73,8 @@ pub(crate) fn keeps_record(c: &Construction, def: Def) -> Option<bool> {
 
 /// The setter can write a circle record even when its geometry cannot
 /// be displayed: a numeric radius may be undefined, or the Cartesian
-/// centre may have an infinite coordinate with weight 1.
+/// centre may have an infinite coordinate with weight 1. A circle through
+/// a finite point then has an infinite half-axis.
 pub(crate) fn invalid_record(c: &Construction, def: Def) -> Option<(f64, f64, f64)> {
     let (center, r) = match def {
         Def::CircleRadius { center, radius } => (
@@ -83,6 +84,11 @@ pub(crate) fn invalid_record(c: &Construction, def: Def) -> Option<(f64, f64, f6
                 .unwrap_or(f64::NAN),
         ),
         Def::Conic(ConicDef::LiteralRadius { center, radius }) => (center, radius),
+        Def::CircleThrough { center, through } => {
+            let (x, y) = c.cartesian_point(center)?;
+            let (px, py) = c.point(through)?;
+            return (x.is_infinite() || y.is_infinite()).then(|| (x, y, length(px - x, py - y)));
+        }
         _ => return None,
     };
     let (x, y) = c.cartesian_point(center)?;

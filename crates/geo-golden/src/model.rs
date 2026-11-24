@@ -45,6 +45,7 @@ pub enum Step {
     Delete {
         label: String,
     },
+    Undo,
     SetSliderBounds {
         label: String,
         min: f64,
@@ -114,12 +115,19 @@ impl<'de> Deserialize<'de> for Step {
             ));
         }
         match raw.action.as_str() {
-            "initial" => {
+            "initial" | "undo" => {
                 if raw.label.is_some() || raw.x.is_some() || raw.y.is_some() || raw.value.is_some()
                 {
-                    return Err(D::Error::custom("step `initial` takes no fields"));
+                    return Err(D::Error::custom(format!(
+                        "step `{}` takes no fields",
+                        raw.action
+                    )));
                 }
-                Ok(Step::Initial)
+                Ok(if raw.action == "undo" {
+                    Step::Undo
+                } else {
+                    Step::Initial
+                })
             }
             "move" => {
                 if raw.value.is_some() {
@@ -1355,6 +1363,15 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 }
                 let added = keys.difference(previous).cloned().collect();
                 check_keys(&added, &labels, |_| false).map_err(|e| format!("snapshot {i}: {e}"))?;
+                previous_keys = Some(keys);
+            }
+            Some(_) if case.steps[i] == Step::Undo => {
+                if i < 2
+                    || !matches!(case.steps[i - 1], Step::Add { .. })
+                    || !case.snapshots[i - 2].keys().eq(snap.keys())
+                {
+                    return Err(format!("snapshot {i} does not undo the preceding addition"));
+                }
                 previous_keys = Some(keys);
             }
             Some(previous) if matches!(&case.steps[i], Step::Delete { .. }) => {

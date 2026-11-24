@@ -2406,6 +2406,11 @@ impl Construction {
         // in AlgebraProcessor. A change of definition rebuilds from XML.
         let rebuild_records = !(old.is_free() && def.is_free() && old.kind() == def.kind());
         if rebuild_records {
+            for (i, &def) in self.defs.iter().enumerate() {
+                if matches!(def, Def::Expr(d) if expr::reset_list_records(self, d)) {
+                    dirty.insert(self.evaluation_rank(Id(i)));
+                }
+            }
             for &i in self
                 .circle_records
                 .iter()
@@ -4169,6 +4174,13 @@ impl Construction {
         }
     }
 
+    /// A circle whose Cartesian centre is infinite still has a defined
+    /// reference value, even though the kernel cannot draw its geometry.
+    pub(crate) fn has_infinite_circle_center(&self, id: Id) -> bool {
+        matches!(algo::circle::invalid_record(self, self.def(id)), Some((x, y, r))
+            if (x.is_infinite() || y.is_infinite()) && !r.is_nan())
+    }
+
     /// Keeps the record of a circle command for [`Self::circle_record`],
     /// before `new` replaces the value of object `i`.
     fn keep_circle_record(&mut self, i: usize, def: Def, new: Value, rebuilt: bool) -> bool {
@@ -4225,7 +4237,8 @@ impl Construction {
             if let Some(fresh) = fresh {
                 if record.0.to_bits() == fresh.0.to_bits()
                     && record.1.to_bits() == fresh.1.to_bits()
-                    && record.2.is_nan()
+                    && (record.2.to_bits() == fresh.2.to_bits()
+                        || (record.2.is_nan() && fresh.2.is_nan()))
                 {
                     return true;
                 }
@@ -4254,6 +4267,25 @@ impl Construction {
         }
         self.propagate_dirty_with(dirty, 0, Propagation::Reload);
         true
+    }
+
+    /// Reloading an undo snapshot creates Transpose outputs with fresh flags.
+    pub fn reset_transpose_flags(&mut self) -> bool {
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.len());
+        let mut changed = false;
+        for (i, &def) in self.defs.iter().enumerate() {
+            if matches!(def, Def::Expr(d) if expr::reset_transpose_flags(self, d)) {
+                dirty.insert(self.evaluation_rank(Id(i)));
+                changed = true;
+            }
+        }
+        if changed {
+            self.propagate_dirty(dirty, 0);
+        } else {
+            self.dirty = dirty;
+        }
+        changed
     }
 
     fn forget_circle_record(&mut self, i: usize) -> bool {

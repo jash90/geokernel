@@ -1,0 +1,5 @@
+{
+  "cases": [
+    {"id": "keptvalues-pointpath-001", "group": "keptvalues", "script": ["n = 1", "U = (-2, 0)", "A = If(n > 0, U)", "B = (0, 2)", "C = (2, 0)", "paths = {CircumcircleArc(A, B, C)}", "P = Point(paths)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "n", "value": 0.0}, {"action": "set_number", "label": "n", "value": 1.0}]}
+  ]
+}

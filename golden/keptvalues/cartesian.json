@@ -218,6 +218,75 @@
           "d": { "type": "number", "defined": true, "value": 1.118033988749895 }
         }
       ]
+    },
+    {
+      "id": "keptvalues-cartesian-007",
+      "group": "keptvalues",
+      "script": [
+        "P = (1/0, 0)",
+        "O = (0, 0)",
+        "k = Circle(P, 3)",
+        "dp = IsDefined(P)",
+        "dk = IsDefined(k)",
+        "nz = Length(RemoveUndefined({k}))",
+        "r = Radius(k)",
+        "c = Circle(P, O)",
+        "s = Radius(c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": false },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": false },
+          "dp": { "type": "boolean", "defined": true, "value": true },
+          "dk": { "type": "boolean", "defined": true, "value": true },
+          "nz": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "circle", "defined": false },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-cartesian-008",
+      "group": "keptvalues",
+      "script": [
+        "s = Length(RemoveUndefined(Sequence((1/i, 2), i, 0, 2)))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-cartesian-009",
+      "group": "keptvalues",
+      "script": [
+        "P = (1/0, 0)",
+        "Q = If(true, P, (0, 0))",
+        "R = Element({P}, 1)",
+        "a = x(Q)",
+        "b = x(R)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": false },
+          "R": { "type": "point", "defined": false },
+          "a": { "type": "number", "defined": true, "infinity": 1 },
+          "b": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
     }
   ]
 }

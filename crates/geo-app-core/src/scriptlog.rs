@@ -631,6 +631,10 @@ impl Log {
             self.ops
                 .push(Op::SavedProperty(Box::new(Property::ResetArcRecords)));
         }
+        if c.reset_transpose_flags() {
+            self.ops
+                .push(Op::SavedProperty(Box::new(Property::ResetTransposeFlags)));
+        }
     }
 
     fn push_set(&mut self, label: &str, to: Setting, ordered: bool) {

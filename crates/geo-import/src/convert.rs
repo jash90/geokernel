@@ -73,6 +73,15 @@ pub(crate) fn convert_with_assets(
                 inputs,
                 outputs,
             } => {
+                if let ("Intersect", [a, b, selector], [label]) =
+                    (name.as_str(), inputs.as_slice(), outputs.as_slice())
+                {
+                    if a == b && selector == "1" && !label.is_empty() {
+                        c.self_circle_first
+                            .entry(a.clone())
+                            .or_insert_with(|| label.clone());
+                    }
+                }
                 if name == "Polygon" && inputs.len() >= 3 {
                     if let Some(label) = outputs.first() {
                         polygon_inputs.insert(label.as_str(), inputs.as_slice());
@@ -415,6 +424,7 @@ struct Converter {
     /// Sliders whose expression endpoints were restored right after their
     /// element, before the objects that read them.
     early_bounds: BTreeSet<String>,
+    self_circle_first: BTreeMap<String, String>,
     self_circle_swaps: BTreeMap<Id, bool>,
 }
 
@@ -783,7 +793,7 @@ impl Converter {
                 }
             }
         }
-        if let ("Intersect", [a, b, selector], [label]) = (name, args.as_mut_slice(), outputs) {
+        if let ("Intersect", [a, b, selector], [_]) = (name, args.as_mut_slice(), outputs) {
             if a == b {
                 if let Some(id) = self
                     .kernel
@@ -791,7 +801,7 @@ impl Converter {
                     .filter(|&id| self.kernel.kind(id) == Kind::Circle)
                 {
                     if matches!(selector.as_str(), "1" | "2")
-                        && self.saved_self_circle_swap(id, a, selector, label, elements)?
+                        && self.saved_self_circle_swap(id, a, elements)?
                     {
                         *selector = if selector == "1" { "2" } else { "1" }.into();
                     }
@@ -892,18 +902,20 @@ impl Converter {
         &mut self,
         circle: Id,
         name: &str,
-        selector: &str,
-        label: &str,
         elements: &BTreeMap<&str, &Element>,
     ) -> Result<bool, String> {
         if let Some(&swap) = self.self_circle_swaps.get(&circle) {
             return Ok(swap);
         }
-        let Some([x, y, z]) = elements.get(label).and_then(|el| coords3(el)) else {
+        let Some((label, [x, y, z])) = self
+            .self_circle_first
+            .get(name)
+            .and_then(|label| Some((label, coords3(elements.get(label.as_str())?)?)))
+        else {
             return Ok(false);
         };
         let saved = [x / z, y / z];
-        if selector != "1" || !saved.iter().all(|v| v.is_finite()) {
+        if !saved.iter().all(|v| v.is_finite()) {
             return Ok(false);
         }
         let checkpoint = self.kernel.checkpoint();

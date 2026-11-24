@@ -226,7 +226,7 @@ cases = ["expr-syntax-013", "expr-twonum-002", "expr-twonum-007"]
 [[form]]
 command = "Element"
 form = "list,number"
-cases = ["lists-index-003", "lists-index-004", "lists-index-013", "keptvalues-cartesian-006"]
+cases = ["lists-index-003", "lists-index-004", "lists-index-013", "keptvalues-cartesian-006", "keptvalues-cartesian-009"]
 
 [[form]]
 command = "Element"
@@ -1021,7 +1021,7 @@ cases = ["geomextras-tangentfunction-001", "geomextras-tangentfunction-003", "ge
 [[form]]
 command = "Tangent"
 form = "point,function"
-cases = ["geomextras-tangentfunction-001", "geomextras-tangentfunction-002"]
+cases = ["geomextras-tangentfunction-001", "geomextras-tangentfunction-002", "keptvalues-root-003"]
 
 [[form]]
 command = "Vertex"
@@ -3579,42 +3579,6 @@ cases = [
 ]
 
 [[form]]
-command = "CircumcircleArc"
-form = "point,point,point"
-cases = [
-    "arcs-circum-001",
-    "arcs-circum-002",
-    "arcs-circum-005",
-    "arcs-circum-006",
-    "arcs-circum-009",
-    "arcs-circum-010",
-    "arcs-circum-011",
-    "arcs-circum-012",
-    "arcs-circum-013",
-    "arcs-keptpart-001",
-    "arcs-keptpart-003",
-    "arcs-points-003",
-    "arcs-points-004",
-    "arcs-undefined-003",
-    "arcs-undefined-007",
-    "export-conics-001",
-    "locus-arc-003",
-    "transform-anglearg-007",
-    "transform-arcchain-002",
-    "transform-circumarc-001",
-    "transform-circumarc-002",
-    "transform-circumarc-003",
-    "transform-circumarc-004",
-    "transform-circumarc-005",
-    "transform-circumarc-006",
-    "transform-circumarc-007",
-    "transform-circumarc-008",
-    "transform-circumarc-009",
-    "transform-circumarc-010",
-    "arcs-keptpart-006",
-]
-
-[[form]]
 command = "CircumcircleSector"
 form = "point,point,point"
 cases = [
@@ -4417,19 +4381,14 @@ cases = [
 ]
 
 [[form]]
-command = "Point"
-form = "list"
-cases = ["geomextras-pointlist-007", "keptvalues-pointgrowth-001", "keptvalues-pointgrowth-002"]
-
-[[form]]
 command = "Take"
 form = "list,number"
-cases = ["lists-take-001", "lists-take-016", "keptvalues-replay-001"]
+cases = ["lists-take-001", "lists-take-016", "keptvalues-replay-001", "keptvalues-redefinition-001"]
 
 [[form]]
 command = "RemoveUndefined"
 form = "list"
-cases = ["lists-undef-003", "lists-undef-005"]
+cases = ["lists-undef-003", "lists-undef-005", "keptvalues-cartesian-007"]
 
 [[form]]
 command = "Length"
@@ -4459,12 +4418,12 @@ cases = ["geomforms-area-001", "geomforms-area-003"]
 [[form]]
 command = "Transpose"
 form = "list"
-cases = ["matrixdilate-elimination-009", "keptvalues-transpose-001"]
+cases = ["matrixdilate-elimination-009", "keptvalues-transpose-001", "keptvalues-transpose-002", "keptvalues-transpose-003"]
 
 [[form]]
 command = "Intersect"
 form = "line,curve"
-cases = ["georestintersect-spline-001", "georestintersect-trig-001", "keptvalues-spline-001"]
+cases = ["georestintersect-spline-001", "georestintersect-trig-001", "keptvalues-spline-001", "keptvalues-spline-002"]
 
 [[form]]
 command = "Distance"

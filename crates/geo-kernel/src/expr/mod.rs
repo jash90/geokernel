@@ -230,7 +230,7 @@ use decimal::Dec;
 pub struct ExprDef {
     kind: Kind,
     pub(crate) angle_style: AngleStyle,
-    independent: bool,
+    allows_infinite_point: bool,
     index: u32,
 }
 
@@ -904,6 +904,36 @@ pub(crate) fn restore_list_records(c: &Construction, d: ExprDef, records: ListRe
     *entry(c, d).list_history.records() = records;
 }
 
+pub(crate) fn reset_list_records(c: &Construction, d: ExprDef) -> bool {
+    let e = entry(c, d);
+    if !e.lists {
+        return false;
+    }
+    let mut records = e.list_history.records();
+    if records.shapes.is_empty() && records.invalid_transposes.is_empty() {
+        return false;
+    }
+    *records = ListRecords {
+        revision: records.revision.wrapping_add(1),
+        ..ListRecords::default()
+    };
+    true
+}
+
+pub(crate) fn reset_transpose_flags(c: &Construction, d: ExprDef) -> bool {
+    let e = entry(c, d);
+    if !e.lists {
+        return false;
+    }
+    let mut records = e.list_history.records();
+    if records.invalid_transposes.is_empty() {
+        return false;
+    }
+    records.invalid_transposes.clear();
+    records.revision = records.revision.wrapping_add(1);
+    true
+}
+
 impl Entry {
     fn kept_list_shape(&self, node: u32) -> Option<std::sync::Arc<[Kind]>> {
         self.list_history
@@ -941,6 +971,7 @@ impl Entry {
                         | Node::Dilate(..)
                         | Node::PolynomialPart(..)
                         | Node::Cas(..)
+                        | Node::Un(Un::Length, _)
                 )
             });
         let inverts = p.nodes.iter().any(|node| match *node {
@@ -1775,6 +1806,7 @@ pub(crate) fn object_defined(c: &Construction, id: Id) -> bool {
         (Kind::Number | Kind::Angle, Def::Expr(d)) => {
             !matches!(raw(c, d), Raw::Num(v) if v.is_nan())
         }
+        (Kind::Circle, _) => c.value(id).is_defined() || c.has_infinite_circle_center(id),
         _ => c.value(id).is_defined(),
     }
 }
@@ -1784,15 +1816,44 @@ pub(crate) fn object_defined(c: &Construction, id: Id) -> bool {
 /// that reads them keeps its defined flag.
 fn predicate_has_undefined_value(c: &Construction, id: Id) -> bool {
     match c.value(id) {
-        Value::Point { x, y } | Value::Vector { x, y } => x.is_infinite() || y.is_infinite(),
+        Value::Vector { x, y } => x.is_infinite() || y.is_infinite(),
         Value::Function => {
             let Def::Expr(d) = c.def(id) else {
                 return false;
             };
-            let e = entry(c, d);
-            matches!(e.nodes[e.root as usize], Node::Un(Un::X | Un::Y, _))
-                && e.vars == 0
-                && c.function_value(id, 0.0).is_some_and(f64::is_nan)
+            let meter = eval::Lists::new(Vec::new());
+            let ctx = eval::Ctx::<true> {
+                meter: Some(&meter),
+                ..eval::Ctx::new(c, entry(c, d), &eval::Env::None)
+            };
+            prints_undefined_coordinate(&ctx, ctx.e.root, MAX_DEPTH)
+        }
+        _ => false,
+    }
+}
+
+// AlgoDependentFunction expands applications before formatting the value.
+fn prints_undefined_coordinate(ctx: &eval::Ctx<'_, true>, node: u32, depth: u32) -> bool {
+    if depth == 0 || ctx.stop(1) {
+        return false;
+    }
+    match ctx.node(node) {
+        Node::Un(Un::X | Un::Y, _) => ctx.e.vars == 0 && ctx.full_number(node).is_nan(),
+        Node::Apply(id, _) => {
+            if let (Def::Expr(def), Value::Function) = (ctx.c.def(id), ctx.c.value(id)) {
+                let entry = entry(ctx.c, def);
+                prints_undefined_coordinate(&eval::Ctx { e: entry, ..*ctx }, entry.root, depth - 1)
+            } else {
+                false
+            }
+        }
+        Node::Bin(Bin::Add, a, b) => {
+            (ctx.is_constant(b)
+                && ctx.full_number(b) == 0.0
+                && prints_undefined_coordinate(ctx, a, depth - 1))
+                || (ctx.is_constant(a)
+                    && ctx.full_number(a) == 0.0
+                    && prints_undefined_coordinate(ctx, b, depth - 1))
         }
         _ => false,
     }
@@ -1825,6 +1886,8 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
         Node::Obj(id) => function_input_defined(ctx.c, id),
         Node::Apply(f, a) => object_defined(ctx.c, f) && defined_below(ctx, a),
         Node::Cmd(def, hint) => command_defined(ctx.c, def, hint),
+        // CmdLength supplies a numeric helper for a point or vector.
+        Node::Un(Un::Length, a) => defined_below(ctx, a) && !ctx.full_number(i).is_nan(),
         Node::Inverse(a) => defined_below(ctx, a) && inverse::sample(ctx, a, 1.0).is_some(),
         Node::Cas(op, a, b) if op.is_function() => cas::function_at(ctx, op, a, b).is_some(),
         Node::PolynomialPart(remainder, a, b) => {
@@ -2182,7 +2245,7 @@ pub(crate) fn value(d: ExprDef, raw: Raw) -> Value {
         // created directly by AlgebraProcessor, still owns both coordinates.
         (Kind::Point, Raw::Vec(x, y))
             if (x.is_finite() && y.is_finite())
-                || (d.independent && !(x.is_nan() || y.is_nan())) =>
+                || (d.allows_infinite_point && !(x.is_nan() || y.is_nan())) =>
         {
             Value::Point { x, y }
         }
@@ -2803,6 +2866,13 @@ fn add_entry(
     independent: bool,
 ) -> Result<Id, Error> {
     let index = u32::try_from(c.exprs.entries.len()).map_err(|_| Error::UnknownObject)?;
+    // AlgoIf and AlgoListElement copy existing points. Arithmetic point
+    // expressions go through AlgoDependentPoint and reject infinity.
+    let allows_infinite_point = independent
+        || matches!(
+            entry.nodes[entry.root as usize],
+            Node::If(IfMode::Algo, ..) | Node::ListOp(ListOp::Element, ..)
+        );
     c.exprs.entries.push(entry);
     c.exprs.pending = Some(index);
     let result = c.add(
@@ -2811,7 +2881,7 @@ fn add_entry(
             kind,
             index,
             angle_style,
-            independent,
+            allows_infinite_point,
         }),
     );
     c.exprs.pending = None;
