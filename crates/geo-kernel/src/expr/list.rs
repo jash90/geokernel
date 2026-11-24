@@ -6,6 +6,7 @@
 //! elements. The object's [`Value::List`] only carries the length. The
 //! slots can own text, and [`List`] reads the elements from the buffer.
 
+use crate::algo::conic_nd::ConicData;
 use crate::kernel::{Construction, Id, Kind, Value};
 use std::sync::Arc;
 
@@ -25,8 +26,18 @@ pub(crate) struct Slot {
     extra: Option<Arc<SlotExtra>>,
 }
 
+#[derive(Debug)]
+struct SlotConic(ConicData);
+
+impl PartialEq for SlotConic {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.same(&other.0)
+    }
+}
+
 #[derive(Debug, PartialEq)]
 enum SlotExtra {
+    Conic(Box<SlotConic>),
     Text(String),
     Polynomial(crate::cas::Poly),
     Symbolic(String),
@@ -115,6 +126,20 @@ impl Slot {
             object: NO_OBJECT,
             equation_revision: 0,
             extra: None,
+        }
+    }
+
+    pub(super) fn with_conic(data: ConicData, kind: Kind, value: Value) -> Self {
+        Self {
+            extra: Some(Arc::new(SlotExtra::Conic(Box::new(SlotConic(data))))),
+            ..Self::with_value(kind, value)
+        }
+    }
+
+    pub(super) fn conic(&self, c: &Construction) -> Option<ConicData> {
+        match self.extra.as_deref() {
+            Some(SlotExtra::Conic(record)) => Some(record.0),
+            _ => c.conic(self.object_id()?),
         }
     }
 
@@ -246,6 +271,11 @@ impl Slot {
             // An undefined line retains coefficients used by equality. Functions,
             // curves, and conics can change data held outside their value.
             return false;
+        }
+        if matches!(self.value, Value::Circle { .. } | Value::Ray { .. })
+            || matches!(other.value, Value::Circle { .. } | Value::Ray { .. })
+        {
+            return self.value.identical(&other.value);
         }
         if matches!(self.value, Value::Segment { .. })
             || matches!(other.value, Value::Segment { .. })
@@ -511,5 +541,20 @@ impl<'a> List<'a> {
     pub fn iter(&self) -> impl Iterator<Item = Element<'a>> + 'a {
         let list = *self;
         (0..list.len()).filter_map(move |k| list.get(k))
+    }
+}
+
+#[cfg(test)]
+mod dilation_tests {
+    #[test]
+    fn a_dilated_conic_slot_holds_the_transformed_record() {
+        let c = crate::script::load(
+            "A = (1, 1)\nF = (0, 2)\ng: y = 0\np = Parabola(F, g)\n\
+             n = 2\nq = Dilate(p, n, A)\nl = Dilate({p}, n, A)",
+        )
+        .unwrap();
+        let list = c.elements(c.id("l").unwrap()).unwrap();
+        let record = list.slots[0].conic(&c).unwrap();
+        assert!(record.same(&c.conic(c.id("q").unwrap()).unwrap()));
     }
 }

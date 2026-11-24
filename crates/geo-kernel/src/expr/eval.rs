@@ -17,6 +17,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec2D.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentBoolean.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIf.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDilate.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTransformation.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyList.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentList.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoSequence.java
@@ -137,6 +139,42 @@ fn limit() -> u64 {
 thread_local! {
     /// The work done on this thread (see [`work_done`]).
     static WORK: Cell<u64> = const { Cell::new(0) };
+    // Kernel commands can read conditional shape records on behalf of an
+    // expression. Those reads spend the same allowance as the expression.
+    static COMMAND_END: Cell<u64> = const { Cell::new(u64::MAX) };
+}
+
+pub(crate) fn carrier_deadline() -> u64 {
+    COMMAND_END
+        .with(Cell::get)
+        .min(work_done().saturating_add(limit()))
+}
+
+pub(crate) fn charge_carrier(end: u64) -> bool {
+    if work_done() >= end {
+        // An enclosing expression must see that this command ran out of
+        // work, even if it would normally consume an undefined argument.
+        if COMMAND_END.with(Cell::get) == end {
+            work(1);
+        }
+        return false;
+    }
+    work(1);
+    true
+}
+
+pub(super) fn with_command_budget<T>(meter: Option<&Lists>, f: impl FnOnce() -> T) -> T {
+    let Some(meter) = meter else {
+        return f();
+    };
+    struct Restore(u64);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            COMMAND_END.with(|end| end.set(self.0));
+        }
+    }
+    let _restore = Restore(COMMAND_END.with(|end| end.replace(end.get().min(meter.end))));
+    f()
 }
 
 /// The evaluation work done on this thread so far, in units of about 3.5
@@ -178,6 +216,8 @@ pub(super) struct Lists {
     /// nothing for them.
     objects: RefCell<([Id; MAX_OBJECTS], usize)>,
     built: Cell<u64>,
+    nested_transforms: RefCell<super::NestedTransforms>,
+    pub(super) invalid_transform_list: Cell<bool>,
     /// The reading of [`work_done`] past which the evaluation is over.
     end: u64,
 }
@@ -189,7 +229,25 @@ impl Lists {
             arena: RefCell::new(arena),
             objects: RefCell::new(([Id(0); MAX_OBJECTS], 0)),
             built: Cell::new(0),
-            end: work_done().saturating_add(limit()),
+            nested_transforms: RefCell::new(super::NestedTransforms::new()),
+            invalid_transform_list: Cell::new(false),
+            end: carrier_deadline(),
+        }
+    }
+
+    pub(super) fn remember_transform(&self, node: u32, start: u32, len: u32) {
+        let mut items = Vec::new();
+        copy_tree(&self.arena.borrow(), start, len, &mut items);
+        self.nested_transforms
+            .borrow_mut()
+            .insert(node, (len, items));
+    }
+
+    pub(super) fn take_nested_transforms(&self) -> super::NestedTransforms {
+        if self.over() {
+            super::NestedTransforms::new()
+        } else {
+            self.nested_transforms.take()
         }
     }
 
@@ -656,7 +714,11 @@ pub(super) fn root(c: &Construction, e: &Entry, lists: Option<&Lists>) -> (Raw, 
     }
 }
 
-pub(super) fn text_root(c: &Construction, e: &Entry, latex: Option<bool>) -> super::TextResult {
+pub(super) fn text_root(
+    c: &Construction,
+    e: &Entry,
+    latex: Option<bool>,
+) -> (super::TextResult, super::NestedTransforms) {
     let meter = Lists::new(Vec::new());
     let ctx = Ctx::<true> {
         lists: Some(&meter),
@@ -679,7 +741,80 @@ pub(super) fn text_root(c: &Construction, e: &Entry, latex: Option<bool>) -> sup
         }
         text
     });
-    super::TextResult { text, presentation }
+    (
+        super::TextResult {
+            text,
+            presentation,
+            invalid_transform_list: meter.invalid_transform_list.get(),
+        },
+        meter.take_nested_transforms(),
+    )
+}
+
+/// CmdIf resolves its command arguments before selecting a branch.
+pub(super) fn validate_dilations(
+    c: &Construction,
+    e: &Entry,
+    lists: &Lists,
+) -> Result<super::NestedTransforms, crate::Error> {
+    let ctx = Ctx::<true> {
+        lists: Some(lists),
+        meter: Some(lists),
+        ..Ctx::new(c, e, &Env::None)
+    };
+    // Children precede their parents. Track the outermost local each node
+    // needs so dilation can wait until the sequence or other binder runs.
+    let mut free_locals = Vec::new();
+    for (i, node) in e.nodes.iter().enumerate() {
+        if !lists.charge(1) {
+            return Err(crate::Error::EvaluationLimit);
+        }
+        let depth = outermost_local(node, &free_locals);
+        free_locals.push(depth);
+        if depth == super::NONE
+            && matches!(node, Node::Dilate(..))
+            && matches!(e.tys[i], Ty::List(_))
+        {
+            ctx.list(i as u32);
+            if lists.invalid_transform_list.get() {
+                return Err(crate::Error::InvalidTransformList);
+            }
+            if lists.over() {
+                return Err(crate::Error::EvaluationLimit);
+            }
+            lists.truncate(0);
+        }
+    }
+    Ok(lists.take_nested_transforms())
+}
+
+fn outermost_local(node: &Node, free_locals: &[u32]) -> u32 {
+    use super::{IterationMode, NONE};
+
+    if let Node::Local(depth, _) = *node {
+        return depth;
+    }
+    super::children(node)
+        .enumerate()
+        .filter_map(|(argument, child)| {
+            let depth = free_locals[child as usize];
+            let first_bound = match (*node, argument) {
+                (Node::Seq(.., local), 0) | (Node::Filter { local, .. }, 1) => local,
+                (
+                    Node::Iteration {
+                        mode: IterationMode::Local { first, .. },
+                        ..
+                    },
+                    0,
+                ) => first,
+                (Node::Call(CallOp::Zip, first, _), 0) => free_locals[first as usize + 1],
+                (Node::Call(CallOp::Zip, ..), k) if k % 2 == 1 => return None,
+                _ => NONE,
+            };
+            (depth < first_bound).then_some(depth)
+        })
+        .min()
+        .unwrap_or(NONE)
 }
 
 /// Evaluates an entry whose result is a list: its elements go to `out`,
@@ -839,7 +974,9 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Obj(id) => object_ex(self.c, id),
             Node::Cmd(def, hint) => Ex {
                 obj: true,
-                ..Ex::plain(command(self.c, def, hint))
+                ..Ex::plain(with_command_budget(self.meter, || {
+                    command(self.c, def, hint)
+                }))
             },
             // `MyVecNode.getVector`: coordinates by `evaluateDouble`.
             Node::Tuple(a, b) => Ex::plain(V(self.fast(a), self.fast(b))),
@@ -948,8 +1085,13 @@ impl<const M: bool> Ctx<'_, M> {
             Node::PolynomialPart(..) => Ex::plain(N(self.polynomial_value())),
             Node::Cas(op, a, b) => self.cas_scalar(i, op, a, b),
             Node::CasVariable(_) => Ex::plain(N(f64::NAN)),
-            Node::ObjectDefined(id) => Ex::plain(Val::B(super::object_defined(self.c, id), true)),
-            Node::Defined(a) => Ex::plain(Val::B(self.is_defined_argument(a), true)),
+            Node::ObjectDefined(id) => Ex::plain(
+                commands::defined_object(self, id).map_or(N(f64::NAN), |b| Val::B(b, true)),
+            ),
+            Node::Defined(a, function) => Ex::plain(
+                self.is_defined_argument(a, function)
+                    .map_or(N(f64::NAN), |b| Val::B(b, true)),
+            ),
             Node::Filter {
                 keep: false,
                 list,
@@ -1029,7 +1171,7 @@ impl<const M: bool> Ctx<'_, M> {
             | Node::Local(..)
             | Node::Algebra(..)
             | Node::ObjectDefined(_)
-            | Node::Defined(_)
+            | Node::Defined(..)
             | Node::Filter { .. }
             | Node::ListOp(..)
             | Node::Range(..)
@@ -1394,7 +1536,7 @@ impl<const M: bool> Ctx<'_, M> {
                 elem,
                 explicit,
             } => self.filter(list, condition, local, elem, explicit, true),
-            Node::ListOp(op, l, n) if op.makes_list() => commands::list_fn(self, op, l, n),
+            Node::ListOp(op, l, n) if op.makes_list() => commands::list_fn(self, i, op, l, n),
             // an element that is a list: its elements were built with the
             // list it belongs to
             Node::ListOp(op, l, n) => self.pick(op, l, n)?.run(),
@@ -1402,8 +1544,10 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Dilate(src, factor, center) => {
                 let (r, sx, sy) = self.dilation(factor, center);
                 let source = self.list(src)?;
-                commands::map_list(self, source, |value| {
-                    crate::algo::transform::dilate_element(value, r, sx, sy)
+                with_command_budget(self.meter, || {
+                    commands::map_list(self, i, source, |slot| {
+                        commands::dilate_slot(self.c, slot, r, sx, sy)
+                    })
                 })
             }
             _ => None,

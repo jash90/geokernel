@@ -1,0 +1,46 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "matrixdilate-dilatereject-001",
+      "group": "matrixdilate",
+      "script": [
+        "A = (1, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "n = Length(Dilate({1, A}, 2))" },
+        { "action": "reject", "line": "n = Length(Dilate({1}, 2))" },
+        { "action": "reject", "line": "n = Length(Dilate({true, A}, 2))" },
+        { "action": "reject", "line": "n = Length(Dilate({\"abc\", A}, 2))" },
+        { "action": "reject", "line": "n = Length(Dilate({{1}, A}, 2))" },
+        { "action": "reject", "line": "txt = Text(Dilate({1, A}, 2))" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    }
+  ]
+}

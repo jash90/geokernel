@@ -39,10 +39,10 @@ Intersect,,geometry,P0,partial,79,70,"Carriers, conics, functions, polygonal bou
 IntersectPath,,geometry,P1,partial,9,6,"Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices."
 IntersectRegion,,english,P2,partial,9,8,
 Distance,,geometry,P0,partial,4,1,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
-Length,,geometry,P1,partial,11,10,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
+Length,,geometry,P1,partial,11,9,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
 Radius,,geometry,P1,todo,1,0,Radius(conic or conic part); defined for circle and single-point types
 Type,,geometry,P1,todo,0,0,
-CircleArc,,geometry,P1,todo,1,0,"CircularArc(centre, point, point)"
+CircleArc,,geometry,P1,done,1,1,"CircularArc(centre, point, point)"
 Arc,,geometry,P1,done,2,2,Conic with point endpoints or numeric parameters
 Sector,,geometry,P1,done,2,2,Conic with point endpoints or numeric parameters
 CircleSector,,geometry,P1,done,1,1,"CircularSector(centre, point, point)"
@@ -327,17 +327,17 @@ InverseLogNormal,,probability,,out_of_scope,,,
 RandomPolynomial,,probability,,out_of_scope,,,
 RandomDiscrete,,probability,,out_of_scope,,,
 RandomPointIn,,probability,,out_of_scope,,,
-ApplyMatrix,,vector,P2,partial,10,7,"2 x 2 or 3 x 3 matrix on a point, vector, line, conic, polygon, polyline, Cartesian curve, function graph, raster image or list"
+ApplyMatrix,,vector,P2,partial,10,8,"2 x 2 or 3 x 3 matrix on a point, vector, line, conic, polygon, polyline, Cartesian curve, function graph, raster image or list"
 UnitVector,,vector,P2,partial,3,1,"UnitVector(vector, line, segment or ray)"
 Vector,,vector,P2,done,3,3,"Vector(point, point); Vector(point); a free (x, y) under a lower-case label"
-UnitOrthogonalVector,,vector,P2,partial,3,2,"UnitOrthogonalVector(vector, line, segment or ray)"
+UnitOrthogonalVector,,vector,P2,done,3,3,"UnitOrthogonalVector(vector, line, segment or ray)"
 OrthogonalVector,,vector,P2,partial,3,1,"OrthogonalVector(vector, line, segment or ray)"
 Invert,,vector,P2,done,2,2,
 Transpose,,vector,P2,partial,3,2,
 ReducedRowEchelonForm,,vector,P2,done,3,3,
 Determinant,,vector,P2,done,1,1,
 Identity,,vector,P2,done,1,1,
-Dimension,,vector,P2,partial,3,2,
+Dimension,,vector,P2,done,3,3,
 MatrixRank,,vector,P2,done,1,1,
 Mirror,,transformation,P1,done,3,3,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector in a point or a line; point, line, segment, circle, arc or sector in a circle (inversion)"
 Dilate,,transformation,P1,partial,19,18,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc, sector, function, Cartesian curve, raster image or list by a factor, from the origin or a point"
@@ -447,7 +447,7 @@ PerpendicularLine,OrthogonalLine,geometry,P0,partial,,,
 PerpendicularVector,OrthogonalVector,vector,P2,partial,,,
 MinorAxis,SecondAxis,conic,P1,done,,,
 SemiMinorAxisLength,SecondAxisLength,conic,P1,done,,,
-UnitPerpendicularVector,UnitOrthogonalVector,vector,P2,partial,,,
+UnitPerpendicularVector,UnitOrthogonalVector,vector,P2,done,,,
 CorrelationCoefficient,PMCC,statistics,,out_of_scope,,,
 FitLine,FitLineY,statistics,,out_of_scope,,,
 BinomialCoefficient,nCr,english,P2,done,,,
@@ -457,7 +457,7 @@ AngleBisector,AngularBisector,geometry,P1,done,,,
 CircumcircularSector,CircumcircleSector,geometry,P1,done,,,
 CircumcircularArc,CircumcircleArc,geometry,P1,done,,,
 CircularSector,CircleSector,geometry,P1,done,,,
-CircularArc,CircleArc,geometry,P1,todo,,,
+CircularArc,CircleArc,geometry,P1,done,,,
 Polyline,PolyLine,geometry,P1,partial,,,
 Sxx,SXX,statistics,,out_of_scope,,,
 Syy,SYY,statistics,,out_of_scope,,,
