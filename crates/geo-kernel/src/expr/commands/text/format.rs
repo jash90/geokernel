@@ -18,6 +18,36 @@ use crate::expr::eval::{Ctx, Val};
 use crate::expr::{self, Node, Ty};
 use crate::kernel::{Def, Id, Kind, Value};
 
+pub(in crate::expr::commands) fn function_has_value<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    id: Id,
+) -> Option<bool> {
+    let Def::Expr(def) = ctx.c.def(id) else {
+        return Some(true);
+    };
+    let entry = expr::entry(ctx.c, def);
+    let meter = ctx
+        .meter
+        .is_none()
+        .then(|| expr::eval::Lists::new(Vec::new()));
+    let nested = Ctx::<true> {
+        meter: ctx.meter.or(meter.as_ref()),
+        ..Ctx::new(ctx.c, entry, &expr::eval::Env::None)
+    };
+    function_expression_has_value(&nested, entry.root)
+}
+
+pub(in crate::expr::commands) fn function_expression_has_value<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    root: u32,
+) -> Option<bool> {
+    let format = Format {
+        simplify_coefficients: true,
+        ..Format::new(false)
+    };
+    format.has_value(ctx, root)
+}
+
 pub(super) fn evaluate<const M: bool>(
     ctx: &Ctx<'_, M>,
     op: TextOp,
@@ -108,7 +138,11 @@ fn describe<const M: bool>(ctx: &Ctx<'_, M>, op: TextOp, args: &[u32]) -> Option
     // AlgoText switches the flag after formatting its content.
     let format = Format::new(formula || ctx.text_latex());
     let text_input = ctx.e.tys[input as usize] == Ty::Text;
-    if !formula && (anchor && !defined(ctx, args[1]) || !text_input && !defined(ctx, input)) {
+    let anchor_defined = |i| match ctx.node(i) {
+        Node::Obj(id) => ctx.c.stored_value(id).is_defined(),
+        _ => defined(ctx, i),
+    };
+    if !formula && (anchor && !anchor_defined(args[1]) || !text_input && !defined(ctx, input)) {
         return None;
     }
     let Some(substitute) = substitute else {
@@ -416,6 +450,8 @@ impl Format {
                     self.quoted(text)
                 } else if let Some(id) = slot.object_id().filter(|_| slot.value.is_defined()) {
                     self.object_value(ctx, id)?
+                } else if matches!(slot.value, Value::Conic { .. }) {
+                    self.conic_equation(&slot.conic(ctx.c)?)
                 } else if slot.kind == Kind::Text {
                     self.quoted("")
                 } else {

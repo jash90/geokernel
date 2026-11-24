@@ -2,6 +2,8 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdIf.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIf.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdDefined.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDefined.java
 //   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoNumeric.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
@@ -18,6 +20,26 @@ use crate::expr::parse::Parser;
 use crate::expr::{children, IfMode, Node, Ty, NONE};
 use crate::script::split_call;
 use crate::{Construction, Def, Id, Kind, Value};
+
+/// `AlgoDefined` uses an object's defined flag. For functions it also
+/// checks the value string. Projective points at infinity and vectors with
+/// infinite coordinates return false.
+pub(in crate::expr) fn defined_object<const M: bool>(ctx: &Ctx<'_, M>, id: Id) -> Option<bool> {
+    let c = ctx.c;
+    Some(match c.kind(id) {
+        Kind::Point => c
+            .stored_value(id)
+            .point_coords()
+            .is_some_and(|(x, y, z)| !crate::kernel::point_at_infinity(x, y, z)),
+        Kind::Vector => matches!(c.value(id), Value::Vector { x, y }
+            if x.is_finite() && y.is_finite()),
+        Kind::Arc | Kind::Sector => c.stored_value(id).is_defined(),
+        Kind::Function if crate::expr::object_defined(c, id) => {
+            return super::text::function_has_value(ctx, id);
+        }
+        _ => crate::expr::object_defined(c, id),
+    })
+}
 
 /// The commands of this group (see `commands::is_command`).
 pub(super) const NAMES: &[&str] = &["If", "CountIf", "KeepIf", "Defined", "IsDefined"];
@@ -103,22 +125,23 @@ pub(crate) fn define_geometry_if(
     Some(result)
 }
 
-pub(crate) fn conditional_branch(c: &Construction, ids: &[Id]) -> Option<Id> {
+pub(crate) fn conditional_branch(c: &Construction, ids: &[Id], end: u64) -> Option<Id> {
     if alternative_count(ids.len()) > MAX_IF_ALTERNATIVES {
         return None;
     }
     let (pairs, fallback) = ids.as_chunks::<2>();
-    pairs
-        .iter()
-        .find_map(|&[condition, branch]| {
-            crate::expr::charge(1);
-            (c.value(condition) == Value::Bool(true)).then_some(branch)
-        })
-        .or_else(|| {
-            let branch = *fallback.first()?;
-            crate::expr::charge(1);
-            Some(branch)
-        })
+    for &[condition, branch] in pairs {
+        if !crate::expr::charge_carrier(end) {
+            return None;
+        }
+        if c.value(condition) == Value::Bool(true) {
+            return Some(branch);
+        }
+    }
+    fallback
+        .first()
+        .copied()
+        .filter(|_| crate::expr::charge_carrier(end))
 }
 
 /// `If(...)`.
@@ -134,10 +157,19 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
                     return Ok(Some(p.push(Node::ObjectDefined(id))));
                 }
             }
+            // A free x in this argument creates a function for CmdDefined;
+            // it does not make the enclosing Boolean a function.
+            let uses_var = std::mem::take(&mut p.uses_var);
             let [arg] = p.arguments()?[..] else {
                 return Err(format!("`{text}` takes one argument"));
             };
-            Ok(Some(p.push(Node::Defined(arg))))
+            let function = p.uses_var;
+            p.uses_var = uses_var;
+            let node = match p.node(arg) {
+                Node::Obj(id) | Node::FunctionObject(id) => Node::ObjectDefined(id),
+                _ => Node::Defined(arg, function),
+            };
+            Ok(Some(p.push(node)))
         }
         _ => Ok(None),
     }

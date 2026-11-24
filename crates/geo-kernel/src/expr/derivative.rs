@@ -197,7 +197,7 @@ impl Walker<'_> {
             | Node::PolynomialPart(..)
             | Node::Algebra(..)
             | Node::ObjectDefined(_)
-            | Node::Defined(_)
+            | Node::Defined(..)
             | Node::Filter { .. } => f64::NAN,
         })
     }

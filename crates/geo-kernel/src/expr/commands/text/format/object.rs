@@ -8,6 +8,7 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use super::Format;
+use crate::algo::conic_nd::ConicData;
 use crate::algo::measure::MeasureDef;
 use crate::equation;
 use crate::expr::eval::{Ctx, Env, Lists};
@@ -267,14 +268,18 @@ impl Format {
                         return Some(text);
                     }
                 }
-                let eq = equation::conic_equation(&conic, &|value| self.number(value));
-                Some(if self.latex {
-                    eq.replace('²', "^{2}").replace(" = ", self.equals())
-                } else {
-                    eq
-                })
+                Some(self.conic_equation(&conic))
             }
             _ => None,
+        }
+    }
+
+    pub(super) fn conic_equation(self, conic: &ConicData) -> String {
+        let eq = equation::conic_equation(conic, &|value| self.number(value));
+        if self.latex {
+            eq.replace('²', "^{2}").replace(" = ", self.equals())
+        } else {
+            eq
         }
     }
 

@@ -172,16 +172,6 @@ mismatches = [
 # representations, including curve and conic records.
 
 [[gap]]
-id = "matrixdilate-applylist-006"
-reason = "ApplyMatrix reports a command error when a number is visited before any transformable list element. The kernel creates an undefined list."
-mismatches = ["1:step"]
-
-[[gap]]
-id = "matrixdilate-dilatelist-006"
-reason = "Dilate reports a command error when a number is visited before any transformable list element. The kernel creates an undefined list."
-mismatches = ["1:step"]
-
-[[gap]]
 id = "algebralogic-logic-022"
 reason = "GeoFunction.isInRegion reads the separately stored GeoPoint x2D coordinate, which can be stale at construction and after a direct headless move. The kernel evaluates the inequality at the point's current Cartesian coordinates. The construction mismatch is recorded separately in algebralogic-logic-025."
 mismatches = ["1:b"]
@@ -230,7 +220,7 @@ mismatches = ["0:g"]
 
 [[gap]]
 id = "discrete-upstream-019"
-reason = "The circumcircle test is sensitive to the last bit of cos(6) on approximately cocircular sites. The literal cocircular cases exercise the exact tie rule separately."
+reason = "The recording JVM rounds cos(6) one ulp above the portable result. On these nearly cocircular sites that changes the chosen diagonals, so the list of triangulation edges differs. The literal cocircular cases exercise the exact tie rule separately."
 mismatches = ["0:g"]
 
 # Calculus
@@ -2770,27 +2760,6 @@ mismatches = [
 
 # infinity
 
-# tpairfixes
-
-[[gap]]
-id = "tpairfixes-fnundef-003"
-reason = "intended difference, recorded in DIFFERENCES.md: IsDefined(f) of a function is false when GeoGebra prints the function as `?`, which it does for `? + 0 x` after dropping the zero term; the kernel asks whether the function is defined"
-mismatches = ["0:b"]
-
-[[gap]]
-id = "tpairfixes-fnundef-024"
-reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps `-(?)` as the product of -1 and the undefined constant, a defined function; the kernel negates the constant as it does for `-?`, which leaves the undefined constant alone and an undefined function"
-mismatches = ["0:b", "0:f", "0:g"]
-
-[[gap]]
-id = "tpairfixes-fnundef-029"
-reason = "intended difference, recorded in DIFFERENCES.md: IsDefined(f) of a function is false when GeoGebra prints the function as `?`, which it does for `? + 0` after dropping the zero term; the kernel asks whether the function is defined"
-mismatches = ["0:b"]
-
-[[gap]]
-id = "tpairfixes-fnundef-030"
-reason = "intended difference, recorded in DIFFERENCES.md: IsDefined(f) of a function is false when GeoGebra prints the function as `?`, which it does for `1 ?` after dropping the factor 1; the kernel asks whether the function is defined"
-mismatches = ["0:b"]
 
 [[gap]]
 id = "georestsmall-matrixcurve-005"
@@ -2982,3 +2951,17 @@ mismatches = ["2:A"]
 id = "keptvalues-pointpath-001"
 reason = "The list literal rejects the inline CircumcircleArc. A list of paths also needs stable element identities and a composite path parameter, which the coordinate-row Point machinery does not store."
 mismatches = ["0:script line 6"]
+
+# List dilation
+
+[[gap]]
+id = "matrixdilate-dilateleaves-001"
+reason = "GeoGebra allocates a dilated polygon as a list element. The kernel's expression list slots cannot store the transformed polygon vertices, so the dilation is undefined."
+mismatches = ["0:n"]
+undefined = true
+
+[[gap]]
+id = "matrixdilate-dilateleaves-002"
+reason = "GeoGebra allocates a dilated Cartesian curve as a list element. The kernel's expression list slots cannot store the transformed curve definition and parameter interval, so the dilation is undefined."
+mismatches = ["0:n"]
+undefined = true

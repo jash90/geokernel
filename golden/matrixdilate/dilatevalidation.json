@@ -1,0 +1,82 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "matrixdilate-dilatevalidation-001",
+      "group": "matrixdilate",
+      "script": [
+        "A = (1, 1)",
+        "l = Sequence(Length(Dilate(If(i > 0, {A}, {1}), 2)), i, 1, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-dilatevalidation-002",
+      "group": "matrixdilate",
+      "script": [
+        "A = (1, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "q = If(false, Length({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}) + Length(Dilate({1, A}, 2)), 7)" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-dilatevalidation-003",
+      "group": "matrixdilate",
+      "script": [
+        "F = (0, 2)",
+        "g: y = 0",
+        "p = Parabola(F, g)",
+        "t = Text(Dilate({p}, 2))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, 4.0, -0.0, -0.0, -2.0],
+            "vertex": [0.0, 1.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "t": { "type": "text", "defined": true, "text": "{x² - 8y = -16}" }
+        }
+      ]
+    }
+  ]
+}

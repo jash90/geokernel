@@ -363,6 +363,8 @@ impl Value {
                 Self::Undefined
             }
             Self::HomogeneousPoint { .. } => Self::Undefined,
+            Self::Arc { length } if !length.is_finite() => Self::Undefined,
+            Self::Sector { area } if !area.is_finite() => Self::Undefined,
             _ => self,
         }
     }
@@ -865,6 +867,8 @@ pub enum Error {
     NotFree(String),
     BadIndex(u8),
     NotFinite,
+    InvalidTransformList,
+    EvaluationLimit,
 }
 
 impl fmt::Display for Error {
@@ -891,6 +895,13 @@ impl fmt::Display for Error {
             ),
             Error::BadIndex(i) => write!(f, "intersection index {i} is out of range"),
             Error::NotFinite => write!(f, "coordinates must be finite numbers"),
+            Error::EvaluationLimit => {
+                write!(f, "expression validation exceeded the evaluation limit")
+            }
+            Error::InvalidTransformList => write!(
+                f,
+                "the list transform has no reusable geometry for its first element"
+            ),
         }
     }
 }
@@ -2764,7 +2775,13 @@ impl Construction {
             ) => {
                 self.add_tangent_output(id, TangentDef::of(def).expect("tangent definition"), owner)
             }
-            Def::Expr(d) => expr::update(self, id, d).0,
+            Def::Expr(d) => match expr::initialize(self, id, d) {
+                Ok(value) => value,
+                Err(error) => {
+                    self.hints.pop();
+                    return Err(error);
+                }
+            },
             Def::IntersectConics(d) => {
                 let mut state = self.create_conic_intersection(d);
                 let value = state.value(d, self).unwrap_or(Value::Undefined);
@@ -4437,16 +4454,20 @@ impl Construction {
     /// The active source of a conditional object. Branches precede their
     /// result in the construction.
     pub(crate) fn conditional_source(&self, mut id: Id) -> Option<Id> {
-        for _ in 0..=id.0 {
+        let end = expr::carrier_deadline();
+        loop {
             let Some(Def::Conditional { args, .. }) = self.defs.get(id.0) else {
                 return Some(id);
             };
             if !self.values[id.0].is_defined() {
                 return None;
             }
-            id = expr::conditional_branch(self, self.list(*args))?;
+            let branch = expr::conditional_branch(self, self.list(*args), end)?;
+            if branch.0 >= id.0 {
+                return None;
+            }
+            id = branch;
         }
-        None
     }
 
     /// The current contents of a text object.
@@ -4691,7 +4712,8 @@ impl Construction {
             Def::Number(v) | Def::Angle(v) => Some(Value::Number(v)),
             Def::Boolean(v) => Some(Value::Bool(v)),
             Def::Conditional { args, kind } => {
-                let branch = expr::conditional_branch(self, self.list(args))?;
+                let branch =
+                    expr::conditional_branch(self, self.list(args), expr::carrier_deadline())?;
                 match (kind, self.stored_value(branch)) {
                     // `GeoLine.set` copies the coefficients of a segment.
                     (Kind::Line, Value::Segment { .. }) => {
@@ -4709,7 +4731,7 @@ impl Construction {
             Def::Image(list) => self
                 .list(list)
                 .iter()
-                .all(|&id| self.value(id).is_defined())
+                .all(|&id| self.stored_value(id).is_defined())
                 .then_some(Value::Image),
             Def::Line(p, q) => algo::basic::line(self, p, q),
             Def::Segment(p, q) => algo::basic::segment(self, p, q),

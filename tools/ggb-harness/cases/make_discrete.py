@@ -179,4 +179,10 @@ for n in range(5, 13):
     for _ in range(2):
         hull_roundoff_case([c.rp() for _ in range(n)])
 
+
+c.case("delaunaylist", [
+    "A = (0, 0)", "B = (4, 0)", "C = (4, 3)", "D = (0, 4)", "P = (2, 1)",
+    "l = {A, B, C, D, P}", "g = DelauneyTriangulation(l)",
+], [mv("P", 2, 3), mv("P", 4, 3), mv("P", 2, 1)])
+
 c.write()

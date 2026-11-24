@@ -569,13 +569,13 @@ fn type_node(
         }
         Node::Local(depth, elem) => (state.local(depth, elem)?, 1, 1, 0),
         Node::ObjectDefined(_) => (Ty::Bool, 1, 1, 0),
-        Node::Defined(a) => {
+        Node::Defined(a, function) => {
             let a = a as usize;
             (
                 Ty::Bool,
                 1 + state.depth[a],
                 1u64.saturating_add(state.cost[a]),
-                state.vars[a],
+                if function { 0 } else { state.vars[a] },
             )
         }
         Node::Filter {

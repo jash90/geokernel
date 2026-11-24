@@ -160,5 +160,16 @@ reference = Cases("vectorforms")
 reference_topics = {"images", "matrixlists", "matrixnumbers", "nestedcross", "point", "products"}
 reference.cases = [entry for entry in cases.cases if entry["id"].split("-")[1] in reference_topics]
 cases.cases = [entry for entry in cases.cases if entry["id"].split("-")[1] not in reference_topics]
+
+# CommandsTest.cmdDimension and cmdUnitOrthogonalVector use a point.
+cases.case("pointforms", [
+    "A = (3, 7)", "B = (3, 4)", "d = Dimension(A)", "u = UnitOrthogonalVector(B)",
+], [mv("A", 0, 0), mv("B", 0, 0), mv("B", -4, 3)])
+cases.case("pointforms", [
+    "A = (0, 0)", "B = (2, 0)", "C = (0, 1)", "D = (2, 2)",
+    "g = Line(A, B)", "h = Line(C, D)", "P = Intersect(g, h)",
+    "d = Dimension(P)", "u = UnitOrthogonalVector(P)",
+], [mv("D", 2, 1), mv("D", 1, -1), mv("D", 2, 2)])
+
 cases.write()
 reference.write("reference")

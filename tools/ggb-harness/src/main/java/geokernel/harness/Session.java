@@ -1522,6 +1522,7 @@ final class Session {
             case "Tangent":
             case "Axes":
             case "MajorAxis":
+            case "firstaxis":
             case "FirstAxis":
             case "MinorAxis":
             case "SecondAxis":

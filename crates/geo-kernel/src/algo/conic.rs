@@ -65,7 +65,7 @@ pub(super) fn scaled_length(x: f64, y: f64) -> f64 {
     }
 }
 
-fn is_equal(a: f64, b: f64) -> bool {
+pub(super) fn is_equal(a: f64, b: f64) -> bool {
     a == b || ((a - STANDARD_PRECISION) <= b && b <= (a + STANDARD_PRECISION))
 }
 
