@@ -126,16 +126,29 @@ public final class GoldenGenerator {
         }
         List<?> script = (List<?>) input.get("script");
         List<?> steps = (List<?>) input.get("steps");
+        List<?> observe = (List<?>) input.get("observe");
+        boolean undo = steps.stream().anyMatch(step -> "undo".equals(((Map<?, ?>) step).get("action")));
+        if (undo) {
+            session.kernel().setUndoActive(true);
+        }
         session.kernel().getConstruction().setFileLoading(fileLoading);
         try {
-            for (Object line : script) {
-                session.run((String) line);
+            for (Object inputLine : script) {
+                String line = (String) inputLine;
+                if (observe != null && line.contains(" = IntersectPath(")) {
+                    session.sampleClip(line, observe);
+                } else {
+                    session.run(line);
+                }
             }
         } finally {
             session.kernel().getConstruction().setFileLoading(false);
         }
         if (steps.isEmpty() || !"initial".equals(((Map<?, ?>) steps.get(0)).get("action"))) {
             throw new IllegalArgumentException("the first step must be 'initial'");
+        }
+        if (undo) {
+            session.kernel().initUndoInfo();
         }
         List<Object> outSteps = new ArrayList<>();
         List<Object> snapshots = new ArrayList<>();
@@ -193,12 +206,26 @@ public final class GoldenGenerator {
                     outStep.put("label", label);
                     break;
                 }
-                case "add": {
+                case "add":
+                case "append": {
                     String line = (String) step.get("line");
                     session.run(line);
                     outStep.put("line", line);
                     break;
                 }
+                case "anchor_text": {
+                    String label = (String) step.get("label");
+                    String point = (String) step.get("point");
+                    session.anchorText(label, point);
+                    outStep.put("label", label);
+                    outStep.put("point", point);
+                    break;
+                }
+                case "undo":
+                case "redo":
+                case "reload":
+                    session.restoreStep(action);
+                    break;
                 case "redefine": {
                     String line = (String) step.get("line");
                     session.redefine(line);
@@ -241,7 +268,13 @@ public final class GoldenGenerator {
             if (outStep.size() != step.size()) {
                 throw new IllegalArgumentException("unexpected fields in step " + step);
             }
-            Map<String, Object> snap = session.snapshot(sampleCurves);
+            if (undo && i > 0 && !Set.of("undo", "redo", "reload").contains(action)) {
+                session.kernel().storeUndoInfo();
+            }
+            Map<String, Object> snap = session.snapshot(sampleCurves, observe);
+            if (observe != null && !snap.keySet().equals(new HashSet<>(observe))) {
+                throw new IllegalStateException("observed labels " + observe + ", found " + snap.keySet());
+            }
             for (Object o : snap.values()) {
                 if (Boolean.FALSE.equals(((Map<?, ?>) o).get("defined"))) {
                     stats.undefined++;
@@ -261,11 +294,14 @@ public final class GoldenGenerator {
         if (view != null) {
             golden.put("view", view);
         }
+        if (observe != null) {
+            golden.put("observe", observe);
+        }
         golden.put("steps", outSteps);
         golden.put("snapshots", snapshots);
         if (input.size() != (4 + (boundaryGrowth ? 1 : 0) + (pointListGrowth ? 1 : 0)
                 + (rootGrowth ? 1 : 0) + (sampleCurves ? 1 : 0) + (view != null ? 1 : 0)
-                + (fileLoading ? 1 : 0))) {
+                + (fileLoading ? 1 : 0) + (observe != null ? 1 : 0))) {
             throw new IllegalArgumentException(
                     "unexpected fields in the case input");
         }

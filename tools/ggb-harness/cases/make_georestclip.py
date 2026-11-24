@@ -120,4 +120,28 @@ cases.case("longcarrier", [
     "s = IntersectPath(p, g)",
 ], [])
 
+
+cases.case("longpath", [
+    pt("O", 0, 0), "k = Circle(O, 1)",
+    "vertices = Sequence((j/100001, 0), j, 1, 100000)",
+    "p = PolyLine(vertices)", "q = IntersectPath(p, k)",
+], [])
+# Sample the ends without recording the full 100,000-vertex path twice.
+cases.cases[-1]["observe"] = ["q_{1}", "q_{99999}"]
+
+# The output prefix already has occupied indexed labels.
+cases.case("occupied", circle + [
+    "q_{1} = 1", "q_{2} = 2", pt("A", -1, 0), pt("B", 1, 0),
+    "s = Segment(A, B)", "q = IntersectPath(s, k)",
+], [mv("B", 1, 1)])
+
+# Overlay points and edges use the next free labels in their own families.
+cases.case("overlaylabels", [
+    pt("P0", 1, 0), pt("P1", 0, 1), pt("P2", -1, 0), pt("P3", 0, -1),
+    "p = Polygon(P0, P1, P2, P3)",
+    pt("S0", -2, -2), pt("S1", 2, -2), pt("S2", 2, 2), pt("S3", -2, 2),
+    "s = Polygon(S0, S1, S2, S3)",
+    "B = 1", "C = 1", "b = 1", "c = 1", "r = IntersectPath(p, s)",
+], [])
+
 cases.write()

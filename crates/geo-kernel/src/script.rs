@@ -962,8 +962,11 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
                 if crate::expr::inequality::fails(c, source) {
                     return Err(INEQUALITY_FAILURE.into());
                 }
-                let count = crate::expr::inequality::vertices(c, source).len().max(1);
-                return add_outputs(c, name, PointDef::inequality_slots(source, count)).map(Some);
+                let count = crate::expr::inequality::preview_vertices(c, source)
+                    .len()
+                    .max(1);
+                let defs = PointDef::inequality_slots(c, source, count);
+                return add_outputs(c, name, defs).map(Some);
             }
             // A boolean expression becomes an unlabeled helper, which has
             // no checkbox drawable.
@@ -1837,8 +1840,10 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
         if crate::expr::inequality::fails(c, source) {
             return Some(Err(INEQUALITY_FAILURE.into()));
         }
-        let count = crate::expr::inequality::vertices(c, source).len().max(1);
-        return Some(Ok(PointDef::inequality_slots(source, count)));
+        let count = crate::expr::inequality::preview_vertices(c, source)
+            .len()
+            .max(1);
+        return Some(Ok(PointDef::inequality_slots(c, source, count)));
     }
     if func == "Angle" {
         if let Some(defs) = angle::fixed(c, &args) {
@@ -2515,7 +2520,8 @@ fn exec_slots(c: &mut Construction, slots: &[&str], rhs: &str) -> Result<Option<
             if slots.len() > crate::expr::inequality::MAX_VERTICES {
                 return Err("too many output labels for the inequality".into());
             }
-            return add_named_outputs(c, slots, PointDef::inequality_slots(source, slots.len()));
+            let defs = PointDef::inequality_slots(c, source, slots.len());
+            return add_named_outputs(c, slots, defs);
         }
     }
     if let Some((name @ "Intersect", args)) = split_call(rhs) {

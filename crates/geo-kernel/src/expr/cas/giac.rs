@@ -503,7 +503,7 @@ impl Printer<'_> {
         match e.nodes[i as usize] {
             Node::Num(v) => {
                 match &e.lits[i as usize] {
-                    Lit::Special(Some(dec)) => self.literal(&dec.negated(), out),
+                    Lit::Special(Some(dec), _) => self.literal(&dec.negated(), out),
                     _ => self.number(-v, out),
                 }
                 Some(())
@@ -536,7 +536,7 @@ impl Printer<'_> {
         match e.nodes[i as usize] {
             Node::Num(v) => {
                 match &e.lits[i as usize] {
-                    Lit::Special(Some(dec)) => self.literal(dec, out),
+                    Lit::Special(Some(dec), _) => self.literal(dec, out),
                     _ => self.number(v, out),
                 }
                 Some(())

@@ -1,0 +1,191 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "corners-textbounds-001",
+      "group": "corners",
+      "script": [
+        "A = (0.3, 1.2)",
+        "b = UnicodeToLetter(10)",
+        "a = \"A_{12}\" + b + \"Wide\"",
+        "t = Text(a, A)",
+        "P = Corner(t, 1)",
+        "Q = Corner(t, 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -0.35, "y": 0.25 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.3, "y": 1.2 },
+          "b": { "type": "text", "defined": true, "text": "\u000a" },
+          "a": { "type": "text", "defined": true, "text": "A_{12}\u000aWide" },
+          "t": { "type": "text", "defined": true, "text": "A_{12}\u000aWide" },
+          "P": { "type": "point", "defined": true, "x": 0.24, "y": 0.66 },
+          "Q": { "type": "point", "defined": true, "x": 0.84, "y": 1.5 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -0.35, "y": 0.25 },
+          "b": { "type": "text", "defined": true, "text": "\u000a" },
+          "a": { "type": "text", "defined": true, "text": "A_{12}\u000aWide" },
+          "t": { "type": "text", "defined": true, "text": "A_{12}\u000aWide" },
+          "P": { "type": "point", "defined": true, "x": -0.4, "y": -0.29999999999999993 },
+          "Q": { "type": "point", "defined": true, "x": 0.19999999999999996, "y": 0.54 }
+        }
+      ]
+    },
+    {
+      "id": "corners-textbounds-002",
+      "group": "corners",
+      "script": [
+        "A = (1, 2)",
+        "t = Text(\"x^2\", A, false, true)",
+        "P = Corner(t, 1)",
+        "Q = Corner(t, 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "t": { "type": "text", "defined": true, "text": "x^2" },
+          "P": { "type": "point", "defined": true, "x": 0.9400000000000001, "y": 1.58 },
+          "Q": { "type": "point", "defined": true, "x": 1.06, "y": 2.06 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "t": { "type": "text", "defined": true, "text": "x^2" },
+          "P": { "type": "point", "defined": true, "x": 1.94, "y": -0.42 },
+          "Q": { "type": "point", "defined": true, "x": 2.06, "y": 0.06 }
+        }
+      ]
+    },
+    {
+      "id": "corners-textbounds-003",
+      "group": "corners",
+      "script": [
+        "t = Text(\"Before $x^2$ after\", (0, 0), false, true)",
+        "P = Corner(t, 1)",
+        "Q = Corner(t, 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "Before $x^2$ after" },
+          "P": { "type": "point", "defined": true, "x": -0.06, "y": -0.42 },
+          "Q": { "type": "point", "defined": true, "x": 1.6199999999999999, "y": 0.06 }
+        }
+      ]
+    },
+    {
+      "id": "corners-textbounds-004",
+      "group": "corners",
+      "script": [
+        "t = Text(\"$$abc$$\", (0,0), false, true)",
+        "P = Corner(t, 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "$$abc$$" },
+          "P": { "type": "point", "defined": true, "x": 0.06, "y": 0.06 }
+        }
+      ]
+    },
+    {
+      "id": "corners-textbounds-005",
+      "group": "corners",
+      "script": [
+        "t = \"a__\"",
+        "P = Corner(t, 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "a__" },
+          "P": { "type": "point", "defined": true, "x": 0.16, "y": 0.3 }
+        }
+      ]
+    },
+    {
+      "id": "corners-textbounds-006",
+      "group": "corners",
+      "script": [
+        "n = 1",
+        "A = (sqrt(n), 0)",
+        "t = Text(\"hi\", A)",
+        "Q = Corner(t, 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": -1.0 },
+        { "action": "set_number", "label": "n", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "t": { "type": "text", "defined": true, "text": "hi" },
+          "Q": { "type": "point", "defined": true, "x": 1.3, "y": 0.3 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": false },
+          "t": { "type": "text", "defined": false },
+          "Q": { "type": "point", "defined": true, "x": 1.3, "y": 0.3 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "t": { "type": "text", "defined": true, "text": "hi" },
+          "Q": { "type": "point", "defined": true, "x": 2.3, "y": 0.3 }
+        }
+      ]
+    },
+    {
+      "id": "corners-textbounds-007",
+      "group": "corners",
+      "script": [
+        "A = (0, 0)",
+        "t = \"abc\""
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "anchor_text", "label": "t", "point": "A" },
+        { "action": "append", "line": "Q = Corner(t, 3)" },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "text", "defined": true, "text": "abc" }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "text", "defined": true, "text": "abc" }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "text", "defined": true, "text": "abc" },
+          "Q": { "type": "point", "defined": true, "x": 0.42, "y": 0.3 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "t": { "type": "text", "defined": true, "text": "abc" },
+          "Q": { "type": "point", "defined": true, "x": 1.42, "y": 1.3 }
+        }
+      ]
+    }
+  ]
+}

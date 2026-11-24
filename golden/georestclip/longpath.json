@@ -1,0 +1,31 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "georestclip-longpath-001",
+      "group": "georestclip",
+      "script": [
+        "O = (0, 0)",
+        "k = Circle(O, 1)",
+        "vertices = Sequence((j/100001, 0), j, 1, 100000)",
+        "p = PolyLine(vertices)",
+        "q = IntersectPath(p, k)"
+      ],
+      "observe": [
+        "q_{1}",
+        "q_{99999}"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q_{1}": { "type": "segment", "defined": true, "x1": 9.99990000099999E-6, "y1": 0.0, "x2": 1.999980000199998E-5, "y2": 0.0 },
+          "q_{99999}": { "type": "segment", "defined": true, "x1": 0.999980000199998, "y1": 0.0, "x2": 0.999990000099999, "y2": 0.0 }
+        }
+      ]
+    }
+  ]
+}
