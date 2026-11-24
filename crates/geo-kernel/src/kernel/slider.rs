@@ -235,6 +235,31 @@ impl Construction {
         requires_replay
     }
 
+    pub(super) fn copy_redefined_slider_animation(
+        &mut self,
+        id: Id,
+        step: Option<String>,
+        speed: Option<String>,
+    ) {
+        // Copying the old style freezes its step after both endpoint cascades.
+        let step = step.or_else(|| {
+            let source = self.slider_animation_options(id)[0]?;
+            Some(match self.numeric_value(source) {
+                Some(f64::INFINITY) => "Infinity".to_owned(),
+                Some(f64::NEG_INFINITY) => "-Infinity".to_owned(),
+                Some(value) if !value.is_nan() => value.to_string(),
+                _ => source.to_owned(),
+            })
+        });
+        if step.is_some() || speed.is_some() {
+            let options = self.slider_animation_options.entry(id).or_default();
+            options[0] = step;
+            if speed.is_some() {
+                options[1] = speed;
+            }
+        }
+    }
+
     /// Explicit step and speed expressions from the slider command.
     pub fn slider_animation_options(&self, id: Id) -> [Option<&str>; 2] {
         self.slider_animation_options

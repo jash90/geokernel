@@ -2542,9 +2542,7 @@ impl Construction {
                 self.refresh_circle_hints(&mut dirty);
             }
         }
-        for child in self.children(id) {
-            dirty.insert(self.evaluation_rank(child));
-        }
+        let clamped_slider = self.enqueue_updated_children(id, &mut dirty, true);
         for child in old_reads.keys().copied() {
             if matches!(
                 self.def(child),
@@ -2553,9 +2551,10 @@ impl Construction {
                 dirty.insert(self.evaluation_rank(child));
             }
         }
-        // Same-kind replacements of independent values are assignments
-        // in AlgebraProcessor. A change of definition rebuilds from XML.
-        let rebuild_records = !(old.is_free() && def.is_free() && old.kind() == def.kind());
+        // Assignments and childless replacements keep the existing
+        // construction, including retained geometry outside the edit.
+        let rebuild_records = !self.children[id.0].is_empty()
+            && !(old.is_free() && def.is_free() && old.kind() == def.kind());
         if rebuild_records {
             for (i, &def) in self.defs.iter().enumerate() {
                 if matches!(def, Def::Expr(d) if expr::reset_list_records(self, d)) {
@@ -2600,22 +2599,9 @@ impl Construction {
         if bounds.is_some() {
             self.remember_slider_slot(id);
             let [step, speed] = slider_options.unwrap_or_default();
-            // Copying the old visual style freezes the step at its value
-            // after both endpoint updates and their cascades.
-            let step = step.or_else(|| {
-                let source = self.slider_animation_options(id)[0]?;
-                let value = self.numeric_value(source).filter(|value| value.is_finite());
-                Some(value.map_or_else(|| source.to_owned(), |value| value.to_string()))
-            });
-            if step.is_some() || speed.is_some() {
-                let options = self.slider_animation_options.entry(id).or_default();
-                options[0] = step;
-                if speed.is_some() {
-                    options[1] = speed;
-                }
-            }
+            self.copy_redefined_slider_animation(id, step, speed);
         }
-        self.last_update_requires_replay |= requires_replay;
+        self.last_update_requires_replay |= requires_replay || clamped_slider;
         // A checkpoint cannot restore a changed definition.
         self.invalidate_checkpoints();
         Ok(Some(id))
@@ -3694,7 +3680,7 @@ impl Construction {
         // the set is lost, and `fit` gives a clean one on the next update.
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.defs.len());
-        let clamped_slider = self.enqueue_updated_children(start, &mut dirty);
+        let clamped_slider = self.enqueue_updated_children(start, &mut dirty, false);
         let recomputed = self.propagate_dirty(dirty, self.evaluation_rank(start));
         // The sweep starts a fresh replay flag. Keep clamps by the initial
         // endpoint listeners alongside changes made during the sweep.
@@ -3702,7 +3688,12 @@ impl Construction {
         recomputed
     }
 
-    fn enqueue_updated_children(&mut self, parent: Id, dirty: &mut DirtySet) -> bool {
+    fn enqueue_updated_children(
+        &mut self,
+        parent: Id,
+        dirty: &mut DirtySet,
+        refresh_definitions: bool,
+    ) -> bool {
         if self.saved_slider_bounds.is_empty() {
             for child in self.children[parent.0].iter() {
                 dirty.insert(self.evaluation_rank(child));
@@ -3724,9 +3715,12 @@ impl Construction {
         }
         let mut clamped_slider = false;
         for child in sliders.drain(..) {
-            if self.update_slider_bounds(child) {
+            let changed = self.update_slider_bounds(child);
+            if changed {
                 clamped_slider = true;
                 self.construction_sources.remove(&child);
+            }
+            if changed || refresh_definitions {
                 dirty.insert(self.evaluation_rank(child));
             }
         }
@@ -4043,10 +4037,14 @@ impl Construction {
                         self.inequality_helpers.pending.insert(Id(i));
                     }
                     let new = self.compute(def, i);
-                    // Redefinition retains the circle through a point when
-                    // either input is undefined, including its type for proofs.
+                    // A through-point circle can become undefined during
+                    // redefinition and retain the type it had at the start
+                    // of that update. An already undefined circle starts the
+                    // rebuild without its old type.
                     let reset_circle_record = rebuild_records
-                        && !(redefining && matches!(def, Def::CircleThrough { .. }));
+                        && !(redefining
+                            && matches!(def, Def::CircleThrough { .. })
+                            && self.values[i].is_defined());
                     let record_changed = self.keep_circle_record(i, def, new, reset_circle_record);
                     if let Def::IntersectBoundary(intersection) = def {
                         if let Some(saved) = intersection.with_root(new) {
@@ -4111,7 +4109,7 @@ impl Construction {
             // its slider listeners before the next endpoint is evaluated.
             if (!refresh_definitions
                 || def.kind() == Kind::Number && !self.saved_slider_bounds.is_empty())
-                && self.enqueue_updated_children(Id(i), &mut dirty)
+                && self.enqueue_updated_children(Id(i), &mut dirty, false)
             {
                 self.last_update_requires_replay = true;
             }

@@ -914,3 +914,56 @@ fn a_scalar_replacing_a_nested_list_leaves_its_points_at_the_previous_scale() {
         ));
     }
 }
+
+#[test]
+fn followup_nested_transform_keeps_the_active_point_across_two_scalar_replacements() {
+    use super::Element;
+
+    for command in ["Dilate(L, 2)", "ApplyMatrix({{2, 0}, {0, 2}}, L)"] {
+        let mut c = load(&format!(
+            "t = 2\nA = (1, 2)\nB = (3, 5)\n\
+             L = If(t > 1, {{{{A}}, {{B}}}}, If(t > 0, {{{{A}}, 4}}, {{3, 4}}))\nM = {command}"
+        ))
+        .unwrap();
+        let t = c.id("t").unwrap();
+        c.set_number(t, 1.0).unwrap();
+        c.set_number(t, 0.0).unwrap();
+        let result = c.elements(c.id("M").unwrap()).unwrap();
+        for (index, expected) in [
+            (0, Value::Point { x: 16.0, y: 32.0 }),
+            (1, Value::Point { x: 6.0, y: 10.0 }),
+        ] {
+            let Some(Element::List(nested)) = result.get(index) else {
+                panic!("expected a retained nested list at {index}");
+            };
+            assert!(
+                matches!(
+                    nested.get(0),
+                    Some(Element::Value(Kind::Point, point)) if point == expected
+                ),
+                "{command}, output {index}: {:?}",
+                nested.get(0)
+            );
+        }
+    }
+}
+
+#[test]
+fn followup_a_redefined_direct_endpoint_notifies_before_the_other_bound_updates() {
+    let mut c = load("u = -4\nhi = u + 3\na = Slider(u, hi)").unwrap();
+    crate::script::exec(&mut c, "u = -0.5").unwrap();
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Number(1.0));
+}
+
+#[test]
+fn followup_an_omitted_infinite_step_stays_frozen_after_widening() {
+    let mut c = load("h = 0.2\na = Slider(0, 6, h, 2)").unwrap();
+    let a = c.id("a").unwrap();
+    c.set_number(a, 5.0).unwrap();
+    crate::script::exec(&mut c, "h = 1/(a - 2)").unwrap();
+    crate::script::exec(&mut c, "a = Slider(0, 2)").unwrap();
+    crate::script::exec(&mut c, "a = Slider(0, 6)").unwrap();
+    c.set_number(a, 5.0).unwrap();
+    let step = c.slider_animation_options(a)[0].unwrap();
+    assert_eq!(c.numeric_value(step), Some(f64::INFINITY));
+}

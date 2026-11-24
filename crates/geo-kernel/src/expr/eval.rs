@@ -255,6 +255,8 @@ pub(super) struct Lists {
     objects: RefCell<([Id; MAX_OBJECTS], usize)>,
     built: Cell<u64>,
     nested_transforms: RefCell<super::NestedTransforms>,
+    /// An active root output, first addressed in the arena, then in Entry::items.
+    pub(super) root_transform: Cell<Option<Option<u32>>>,
     pub(super) invalid_transform_list: Cell<bool>,
     /// The reading of [`work_done`] past which the evaluation is over.
     end: Cell<u64>,
@@ -271,6 +273,7 @@ impl Lists {
             objects: RefCell::new(([Id(0); MAX_OBJECTS], 0)),
             built: Cell::new(0),
             nested_transforms: RefCell::new(super::NestedTransforms::new()),
+            root_transform: Cell::new(None),
             invalid_transform_list: Cell::new(false),
             end: Cell::new(carrier_deadline()),
             helper_remaining: Cell::new(limit()),
@@ -279,12 +282,24 @@ impl Lists {
         }
     }
 
-    pub(super) fn remember_transform(&self, node: u32, start: u32, len: u32) {
+    pub(super) fn remember_transform(
+        &self,
+        node: u32,
+        start: u32,
+        len: u32,
+        active: Option<u32>,
+        root: bool,
+    ) {
+        if root {
+            // root_list flattens the result into Entry::items.
+            self.root_transform.set(Some(active));
+            return;
+        }
         let mut items = Vec::new();
-        copy_tree(&self.arena.borrow(), start, len, &mut items);
+        let active = copy_tree(&self.arena.borrow(), start, len, &mut items, active);
         self.nested_transforms
             .borrow_mut()
-            .insert(node, (len, items));
+            .insert(node, super::TransformOutput { len, items, active });
     }
 
     pub(super) fn take_nested_transforms(&self) -> super::NestedTransforms {
@@ -371,7 +386,7 @@ impl Lists {
     /// as built then; `false` past the element bound.
     fn copy_out(&self, c: &Construction, start: u32, len: u32, out: &mut Vec<Slot>) -> bool {
         if self.objects.borrow().1 == 0 {
-            copy_tree(&self.arena.borrow(), start, len, out);
+            copy_tree(&self.arena.borrow(), start, len, out, None);
             return true;
         }
         let copy = |from: u32, n: u32, out: &mut Vec<Slot>| {
@@ -916,6 +931,13 @@ pub(super) fn root_list(
         return None;
     }
     out.clear();
+    if let Some(active) = lists.root_transform.get() {
+        // A transformation writes the entire output, including its nested
+        // lists, to the arena. Keep the active slot's address after copying.
+        let active = copy_tree(&lists.arena.borrow(), start, len, out, active);
+        lists.root_transform.set(Some(active));
+        return Some(len);
+    }
     lists.copy_out(c, start, len, out).then_some(len)
 }
 

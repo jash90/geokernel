@@ -788,7 +788,14 @@ struct FunctionInterval {
     defined: bool,
 }
 
-type NestedTransforms = std::collections::BTreeMap<u32, (u32, Vec<Slot>)>;
+#[derive(Clone)]
+struct TransformOutput {
+    len: u32,
+    items: Vec<Slot>,
+    active: Option<u32>,
+}
+
+type NestedTransforms = std::collections::BTreeMap<u32, TransformOutput>;
 
 #[derive(Clone)]
 pub(crate) struct Entry {
@@ -808,6 +815,8 @@ pub(crate) struct Entry {
     /// Whether a function's tree requires checking its branches or transforms
     /// to decide whether it is defined (see [`inputs_defined`]).
     checks_branches: bool,
+    /// Whether the expression contains a separate AlgoIf predecessor.
+    pub(crate) has_if_algorithm: bool,
     /// Whether this tree or an applied function needs an expression work meter.
     inverts: bool,
     /// The objects named in the tree (a function's inputs).
@@ -821,6 +830,7 @@ pub(crate) struct Entry {
     lists: bool,
     /// The elements of a list result (see [`list`]).
     items: Vec<Slot>,
+    root_transform_active: Option<u32>,
     nested_transforms: NestedTransforms,
     coordinate_layout: Option<list::CoordinateLayout>,
     depth: u32,
@@ -990,13 +1000,20 @@ impl Entry {
             _ => false,
         });
         let lists = reads_list(&p.nodes, &p.tys);
+        let has_if_algorithm = !function
+            && matches!(p.tys[p.root as usize], Ty::Num(_))
+            && p.nodes
+                .iter()
+                .any(|node| matches!(node, Node::If(IfMode::Algo | IfMode::AlgoNext, ..)));
         Entry {
             stuck: Stuck::default(),
             list_history: ListHistory::default(),
             checks_branches,
+            has_if_algorithm,
             inverts,
             lists,
             items: Vec::new(),
+            root_transform_active: None,
             nested_transforms: NestedTransforms::new(),
             coordinate_layout: None,
             interval: None,
@@ -1762,6 +1779,7 @@ pub(crate) struct SavedResult {
     coordinate_layout: Option<list::CoordinateLayout>,
     stuck: Vec<u32>,
     list_records: Option<ListRecords>,
+    root_transform_active: Option<u32>,
     nested_transforms: NestedTransforms,
 }
 
@@ -1782,7 +1800,7 @@ impl SavedResult {
         let transform_work = e
             .nested_transforms
             .values()
-            .map(|(_, slots)| 1 + slots.len())
+            .map(|output| 1 + output.items.len())
             .sum::<usize>();
         let work = 2
             * (1 + e.items.len() + extra_work + stuck.len() + transform_work + record_work) as u64;
@@ -1794,6 +1812,7 @@ impl SavedResult {
             coordinate_layout: e.coordinate_layout,
             stuck: stuck.clone(),
             list_records: list_records.as_deref().cloned(),
+            root_transform_active: e.root_transform_active,
             nested_transforms: e.nested_transforms.clone(),
         })
     }
@@ -1804,6 +1823,7 @@ impl SavedResult {
         e.extra = self.extra;
         e.interval = self.interval;
         e.items = self.items;
+        e.root_transform_active = self.root_transform_active;
         e.nested_transforms = self.nested_transforms;
         e.coordinate_layout = self.coordinate_layout;
         *e.stuck.nodes() = self.stuck;
@@ -1897,8 +1917,10 @@ fn update_lists(c: &mut Construction, d: ExprDef) -> ((Value, bool), bool) {
     let out = evaluate_lists(c, d, &lists, &mut items);
     let invalid_transform_list = lists.invalid_transform_list.get();
     let transforms = lists.take_nested_transforms();
+    let root_transform_active = lists.root_transform.get().flatten();
     c.exprs.arena = lists.into_arena();
     let e = &mut c.exprs.entries[d.index as usize];
+    e.root_transform_active = root_transform_active;
     e.nested_transforms.extend(transforms);
     let items_changed = !list::same_slots(&e.items, &items);
     if items_changed {

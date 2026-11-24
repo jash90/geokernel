@@ -143,4 +143,17 @@ cases.case("bulkrollback", [
     *(f"{label} = If(a < 0.01, Sum(Sort(v)), a)" for label in readers),
 ], [setn("k", 2)])
 cases.cases[-1]["observe"] = ["a", "k", "m", "n", *readers]
+for command in ["Dilate(L, 2)", "ApplyMatrix({{2, 0}, {0, 2}}, L)"]:
+    cases.case("nestedactiveoutput", [
+        "t = 2", "A = (1, 2)", "B = (3, 5)",
+        "L = If(t > 1, {{A}, {B}}, If(t > 0, {{A}, 4}, {3, 4}))", f"M = {command}",
+    ], [setn("t", 1), setn("t", 0)])
+cases.case("directendpoint", [
+    "u = -4", "hi = u + 3", "a = Slider(u, hi)",
+], [redefine("u = -0.5")])
+cases.case("infinitestep", ["h = 0.2", "a = Slider(0, 6, h, 2)"], [
+    setn("a", 5), redefine("h = 1/(a - 2)"), redefine("a = Slider(0, 2)"),
+    redefine("a = Slider(0, 6)"), setn("a", 5),
+    {"action": "slider_animation", "label": "a"},
+])
 cases.write()

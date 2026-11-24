@@ -423,13 +423,42 @@ cases.case("dependencyreplay", INDEXED_DIAMETER + [
     "M = Midpoint(A, Q)", "B = (3, 5)", "r = Prove(AreCollinear(O, M, B))",
     "S = Intersect(g, c)", "U = (1, 2)", "V = (4, 3)", "h = Line(U, V)",
 ], [redefine("B = Point(h, 0.25)"), add("p_2 = Prove(AreEqual(A, Q))")])
-cases.case("rebuiltcircle", [
+RADIUS_CIRCLE = [
     "O = (0, 0)", "A = (-3, 0)", "B = (3, 0)", "n = 2", "c = Circle(O, n)",
     "Q = Intersect(Line(A, B), c, 1)", "b = A == B", "p = Prove(b)",
-], [redefine("n = -1"), redefine("b = false"),
-    add("p_2 = Prove(AreCollinear(A, B, Q))")])
+]
+REBUILD_RADIUS = [
+    redefine("n = -1"), redefine("b = false"),
+    add("p_2 = Prove(AreCollinear(A, B, Q))"),
+]
+cases.case("rebuiltcircle", RADIUS_CIRCLE, REBUILD_RADIUS)
 proof("conditionalselector",
       PARABOLA + ["s = Line(A, B)", "n = If(x(B) > 0, 1, 2)", "P = Intersect(s, k, n)"],
       "AreCollinear(A, B, P)")
+
+THROUGH_CIRCLE = [
+    "O = (0, 0)", "A = (-3, 0)", "B = (3, 0)", "C = (1, 0)", "D = (1, 2)",
+    "g = Line(A, B)", "h = Line(C, D)", "H = Intersect(g, h)", "c = Circle(O, H)",
+    "Q = Intersect(Line(A, B), c, 1)", "b = A == B", "p = Prove(b)",
+]
+cases.case("rebuiltthrough", THROUGH_CIRCLE, [
+    redefine("D = (2, 0)"), redefine("b = false"),
+    add("p_2 = Prove(AreCollinear(A, B, Q))"),
+])
+cases.case("rebuiltthrough", THROUGH_CIRCLE + ["R = Intersect(Line(A, Q), c, 1)"], [
+    redefine("D = (2, 0)"), redefine("b = false"),
+    add("p_2 = Prove(AreCollinear(A, Q, R))"),
+])
+
+cases.case("retainedradius", RADIUS_CIRCLE, [
+    redefine("n = -1"), add("unused = 1"), redefine("unused = x(A)"),
+    add("p_2 = Prove(AreCollinear(A, B, Q))"),
+])
+proof("wrappedselector",
+      PARABOLA + ["s = Line(A, B)", "n = If(x(B) > 0, 1, 2) + 0", "P = Intersect(s, k, n)"],
+      "AreCollinear(A, B, P)")
+cases.case("rebuiltdetails", RADIUS_CIRCLE, REBUILD_RADIUS + [
+    add("q_2 = ProveDetails(AreCollinear(A, B, Q))"),
+])
 
 cases.write()

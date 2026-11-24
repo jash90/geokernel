@@ -271,13 +271,7 @@ impl System {
             }
             Def::Expr(d) if c.kind(id) == Kind::Number => {
                 let entry = crate::expr::source_entry(c, d);
-                if matches!(
-                    crate::expr::nodes_of(entry)[crate::expr::root_of(entry) as usize],
-                    Node::If(
-                        crate::expr::IfMode::Algo | crate::expr::IfMode::AlgoNext,
-                        ..
-                    )
-                ) {
+                if entry.has_if_algorithm {
                     self.unknown = true;
                     return None;
                 }
@@ -480,14 +474,17 @@ impl System {
             proper_circle(c, id)
                 || c.circle_record(id)
                     .is_some_and(|conic| conic.ty == ConicType::Circle)
-                // Redefinition can clear the numeric record when the new
-                // coordinates are undefined. The centre and through-point
-                // still supply the equations of the symbolic circle.
-                || (!c.value(id).is_defined()
-                    && matches!(c.def(id), Def::CircleThrough { .. }))
         };
-        if cached.is_none() && (!is_circle(second) || (two_circles && !is_circle(first))) {
-            return None;
+        if cached.is_none() {
+            let missing_second = !is_circle(second);
+            let missing_first = two_circles && !is_circle(first);
+            if missing_second || missing_first {
+                // The reference reports an unknown proof if an undefined
+                // conic has no retained circle type for the intersection.
+                self.unknown = (missing_second && !c.value(second).is_defined())
+                    || (missing_first && !c.value(first).is_defined());
+                return None;
+            }
         }
         let p = [self.new_var(false)?, self.new_var(false)?];
         if two_circles {

@@ -851,6 +851,63 @@ mod tests {
     }
 
     #[test]
+    fn followup_inline_circle_intersections_lose_the_rebuilt_through_circle_type() {
+        let script = "O = (0, 0)\nA = (-3, 0)\nB = (3, 0)\nC = (1, 0)\nD = (1, 2)\n\
+                      g = Line(A, B)\nh = Line(C, D)\nH = Intersect(g, h)\nc = Circle(O, H)\n\
+                      Q = Intersect(Line(A, B), c, 1)\nb = A == B\np = Prove(b)";
+        for (extra, statement) in [
+            ("", "AreCollinear(A, B, Q)"),
+            ("\nR = Intersect(Line(A, Q), c, 1)", "AreCollinear(A, Q, R)"),
+        ] {
+            let mut c = crate::script::load(&format!("{script}{extra}")).unwrap();
+            crate::script::exec(&mut c, "D = (2, 0)").unwrap();
+            crate::script::exec(&mut c, "b = false").unwrap();
+            let proof = crate::script::exec(&mut c, &format!("p_2 = Prove({statement})"))
+                .unwrap()
+                .unwrap();
+            assert_eq!(c.value(proof), Value::Undefined, "{statement}");
+        }
+    }
+
+    const FOLLOWUP_RADIUS: &str = "O = (0, 0)\nA = (-3, 0)\nB = (3, 0)\nn = 2\nc = Circle(O, n)\n\
+         Q = Intersect(Line(A, B), c, 1)\nb = A == B\np = Prove(b)";
+
+    #[test]
+    fn followup_childless_redefinition_keeps_the_retained_circle_type() {
+        let mut c = crate::script::load(FOLLOWUP_RADIUS).unwrap();
+        for line in ["n = -1", "unused = 1", "unused = x(A)"] {
+            crate::script::exec(&mut c, line).unwrap();
+        }
+        let proof = crate::script::exec(&mut c, "p_2 = Prove(AreCollinear(A, B, Q))")
+            .unwrap()
+            .unwrap();
+        assert_eq!(c.value(proof), Value::Bool(true));
+    }
+
+    #[test]
+    fn followup_a_wrapped_conditional_selector_makes_the_proof_unknown() {
+        let script = "D = (-3, -1)\nE = (3, -1)\nd = Line(D, E)\nF = (0, 1)\nk = Parabola(F, d)\n\
+             A = (-4, 1)\nB = (4, 1)\ns = Line(A, B)\nn = If(x(B) > 0, 1, 2) + 0\n\
+             P = Intersect(s, k, n)\nb = AreCollinear(A, B, P)";
+        assert_eq!(outcome(script, Question::Prove), Outcome::Unknown);
+        assert_eq!(outcome(script, Question::Details), Outcome::Unknown);
+    }
+
+    #[test]
+    fn followup_details_for_a_rebuilt_undefined_radius_circle_are_empty() {
+        let mut c = crate::script::load(FOLLOWUP_RADIUS).unwrap();
+        for line in [
+            "n = -1",
+            "b = false",
+            "p_2 = Prove(AreCollinear(A, B, Q))",
+            "q_2 = ProveDetails(AreCollinear(A, B, Q))",
+        ] {
+            crate::script::exec(&mut c, line).unwrap();
+        }
+        assert_eq!(c.elements(c.id("q_2").unwrap()).unwrap().len(), 0);
+    }
+
+    #[test]
     fn keeps_the_result_while_points_move() {
         let mut c =
             crate::script::load(&format!("{MIDLINE}\np = Prove(b)\nq = ProveDetails(b)")).unwrap();
