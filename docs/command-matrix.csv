@@ -5,9 +5,9 @@ Min,,algebra,P2,done,5,5,"Min(number, number); Min(list)"
 Max,,algebra,P2,done,5,5,"Max(number, number); Max(list)"
 LCM,,algebra,P2,done,2,2,"LCM(number, number)"
 GCD,,algebra,P2,done,2,2,"GCD(number, number)"
-Expand,,algebra,P2,partial,6,5,"Polynomial and rational functions are in scope for the 1.0 CAS. A list, a line and a conic are refused as in the reference. Done only with the giac feature (docs/cas-giac.md): Expand(implicit)."
-Factor,,algebra,P2,partial,6,5,"Exact polynomial and rational functions are in scope for the 1.0 CAS. A list, a line and a conic are refused as in the reference. Done only with the giac feature (docs/cas-giac.md): Factor(implicit)."
-Simplify,,algebra,P2,partial,8,7,"Polynomial and rational functions, number inputs and formula texts are in scope for the 1.0 CAS. A list is refused as in the reference. Done only with the giac feature (docs/cas-giac.md): Simplify(function), Simplify(line), Simplify(conic), Simplify(implicit), Simplify(number)."
+Expand,,algebra,P2,done,6,6,"Polynomial and rational functions are in scope for the 1.0 CAS. A list, a line and a conic are refused as in the reference. Done only with the giac feature (docs/cas-giac.md): Expand(implicit), Expand(curve)."
+Factor,,algebra,P2,done,6,6,"Exact polynomial and rational functions are in scope for the 1.0 CAS. A list, a line and a conic are refused as in the reference. Done only with the giac feature (docs/cas-giac.md): Factor(implicit), Factor(curve)."
+Simplify,,algebra,P2,done,8,8,"Polynomial and rational functions, number inputs and formula texts are in scope for the 1.0 CAS. A list is refused as in the reference. Done only with the giac feature (docs/cas-giac.md): Simplify(function), Simplify(line), Simplify(conic), Simplify(implicit), Simplify(number), Simplify(curve)."
 PrimeFactors,,algebra,P2,done,1,1,
 CompleteSquare,,algebra,P2,done,1,1,"Quadratic polynomials, including quadratic polynomials in a power of x."
 ToBase,,algebra,P2,done,1,1,
@@ -510,7 +510,7 @@ Reflect,Mirror,transformation,P1,done,,,
 Assume,,cas,,out_of_scope,,,
 CFactor,,cas,,out_of_scope,,,
 CIFactor,,cas,,out_of_scope,,,
-IFactor,,algebra,P2,partial,6,5,"Polynomial and rational functions are in scope for the 1.0 CAS, with bounded radical forms. A list, a line and a conic are refused as in the reference. Done only with the giac feature (docs/cas-giac.md): IFactor(implicit)."
+IFactor,,algebra,P2,done,6,6,"Polynomial and rational functions are in scope for the 1.0 CAS, with bounded radical forms. A list, a line and a conic are refused as in the reference. Done only with the giac feature (docs/cas-giac.md): IFactor(implicit), IFactor(curve)."
 IntegralSymbolic,,cas,,out_of_scope,,,
 CommonDenominator,,algebra,P2,done,2,2,Number pairs and rational-function pairs.
 Cross,,algebra,P2,done,5,5,"point or vector pairs and list pairs of equal length 2 or 3, including row lists (vectorforms-listcross-001 and vectorforms-nestedcross-001)"

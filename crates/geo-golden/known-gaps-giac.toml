@@ -13,7 +13,7 @@
 # reason = "why it still differs with Giac"
 # mismatches = ["0:r1"]  # replaces the entry of known-gaps.toml (or adds one)
 
-# Cases that agree exactly once the solving commands are evaluated by Giac.
+# Cases that agree exactly with Giac.
 
 [[gap]]
 id = "cas-coefficient-001"
@@ -1380,6 +1380,7 @@ mismatches = ["1:step"]
 id = "cas-literal-001"
 agrees = true
 
+# Agreement from geometric read-back and algebra rewrites.
 [[gap]]
 id = "cas-family-003"
 agrees = true
@@ -1654,25 +1655,20 @@ agrees = true
 
 [[gap]]
 id = "cas-curve-011"
-reason = "The Linux replay agreed initially and while the curve was undefined. At a = 3, Giac returns 3*ggbtmpvart^2 and the rewritten second coordinate has value 9 at t = 0. The rewritten coordinates kept the initial a = 2, with second coordinate 4 at t = 0, because the builder did not register the FunctionObject read (crates/geo-kernel/src/expr/equation.rs:853). The same stale coordinates remain after a changes to 0 or 1."
-mismatches = ["1:r1", "1:r2", "1:r3", "3:r1", "3:r2", "3:r3", "4:r1", "4:r2", "4:r3"]
+agrees = true
 
 [[gap]]
 id = "cas-curve-012"
-reason = "At a = 0.5 Giac returns ggbtmpvart+1/2 for Expand and 1/2*(2*ggbtmpvart+1) for Factor. The reference starts at x = 0.5, while the rewritten curve kept x = 1. The same stale value remains after a changes to 3 or 0 because the builder did not register the FunctionObject read (crates/geo-kernel/src/expr/equation.rs:853)."
-mismatches = ["1:r1", "1:r2", "2:r1", "2:r2", "3:r1", "3:r2"]
+agrees = true
 
 [[gap]]
 id = "cas-curve-017"
-reason = "At a = 3 Giac returns ggbtmpvart+3 for the second coordinate. The reference starts at y = 3, while the rewritten curve kept y = 2. The same stale value remains after a changes to 0 or 1 because the builder did not register the FunctionObject read (crates/geo-kernel/src/expr/equation.rs:853)."
-mismatches = ["1:result", "3:result", "4:result"]
+agrees = true
 
 [[gap]]
 id = "cas-curve-022"
-reason = "At a = -1 Giac returns ggbtmpvart^3+1 for the second coordinate. The reference starts at y = 1, while the rewritten curve kept y = -2. The same stale value remains when a changes to 0.5 because the builder did not register the FunctionObject read (crates/geo-kernel/src/expr/equation.rs:853)."
-mismatches = ["1:r1", "1:r2", "2:r1", "2:r2"]
+agrees = true
 
 [[gap]]
 id = "cas-curve-024"
-reason = "Expand prints ggbtmpvart^2-200000000*ggbtmpvart+10000000000000000. At t = 99999999 the reference samples x = 0, while native powf rounded the square one unit higher and gave x = 2 (crates/geo-kernel/src/expr/cas/giac.rs:1349)."
-mismatches = ["0:r2"]
+agrees = true

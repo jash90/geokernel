@@ -185,21 +185,39 @@ coefficients printed at 15 significant digits.
 `Simplify`, `Expand`, `Factor` and `IFactor` use the single-argument templates
 from `Ggb2giac`. `CmdSimplify` converts a line or conic to its function where
 it has one. Cartesian curves rewrite each coordinate and reuse the source
-bounds. Implicit curves rewrite the equation's left side minus its right
-side and read the result as a polynomial equal to zero. `Factor` and
-`IFactor` keep the returned equation as the display form.
+bounds. The coordinates recompute when inputs change. Typed number objects
+keep their original decimal text in rewrite inputs. Implicit curves rewrite
+the equation's left side minus its right side and read the result as a
+polynomial equal to zero. `Factor` and `IFactor` keep the returned equation
+as the display form.
 
 ## Results (Linux x86_64)
 
 `GEO_GIAC_LIBRARY=$(tools/giac/fetch.sh) cargo test -p geo-golden --features
-giac --test golden -- --nocapture` runs the golden data with the feature;
+giac --test golden -- --nocapture` runs the golden data with the feature.
 `crates/geo-golden/known-gaps-giac.toml` lists, on top of
 `known-gaps.toml`, the cases that agree only with Giac (`agrees = true`) and
 the reason for those that still differ.
 
-The command matrix marks forms that require the feature as done only when
-every recorded case that may call the form agrees with Giac. Those rows
-use `giac = true` in `tools/command-matrix/form-evidence.toml`.
+The replay includes 7,304 cases, 7,303 of them from the harness.
+
+| Profile | Agree | Known gaps |
+| --- | ---: | ---: |
+| Default build | 6,819 | 485 |
+| `giac` feature, library present | 7,230 | 74 |
+| `giac` feature, no library | 6,819 | 485 |
+
+The Giac profile closes 97 of the 171 effective gaps at the start of this
+work. The remaining gaps include 73 inherited cases outside these CAS
+commands and `cas-plot-022`. The latter records the old `unknown command`
+message for invalid `PlotSolve` calls. The enabled command rejects the same
+calls with `invalid arguments`.
+
+All 71 forms of `Solve`, `Solutions`, `NSolve`, `NSolutions`, `PlotSolve`,
+`Simplify`, `Expand`, `Factor`, and `IFactor` have command-matrix evidence.
+Rows that require the feature use `giac = true` in
+`tools/command-matrix/form-evidence.toml`. The matrix tests check every
+recorded case that may call each done form against its profile.
 
 CI runs the binding, the kernel and the golden data with the feature on Linux
 (`giac-linux` in `.github/workflows/ci.yml`).

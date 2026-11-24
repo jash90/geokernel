@@ -4967,3 +4967,27 @@ form = "list,any"
 cases = ["cas-family-003", "cas-freevariable-001", "cas-freevariable-002"]
 difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
 giac = true
+
+[[form]]
+command = "Expand"
+form = "curve"
+cases = ["cas-curve-001", "cas-curve-004", "cas-curve-005"]
+giac = true
+
+[[form]]
+command = "Factor"
+form = "curve"
+cases = ["cas-curve-002", "cas-curve-004", "cas-curve-005"]
+giac = true
+
+[[form]]
+command = "IFactor"
+form = "curve"
+cases = ["cas-curve-003", "cas-curve-004", "cas-curve-005"]
+giac = true
+
+[[form]]
+command = "Simplify"
+form = "curve"
+cases = ["cas-curve-015", "cas-curve-016", "cas-curve-017"]
+giac = true
