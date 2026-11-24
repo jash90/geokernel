@@ -21,7 +21,7 @@ pub(super) mod function_roots;
 
 use crate::algo::intersect::Hint;
 use crate::algo::vector::{matrix, VectorDef};
-use crate::expr::eval::{combine, number_of, slot_val, Ctx, Val};
+use crate::expr::eval::{combine, number_of, slot_val, Ctx, Lists, Val};
 use crate::expr::list::Slot;
 use crate::expr::parse::{list_form, Parser};
 use crate::expr::{self, Bin, Elem, Entry, IfMode, ListOp, Node, Raw, Ty, Un, NONE};
@@ -473,6 +473,14 @@ pub(in crate::expr) fn map_list<const M: bool>(
 ) -> Option<(u32, u32)> {
     let lists = ctx.lists?;
     let dilate = matches!(ctx.node(node), Node::Dilate(..));
+    let transformable = |kind| {
+        matches!(kind, Kind::Point | Kind::Vector)
+            || dilate
+                && matches!(
+                    kind,
+                    Kind::Segment | Kind::Line | Kind::Ray | Kind::Circle | Kind::Conic
+                )
+    };
     let transformed = |slot: Slot| match transform(&slot) {
         Some(slot) => slot,
         None => Slot::undefined(slot.kind),
@@ -480,7 +488,7 @@ pub(in crate::expr) fn map_list<const M: bool>(
     let out = lists.reserve(len)?;
     let mut pending = Vec::new();
     // AlgoTransformation keeps the output slot at each existing index.
-    let retain = dilate && node != ctx.e.root && ctx.locals.is_none();
+    let retain = node != ctx.e.root && ctx.locals.is_none();
     let (previous_items, prior) = match ctx.e.raw {
         crate::expr::Raw::List(len) if node == ctx.e.root => (&ctx.e.items[..], (0, len)),
         _ => ctx
@@ -528,15 +536,44 @@ pub(in crate::expr) fn map_list<const M: bool>(
                 );
             }
             Slot::list(dest, len)
-        } else if matches!(slot.kind, Kind::Point | Kind::Vector)
-            || dilate
-                && matches!(
-                    slot.kind,
-                    Kind::Segment | Kind::Line | Kind::Ray | Kind::Circle | Kind::Conic
-                )
-        {
+        } else if transformable(slot.kind) {
             last = Some(target);
+            let slot = match previous.map(|p| p.kind) {
+                Some(kind @ (Kind::Point | Kind::Vector))
+                    if matches!(slot.kind, Kind::Point | Kind::Vector) && kind != slot.kind =>
+                {
+                    match slot.value {
+                        Value::Vector { x, y } => Slot::coords(Kind::Point, x, y),
+                        // GeoVector.set uses the point's raw x and y.
+                        // GeoPoint.getCoordsInD3 supplies a zero spatial z.
+                        Value::Point { x, y } | Value::HomogeneousPoint { x, y, .. } => {
+                            Slot::coords(Kind::Vector, x, y)
+                        }
+                        _ => Slot::undefined(kind),
+                    }
+                }
+                _ => slot,
+            };
             transformed(slot)
+        } else if let Some((start, len)) = previous
+            .filter(|_| slot.kind.is_number())
+            .and_then(Slot::run)
+        {
+            // GeoList.set(number) keeps the elements and changes the selection.
+            // The transform still acts on its most recent point or vector.
+            let (list, leaf) = copy_transform_template(
+                lists,
+                previous_items,
+                start,
+                len,
+                if retain { 2 } else { 1 },
+                transformable,
+            )?;
+            if let Some(leaf) = last.or(leaf) {
+                lists.set(leaf, transformed(lists.read(ctx.c, leaf)));
+                last = Some(leaf);
+            }
+            list
         } else if slot.kind.is_number() && previous.is_some_and(|p| p.kind == Kind::Point) {
             // GeoPoint.set copies a number as (value, 0) into the old point.
             last = Some(target);
@@ -565,6 +602,42 @@ pub(in crate::expr) fn map_list<const M: bool>(
         };
         lists.set(target, result);
     }
+}
+
+/// Copies a retained output list into the new arena and locates its last
+/// transformable leaf in the same order as the transform's traversal.
+fn copy_transform_template(
+    lists: &Lists,
+    items: &[Slot],
+    start: u32,
+    len: u32,
+    work_per_slot: u64,
+    transformable: impl Fn(Kind) -> bool,
+) -> Option<(Slot, Option<u32>)> {
+    let out = lists.reserve(len)?;
+    let mut pending = vec![(start, out, len)];
+    let mut last = None;
+    while let Some((source, target, len)) = pending.pop() {
+        if len == 0 {
+            continue;
+        }
+        if !lists.charge(work_per_slot) {
+            return None;
+        }
+        pending.push((source + 1, target + 1, len - 1));
+        let slot = &items[source as usize];
+        if let Some((start, len)) = slot.run() {
+            let out = lists.reserve(len)?;
+            lists.set(target, Slot::list(out, len));
+            pending.push((start, out, len));
+        } else {
+            if transformable(slot.kind) {
+                last = Some(target);
+            }
+            lists.set(target, slot.clone());
+        }
+    }
+    Some((Slot::list(out, len), last))
 }
 
 pub(in crate::expr) fn apply_matrix_coordinates<const M: bool>(

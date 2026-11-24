@@ -764,24 +764,27 @@ fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
                 | "UnitVector"
                 | "Tangent"
         );
+    let point_arguments = matches!(
+        command,
+        "Circle"
+            | "Polygon"
+            | "PolyLine"
+            | "Arc"
+            | "Sector"
+            | "CircleArc"
+            | "CircularArc"
+            | "CircleSector"
+            | "CircularSector"
+    ) || (command == "ClosestPoint"
+        && args.len() == 2
+        && args.iter().any(|arg| c.id(arg).is_some()));
     let mut rewritten = false;
     let args = args
         .iter()
         .map(|&arg| {
             let inline = c.id(arg).is_none()
                 && (equations && crate::expr::equation::split_equation(arg).is_ok()
-                    || matches!(
-                        command,
-                        "Circle"
-                            | "Polygon"
-                            | "PolyLine"
-                            | "Arc"
-                            | "Sector"
-                            | "CircleArc"
-                            | "CircularArc"
-                            | "CircleSector"
-                            | "CircularSector"
-                    ) && arg.starts_with('(')
+                    || point_arguments && arg.starts_with('(')
                     || conic_reader.is_some() && split_call(arg).is_some()
                     || matches!(
                         (command, split_call(arg).map(|(name, _)| name)),
@@ -1279,37 +1282,33 @@ fn define(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
     c.add(name, def).map_err(|e| e.to_string())
 }
 
-/// `Slider(min, max)` with constant or live endpoints (`CmdSlider`).
-/// An optional third argument sets the increment used when dragging.
+/// Numeric `Slider` overloads with optional animation increment and speed.
 fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
-    let number = |arg| {
+    let number = |c: &Construction, arg| {
+        if matches!(ungroup(arg), "?" | "NaN") {
+            return Some(f64::NAN);
+        }
         crate::expr::constant_number(c, arg)
             .filter(|&(_, angle)| !angle)
             .map(|(value, _)| value)
-            .ok_or_else(|| format!("expected a constant number, got `{arg}`"))
     };
-    let (lower, upper, step) = match args {
-        [min, max] => (*min, *max, None),
-        [min, max, step] => (*min, *max, Some(number(step)?)),
-        _ => return Err(format!("`Slider` does not take {} argument(s)", args.len())),
+    let [min, max, options @ ..] = args else {
+        return Err(format!("`Slider` does not take {} argument(s)", args.len()));
     };
-    let endpoint = |arg| match ungroup(arg) {
-        "?" | "NaN" => Ok(f64::NAN),
-        _ => number(arg),
-    };
-    let id = match (endpoint(lower), endpoint(upper)) {
-        (Ok(min), Ok(max)) => c.add_slider(name, min, max).map_err(|e| e.to_string())?,
-        _ => c.add_slider_with_sources(name, [lower, upper])?,
-    };
-    if step.is_some() {
-        c.set_slider_style(
-            id,
-            crate::kernel::control::SliderStyle {
-                step,
-                ..Default::default()
-            },
-        );
+    if options.len() > 2 {
+        return Err(format!("`Slider` does not take {} argument(s)", args.len()));
     }
+    for &arg in options {
+        if c.numeric_value(arg).is_none() {
+            return Err(format!("expected a number, got `{arg}`"));
+        }
+    }
+    let id = if let (Some(min), Some(max)) = (number(c, min), number(c, max)) {
+        c.add_slider(name, min, max).map_err(|e| e.to_string())?
+    } else {
+        c.add_expression_slider(name, [min, max])?
+    };
+    c.set_slider_animation_options(id, options);
     Ok(id)
 }
 

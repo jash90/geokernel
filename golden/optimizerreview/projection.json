@@ -1,0 +1,75 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-projection-001",
+      "group": "optimizerreview",
+      "script": [
+        "g = Function({0, 2, 0, 2, 0})",
+        "A = (0.5, 2)",
+        "P = ClosestPoint(g, A)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 2.0],
+              [2.0, 0.0],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.5, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 0.5, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "optimizerreview-projection-002",
+      "group": "optimizerreview",
+      "script": [
+        "g = Function({0, 2, 0, 2, 0})",
+        "P = ClosestPoint(g, (0.5, 2))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 2.0],
+              [2.0, 0.0],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.5, "y": 1.0 }
+        }
+      ]
+    }
+  ]
+}

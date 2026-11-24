@@ -34,6 +34,11 @@ pub struct Case {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Step {
     Initial,
+    ReloadGgb,
+    SliderAnimation {
+        label: String,
+        options: AnimationOptions,
+    },
     Append {
         line: String,
     },
@@ -78,6 +83,13 @@ pub enum Step {
     },
 }
 
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AnimationOptions {
+    pub step: Option<String>,
+    pub speed: Option<String>,
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct RawStep {
@@ -94,6 +106,7 @@ struct RawStep {
     error: Option<String>,
     reference_parse_error: Option<bool>,
     frames: Option<f64>,
+    options: Option<AnimationOptions>,
 }
 
 impl<'de> Deserialize<'de> for Step {
@@ -129,11 +142,16 @@ impl<'de> Deserialize<'de> for Step {
                 "only step `move` records a reference parse error",
             ));
         }
+        if raw.action != "slider_animation" && raw.options.is_some() {
+            return Err(D::Error::custom(
+                "only step `slider_animation` takes `options`",
+            ));
+        }
         if raw.action != "anchor_text" && raw.point.is_some() {
             return Err(D::Error::custom("only `anchor_text` takes `point`"));
         }
         match raw.action.as_str() {
-            "initial" | "undo" | "redo" | "reload" => {
+            "initial" | "reload_ggb" | "undo" | "redo" | "reload" => {
                 if raw.label.is_some() || raw.x.is_some() || raw.y.is_some() || raw.value.is_some()
                 {
                     return Err(D::Error::custom(format!(
@@ -142,10 +160,22 @@ impl<'de> Deserialize<'de> for Step {
                     )));
                 }
                 Ok(match raw.action.as_str() {
+                    "reload_ggb" => Step::ReloadGgb,
                     "undo" => Step::Undo,
                     "redo" => Step::Redo,
                     "reload" => Step::Reload,
                     _ => Step::Initial,
+                })
+            }
+            "slider_animation" => {
+                if raw.x.is_some() || raw.y.is_some() || raw.value.is_some() {
+                    return Err(D::Error::custom(
+                        "step `slider_animation` takes only `label` and `options`",
+                    ));
+                }
+                Ok(Step::SliderAnimation {
+                    label: raw.label.ok_or_else(|| need("label"))?,
+                    options: raw.options.ok_or_else(|| need("options"))?,
                 })
             }
             "anchor_text" => {

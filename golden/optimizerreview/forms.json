@@ -1,0 +1,80 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-forms-001",
+      "group": "optimizerreview",
+      "script": [
+        "b = 6",
+        "h = 0.1",
+        "a = Slider(0, b, h)",
+        "d = 2a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "h", "value": 0.2 },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        { "action": "set_number", "label": "b", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "h": { "type": "number", "defined": true, "value": 0.1 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "d": { "type": "number", "defined": true, "value": 10.0 }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "optimizerreview-forms-002",
+      "group": "optimizerreview",
+      "script": [
+        "b = 6",
+        "a = Slider(0, b, 0.1, 2)",
+        "d = 2a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        { "action": "set_number", "label": "b", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "d": { "type": "number", "defined": true, "value": 10.0 }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    }
+  ]
+}

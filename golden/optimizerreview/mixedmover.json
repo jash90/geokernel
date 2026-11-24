@@ -1,0 +1,97 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-mixedmover-001",
+      "group": "optimizerreview",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "g = Segment(A, B)",
+        "P = Point(g)",
+        "a = Slider(0, 6)",
+        "m = Minimize((a - (x(P) + 1))^2, a)",
+        "N = Minimize((m - 3)^2, P)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0000000000000004 },
+          "N": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "optimizerreview-mixedmover-002",
+      "group": "optimizerreview",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "g = Segment(A, B)",
+        "P = Point(g)",
+        "a = Slider(0, 6)",
+        "m = Minimize((a - (x(P) + 1))^2, a)",
+        "b = 6",
+        "s = Slider(0, b)",
+        "q = Minimize((s - 3)^2, s)",
+        "k = 1",
+        "N = Minimize(k (m - q)^2, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 2.0 },
+        { "action": "set_number", "label": "k", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0000000000000004 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "N": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0000000000000004 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "N": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0000000000000004 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "q": { "type": "number", "defined": true, "value": 1.9999999416445915 },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "N": { "type": "point", "defined": true, "x": 0.9999999416445914, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

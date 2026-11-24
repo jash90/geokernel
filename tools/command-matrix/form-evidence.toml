@@ -1952,6 +1952,11 @@ cases = ["financial-npr-001", "financial-npr-002", "financial-npr-003"]
 # optimization
 
 [[form]]
+command = "Maximize"
+form = "number,point"
+cases = ["misc-maximizepoint-001"]
+
+[[form]]
 command = "Sum"
 form = "list,list"
 cases = ["misc-sum-001", "misc-sum-002", "misc-sum-003"]
@@ -3538,10 +3543,10 @@ cases = [
   "vectorforms-pointforms-002",
 ]
 
-# Dilate(list,number) is open. Polygon and Cartesian curve list leaves have gaps in matrixdilate-dilateleaves.
-
-# Defined(any) is open. Printed product simplification has gaps in logic-definedproducts.
-
+# Dilate(list,number) is open because polygon and Cartesian curve leaves
+# have gaps in matrixdilate-dilateleaves. The agreeing cases include
+# matrixdilate-dilatelist-001, -002, -004, -005, -006 and
+# optimizerreview-transform-001, -003, -005, -006.
 
 [[form]]
 command = "ApplyMatrix"
@@ -3553,6 +3558,10 @@ cases = [
   "matrixdilate-applylist-004",
   "matrixdilate-applylist-005",
   "matrixdilate-applylist-006",
+  "optimizerreview-transform-002",
+  "optimizerreview-transform-004",
+  "optimizerreview-transform-007",
+  "optimizerreview-transform-008",
   "vectorforms-inlineimages-001",
 ]
 

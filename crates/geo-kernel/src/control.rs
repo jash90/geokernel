@@ -342,8 +342,10 @@ impl Construction {
         let width = max - min;
         let animation = self.animation(id);
         let style = self.slider_style(id);
-        let step = style
-            .step
+        let step = self.slider_animation_options(id)[0]
+            .and_then(|source| self.numeric_value(source))
+            .filter(|step| step.is_finite())
+            .or(style.step)
             .or_else(|| {
                 self.arithmetic_value(style.step_expression.as_deref()?)
                     .filter(|step| step.is_finite())

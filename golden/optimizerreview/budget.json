@@ -1,0 +1,34 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-budget-001",
+      "group": "optimizerreview",
+      "script": [
+        "a = Slider(0, 6)",
+        "f = (a - 3)^2",
+        "m_{1} = Minimize(f, a)",
+        "m_{2} = Minimize(f, a)",
+        "m_{3} = Minimize(f, a)",
+        "m_{4} = Minimize(f, a)",
+        "m_{5} = Minimize(f, a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": { "type": "number", "defined": true, "value": 9.0 },
+          "m_{1}": { "type": "number", "defined": true, "value": 3.0 },
+          "m_{2}": { "type": "number", "defined": true, "value": 3.0 },
+          "m_{3}": { "type": "number", "defined": true, "value": 3.0 },
+          "m_{4}": { "type": "number", "defined": true, "value": 3.0 },
+          "m_{5}": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    }
+  ]
+}
