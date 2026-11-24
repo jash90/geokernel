@@ -1168,3 +1168,107 @@ fn matrix_circle_projects_a_point_at_infinity() {
         );
     }
 }
+
+#[test]
+fn sampling_recomputes_projective_coordinates() {
+    let mut c = load("a = Slider(0, 1, 0.01)").unwrap();
+    let slider = c.id("a").unwrap();
+    c.set_number(slider, 0.0).unwrap();
+    for line in [
+        "C = (0, 1)",
+        "D = (1, 1+a)",
+        "m = Line(C, D)",
+        "S = Intersect(xAxis, m)",
+        "G = (0, 2)",
+        "h = Ray(G, S)",
+        "F = (1, 1)",
+        "g = Line(C, F)",
+        "Q = Intersect(h, g)",
+        "L = Locus(Q, a)",
+        "f = (x(Q)+1)^2",
+        "M = Minimize(f, a)",
+    ] {
+        exec(&mut c, line).unwrap();
+    }
+    let locus = c.locus(c.id("L").unwrap()).unwrap();
+    assert_eq!(locus.points.len(), 300);
+    assert!(locus.points.iter().all(|p| (p.y - 1.0).abs() < 1e-9));
+    assert!((c.number(c.id("M").unwrap()).unwrap() - 0.50000000118757).abs() < 1e-9);
+    assert_eq!(c.number(slider), Some(0.0));
+    assert!(c.point_at_infinity(c.id("S").unwrap()).is_some());
+    assert_eq!(homogeneous_case_value(&c, "Q"), Value::Undefined);
+}
+
+#[test]
+fn sampling_projects_onto_a_circle_from_infinity() {
+    let c = load(&format!(
+        "D = (2, 4)\n{PROJECTIVE_LINES}r = Slider(1, 3, 0.1)\nk = Circle(A, r)\nR = ClosestPoint(k, S)\nQ = (x(R), y(R))\nL = Locus(Q, r)"
+    )).unwrap();
+    let locus = c.locus(c.id("L").unwrap()).unwrap();
+    assert_eq!(locus.points.len(), 150);
+    assert!(locus
+        .points
+        .iter()
+        .all(|p| p.y == 0.0 && (1.0..=3.0).contains(&p.x)));
+    assert_homogeneous_pair(homogeneous_case_value(&c, "R"), (1.0, 0.0));
+}
+
+#[test]
+fn rotation_uses_the_normalized_projective_triple() {
+    let c = load(
+        "A = (0, 0)\nB = (1, 1)\nC = (0, 0.00001)\nD = (1, 1.000010000000057)\n\
+         l = Line(A, B)\nm = Line(C, D)\nS = Intersect(l, m)\ng = Line(S, l)\n\
+         d = Direction(g)\nP = Rotate(S, pi/2, A)",
+    )
+    .unwrap();
+    let (x, y) = c.point(c.id("P").unwrap()).unwrap();
+    assert!((x - 175921860.44416).abs() < 1e-6 && (y + 175921860.44416).abs() < 1e-6);
+}
+
+#[test]
+fn infinite_start_ray_keeps_its_carrier() {
+    let c = load(&format!(
+        "D = (2, 4)\n{PROJECTIVE_LINES}g = Line(A, S)\nh = Ray(S, C)\nd = Direction(g)\ne = Direction(h)\nb = IsDefined(h)\nj = Line(A, h)"
+    )).unwrap();
+    assert_eq!(homogeneous_case_value(&c, "b"), Value::Bool(true));
+    assert_eq!(
+        homogeneous_case_value(&c, "j"),
+        Value::Line {
+            a: -6.0,
+            b: 12.0,
+            c: 0.0
+        }
+    );
+    assert_eq!(homogeneous_case_value(&c, "h"), Value::Undefined);
+}
+
+#[test]
+fn projective_circle_projection_uses_rotated_axes() {
+    let c = load(&format!(
+        "D = (2, 4)\n{PROJECTIVE_LINES}c = Conic({{{{1,0,0}},{{0,1,0}},{{0,0,-4}}}})\nc2 = Rotate(c, pi/2, A)\nR = ClosestPoint(c2, S)"
+    )).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "R"), (0.0, 2.0));
+}
+
+#[test]
+fn projective_projection_follows_conic_type_changes() {
+    let mut c = load(&format!(
+        "D = (2, 4)\n{PROJECTIVE_LINES}n = 1\nc = Conic({{{{1,0,0}},{{0,n,0}},{{0,0,-4}}}})\nR = ClosestPoint(c, S)"
+    )).unwrap();
+    let (d, n) = (c.id("D").unwrap(), c.id("n").unwrap());
+    c.move_point(d, 2.0, 5.0).unwrap();
+    c.move_point(d, 2.0, 4.0).unwrap();
+    assert_homogeneous_pair(
+        homogeneous_case_value(&c, "R"),
+        (-4.0 / 5.0_f64.sqrt(), -2.0 / 5.0_f64.sqrt()),
+    );
+    for value in [2.0, 1.0] {
+        c.set_number(n, value).unwrap();
+        assert_homogeneous_pair(homogeneous_case_value(&c, "R"), (2.0, 0.0));
+    }
+
+    let c = load(&format!(
+        "D = (2, 4)\n{PROJECTIVE_LINES}c = Conic({{{{1,0,0}},{{0,1,0}},{{0,0,0}}}})\nR = ClosestPoint(c, S)"
+    )).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "R"), (0.0, 0.0));
+}

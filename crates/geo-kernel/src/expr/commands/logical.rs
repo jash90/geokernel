@@ -32,6 +32,7 @@ pub(in crate::expr) fn defined_object<const M: bool>(ctx: &Ctx<'_, M>, id: Id) -
         }
         Kind::Vector => matches!(c.value(id), Value::Vector { x, y }
             if x.is_finite() && y.is_finite()),
+        Kind::Ray => c.raw_carrier(id).is_some(),
         Kind::Arc | Kind::Sector => c.stored_value(id).is_defined(),
         Kind::Function if crate::expr::object_defined(c, id) => {
             return super::text::function_has_value(ctx, id);

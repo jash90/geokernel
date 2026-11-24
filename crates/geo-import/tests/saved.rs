@@ -928,3 +928,20 @@ fn saved_free_points_keep_homogeneous_coordinates() {
         assert_eq!(c.stored_value(c.id(label).unwrap()), expected);
     }
 }
+
+#[test]
+fn saved_projective_point_keeps_coordinates_when_cartesian_division_overflows() {
+    let (snapshot, imported) = fixture("saved-projectiveoverflow-001");
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    check_review_values(&snapshot, &c, &[]);
+    assert_eq!(
+        c.stored_value(c.id("P").unwrap()),
+        Value::HomogeneousPoint {
+            x: 1e308,
+            y: 0.0,
+            z: 1e-6
+        },
+    );
+}

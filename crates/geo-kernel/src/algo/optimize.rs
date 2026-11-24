@@ -303,6 +303,8 @@ pub(crate) fn search(
                 return f64::NAN;
             }
         }
+        // The locus recompute also updates the homogeneous point records
+        // read by later objects in the trial.
         for &i in &chain {
             crate::kernel::locus::recompute(c, i);
             crate::expr::charge(1);

@@ -216,4 +216,27 @@ case("infinityedit", ["D = (2, 4)"] + PROJECTIVE + CIRCLE_PROJECTION,
      [mv("D", 2, 5), mv("D", 0, 3), mv("D", 2, 4),
       {"action": "add", "line": "J = (5, 5)"}, {"action": "undo"}])
 
+# Projective coordinates and retained parameters during edits and sampling.
+case("projectiveupdates", ["a = Slider(0, 1, 0.01)"],
+     [setn("a", 0)] + [{"action": "add", "line": line} for line in [
+         "C = (0, 1)", "D = (1, 1+a)", "m = Line(C, D)", "S = Intersect(xAxis, m)",
+         "G = (0, 2)", "h = Ray(G, S)", "F = (1, 1)", "g = Line(C, F)",
+         "Q = Intersect(h, g)", "L = Locus(Q, a)", "f = (x(Q)+1)^2", "M = Minimize(f, a)",
+     ]])
+case("projectiveupdates", ["D = (2, 4)"] + PROJECTIVE +
+     ["r = Slider(1, 3, 0.1)", "k = Circle(A, r)", "R = ClosestPoint(k, S)",
+      "Q = (x(R), y(R))", "L = Locus(Q, r)"], [])
+case("projectiveupdates", ["D = (2, 4)"] + PROJECTIVE +
+     ["c = Conic({{1,0,0},{0,1,0},{0,0,-4}})", "c2 = Rotate(c, pi/2, A)",
+      "R = ClosestPoint(c2, S)"], [])
+case("projectiveupdates", ["D = (2, 4)"] + PROJECTIVE +
+     ["n = 1", "c = Conic({{1,0,0},{0,n,0},{0,0,-4}})", "R = ClosestPoint(c, S)"],
+     [mv("D", 2, 5), mv("D", 2, 4), setn("n", 2), setn("n", 1)])
+case("projectiveupdates", ["D = (2, 4)"] + PROJECTIVE +
+     ["c = Conic({{1,0,0},{0,1,0},{0,0,0}})", "R = ClosestPoint(c, S)"], [])
+case("projectiveupdates", ["O = (0, 0)", "P = (1, 2)", "k = Circle(O, 2)",
+                          "R = ClosestPoint(k, P)"],
+     [mv("P", *p) for p in [(2, 1), (1, 2), (2, 1), (1, 2), (2, 1)]] +
+     [{"action": "add", "line": "J = (5, 5)"}, {"action": "undo"}])
+
 cases.write()

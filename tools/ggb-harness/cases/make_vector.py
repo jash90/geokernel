@@ -293,4 +293,9 @@ case("projective", ["A = (0, 0)", "B = (2, 1)", "C = (0, 3)", "D = (2, 4)",
                     "l = Line(A, B)", "m = Line(C, D)", "S = Intersect(l, m)",
                     "g = Line(A, S)", "h = Ray(S, C)", "d = Direction(g)",
                     "e = Direction(h)"], [])
+case("projectiveupdates", ["A = (0, 0)", "B = (2, 1)", "C = (0, 3)", "D = (2, 4)",
+                           "l = Line(A, B)", "m = Line(C, D)", "S = Intersect(l, m)",
+                           "g = Line(A, S)", "h = Ray(S, C)", "d = Direction(g)",
+                           "e = Direction(h)", "b = IsDefined(h)", "j = Line(A, h)"], [])
+
 cases.write()

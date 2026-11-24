@@ -652,7 +652,12 @@ impl Group for VectorDef {
                 _ => None,
             },
             VectorDef::RayPoints(p, q) => {
-                let start = point(c, p)?;
+                // Keep the carrier even when there is no Cartesian start.
+                let start = point(c, p).or_else(|| {
+                    c.stored_value(p)
+                        .point_coords()
+                        .map(|_| (f64::INFINITY, f64::INFINITY))
+                })?;
                 ray_value(start, super::basic::raw_line_through(c, p, q)?)
             }
             VectorDef::RayVector(p, v) => {

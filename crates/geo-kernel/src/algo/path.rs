@@ -1103,6 +1103,15 @@ pub(crate) fn project(c: &Construction, id: Id, (x, y): (f64, f64)) -> Option<Va
     state.value()
 }
 
+/// Projects the copied coordinates, including division by a projective weight.
+pub(crate) fn project_conic(conic: ConicData, (x, y): (f64, f64)) -> Option<Value> {
+    let mut state = PathState::new();
+    state.set_coords_2d(x, y, 1.0);
+    super::conic_path::point_changed(&conic, &mut state);
+    state.update_coords();
+    state.value()
+}
+
 /// `AlgoPointOnPath.compute`: a parameter given as a number is put on the
 /// path first; then the point follows the path, or becomes undefined with
 /// it.

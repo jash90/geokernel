@@ -370,6 +370,7 @@ impl Value {
             Self::HomogeneousPoint { .. } | Self::NormalizedPointAtInfinity { .. } => {
                 Self::Undefined
             }
+            Self::Ray { x, y, .. } if !x.is_finite() || !y.is_finite() => Self::Undefined,
             Self::Arc { length } if !length.is_finite() => Self::Undefined,
             Self::Sector { area } if !area.is_finite() => Self::Undefined,
             _ => self,
@@ -443,7 +444,10 @@ impl Value {
             Value::Circle { cx, cy, r } => cx.is_finite() && cy.is_finite() && !r.is_nan(),
             Value::Number(v) => !v.is_nan(),
             Value::Vector { x, y } => !(x.is_nan() || y.is_nan()),
-            Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
+            Value::Ray { x, y, a, b, c } => {
+                [a, b, c].into_iter().all(f64::is_finite)
+                    && (x.is_finite() && y.is_finite() || x == f64::INFINITY && y == f64::INFINITY)
+            }
             Value::Bool(_) | Value::Button | Value::InputBox | Value::Image | Value::PieChart => {
                 true
             }
@@ -1174,6 +1178,9 @@ pub struct Construction {
     pub(crate) clips: algo::polygon_clip::ClipCache,
     pub(crate) analysis: AnalysisCache,
     last_update_requires_replay: bool,
+    replaced_closest_angles: Vec<Id>,
+    changed_closest_angle: bool,
+    used_retained_closest_angle: bool,
     /// The states of the points on paths, with the index of each point, in
     /// creation order.
     paths: Vec<(usize, PathState)>,
@@ -1559,11 +1566,14 @@ impl Construction {
     }
 
     pub fn value(&self, id: Id) -> Value {
+        self.value_slot(id).cartesian()
+    }
+
+    fn value_slot(&self, id: Id) -> Value {
         self.values
             .get(id.0)
             .copied()
             .unwrap_or_else(|| axis::get(id).expect("object id").value)
-            .cartesian()
     }
 
     /// An object's selected equation form, if it has one.
@@ -1615,10 +1625,7 @@ impl Construction {
                 Value::HomogeneousPoint { x, y, z }
             };
         }
-        self.values
-            .get(id.0)
-            .copied()
-            .unwrap_or_else(|| axis::get(id).expect("object id").value)
+        self.value_slot(id)
     }
 
     pub(crate) fn point_at_infinity(&self, id: Id) -> Option<(f64, f64, f64)> {
@@ -3049,7 +3056,9 @@ impl Construction {
         // compute reads the hint of the new object from `hints`
         self.hints.push(algo::intersect::hint(self, &def));
         let value = match def {
-            Def::Point(PointDef::Closest { path, point }) => self.closest_point(id.0, path, point),
+            Def::Point(PointDef::Closest { path, point }) => {
+                self.closest_point(id.0, path, point, false)
+            }
             Def::Lines(LineDef::TangentPoint { .. } | LineDef::TangentLine { .. })
             | Def::ConicPart(
                 ConicPartDef::TangentPoint { .. } | ConicPartDef::TangentLine { .. },
@@ -3411,7 +3420,7 @@ impl Construction {
     /// its `special` flag is set; with the flag false, moving that point
     /// still recomputes the intersection, which does not change.
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> Result<usize, Error> {
-        self.last_update_requires_replay = false;
+        self.reset_replay_flags();
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
         }
@@ -3559,7 +3568,7 @@ impl Construction {
         v: f64,
         clamp_slider: bool,
     ) -> Result<Option<usize>, Error> {
-        self.last_update_requires_replay = false;
+        self.reset_replay_flags();
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
         }
@@ -3615,7 +3624,24 @@ impl Construction {
     /// to preserve retained geometry, hidden intersection starts,
     /// inequality vertex helpers or dependent slider clamps.
     pub fn last_update_requires_replay(&self) -> bool {
-        self.last_update_requires_replay
+        self.last_update_requires_replay || self.changed_closest_angle
+    }
+
+    /// Closest-point records assigned by the last update, when it is safe to
+    /// replace an earlier edit that assigned the same records.
+    pub fn replaced_closest_angles(&self) -> &[Id] {
+        if self.last_update_requires_replay || self.used_retained_closest_angle {
+            &[]
+        } else {
+            &self.replaced_closest_angles
+        }
+    }
+
+    fn reset_replay_flags(&mut self) {
+        self.last_update_requires_replay = false;
+        self.changed_closest_angle = false;
+        self.used_retained_closest_angle = false;
+        self.replaced_closest_angles.clear();
     }
 
     /// Rebuilds inequality-vertex algorithms at the current input values,
@@ -3773,7 +3799,8 @@ impl Construction {
         }
         let end = expr::work_done().saturating_add(expr::MAX_EVALUATION_WORK);
         self.optimizer_final_update = Some((owner, end));
-        let requires_replay = self.last_update_requires_replay || self.inequality_helpers.changed();
+        let requires_replay =
+            self.last_update_requires_replay() || self.inequality_helpers.changed();
         // The secondary sweep can reach retained geometry and inequality
         // helpers outside the original dependency chain.
         let mode = match mode {
@@ -3818,7 +3845,7 @@ impl Construction {
             } | Propagation::Reload
         );
         let redefining = matches!(mode, Propagation::Redefinition { .. });
-        self.last_update_requires_replay = false;
+        self.reset_replay_flags();
         self.inequality_helpers.begin_update();
         self.function_roots.clear();
         self.clips.clear();
@@ -4045,7 +4072,7 @@ impl Construction {
                     }
                     let new = match def {
                         Def::Point(PointDef::Closest { path, point }) => {
-                            self.closest_point(i, path, point)
+                            self.closest_point(i, path, point, true)
                         }
                         _ => self.compute(def, i),
                     };
@@ -4890,8 +4917,9 @@ impl Construction {
         let value = Value::homogeneous_point(x, y, z);
         let (x, y) = match value.cartesian() {
             Value::Point { x, y } => (x, y),
-            _ if point_at_infinity(x, y, z) => (0.0, 0.0),
-            _ => return Err(Error::NotFinite),
+            // Keep the XML triple even when it has no finite Cartesian
+            // representation. The free definition still needs a finite seed.
+            _ => (0.0, 0.0),
         };
         let id = self.add(label, Def::FreePoint { x, y })?;
         self.values[id.0] = self.store_point_coordinates(id.0, value);
@@ -5259,16 +5287,23 @@ impl Construction {
         Ok(())
     }
 
-    fn closest_point(&mut self, i: usize, path: Id, point: Id) -> Value {
-        if algo::point::circle_geometry(self, path).is_none() {
+    fn closest_point(&mut self, i: usize, path: Id, point: Id, track_replay: bool) -> Value {
+        let Some(circle) = algo::point::circle_geometry(self, path) else {
+            if matches!(self.value(path), Value::Conic { .. })
+                && self.closest_circle_parameters.remove(&i).is_some()
+                && track_replay
+            {
+                self.last_update_requires_replay = true;
+            }
             return self.compute(Def::Point(PointDef::Closest { path, point }), i);
-        }
+        };
         let previous = self
             .closest_circle_parameters
             .get(&i)
             .copied()
             .unwrap_or(0.0);
-        let Some((value, parameter)) = algo::point::closest_circle(self, path, point, previous)
+        let Some((value, parameter)) =
+            algo::point::closest_circle_with_geometry(self, circle, point, previous)
         else {
             return Value::Undefined;
         };
@@ -5276,10 +5311,13 @@ impl Construction {
             return Value::Undefined;
         }
         if let Some(parameter) = parameter {
-            // A later input can leave this angle unchanged. Replay the edit
-            // that established it before a consecutive move can replace it.
-            self.last_update_requires_replay |= previous.to_bits() != parameter.to_bits();
+            if track_replay {
+                self.changed_closest_angle |= previous.to_bits() != parameter.to_bits();
+                self.replaced_closest_angles.push(Id(i));
+            }
             self.closest_circle_parameters.insert(i, parameter);
+        } else if track_replay && circle.half_axes[0] >= crate::tol::STANDARD_PRECISION {
+            self.used_retained_closest_angle = true;
         }
         value
     }
@@ -5477,7 +5515,7 @@ impl Construction {
     /// to its end point, which is what GeoGebra's `GeoSegment` holds; they are
     /// all zero when the end points coincide.
     pub(crate) fn raw_carrier(&self, id: Id) -> Option<(f64, f64, f64)> {
-        match self.value(id) {
+        match self.value_slot(id) {
             Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => Some((a, b, c)),
             Value::Segment { .. } if self.segment_carriers.contains_key(&id) => {
                 Some(self.segment_carriers[&id])

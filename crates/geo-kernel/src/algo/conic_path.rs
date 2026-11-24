@@ -178,6 +178,10 @@ fn ellipse_parameter([a, b]: [f64; 2], x: f64, y: f64) -> f64 {
         PI / 2.0
     } else if py < crate::tol::STANDARD_PRECISION {
         (a * px / c2).min(1.0).acos()
+    } else if !px.is_finite() || !py.is_finite() {
+        // The normal equation has no usable root for these coordinates.
+        // A fresh projection keeps its initial first-quadrant parameter.
+        0.0
     } else {
         super::curve::bisect(0.0, PI / 2.0, |t| {
             let (sin, cos) = t.sin_cos();

@@ -2274,7 +2274,12 @@ fn cross_check(
     polygon: Option<&[[f64; 2]]>,
 ) -> Option<(String, String)> {
     let kind = c.kind(id);
-    let value = c.value(id);
+    // Saved rays carry their line coefficients even without a finite start.
+    let value = if kind == Kind::Ray {
+        c.stored_value(id)
+    } else {
+        c.value(id)
+    };
     let kind_matches = kind_agrees(&el.kind, kind);
     // GeoGebra writes independent text as a quoted expression. Dependent
     // texts normally save their definition or command and omit the result.
@@ -2351,11 +2356,27 @@ fn cross_check(
             _ => {}
         }
     }
-    if let Value::NormalizedPointAtInfinity { x, y } = c.stored_value(id) {
+    if !value.is_defined() && kind == Kind::Point {
         if let Some([sx, sy, sz]) = coords3(el) {
-            return (!(sz == 1.0 && close(x, sx) && close(y, sy)))
-                .then(report)
-                .flatten();
+            match c.stored_value(id) {
+                Value::NormalizedPointAtInfinity { x, y } => {
+                    return (!(sz == 1.0 && close(x, sx) && close(y, sy)))
+                        .then(report)
+                        .flatten();
+                }
+                // Cartesian overflow leaves the XML triple available to
+                // geometry. Check that the importer kept all three fields.
+                Value::HomogeneousPoint { x, y, z }
+                    if sz != 0.0 && (!(sx / sz).is_finite() || !(sy / sz).is_finite()) =>
+                {
+                    let saved = [sx, sy, sz];
+                    let computed = [x, y, z];
+                    return (computed != saved && computed != saved.map(|n| -n))
+                        .then(report)
+                        .flatten();
+                }
+                _ => {}
+            }
         }
     }
     let saved_defined =

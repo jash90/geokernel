@@ -166,6 +166,7 @@ enum Op {
         label: String,
         to: Setting,
         ordered: bool,
+        replaced_angles: Box<[Id]>,
     },
     /// The start point a locus froze on a line without one, written where
     /// the entry of the locus was when the locus was deleted
@@ -768,7 +769,12 @@ impl Log {
     }
 
     pub(crate) fn record_update(&mut self, c: &Construction, label: &str, to: Setting) {
-        self.push_set(label, to, c.last_update_requires_replay());
+        self.push_set_with_angles(
+            label,
+            to,
+            c.last_update_requires_replay(),
+            c.replaced_closest_angles(),
+        );
     }
 
     pub(crate) fn reset_snapshot_records(&mut self, c: &mut Construction) {
@@ -789,22 +795,46 @@ impl Log {
     }
 
     fn push_set(&mut self, label: &str, to: Setting, ordered: bool) {
+        self.push_set_with_angles(label, to, ordered, &[]);
+    }
+
+    fn push_set_with_angles(&mut self, label: &str, to: Setting, ordered: bool, angles: &[Id]) {
         let set = Op::Set {
             label: label.to_owned(),
             to,
             ordered,
+            replaced_angles: angles.into(),
         };
-        // Keep edits that change retained geometry (including closest-circle
-        // angles), hidden starts, inequality helpers or slider clamps.
-        if !ordered
-            && matches!(
-                self.ops.last(),
-                Some(Op::Set { label: previous, ordered: false, .. }) if previous == label
-            )
-        {
+        if Self::sets_coalesce(self.ops.last(), label, ordered, angles) {
             self.ops.replace_last(set);
         } else {
             self.ops.push(set);
+        }
+    }
+
+    fn sets_coalesce(previous: Option<&Op>, label: &str, ordered: bool, angles: &[Id]) -> bool {
+        let Some(Op::Set {
+            label: old_label,
+            ordered: old_ordered,
+            replaced_angles: old_angles,
+            ..
+        }) = previous
+        else {
+            return false;
+        };
+        // An angle write can replace a previous write to the same records
+        // when neither edit needs earlier angles or other retained state.
+        old_label == label
+            && (!ordered && !old_ordered || !angles.is_empty() && old_angles.as_ref() == angles)
+    }
+
+    fn replay_angles<'a>(c: &'a Construction, ordered: bool, angles: &[Id]) -> &'a [Id] {
+        if ordered && angles.is_empty() {
+            // A released output or another explicit checkpoint may use
+            // the state made by this exact edit.
+            &[]
+        } else {
+            c.replaced_closest_angles()
         }
     }
 
@@ -927,16 +957,21 @@ impl Log {
     }
 
     fn keep_last_set(&mut self) {
-        if let Some(Op::Set {
+        let Some(Op::Set {
             label,
             to,
-            ordered: false,
+            ordered,
+            replaced_angles,
         }) = self.ops.last()
-        {
+        else {
+            return;
+        };
+        if !ordered || !replaced_angles.is_empty() {
             let set = Op::Set {
                 label: label.clone(),
                 to: *to,
                 ordered: true,
+                replaced_angles: Box::default(),
             };
             self.ops.replace_last(set);
         }
@@ -1325,7 +1360,12 @@ impl Log {
                         }
                     }
                 }
-                Op::Set { label, to, ordered } => {
+                Op::Set {
+                    label,
+                    to,
+                    ordered,
+                    replaced_angles,
+                } => {
                     let Some(id) = c.id(label) else {
                         if gone.contains(label) {
                             diverge(&mut kept, &mut same);
@@ -1345,19 +1385,21 @@ impl Log {
                     // into it by `record_set` (after a `remove` they can
                     // meet): the journal and `kept` part there.
                     let keep_order = *ordered || c.last_update_requires_replay();
-                    let merges = !keep_order
-                        && i > 0
-                        && matches!(
-                            &ops[i - 1],
-                            Op::Set { label: previous, ordered: false, .. } if previous == label
-                        );
+                    let angles = Self::replay_angles(&c, *ordered, replaced_angles);
+                    let merges =
+                        i > 0 && Self::sets_coalesce(Some(ops[i - 1]), label, keep_order, angles);
                     match same {
-                        Some(n) if n == i && !merges && keep_order == *ordered => {
+                        Some(n)
+                            if n == i
+                                && !merges
+                                && keep_order == *ordered
+                                && angles == replaced_angles.as_ref() =>
+                        {
                             same = Some(i + 1)
                         }
                         _ => {
                             diverge(&mut kept, &mut same);
-                            kept.push_set(label, *to, keep_order);
+                            kept.push_set_with_angles(label, *to, keep_order, angles);
                         }
                     }
                 }
@@ -1557,7 +1599,12 @@ impl Log {
                         }
                     }
                 }
-                Op::Set { label, to, ordered } => {
+                Op::Set {
+                    label,
+                    to,
+                    ordered,
+                    replaced_angles,
+                } => {
                     let Some(id) = c.id(label) else {
                         if gone.contains(label) {
                             continue;
@@ -1572,7 +1619,13 @@ impl Log {
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
                     groups.release_after(&mut c, std::iter::once(id));
-                    kept.push_set(label, *to, *ordered || c.last_update_requires_replay());
+                    let angles = Self::replay_angles(&c, *ordered, replaced_angles);
+                    kept.push_set_with_angles(
+                        label,
+                        *to,
+                        *ordered || c.last_update_requires_replay(),
+                        angles,
+                    );
                 }
                 Op::MovePoints(points) => {
                     let positions = replay_move_points(&mut c, points, Some(&gone))?;

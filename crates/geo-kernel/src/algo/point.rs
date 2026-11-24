@@ -28,6 +28,7 @@
 //! `ClosestPoint` calls the `pointChanged` code of the path on a copy of the
 //! point, as `AlgoClosestPoint` does.
 
+use super::conic_nd::{ConicData, ConicType};
 use super::polygon::{count_arg, Count};
 use super::{Group, Parents, CARRIERS, POINT};
 use crate::expr::{Element, List};
@@ -428,20 +429,26 @@ fn project(line: (f64, f64, f64), start: (f64, f64), p: (f64, f64)) -> ((f64, f6
 }
 
 /// `GeoConicND.pointChangedUnlimited` in the circle's eigenvector coordinates.
-fn circle_parameter(cx: f64, cy: f64, r: f64, p: (f64, f64)) -> f64 {
+fn circle_parameter(circle: ConicData, p: (f64, f64)) -> f64 {
+    let [cx, cy] = circle.midpoint;
+    let [[ux, uy], [vx, vy]] = circle.eigenvec;
+    let [a, b] = circle.half_axes;
     let px = p.0 - cx;
     let py = p.1 - cy;
-    let ex = px * 1.0 + py * 0.0;
-    let ey = px * -0.0 + py * 1.0;
-    (r * ey).atan2(r * ex)
+    let ex = px * ux + py * uy;
+    let ey = px * vx + py * vy;
+    (a * ey).atan2(b * ex)
 }
 
-fn circle_point(cx: f64, cy: f64, r: f64, t: f64) -> Value {
-    let qx = r * t.cos();
-    let qy = r * t.sin();
+fn circle_point(circle: ConicData, t: f64) -> Value {
+    let [cx, cy] = circle.midpoint;
+    let [[ux, uy], [vx, vy]] = circle.eigenvec;
+    let [a, b] = circle.half_axes;
+    let qx = a * t.cos();
+    let qy = b * t.sin();
     Value::Point {
-        x: qx * 1.0 + qy * -0.0 + cx,
-        y: qx * 0.0 + qy * 1.0 + cy,
+        x: qx * ux + qy * vx + cx,
+        y: qx * uy + qy * vy + cy,
     }
 }
 
@@ -449,19 +456,18 @@ fn closest_on_circle(cx: f64, cy: f64, r: f64, p: (f64, f64)) -> Value {
     if r < STANDARD_PRECISION {
         return Value::Point { x: cx, y: cy };
     }
-    circle_point(cx, cy, r, circle_parameter(cx, cy, r, p))
+    let circle = ConicData::circle(cx, cy, r);
+    circle_point(circle, circle_parameter(circle, p))
 }
 
-/// Circles made by conic commands have a conic value rather than a radius value.
-pub(crate) fn circle_geometry(c: &Construction, path: Id) -> Option<(f64, f64, f64)> {
+/// A transformed circle can have a rotated eigenvector frame even though its
+/// equation is unchanged.
+pub(crate) fn circle_geometry(c: &Construction, path: Id) -> Option<ConicData> {
     match c.value(path) {
-        Value::Circle { cx, cy, r } => Some((cx, cy, r)),
-        Value::Conic {
-            ty: super::conic_nd::ConicType::Circle,
-        } => {
-            let conic = c.conic(path)?;
-            Some((conic.midpoint[0], conic.midpoint[1], conic.half_axes[0]))
-        }
+        Value::Circle { .. }
+        | Value::Conic {
+            ty: ConicType::Circle,
+        } => c.conic(path),
         _ => None,
     }
 }
@@ -471,37 +477,47 @@ pub(crate) fn circle_angle_from_position(
     path: Id,
     point: (f64, f64),
 ) -> Option<f64> {
-    let (cx, cy, r) = circle_geometry(c, path)?;
-    if r < STANDARD_PRECISION {
+    let circle = circle_geometry(c, path)?;
+    if circle.half_axes[0] < STANDARD_PRECISION {
         return None;
     }
-    let t = circle_parameter(cx, cy, r, point);
+    let t = circle_parameter(circle, point);
     t.is_finite().then_some(t)
 }
 
-/// `GeoPoint.getCoordsInD2` divides by the weight before projection.
-/// If the resulting angle is NaN, `PathParameter.setT` keeps its old value.
 pub(crate) fn closest_circle(
     c: &Construction,
     path: Id,
     point: Id,
     previous: f64,
 ) -> Option<(Value, Option<f64>)> {
-    let (cx, cy, r) = circle_geometry(c, path)?;
-    let p = if let Some((x, y, z)) = c.point_at_infinity(point) {
-        (x / z, y / z)
-    } else {
-        c.point(point)?
-    };
-    if r < STANDARD_PRECISION {
-        return Some((Value::Point { x: cx, y: cy }, None));
+    closest_circle_with_geometry(c, circle_geometry(c, path)?, point, previous)
+}
+
+/// `GeoPoint.getCoordsInD2` divides by the weight before projection.
+/// If the resulting angle is NaN, `PathParameter.setT` keeps its old value.
+pub(crate) fn closest_circle_with_geometry(
+    c: &Construction,
+    circle: ConicData,
+    point: Id,
+    previous: f64,
+) -> Option<(Value, Option<f64>)> {
+    let p = conic_projection_input(c, point)?;
+    if circle.half_axes[0] < STANDARD_PRECISION {
+        let [x, y] = circle.midpoint;
+        return Some((Value::Point { x, y }, None));
     }
-    let t = circle_parameter(cx, cy, r, p);
+    let t = circle_parameter(circle, p);
     let parameter = (!t.is_nan()).then_some(t);
     Some((
-        circle_point(cx, cy, r, parameter.unwrap_or(previous)),
+        circle_point(circle, parameter.unwrap_or(previous)),
         parameter,
     ))
+}
+
+fn conic_projection_input(c: &Construction, point: Id) -> Option<(f64, f64)> {
+    let (x, y, z) = c.stored_value(point).point_coords()?;
+    Some((x / z, y / z))
 }
 
 pub(crate) fn closest_coords(c: &Construction, path: Id, p: (f64, f64)) -> Option<(f64, f64)> {
@@ -824,6 +840,18 @@ impl Group for PointDef {
                 Some(Value::Point { x, y })
             }
             PointDef::Closest { path, point } => {
+                if matches!(
+                    c.value(path),
+                    Value::Conic {
+                        ty: ConicType::Ellipse | ConicType::SinglePoint,
+                    }
+                ) && c.point(point).is_none()
+                {
+                    return super::path::project_conic(
+                        c.conic(path)?,
+                        conic_projection_input(c, point)?,
+                    );
+                }
                 let (x, y) = closest_coords(c, path, c.point(point)?)?;
                 Some(Value::Point { x, y })
             }

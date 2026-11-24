@@ -84,6 +84,7 @@ const SAVED_CASES: &[&str] = &[
     "saved-texts-001.ggb",
     "saved-text-equations-001.xml",
     "saved-projective-001.xml",
+    "saved-projectiveoverflow-001.xml",
     // Presentation properties per kind, set by the reference application.
     "saved-styles-001.xml",
     "saved-styles-002.xml",

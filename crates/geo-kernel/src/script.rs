@@ -1683,6 +1683,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             | "NIntegral"
             | "IntegralBetween"
             | "Dilate"
+            | "Rotate"
             | "Derivative"
             | "NDerivative"
     ) {
@@ -1743,6 +1744,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             &[(0, Kind::Point), (1, Kind::Number), (1, Kind::Point)]
         }
         ("Circle", [_, _]) => &[(0, Kind::Point)],
+        ("Rotate", [_, _] | [_, _, _]) => &[(1, Kind::Number)],
         ("Dilate", [src, _]) if is_kind(src, Kind::Curve) || is_kind(src, Kind::Image) => {
             &[(1, Kind::Number)]
         }
@@ -1801,6 +1803,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
     let live_numbers = matches!(
         func,
         "Dilate"
+            | "Rotate"
             | "LowerSum"
             | "UpperSum"
             | "LeftSum"

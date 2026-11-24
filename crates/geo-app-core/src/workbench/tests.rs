@@ -2520,3 +2520,24 @@ fn fixed_infinite_projection_coalesces_radius_edits() {
         projection_bits(&w.log.rebuild().unwrap().0)
     );
 }
+
+#[test]
+fn finite_projection_drag_coalesces_replay() {
+    let mut w =
+        Workbench::from_script("O = (0, 0)\nP = (1, 2)\nk = Circle(O, 2)\nR = ClosestPoint(k, P)")
+            .unwrap();
+    let point = w.construction().id("P").unwrap();
+    let entries = w.snapshot_text().lines().count();
+    w.begin_gesture();
+    for _ in 0..128 {
+        assert!(w.move_point(point, 2.0, 1.0));
+        assert!(w.move_point(point, 1.0, 2.0));
+    }
+    assert!(w.move_point(point, 2.0, 1.0));
+    w.end_gesture();
+    assert_eq!(w.snapshot_text().lines().count(), entries + 1);
+    let expected = projection_bits(w.construction());
+    w.run_line("J = (5, 5)").unwrap();
+    assert!(w.undo());
+    assert_eq!(projection_bits(w.construction()), expected);
+}

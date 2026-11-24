@@ -5,7 +5,7 @@ use geo_kernel::{script, Construction, Def, Error, Kind, Value};
 
 /// Number of cases recorded by `ggb-harness` so far. Raise it when adding cases,
 /// so that losing a file is noticed.
-const MIN_GOLDEN_CASES: usize = 7239;
+const MIN_GOLDEN_CASES: usize = 7247;
 
 #[test]
 fn homogeneous_point_cases_agree() {
@@ -20,6 +20,15 @@ fn homogeneous_point_cases_agree() {
     let mut cases = model::load_all(&repo_root()).unwrap();
     cases.retain(|case| ids.contains(&case.id.as_str()));
     assert_eq!(cases.len(), ids.len());
+    let report = report::evaluate(&cases, &gaps::Gaps::new());
+    assert!(report.failures.is_empty(), "{}", report.failures.join("\n"));
+}
+
+#[test]
+fn projective_update_cases_agree() {
+    let mut cases = model::load_all(&repo_root()).unwrap();
+    cases.retain(|case| case.id.contains("-projectiveupdates-"));
+    assert_eq!(cases.len(), 8);
     let report = report::evaluate(&cases, &gaps::Gaps::new());
     assert!(report.failures.is_empty(), "{}", report.failures.join("\n"));
 }

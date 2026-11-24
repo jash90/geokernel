@@ -41,7 +41,8 @@
 //! Upstream also stops sampling when one update of the
 //! construction takes longer than 500 ms (`MAX_TIME_FOR_ONE_STEP`); a time
 //! limit would make the points depend on the machine, so it is left out, and
-//! only the limits on the number of points and steps are kept.
+//! the kernel instead limits total sampling work, as well as the number
+//! of points and steps.
 //!
 //! A locus does not follow its moving object: upstream leaves it out of the
 //! inputs it updates from (`setInputOutput`), so dragging `P` keeps the old
@@ -448,6 +449,7 @@ pub(crate) struct Saved {
     values: Vec<(usize, Value)>,
     defs: Vec<(usize, Def)>,
     paths: Vec<(usize, PathState)>,
+    closest_angles: BTreeMap<usize, f64>,
     conics: Vec<(usize, crate::algo::conic_nd::ConicData)>,
     arcs: Vec<(usize, crate::algo::arc::ArcData)>,
     discrete: Vec<(usize, LocusData)>,
@@ -461,6 +463,7 @@ impl Saved {
             values: Vec::with_capacity(ids.len()),
             defs: Vec::with_capacity(ids.len()),
             paths: Vec::new(),
+            closest_angles: BTreeMap::new(),
             conics: Vec::new(),
             arcs: Vec::new(),
             discrete: Vec::new(),
@@ -468,8 +471,17 @@ impl Saved {
             inequality_helpers_changed: c.inequality_helpers.changed(),
         };
         for &i in ids {
-            s.values.push((i, c.values[i]));
-            s.defs.push((i, c.defs[i]));
+            let def = c.defs[i];
+            let value = if def.kind() == Kind::Point {
+                c.stored_value(Id(i))
+            } else {
+                c.values[i]
+            };
+            s.values.push((i, value));
+            s.defs.push((i, def));
+            if let Some(&angle) = c.closest_circle_parameters.get(&i) {
+                s.closest_angles.insert(i, angle);
+            }
             if let Def::Point(PointDef::InequalityVertex { owner, .. }) = c.defs[i] {
                 s.inequality_helpers
                     .entry(owner)
@@ -492,6 +504,27 @@ impl Saved {
         s
     }
 
+    fn restore_values(
+        c: &mut Construction,
+        values: &[(usize, Value)],
+        closest_angles: &BTreeMap<usize, f64>,
+    ) {
+        for &(i, value) in values {
+            c.values[i] = if c.defs[i].kind() == Kind::Point {
+                c.store_point_coordinates(i, value)
+            } else {
+                value
+            };
+            if let Def::Point(PointDef::Closest { .. }) = c.defs[i] {
+                if let Some(&angle) = closest_angles.get(&i) {
+                    c.closest_circle_parameters.insert(i, angle);
+                } else {
+                    c.closest_circle_parameters.remove(&i);
+                }
+            }
+        }
+    }
+
     /// Puts the saved state back. The objects of `chain` are recomputed
     /// first, so that what an expression keeps besides its value (its last
     /// raw result) follows the saved inputs again; then every saved value
@@ -503,9 +536,7 @@ impl Saved {
         for &(slot, st) in &self.paths {
             c.paths[slot].1 = st;
         }
-        for &(i, v) in &self.values {
-            c.values[i] = v;
-        }
+        Self::restore_values(c, &self.values, &self.closest_angles);
         for (slot, data) in self.discrete {
             c.loci[slot].1 = data;
         }
@@ -527,9 +558,7 @@ impl Saved {
                 recompute(c, i);
             }
         }
-        for (i, v) in self.values {
-            c.values[i] = v;
-        }
+        Self::restore_values(c, &self.values, &self.closest_angles);
         for (slot, st) in self.paths {
             c.paths[slot].1 = st;
         }
@@ -772,7 +801,19 @@ pub(crate) fn recompute(c: &mut Construction, i: usize) {
             c.analysis.clear();
             c.values[i] = c.compute(def, i);
         }
-        _ => c.values[i] = c.compute(def, i),
+        _ => {
+            let value = match def {
+                Def::Point(PointDef::Closest { path, point }) => {
+                    c.closest_point(i, path, point, false)
+                }
+                _ => c.compute(def, i),
+            };
+            c.values[i] = if def.kind() == Kind::Point {
+                c.store_point_coordinates(i, value)
+            } else {
+                value
+            };
+        }
     }
 }
 
@@ -1041,7 +1082,7 @@ pub(crate) fn sample_path_point_on(
     st.update_coords();
     if let Some(slot) = c.path_slot(id.0) {
         c.paths[slot].1 = st;
-        c.values[id.0] = PathDef::value(&st);
+        c.values[id.0] = c.store_point_coordinates(id.0, PathDef::value(&st));
     }
     c.value(id)
 }
@@ -1058,7 +1099,7 @@ impl Moving for PathCopy {
     fn apply(&self, c: &mut Construction) {
         if let Some(slot) = c.path_slot(self.id.0) {
             c.paths[slot].1 = self.st;
-            c.values[self.id.0] = PathDef::value(&self.st);
+            c.values[self.id.0] = c.store_point_coordinates(self.id.0, PathDef::value(&self.st));
         }
     }
 
@@ -1443,6 +1484,7 @@ impl Cache {
 struct Run<'a, M> {
     q: Id,
     chain: &'a [usize],
+    exhausted: bool,
     view: View,
     mover: Mover,
     cache: Cache,
@@ -1529,9 +1571,17 @@ impl<M: Moving> Run<'_, M> {
                     // ConsElementXMLHandler.handleSlider skips slider tags
                     // in the macro construction. The mover still takes
                     // its sampled value, but other sliders keep theirs.
+                    if !crate::expr::reserve_work(1) {
+                        self.exhausted = true;
+                        return None;
+                    }
                     if !matches!(c.defs[i], Def::Number(_)) {
                         recompute(c, i);
                     }
+                }
+                if crate::expr::work_done() > crate::expr::work_deadline() {
+                    self.exhausted = true;
+                    return None;
                 }
                 let q = c.point(self.q);
                 self.cache.put(key, q);
@@ -1558,6 +1608,20 @@ fn sample<M: Moving>(
     c: &mut Construction,
     q: Id,
     chain: &[usize],
+    copy: M,
+    mover: Mover,
+    slider: bool,
+) -> LocusData {
+    let end = crate::expr::work_done().saturating_add(crate::expr::MAX_EVALUATION_WORK);
+    crate::expr::with_work_deadline(end, || {
+        sample_within_budget(c, q, chain, copy, mover, slider)
+    })
+}
+
+fn sample_within_budget<M: Moving>(
+    c: &mut Construction,
+    q: Id,
+    chain: &[usize],
     mut copy: M,
     mover: Mover,
     slider: bool,
@@ -1567,6 +1631,7 @@ fn sample<M: Moving>(
     let mut run = Run {
         q,
         chain,
+        exhausted: false,
         view,
         mover,
         cache: Cache {
@@ -1588,7 +1653,11 @@ fn sample<M: Moving>(
     let max_loops = 2 * MAX_POINTS * views;
     let mut loops = 0;
     let mut finished = false;
-    while !finished && run.points.len() <= MAX_POINTS * views && loops <= max_loops {
+    while !run.exhausted
+        && !finished
+        && run.points.len() <= MAX_POINTS * views
+        && loops <= max_loops
+    {
         loops += 1;
         // lineTo may be false due to a parameter jump
         let jump = !run.mover.next();
@@ -1652,6 +1721,9 @@ fn sample<M: Moving>(
             }
         }
     }
+    if run.exhausted {
+        return LocusData::default();
+    }
     let Some(start) = run.start.take() else {
         return LocusData::default();
     };
@@ -1659,6 +1731,9 @@ fn sample<M: Moving>(
     // differs from any point, as its NaN coordinates do upstream
     copy.back_to(c, &start);
     let v = run.update(c, &copy).unwrap_or((f64::NAN, f64::NAN));
+    if run.exhausted {
+        return LocusData::default();
+    }
     if v.0 != run.last.0 || v.1 != run.last.1 {
         let line_to = run.distance_small(v, either);
         run.insert(v, line_to);
@@ -1870,6 +1945,25 @@ fn parse_hull(c: &Construction, list: &str, number: &str) -> Result<LocusDef, St
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn slider_locus_charges_cascade_visits() {
+        let mut c =
+            crate::script::load("r = Slider(1, 3)\nO = (0, 0)\nk = Circle(O, r)\nQ = Point(k, 0)")
+                .unwrap();
+        let (q, slider) = (c.id("Q").unwrap(), c.id("r").unwrap());
+        let saved = c.value(q);
+        let before = crate::expr::work_done();
+        let data = crate::expr::with_work_deadline(before + 16, || {
+            super::record_slider(&mut c, q, slider)
+        });
+        assert!(!data.defined);
+        assert_eq!(crate::expr::work_done() - before, 16);
+        assert_eq!(c.number(slider), Some(1.0));
+        assert!(c.value(q).identical(&saved));
+        assert!(super::record_slider(&mut c, q, slider).defined);
+    }
+
     use super::OptimizerCascade;
     use crate::{script, Def, Value};
 
