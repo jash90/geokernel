@@ -1869,6 +1869,22 @@ mod tests {
     }
 
     #[test]
+    fn constructed_conics_keep_the_recorded_computed_coefficients() {
+        // cas-order-094, cas-order-096 and cas-order-097.
+        for (script, id, expected) in [
+            ("A = (0.37, -1.21)\nk = Circle(A, 1.7)", "k", "(((x)-((370000000000000/1000000000000000)))^(2))+(((y)+((121000000000000/100000000000000)))^(2))=(289000000000000/100000000000000)"),
+            ("A = (1, 2)\nB = (3, -1)\nC = (-2, 0.5)\nD = (0.5, 3)\nE = (-1, -2)\nk = Conic(A, B, C, D, E)", "k", "((((((-513750000000000/1000000000000))*((x)^(2)))-((((594375000000000/1000000000000))*(x))*(y)))-(((862500000000000/10000000000000))*((y)^(2))))+(((251250000000000/1000000000000))*(x)))-(((125625000000000/1000000000000))*(y))=(-204750000000000/100000000000)"),
+            ("F = (1, 1)\ng: x+y=-1\nk = Parabola(F, g)\nP = (0, 0)\nQ = (2, 1)\nR = (3, 2)\nh = Ellipse(P, Q, R)", "h", "((((((847921561087423/10000000000000))*((x)^(2)))-(((16)*(x))*(y)))+(((967921561087423/10000000000000))*((y)^(2))))-(((161584312217485/1000000000000))*(x)))-(((807921561087423/10000000000000))*(y))=(407960780543712/1000000000000)"),
+        ] {
+            let c = crate::script::load(script).unwrap();
+            let printer = Printer::new(&c, Vec::new(), false);
+            let mut text = String::new();
+            printer.object(c.id(id).unwrap(), &mut text).unwrap();
+            assert_eq!(text, expected, "{script}");
+        }
+    }
+
+    #[test]
     fn radicals_in_a_free_variable_stay_variable() {
         // cas-shape-024.
         with_result("{{√(-x^2+4)},{-√(-x^2+4)}}", |list| {
