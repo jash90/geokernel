@@ -945,6 +945,11 @@ pub(crate) fn reset_list_records(c: &Construction, d: ExprDef) -> bool {
     true
 }
 
+pub(crate) fn has_transform_outputs(c: &Construction, d: ExprDef) -> bool {
+    let e = entry(c, d);
+    e.root_transform.is_some() || !e.nested_transforms.is_empty()
+}
+
 pub(crate) fn reset_transform_outputs(c: &mut Construction, d: ExprDef) -> bool {
     let e = &mut c.exprs.entries[d.index as usize];
     let had_outputs = e.root_transform.take().is_some() || !e.nested_transforms.is_empty();
@@ -1949,11 +1954,13 @@ fn update_lists(c: &mut Construction, d: ExprDef) -> ((Value, bool), bool) {
     c.exprs.out = items;
     let v = value(d, out.raw);
     let changed = store(c, d, out);
-    // A list selector's dependents run even if the selected elements kept
-    // the same values. List transforms can act on retained output objects.
-    let selector_updated = d.kind == Kind::List && entry(c, d).has_if_algorithm;
+    // Selectors and dependent list aliases forward their input update even
+    // when the elements stay equal. Transforms can act on retained outputs.
+    let e = entry(c, d);
+    let list_updated = d.kind == Kind::List
+        && (e.has_if_algorithm || matches!(e.nodes[e.root as usize], Node::Obj(_)));
     (
-        (v, changed || items_changed || selector_updated),
+        (v, changed || items_changed || list_updated),
         invalid_transform_list,
     )
 }

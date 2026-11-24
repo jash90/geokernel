@@ -468,7 +468,7 @@ fn print_form_candidates() {
 /// agrees: no case of `known-gaps.toml` may call a form of
 /// `form-evidence.toml`. A call reaches a form as
 /// [`forms::script_may_use_form`] reads it, so a circle reaches a `conic`
-/// form and a nested call any form its arity fits, unless the call shows
+/// form and a nested call of unknown kind any form its arity fits, unless the call shows
 /// another form of the command exactly.
 /// A row marked `giac` is checked against the gaps that remain with the
 /// Giac backend (`known-gaps-giac.toml` applied).

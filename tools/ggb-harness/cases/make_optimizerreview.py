@@ -183,4 +183,39 @@ cases.case("nanstep", ["h = 0.2", "a = Slider(0, 6, h, 2)"], [
     {"action": "slider_animation", "label": "a"},
 ])
 
+nested = [
+    "t = 2", "A = (1, 2)", "B = (3, 5)",
+    "L = If(t > 1, {{A}, {B}}, If(t > 0, {{A}, 4}, {3, 4}))",
+]
+cases.case("nestedalias", nested + ["J = L", "M = Dilate(J, 2)"], [
+    setn("t", 1), setn("t", 0), setn("t", -1),
+])
+cases.case("nestedidentical", nested + ["M = Dilate(L, 2)"], [
+    setn("t", 1), redefine("M = Dilate(L, 2)"),
+])
+for command in ["Dilate(L, 2)", "ApplyMatrix({{2, 0}, {0, 2}}, L)"]:
+    cases.case("slotregrowth", [
+        "t = 2", "A = (1, 2)", "C = (7, 11)",
+        "L = If(t > 1, {A}, If(t > 0, {}, If(t == 0, {3}, {C})))", f"M = {command}",
+    ], [setn("t", 1), setn("t", 0), setn("t", -1)])
+cases.case("undefinedtransform", [
+    "t = 2", "A = (1, 2)", "B = (3, 5)", "L = If(t > 1, {{A}, {B}})", "M = Dilate(L, 2)",
+], [setn("t", 1)])
+cascade = [
+    "b = IsDefined(a)", "P = (1, 2)", "Q = (3, 5)",
+    "L = If(b, If(a < 0, {{P}, {Q}}, {3, 4}), {{P}, 4})", "M = Dilate(L, 2)",
+]
+cases.case("endpointedit", ["u = -4", "hi = u + 3", "a = Slider(u, hi)"] + cascade, [
+    setn("u", -0.5),
+])
+cases.case("endpointedit", ["u = -4", "lo = u + 0", "hi = u + 3", "a = Slider(lo, hi)"] + cascade, [
+    redefine("u = -0.5"),
+])
+# The reference has XML snapshot reloads instead of native script reset directives.
+reset_count = 4
+cases.case("transformreset", [
+    "A = (1, 2)", "L = {{A}}",
+    *(f"M_{i} = Dilate(L, 2)" for i in range(1, reset_count + 1)),
+], [{"action": "reload_ggb"} for _ in range(reset_count)])
+
 cases.write()

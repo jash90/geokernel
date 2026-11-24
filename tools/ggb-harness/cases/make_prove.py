@@ -482,4 +482,14 @@ proof("namedpointselector", PARABOLA + [
     "s = Line(A, B)", "U = If(x(B) > 0, (1, 0), (2, 0))", "n = x(U)", "P = Intersect(s, k, n)",
 ], "AreCollinear(A, B, P)")
 
+for line in ("g", "Line(A, B)"):
+    cases.case("recoveryundo", [
+        entry.replace("Intersect(Line(A, B), c", f"Intersect({line}, c") for entry in THROUGH_CIRCLE
+    ], [
+        redefine("D = (2, 0)"), redefine("b = false"),
+        add("p_2 = Prove(AreCollinear(A, B, Q))"),
+        redefine("D = (1, 2)"), add("p_3 = Prove(AreCollinear(A, B, Q))"),
+        mv("D", 1, 3), {"action": "undo"},
+    ])
+
 cases.write()

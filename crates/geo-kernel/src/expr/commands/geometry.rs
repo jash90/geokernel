@@ -554,6 +554,8 @@ pub(in crate::expr) fn map_list<const M: bool>(
             (prior + 1, prior_len.saturating_sub(1)),
         );
         let slot = lists.read(ctx.c, source);
+        let retains_number =
+            slot.kind == Kind::Point && previous.is_some_and(|out| out.kind == Kind::Number);
         let result = if let Some((list, len)) = slot.run() {
             let dest = lists.reserve(len)?;
             if len != 0 {
@@ -566,7 +568,7 @@ pub(in crate::expr) fn map_list<const M: bool>(
                 );
             }
             Slot::list(dest, len)
-        } else if transformable(slot.kind) {
+        } else if transformable(slot.kind) && !retains_number {
             active = Some(target);
             let slot = match previous.map(|p| p.kind) {
                 Some(kind @ (Kind::Point | Kind::Vector))
@@ -622,7 +624,7 @@ pub(in crate::expr) fn map_list<const M: bool>(
                 } else if let Some(previous) = previous_leaf {
                     let point = pending_value.take().unwrap_or_else(|| previous.clone());
                     pending_value = Some(transformed(point));
-                } else {
+                } else if !retains_number {
                     // AlgoApplyMatrix and AlgoDilate reuse the most recent
                     // transformable template across nested lists. Before
                     // any such template exists, a numeric item raises an
@@ -635,7 +637,12 @@ pub(in crate::expr) fn map_list<const M: bool>(
                     return None;
                 }
             }
-            slot
+            if retains_number {
+                // GeoNumeric.set evaluates the incoming point as a number.
+                Slot::undefined(Kind::Number)
+            } else {
+                slot
+            }
         };
         lists.set(target, result);
     }

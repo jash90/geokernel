@@ -980,6 +980,7 @@ enum ProtocolFields {
 
 enum Propagation<'a> {
     Live,
+    SliderTransient,
     Redefinition {
         refresh: DefinitionRefresh,
         rebuild_records: bool,
@@ -1160,6 +1161,7 @@ pub struct Construction {
     pub(crate) clips: algo::polygon_clip::ClipCache,
     pub(crate) analysis: AnalysisCache,
     last_update_requires_replay: bool,
+    saved_transform_reset_slots: usize,
     /// The states of the points on paths, with the index of each point, in
     /// creation order.
     paths: Vec<(usize, PathState)>,
@@ -2465,6 +2467,14 @@ impl Construction {
 
         let slider_options = self.slider_animation_options.remove(&new);
         let mut value = self.values[new.0];
+        let retained_transform = match old {
+            Def::Expr(d) if same_definition && expr::has_transform_outputs(self, d) => {
+                def = old;
+                value = self.values[id.0];
+                Some(d)
+            }
+            _ => None,
+        };
         if bounds.is_some() && matches!(old, Def::Number(_)) {
             def = old;
             value = self.values[id.0];
@@ -2550,7 +2560,15 @@ impl Construction {
                 self.refresh_circle_hints(&mut dirty);
             }
         }
-        let clamped_slider = self.enqueue_updated_children(id, &mut dirty, true);
+        if let Some(d) = retained_transform {
+            self.update_expr(id.0, d);
+        }
+        let mut transient = DirtySet::default();
+        let clamped_slider =
+            self.enqueue_updated_children(id, &mut dirty, true, Some(&mut transient));
+        if transient.len != 0 {
+            self.propagate_dirty_with(transient, 0, Propagation::SliderTransient);
+        }
         for child in old_reads.keys().copied() {
             if matches!(
                 self.def(child),
@@ -3690,12 +3708,19 @@ impl Construction {
         // the set is lost, and `fit` gives a clean one on the next update.
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.defs.len());
-        let clamped_slider = self.enqueue_updated_children(start, &mut dirty, false);
+        let mut transient = DirtySet::default();
+        let clamped_slider =
+            self.enqueue_updated_children(start, &mut dirty, false, Some(&mut transient));
+        let transient_count = if transient.len != 0 {
+            self.propagate_dirty_with(transient, 0, Propagation::SliderTransient)
+        } else {
+            0
+        };
         let recomputed = self.propagate_dirty(dirty, self.evaluation_rank(start));
         // The sweep starts a fresh replay flag. Keep clamps by the initial
         // endpoint listeners alongside changes made during the sweep.
         self.last_update_requires_replay |= clamped_slider;
-        recomputed
+        recomputed + transient_count
     }
 
     fn enqueue_updated_children(
@@ -3703,6 +3728,7 @@ impl Construction {
         parent: Id,
         dirty: &mut DirtySet,
         refresh_definitions: bool,
+        mut transient: Option<&mut DirtySet>,
     ) -> bool {
         if self.saved_slider_bounds.is_empty() {
             for child in self.children[parent.0].iter() {
@@ -3724,18 +3750,25 @@ impl Construction {
             }
         }
         let mut clamped_slider = false;
-        let mut transient = DirtySet::default();
         for child in sliders.drain(..) {
             let changed = self.update_slider_bounds(child);
             if changed {
                 clamped_slider = true;
                 self.construction_sources.remove(&child);
-                if refresh_definitions && !self.values[child.0].is_defined() {
-                    // A direct lower bound can invalidate the slider before
-                    // the redefinition sweep updates its upper bound.
-                    transient.fit(self.len());
+                if let Some(transient) = transient
+                    .as_deref_mut()
+                    .filter(|_| !self.values[child.0].is_defined())
+                {
+                    // Notify readers while the slider is undefined, before
+                    // a pending update of its other endpoint can recover it.
                     for dependent in self.children[child.0].iter() {
+                        if transient.len == 0 {
+                            transient.fit(self.len());
+                        }
                         transient.insert(self.evaluation_rank(dependent));
+                    }
+                    if !refresh_definitions {
+                        continue;
                     }
                 }
             }
@@ -3744,9 +3777,6 @@ impl Construction {
             }
         }
         self.slider_updates = sliders;
-        if transient.len != 0 {
-            self.propagate_dirty(transient, 0);
-        }
         clamped_slider
     }
 
@@ -3794,6 +3824,7 @@ impl Construction {
         let mode = match mode {
             Propagation::RecordProtocol(before) => Propagation::RecordProtocol(before),
             Propagation::RestoreProtocol(restored) => Propagation::RestoreProtocol(restored),
+            Propagation::SliderTransient => Propagation::SliderTransient,
             _ => Propagation::Live,
         };
         expr::with_work_deadline(end, || {
@@ -3833,6 +3864,10 @@ impl Construction {
             } | Propagation::Reload
         );
         let redefining = matches!(mode, Propagation::Redefinition { .. });
+        // The nested pass completes its own dirty set in dependency order.
+        // It cannot recursively start another endpoint pass.
+        let observe_transient =
+            matches!(mode, Propagation::Live | Propagation::Redefinition { .. });
         let refresh_proofs = matches!(
             mode,
             Propagation::Redefinition {
@@ -3846,6 +3881,7 @@ impl Construction {
         self.clips.clear();
         self.analysis.clear();
         let mut recomputed = 0;
+        let mut transient = DirtySet::default();
         let mut restored_pairs = BTreeSet::new();
         let final_update_end = self.optimizer_final_update.map(|(_, end)| end);
         while let Some(rank) = dirty.pop_first(from) {
@@ -4138,8 +4174,22 @@ impl Construction {
             // its slider listeners before the next endpoint is evaluated.
             if (!refresh_definitions
                 || def.kind() == Kind::Number && !self.saved_slider_bounds.is_empty())
-                && self.enqueue_updated_children(Id(i), &mut dirty, false)
+                && self.enqueue_updated_children(
+                    Id(i),
+                    &mut dirty,
+                    false,
+                    observe_transient.then_some(&mut transient),
+                )
             {
+                if transient.len != 0 {
+                    recomputed += self.propagate_dirty_while(
+                        std::mem::take(&mut transient),
+                        0,
+                        Propagation::SliderTransient,
+                        within_budget,
+                    )?;
+                    transient = std::mem::take(&mut self.dirty);
+                }
                 self.last_update_requires_replay = true;
             }
         }
@@ -4868,6 +4918,19 @@ impl Construction {
             self.dirty = dirty;
         }
         changed
+    }
+
+    /// A saved reset scans the whole construction. Bound the total number of
+    /// slots it can scan during a replay, even if it finds no transform.
+    pub(crate) fn apply_saved_transform_reset(&mut self) -> Result<(), String> {
+        const MAX_REPLAY_SCAN_SLOTS: usize = 1_000_000;
+        let slots = self.saved_transform_reset_slots.saturating_add(self.len());
+        if slots > MAX_REPLAY_SCAN_SLOTS {
+            return Err("transform output resets exceed the replay work budget".into());
+        }
+        self.saved_transform_reset_slots = slots;
+        self.reset_transform_outputs();
+        Ok(())
     }
 
     /// Reloading an undo snapshot starts each list transformation with fresh outputs.

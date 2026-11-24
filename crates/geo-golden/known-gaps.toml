@@ -2885,3 +2885,23 @@ mismatches = ["2:N"]
 id = "optimizerreview-redefine-008"
 reason = "The upper endpoint reads its own slider through d. GeoGebra clamps a when b lowers that endpoint, both before and after reload in the recorded construction. During reload, the XML endpoint pass rejects the circular upper endpoint and retains the lower one (ConsElementXMLHandler.java:2647). The kernel has no cyclic listener edge and retains a = 3 and d = 6."
 mismatches = ["2:a", "2:d", "3:a", "3:d", "4:a", "4:d"]
+
+# Snapshot proof replay and undefined list transformations
+
+[[gap]]
+id = "prove-recoveryundo-001"
+reason = "Undoing the move restores a radius-1 circle. GeoGebra rebuilds p_2 as true. The kernel replays its creation while the circle is undefined and leaves p_2 undefined after the snapshot restore (workbench/mod.rs:636, kernel.rs:4043). Fresh proof replay needs ordered helper history and an aggregate solver budget."
+mismatches = ["7:p_2"]
+undefined = true
+
+[[gap]]
+id = "prove-recoveryundo-002"
+reason = "Undoing the move restores a radius-1 circle. GeoGebra rebuilds the proof of the inline-line intersection as true. The kernel replays its creation while the circle is undefined and leaves p_2 undefined after the snapshot restore (workbench/mod.rs:636, kernel.rs:4043). Fresh proof replay needs ordered helper history and an aggregate solver budget."
+mismatches = ["7:p_2"]
+undefined = true
+
+[[gap]]
+id = "optimizerreview-undefinedtransform-001"
+reason = "At t = 1, GeoGebra dilates the retained undefined point slots and keeps M as the defined list {{?}, {?}}. The kernel returns a wholly undefined M because expr/eval.rs:1912 drops the undefined source's shape before dilation reads it (expr/eval.rs:1728)."
+mismatches = ["1:M"]
+undefined = true

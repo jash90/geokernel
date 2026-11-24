@@ -96,10 +96,7 @@ impl Property {
                 c.reset_transpose_flags();
                 Ok(())
             }
-            Self::ResetTransformOutputs => {
-                c.reset_transform_outputs();
-                Ok(())
-            }
+            Self::ResetTransformOutputs => c.apply_saved_transform_reset(),
             Self::ImageAsset { name, asset } => c.register_image_asset(name.clone(), asset.clone()),
             Self::DrawingStyle { label, style } => {
                 c.set_drawing_style(object(c, label)?, *style);

@@ -1,0 +1,368 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-transformreset-001",
+      "group": "optimizerreview",
+      "script": [
+        "A = (1, 2)",
+        "L = {{A}}",
+        "M_1 = Dilate(L, 2)",
+        "M_2 = Dilate(L, 2)",
+        "M_3 = Dilate(L, 2)",
+        "M_4 = Dilate(L, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reload_ggb" },
+        { "action": "reload_ggb" },
+        { "action": "reload_ggb" },
+        { "action": "reload_ggb" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+                ]
+              }
+            ]
+          },
+          "M_1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+                ]
+              }
+            ]
+          },
+          "M_1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+                ]
+              }
+            ]
+          },
+          "M_1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+                ]
+              }
+            ]
+          },
+          "M_1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+                ]
+              }
+            ]
+          },
+          "M_1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "M_4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

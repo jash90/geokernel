@@ -1061,3 +1061,83 @@ fn round2_omitted_nan_step_stays_frozen() {
     c.set_number(a, 5.0).unwrap();
     assert_eq!(c.slider_animation_options(a)[0], Some("NaN"));
 }
+
+#[test]
+fn list_alias_forwards_a_value_stable_selector_update() {
+    let mut c = load(&format!("{ROUND2_NESTED}\nJ = L\nM = Dilate(J, 2)")).unwrap();
+    let t = c.id("t").unwrap();
+    for (value, x) in [(1.0, 4.0), (0.0, 16.0), (-1.0, 64.0)] {
+        c.set_number(t, value).unwrap();
+        assert_eq!(first_nested_x(&c), x);
+    }
+}
+
+#[test]
+fn regrown_number_slot_stays_numeric_when_replaced_by_a_point() {
+    for command in ROUND2_TRANSFORMS {
+        let mut c = load(&format!(
+            "t = 2\nA = (1, 2)\nC = (7, 11)\n\
+             L = If(t > 1, {{A}}, If(t > 0, {{}}, If(t == 0, {{3}}, {{C}})))\nM = {command}"
+        ))
+        .unwrap();
+        let (t, m) = (c.id("t").unwrap(), c.id("M").unwrap());
+        c.set_number(t, 1.0).unwrap();
+        assert_eq!(c.elements(m).unwrap().len(), 0);
+        c.set_number(t, 0.0).unwrap();
+        assert!(matches!(
+            c.elements(m).unwrap().get(0),
+            Some(super::Element::Value(Kind::Number, Value::Number(3.0)))
+        ));
+        c.set_number(t, -1.0).unwrap();
+        let list = c.elements(m).unwrap();
+        assert_eq!(list.len(), 1);
+        assert!(matches!(
+            list.get(0),
+            Some(super::Element::Value(Kind::Number, Value::Undefined))
+        ));
+    }
+}
+
+#[test]
+fn retyping_a_list_transform_reuses_its_output_slots() {
+    let mut c = load(&format!("{ROUND2_NESTED}\nM = Dilate(L, 2)")).unwrap();
+    c.set_number(c.id("t").unwrap(), 1.0).unwrap();
+    let m = c.id("M").unwrap();
+    assert_eq!(
+        crate::script::exec(&mut c, "M = Dilate(L, 2)").unwrap(),
+        Some(m)
+    );
+    assert_eq!(first_nested_x(&c), 4.0);
+    let Some(super::Element::List(second)) = c.elements(m).unwrap().get(1) else {
+        panic!("expected a retained nested list");
+    };
+    assert!(matches!(
+        second.get(0),
+        Some(super::Element::Value(
+            Kind::Point,
+            Value::Point { x: 6.0, y: 10.0 }
+        ))
+    ));
+}
+
+#[test]
+fn changing_a_bound_value_notifies_readers_before_the_other_bound_updates() {
+    let mut c = load(
+        "u = -4\nhi = u + 3\na = Slider(u, hi)\nb = IsDefined(a)\nP = (1, 2)\nQ = (3, 5)\n\
+         L = If(b, If(a < 0, {{P}, {Q}}, {3, 4}), {{P}, 4})\nM = Dilate(L, 2)",
+    )
+    .unwrap();
+    c.set_number(c.id("u").unwrap(), -0.5).unwrap();
+    assert_eq!(first_nested_x(&c), 16.0);
+}
+
+#[test]
+fn redefining_a_source_of_two_bounds_notifies_readers_between_bound_updates() {
+    let mut c = load(
+        "u = -4\nlo = u + 0\nhi = u + 3\na = Slider(lo, hi)\nb = IsDefined(a)\nP = (1, 2)\nQ = (3, 5)\n\
+         L = If(b, If(a < 0, {{P}, {Q}}, {3, 4}), {{P}, 4})\nM = Dilate(L, 2)",
+    )
+    .unwrap();
+    crate::script::exec(&mut c, "u = -0.5").unwrap();
+    assert_eq!(first_nested_x(&c), 16.0);
+}
