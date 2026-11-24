@@ -35,8 +35,8 @@ Direction,,geometry,P1,partial,2,1,"Direction(line, segment or ray)"
 Point,,geometry,P1,partial,4,1,"Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter"
 Midpoint,,geometry,P0,partial,4,3,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,partial,2,1,"LineBisector(point, point); LineBisector(segment)"
-Intersect,,geometry,P0,partial,79,71,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
-IntersectPath,,geometry,P1,partial,9,6,"Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices."
+Intersect,,geometry,P0,partial,79,73,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
+IntersectPath,,geometry,P1,partial,9,8,"Polygons with lines, segments, rays or other polygons. Conics with segments, polylines and polygon boundaries within the clipping work budget."
 IntersectRegion,,english,P2,partial,9,8,
 Distance,,geometry,P0,partial,4,2,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
 Length,,geometry,P1,partial,11,10,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
@@ -60,7 +60,7 @@ Barycenter,,geometry,P1,done,1,1,
 Trilinear,,geometry,P1,done,1,1,"Trilinear(point, point, point, number, number, number)"
 Cubic,,geometry,P1,done,1,1,
 TriangleCurve,,geometry,P1,done,1,1,
-Vertex,,geometry,P1,partial,12,10,"Conic, polygon, polyline and graphics view corners. Indexed polygon, polyline, segment, raster image and hidden checkbox corners. Polynomial inequality borders."
+Vertex,,geometry,P1,done,12,12,"Conic, polygon, polyline and graphics view corners. Indexed polygon, polyline, segment, raster image, headless text and hidden checkbox corners. Inequality border intersections."
 PolyLine,,geometry,P1,partial,4,2,Live list with optional Boolean or separate points with an optional false flag
 PenStroke,,geometry,P1,partial,2,1,Literal points smoothed into cubic pieces in the view and frozen; saved strokes restore their points.
 PenStrokeBezier,,english,,out_of_scope,,,"A pen stroke reads the pointing device and the tablet state, not the construction."

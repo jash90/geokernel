@@ -1,0 +1,83 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "polygon-sidelabels-001",
+      "group": "polygon",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "C = (0, 2)",
+        "ه = Midpoint(A, B)",
+        "p = Polygon(ه, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "ه": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 1.0,
+            "signed_area": 1.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "هـ": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": 1.0, "y2": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "polygon-sidelabels-002",
+      "group": "polygon",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "C = (0, 2)",
+        "ه = Midpoint(A, B)",
+        "هـ = 1",
+        "هـ_{1} = 2",
+        "p = Polygon(ه, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "ه": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "هـ": { "type": "number", "defined": true, "value": 1.0 },
+          "هـ_{1}": { "type": "number", "defined": true, "value": 2.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 1.0,
+            "signed_area": 1.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "هـ_2": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": 1.0, "y2": 0.0 }
+        }
+      ]
+    }
+  ]
+}

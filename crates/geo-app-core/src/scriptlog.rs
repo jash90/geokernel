@@ -34,6 +34,8 @@
 //! update of their command and closes the operations it replayed with a
 //! `$keptLabels()` line: every later replay of the journal frees no label
 //! before it, so it reproduces the labels the deletion kept.
+//! Undo, redo and native file reloads record a checkpoint for vertex helpers
+//! affected by the edits since the previous checkpoint.
 
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::control::{decode_text, encode_text, visibility_boolean};
@@ -64,6 +66,42 @@ const SHOW_OBJECT: &str = "$showObject";
 /// Marks the end of the part of the journal that a deletion replayed
 /// without freeing the labels of command outputs (see `Op::KeptLabels`).
 const KEPT_LABELS: &str = "$keptLabels";
+const RESET_INEQUALITY_HELPERS: &str = "$resetInequalityHelpers";
+const REFRESH_INEQUALITY_HELPERS: &str = "$refreshInequalityHelpers";
+
+/// Legacy directives can restart every helper even after an unrelated edit.
+/// Their slot scheduling and evaluation share one allowance per text load.
+struct ResetBudget(u64);
+
+impl ResetBudget {
+    fn new() -> Self {
+        Self(1_000_000)
+    }
+
+    fn reset(&mut self, c: &mut Construction) -> Result<bool, String> {
+        c.reset_inequality_vertex_helpers_with_budget(&mut self.0)
+            .ok_or_else(|| "inequality helper resets exceed the replay work budget".into())
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum HelperReset {
+    All,
+    Changed,
+}
+
+impl HelperReset {
+    fn follows_equivalent(self, previous: Option<&Op>) -> bool {
+        matches!(previous, Some(Op::ResetInequalityHelpers(reset)) if *reset == Self::All || *reset == self)
+    }
+
+    fn apply(self, c: &mut Construction, budget: &mut ResetBudget) -> Result<bool, String> {
+        match self {
+            Self::Changed => Ok(c.refresh_inequality_vertex_helpers()),
+            Self::All => budget.reset(c),
+        }
+    }
+}
 
 fn snapshot_labels(comment: &str) -> Option<&str> {
     if saved::inline_argument_positions(comment).is_some() {
@@ -149,6 +187,7 @@ enum Op {
     /// command, as in the reference. A replay frees a label there only for
     /// a line that takes it.
     KeptLabels,
+    ResetInequalityHelpers(HelperReset),
     TextProperties(Box<str>),
     SavedProperty(Box<Property>),
     EquationStyle {
@@ -200,6 +239,7 @@ enum Directive<'a> {
     SavedProperty(Property),
     EquationStyle(EquationStyle<'a>),
     KeptLabels,
+    ResetInequalityHelpers(HelperReset),
 }
 
 /// The directive on a normalised line, if it is one (a definition always has
@@ -219,8 +259,15 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
     }
     let (name, rest) = line.split_once('(')?;
     let name = name.trim();
-    if !matches!(name, MOVE_POINTS | ANGLE_STYLE | SHOW_OBJECT | KEPT_LABELS)
-        && !DIRECTIVES.contains(&name)
+    if !matches!(
+        name,
+        MOVE_POINTS
+            | ANGLE_STYLE
+            | SHOW_OBJECT
+            | KEPT_LABELS
+            | RESET_INEQUALITY_HELPERS
+            | REFRESH_INEQUALITY_HELPERS
+    ) && !DIRECTIVES.contains(&name)
     {
         return None;
     }
@@ -248,6 +295,12 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
             )),
             (SHOW_OBJECT, [target, boolean]) => Some(Directive::Condition(target, boolean)),
             (KEPT_LABELS, [""]) => Some(Directive::KeptLabels),
+            (RESET_INEQUALITY_HELPERS, [""]) => {
+                Some(Directive::ResetInequalityHelpers(HelperReset::All))
+            }
+            (REFRESH_INEQUALITY_HELPERS, [""]) => {
+                Some(Directive::ResetInequalityHelpers(HelperReset::Changed))
+            }
             (ANGLE_STYLE, [l, style]) => Some(Directive::Set(
                 l,
                 Setting::AngleStyle(geo_kernel::kernel::angle::AngleStyle::from_xml(
@@ -433,7 +486,7 @@ pub(crate) fn object_ids(c: &Construction) -> impl Iterator<Item = Id> + '_ {
 }
 
 fn outputs(c: &Construction, from: usize) -> impl Iterator<Item = Id> + '_ {
-    c.ids().skip(from).filter(|&id| !is_internal(c, id))
+    c.ids_from(from).filter(|&id| !is_internal(c, id))
 }
 
 fn definition_outputs<'a>(
@@ -643,8 +696,7 @@ impl Log {
             to,
             ordered,
         };
-        // A later edit can retain an intermediate geometric record or
-        // a hidden Newton start point, so replay the edit that changed it.
+        // Keep edits that affect retained geometry, Newton seeds or inequality helpers.
         if !ordered
             && matches!(
                 self.ops.last(),
@@ -655,6 +707,26 @@ impl Log {
         } else {
             self.ops.push(set);
         }
+    }
+
+    /// A save or an undo checkpoint starts each vertex algorithm fresh.
+    pub(crate) fn reset_inequality_helpers(&mut self, c: &mut Construction) {
+        if c.refresh_inequality_vertex_helpers() {
+            self.ops
+                .push(Op::ResetInequalityHelpers(HelperReset::Changed));
+        }
+    }
+
+    fn replay_inequality_reset(
+        &mut self,
+        c: &mut Construction,
+        reset: HelperReset,
+        budget: &mut ResetBudget,
+    ) -> Result<(), String> {
+        if !reset.follows_equivalent(self.ops.last()) && reset.apply(c, budget)? {
+            self.ops.push(Op::ResetInequalityHelpers(reset));
+        }
+        Ok(())
     }
 
     pub(crate) fn record_move_points(&mut self, c: &Construction, points: &[Position<Id>]) {
@@ -902,7 +974,11 @@ impl Log {
             Op::SavedProperty(property) => {
                 !property.label().is_some_and(|label| labels.contains(label))
             }
-            Op::Freeze { .. } | Op::MovePoints(_) | Op::TextProperties(_) | Op::KeptLabels => true,
+            Op::Freeze { .. }
+            | Op::MovePoints(_)
+            | Op::TextProperties(_)
+            | Op::KeptLabels
+            | Op::ResetInequalityHelpers(_) => true,
         });
         self.removed.extend(labels);
         true
@@ -1089,6 +1165,23 @@ impl Log {
                     Some(n) => *n = i + 1,
                     None => kept.ops.push(Op::KeptLabels),
                 },
+                Op::ResetInequalityHelpers(reset) => {
+                    // Normalize accepted legacy markers too, since a deletion
+                    // may change the work their original full reset would do.
+                    if *reset == HelperReset::All {
+                        diverge(&mut kept, &mut same);
+                    }
+                    if !c.refresh_inequality_vertex_helpers() {
+                        diverge(&mut kept, &mut same);
+                        continue;
+                    }
+                    match &mut same {
+                        Some(n) => *n = i + 1,
+                        None => kept
+                            .ops
+                            .push(Op::ResetInequalityHelpers(HelperReset::Changed)),
+                    }
+                }
                 Op::Define(e) => {
                     if deferring {
                         for label in &e.labels {
@@ -1325,6 +1418,7 @@ impl Log {
             groups.set_deferred(deferring);
             match op {
                 Op::KeptLabels => kept.ops.push(Op::KeptLabels),
+                Op::ResetInequalityHelpers(_) => kept.reset_inequality_helpers(&mut c),
                 Op::Define(e) => {
                     if deferring {
                         for label in &e.labels {
@@ -1559,6 +1653,12 @@ impl Log {
                     writeln!(out, ")")
                 }
                 Op::KeptLabels => writeln!(out, "{KEPT_LABELS}()"),
+                Op::ResetInequalityHelpers(HelperReset::All) => {
+                    writeln!(out, "{RESET_INEQUALITY_HELPERS}()")
+                }
+                Op::ResetInequalityHelpers(HelperReset::Changed) => {
+                    writeln!(out, "{REFRESH_INEQUALITY_HELPERS}()")
+                }
                 Op::TextProperties(line) => writeln!(out, "{line}"),
                 Op::SavedProperty(property) => writeln!(out, "{property}"),
                 Op::EquationStyle { label, form } => {
@@ -1594,7 +1694,12 @@ impl Log {
     }
 
     /// Applies a directive line to `c` and records it.
-    fn apply(&mut self, c: &mut Construction, d: Directive) -> Result<Vec<Id>, String> {
+    fn apply(
+        &mut self,
+        c: &mut Construction,
+        d: Directive,
+        reset_budget: &mut ResetBudget,
+    ) -> Result<Vec<Id>, String> {
         let (id, label, to) = match d {
             Directive::Set(label, to) => {
                 let id = c.id(label).ok_or_else(|| format!("`{label}` is missing"))?;
@@ -1630,6 +1735,10 @@ impl Log {
                 self.ops.push(Op::TextProperties(props.to_string().into()));
                 return Ok(Vec::new());
             }
+            Directive::ResetInequalityHelpers(reset) => {
+                self.replay_inequality_reset(c, reset, reset_budget)?;
+                return Ok(Vec::new());
+            }
             Directive::KeptLabels => {
                 self.ops.push(Op::KeptLabels);
                 return Ok(Vec::new());
@@ -1643,12 +1752,14 @@ impl Log {
             }
         };
         let result = match to {
-            Setting::Point(x, y) => c.move_point(id, x, y),
-            Setting::Number(v) => c.set_number(id, v),
-            Setting::Boolean(v) => c.set_boolean(id, v),
-            Setting::AngleStyle(style) => c.set_angle_style(id, style),
+            Setting::Point(x, y) => c.move_point(id, x, y).map(Some),
+            Setting::Number(v) => c.set_number_if_changed(id, v),
+            Setting::Boolean(v) => c.set_boolean(id, v).map(Some),
+            Setting::AngleStyle(style) => c.set_angle_style(id, style).map(Some),
         };
-        result.map_err(|e| format!("`{label}`: {e}"))?;
+        if result.map_err(|e| format!("`{label}`: {e}"))?.is_none() {
+            return Ok(Vec::new());
+        }
         if matches!(to, Setting::AngleStyle(_)) {
             self.push_set(label, to, true);
         } else {
@@ -1671,10 +1782,17 @@ impl Log {
     ///   (`dependent`): such a label stays reserved to the end, so neither a
     ///   later definition nor a directive can take it over;
     /// - a directive for a missing object.
-    pub fn load_tolerant(src: &str, checked: bool) -> (Construction, Log, Vec<Rejected>) {
+    ///
+    /// An exhausted helper reset budget aborts the restore. Later lines can
+    /// use the helpers' values, so leaving out just the reset is unsafe.
+    pub fn load_tolerant(
+        src: &str,
+        checked: bool,
+    ) -> Result<(Construction, Log, Vec<Rejected>), String> {
         let mut c = Construction::new();
         let mut log = Log::default();
         let mut groups = BoundaryOutputs::for_script(src);
+        let mut reset_budget = ResetBudget::new();
         let grow = !checked;
         let mut rejected = Vec::new();
         let mut gone: BTreeSet<String> = BTreeSet::new();
@@ -1722,8 +1840,13 @@ impl Log {
                 Err(format!("`{label}` was left out before"))
             } else {
                 match parsed {
+                    Some(Ok(Directive::ResetInequalityHelpers(reset))) => {
+                        log.replay_inequality_reset(&mut c, reset, &mut reset_budget)
+                            .map_err(|e| format!("line {}: {e}", i + 1))?;
+                        Ok(())
+                    }
                     Some(d) => d.and_then(|d| {
-                        let changed = log.apply(&mut c, d)?;
+                        let changed = log.apply(&mut c, d, &mut reset_budget)?;
                         if grow && !changed.is_empty() {
                             log.grow_boundary_outputs(&mut c, &mut groups, changed.into_iter());
                         } else if !changed.is_empty() {
@@ -1772,8 +1895,11 @@ impl Log {
                 });
             }
         }
+        if checked {
+            log.reset_inequality_helpers(&mut c);
+        }
         log.prune_image_assets(&mut c);
-        (c, log, rejected)
+        Ok((c, log, rejected))
     }
 
     /// Runs a definition line and records it. When `expected` is given the
@@ -1853,6 +1979,7 @@ impl Log {
             log.record_asset(Some(asset.clone()));
         }
         let mut groups = BoundaryOutputs::for_script(src);
+        let mut reset_budget = ResetBudget::new();
         // Growth during replay stops before the slots that the script
         // records itself (`BoundaryOutputs::for_script`).
         let grow = true;
@@ -1870,7 +1997,9 @@ impl Log {
                 continue;
             }
             if let Some(d) = directive(&line) {
-                let changed = log.apply(&mut c, d.map_err(at)?).map_err(at)?;
+                let changed = log
+                    .apply(&mut c, d.map_err(at)?, &mut reset_budget)
+                    .map_err(at)?;
                 if grow && !changed.is_empty() {
                     log.grow_boundary_outputs(&mut c, &mut groups, changed.into_iter());
                 }
@@ -2075,7 +2204,7 @@ mod tests {
     fn a_tolerant_load_keeps_what_loads_and_reports_the_rest() {
         let src = "A = (0, 0)\nQ = Nope(A)\nR = Midpoint(Q, A)\nSetCoords(Q, 1, 2)\n\
                    SetCoords(A, 3, 4)\n{T, U} = Nope(A)\nW = Segment(T, A)\nB = (1, 1)\n";
-        let (c, log, rejected) = Log::load_tolerant(src, false);
+        let (c, log, rejected) = Log::load_tolerant(src, false).unwrap();
         let labels: Vec<&str> = c.ids().map(|id| c.label(id)).collect();
         assert_eq!(labels, ["A", "B"]);
         assert_eq!(c.value(c.id("A").unwrap()), Value::Point { x: 3.0, y: 4.0 });
@@ -2089,7 +2218,7 @@ mod tests {
         let (_, strict) = Log::load(&log.to_script()).unwrap();
         assert_eq!(strict, log);
         // A text without errors gives the same as a strict load.
-        let (_, all, none) = Log::load_tolerant("A = (0, 0)\nB = (1, 1)\n", true);
+        let (_, all, none) = Log::load_tolerant("A = (0, 0)\nB = (1, 1)\n", true).unwrap();
         assert!(none.is_empty());
         assert_eq!(all, Log::load("A = (0, 0)\nB = (1, 1)\n").unwrap().1);
     }

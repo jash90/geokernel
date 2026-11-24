@@ -312,6 +312,34 @@ fn saved_elements_rebuild_their_geometry() {
 }
 
 #[test]
+fn a_corner_tracks_an_anchor_from_saved_text_placement() {
+    let xml = r#"<geogebra><construction>
+      <expression label="t" exp="&quot;abc&quot;" type="text"/>
+      <element type="text" label="t"><startPoint exp="A"/></element>
+      <element type="point" label="A"><coords x="0" y="0" z="1"/></element>
+      <command name="Corner"><input a0="t" a1="3"/><output a0="Q"/></command>
+      <element type="point" label="Q"><coords x="0.42" y="0.3" z="1"/></element>
+    </construction></geogebra>"#;
+    let imported = import(xml.as_bytes()).unwrap();
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    let mut c = script::load(&imported.script.join("\n")).unwrap();
+    let q = c.id("Q").unwrap();
+    let position = |c: &Construction, x: f64, y: f64| {
+        let Value::Point {
+            x: actual_x,
+            y: actual_y,
+        } = c.value(q)
+        else {
+            panic!("expected a text corner");
+        };
+        assert!((actual_x - x).abs() < 1e-9 && (actual_y - y).abs() < 1e-9);
+    };
+    position(&c, 0.42, 0.3);
+    c.move_point(c.id("A").unwrap(), 1.0, 1.0).unwrap();
+    position(&c, 1.42, 1.3);
+}
+
+#[test]
 fn saved_text_objects_match_before_and_after_edits() {
     let dir = repo_root().join("golden/ggb/saved");
     let load = |name: &str| {

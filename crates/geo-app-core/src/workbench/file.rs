@@ -271,7 +271,8 @@ impl Workbench {
     /// that depend on them) are returned and quoted in `notice`, the way an
     /// import reports what it left out. The header may follow a byte order
     /// mark and blank lines; any version but `SNAPSHOT_VERSION` is an error,
-    /// which leaves the document unchanged. A text without the header (a
+    /// which leaves the document unchanged. Exhausting the reset work budget
+    /// also aborts the restore. A text without the header (a
     /// plain script) loads the same way, without the check of the labels
     /// each line makes, which needs the snapshot's label lists.
     ///
@@ -286,7 +287,7 @@ impl Workbench {
                 return Err(format!("Nieznana wersja zapisu: {}", v.trim()));
             }
         }
-        let (c, log, rejected) = Log::load_tolerant(text, header.is_some());
+        let (c, log, rejected) = Log::load_tolerant(text, header.is_some())?;
         self.replace(c, log);
         self.notice = rejected_notice(&rejected);
         Ok(rejected)

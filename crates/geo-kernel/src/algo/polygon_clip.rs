@@ -13,7 +13,7 @@ use super::conic_nd::ConicType;
 use super::intersect::conics::on_part;
 use super::intersect::{line_conic_points, normalized_coefficients};
 use super::path::{conic_contains, part_contains, polygon_contains};
-use super::{conic_object, polygon, Parents, CARRIERS, CONIC_OBJECTS};
+use super::{conic_object, Parents, CARRIERS, CONIC_OBJECTS};
 use crate::expr::IntersectionWork;
 use crate::script::object;
 use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
@@ -27,7 +27,10 @@ type XY = (f64, f64);
 type Edge = (XY, XY);
 
 const CONIC_CLIP_PATHS: &[Kind] = &[Kind::Polygon, Kind::PolyLine, Kind::Segment];
-const MAX_CONIC_PATH_VERTICES: usize = polygon::MAX_REGULAR_VERTICES;
+/// Work reserved per collected vertex, including at most two conic roots,
+/// two closure cuts and the resulting segments.
+const CONIC_PATH_VERTEX_WORK: u64 = 32;
+const MAX_CONIC_PATH_OUTPUTS: usize = crate::expr::MAX_ELEMENTS as usize;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ClipMode {
@@ -159,14 +162,6 @@ impl ClipDef {
         }
     }
 
-    pub(crate) fn hidden_parents(self, c: &Construction) -> Vec<Id> {
-        let mut ids = polygon::inputs(c, self.first);
-        if c.kind(self.second) == Kind::Polygon {
-            ids.extend(polygon::inputs(c, self.second));
-        }
-        ids
-    }
-
     pub(crate) fn check(self, c: &Construction) -> Result<(), Error> {
         c.expect(
             self.first,
@@ -205,7 +200,7 @@ impl ClipDef {
         if c.kind(self.first) == Kind::Segment {
             3
         } else {
-            MAX_CONIC_PATH_VERTICES * 3
+            MAX_CONIC_PATH_OUTPUTS
         }
     }
 
@@ -432,9 +427,7 @@ fn conic_segments(c: &Construction, path: Id, id: Id) -> Vec<Edge> {
         Kind::PolyLine | Kind::Polygon => {
             let points = c.vertices(path);
             let count = points.size_hint().0;
-            // Each edge has at most two conic roots and two closure cuts.
-            // Reserve a fixed allowance for collecting, cutting and testing it.
-            if count > MAX_CONIC_PATH_VERTICES || !work.charge(32 * count as u64) {
+            if !work.charge(CONIC_PATH_VERTEX_WORK.saturating_mul(count as u64)) {
                 return result;
             }
             vertices = points.collect::<Vec<_>>();
@@ -535,6 +528,9 @@ fn conic_segments(c: &Construction, path: Id, id: Id) -> Vec<Edge> {
             }
             start = t;
         }
+    }
+    if result.len() > MAX_CONIC_PATH_OUTPUTS {
+        return Vec::new();
     }
     result
 }
@@ -706,7 +702,7 @@ fn remove_collinear(ring: &mut Vec<XY>, work: &IntersectionWork) -> Option<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expr, script};
+    use crate::{algo::polygon::PolygonDef, expr, script, Def};
 
     #[test]
     fn an_empty_polygon_clip_keeps_the_labelled_point_slot() {
@@ -749,6 +745,69 @@ mod tests {
 
         c.move_point(c.id("O").unwrap(), 50.0, 50.0).unwrap();
         assert!(clip.segments(&c).is_empty());
+    }
+
+    #[test]
+    fn a_long_path_clips_with_one_charged_pass() {
+        let c = script::load(
+            "O = (0, 0)\nk = Circle(O, 1.5)\np = PolyLine(Sequence((j, If(j < 1000, 0, 3)), j, 0, 1000))",
+        ).unwrap();
+        let clip = ClipDef::parse(&c, "IntersectPath", &["p", "k"]).unwrap();
+        let before = expr::work_done();
+        assert_eq!(
+            &*clip.segments(&c),
+            &[((0.0, 0.0), (1.0, 0.0)), ((1.0, 0.0), (1.5, 0.0))]
+        );
+        assert_eq!(expr::work_done() - before, 32 * 1001);
+    }
+
+    #[test]
+    fn the_clip_command_builds_all_outputs_of_a_long_path() {
+        let mut c = script::load("O = (0, 0)\nk = Circle(O, 1)").unwrap();
+        let points: Vec<_> = (1..=100_000)
+            .map(|j| {
+                c.add(
+                    &format!("A{j}"),
+                    Def::FreePoint {
+                        x: f64::from(j) / 100_001.0,
+                        y: 0.0,
+                    },
+                )
+                .unwrap()
+            })
+            .collect();
+        let p = c
+            .add_with_list("p", &points, |list| {
+                Def::Polygon(PolygonDef::PolyLine(list))
+            })
+            .unwrap();
+        for j in 1..=100_000 {
+            c.add(&format!("q_{{{j}}}"), Def::Number(f64::from(j)))
+                .unwrap();
+        }
+        let k = c.id("k").unwrap();
+        let before = expr::work_done();
+        let len = c.len();
+        let first = script::exec(&mut c, "q = IntersectPath(p, k)")
+            .unwrap()
+            .unwrap();
+        assert_eq!(c.len() - len, 99_999);
+        let work = expr::work_done() - before;
+        assert!(
+            (32 * 100_000 + 199_999..expr::MAX_EVALUATION_WORK).contains(&work),
+            "{work}"
+        );
+        assert_eq!(c.reads(first), vec![p, k]);
+        assert_eq!(c.label(first), "q_{100001}");
+        let last = c.id("q_{199999}").unwrap();
+        assert!(matches!(c.value(last), Value::Segment { .. }));
+        let end = *points.last().unwrap();
+        assert_eq!(c.direct_dependents(end).collect::<Vec<_>>(), vec![p]);
+        // Rotate the last edge around its start without changing its length.
+        let x = 99_999.0 / 100_001.0;
+        let dy = 100_000.0 / 100_001.0 - x;
+        c.move_point(end, x, dy).unwrap();
+        assert_eq!(c.value(last), segment(((x, 0.0), (x, dy))));
     }
 
     #[test]

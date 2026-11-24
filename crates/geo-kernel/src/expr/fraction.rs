@@ -352,9 +352,10 @@ fn negate(tree: &mut Entry, i: u32) -> u32 {
         Node::Num(v) => {
             let lit = &tree.lits[i as usize];
             let negated = match lit {
-                Lit::Special(decimal) => {
-                    Lit::Special(decimal.as_ref().map(super::decimal::Dec::negated))
-                }
+                Lit::Special(decimal, spelling) => Lit::Special(
+                    decimal.as_ref().map(super::decimal::Dec::negated),
+                    spelling.clone(),
+                ),
                 _ => Lit::Plain,
             };
             push(tree, Node::Num(-v), tree.tys[i as usize], negated)

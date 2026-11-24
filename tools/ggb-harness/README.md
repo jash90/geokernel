@@ -188,6 +188,13 @@ Cases whose scripts use a command the kernel cannot run yet live in
 test checks their exact failures against `known-gaps.toml`. Use a separate
 topic from the runnable cases, since each topic has one output file.
 
+An `append` step runs a new assignment after edits. The `undo` and `redo`
+steps restore GeoGebra construction checkpoints, and `reload` reads the
+current construction back from XML. An `anchor_text` step sets the start
+point used by a saved text. The long polyline clip uses `observe` to record
+the first and last segment by slot with reference label allocation suppressed.
+The last slot still reflects the full reference output count.
+
 For every case `GoldenGenerator`:
 
 1. creates a fresh headless app: `AppCommon` with `LocalizationCommon`,

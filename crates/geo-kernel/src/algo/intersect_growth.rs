@@ -39,7 +39,7 @@ impl Outputs {
 enum GrowthAnchor {
     Intersection(BoundaryDef),
     Tangent(Tangent),
-    Inequality(Id),
+    Inequality { source: Id, owner: Id },
     PointRows(Id),
 }
 
@@ -48,9 +48,11 @@ impl GrowthAnchor {
         match def {
             Def::IntersectBoundary(d) if d.can_grow() => Some(Self::Intersection(d)),
             Def::Lines(LineDef::ImplicitTangent(d)) if d.can_grow() => Some(Self::Tangent(d)),
-            Def::Point(PointDef::InequalityVertex { source, slot: 0 }) => {
-                Some(Self::Inequality(source))
-            }
+            Def::Point(PointDef::InequalityVertex {
+                source,
+                owner,
+                slot: 0,
+            }) => Some(Self::Inequality { source, owner }),
             Def::Point(PointDef::Coordinates { list, slot: 0 }) => Some(Self::PointRows(list)),
             _ => None,
         }
@@ -60,7 +62,9 @@ impl GrowthAnchor {
         match *self {
             Self::Intersection(d) => d.grown_size(c),
             Self::Tangent(d) => d.grown_size(c),
-            Self::Inequality(source) => Some(inequality::vertices(c, source).len()),
+            Self::Inequality { source, owner } => {
+                Some(inequality::vertices(c, source, owner).len())
+            }
             Self::PointRows(list) => Some(crate::expr::coordinate_rows(c, list)?.len()),
         }
     }
@@ -75,9 +79,10 @@ impl GrowthAnchor {
         match *self {
             Self::Intersection(d) => d.grown_slot(slot).map(Def::IntersectBoundary),
             Self::Tangent(d) => d.grown_slot(slot),
-            Self::Inequality(source) if slot < inequality::MAX_VERTICES => {
+            Self::Inequality { source, owner } if slot < inequality::MAX_VERTICES => {
                 Some(Def::Point(PointDef::InequalityVertex {
                     source,
+                    owner,
                     slot: slot as u16,
                 }))
             }
@@ -529,9 +534,11 @@ pub fn restore_boundary_labels(
     let start = c.checkpoint();
     let source = PointDef::inequality_source(c, command, &args)
         .or_else(|| PointDef::inline_inequality_source(c, command, &args))?;
-    let count = inequality::vertices(c, source).len().max(1);
-    let result = (count == labels.len())
-        .then(|| script::add_named_outputs(c, labels, PointDef::inequality_slots(source, count)));
+    let count = inequality::preview_vertices(c, source).len().max(1);
+    let result = (count == labels.len()).then(|| {
+        let defs = PointDef::inequality_slots(c, source, count);
+        script::add_named_outputs(c, labels, defs)
+    });
     if !matches!(result, Some(Ok(_))) {
         c.discard_since(start);
     }

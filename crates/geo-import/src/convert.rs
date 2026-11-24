@@ -609,8 +609,7 @@ impl Converter {
         // Inline arguments can make anonymous objects in addition to the outputs.
         let created = self
             .kernel
-            .ids()
-            .skip(before)
+            .ids_from(before)
             .filter(|&id| !self.kernel.label(id).starts_with('\0'))
             .count();
         let matches = created == expected.len()
@@ -648,8 +647,7 @@ impl Converter {
         }
         let made: Vec<String> = self
             .kernel
-            .ids()
-            .skip(before)
+            .ids_from(before)
             .map(|id| self.kernel.label(id))
             .filter(|label| !label.starts_with('\0'))
             .map(str::to_owned)
@@ -1519,7 +1517,7 @@ impl Converter {
                     && (id.index() == before && self.kernel.len() == before + 1
                         || kind == Some(Kind::Text)
                             && id.index() >= before
-                            && self.kernel.ids().skip(before).all(|made| {
+                            && self.kernel.ids_from(before).all(|made| {
                                 made == id || self.kernel.label(made).starts_with('\0')
                             }))
             }) else {

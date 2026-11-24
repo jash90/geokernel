@@ -22,6 +22,7 @@ pub struct Case {
     pub script: Vec<String>,
     pub view: Option<[f64; 6]>,
     pub steps: Vec<Step>,
+    pub observe: Option<BTreeSet<String>>,
     pub snapshots: Vec<BTreeMap<String, Expected>>,
     /// Generator of the file this case came from. Filled by the loader.
     #[serde(skip)]
@@ -33,6 +34,16 @@ pub struct Case {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Step {
     Initial,
+    Append {
+        line: String,
+    },
+    AnchorText {
+        label: String,
+        point: String,
+    },
+    Undo,
+    Redo,
+    Reload,
     Move {
         label: String,
         x: f64,
@@ -45,7 +56,6 @@ pub enum Step {
     Delete {
         label: String,
     },
-    Undo,
     SetSliderBounds {
         label: String,
         min: f64,
@@ -73,6 +83,7 @@ pub enum Step {
 struct RawStep {
     action: String,
     label: Option<String>,
+    point: Option<String>,
     x: Option<f64>,
     y: Option<f64>,
     value: Option<f64>,
@@ -90,9 +101,13 @@ impl<'de> Deserialize<'de> for Step {
         use serde::de::Error;
         let raw = RawStep::deserialize(d)?;
         let need = |name: &str| D::Error::custom(format!("step `{}` needs `{name}`", raw.action));
-        if !matches!(raw.action.as_str(), "reject" | "add" | "redefine") && raw.line.is_some() {
+        if !matches!(
+            raw.action.as_str(),
+            "reject" | "add" | "redefine" | "append"
+        ) && raw.line.is_some()
+        {
             return Err(D::Error::custom(
-                "only `add`, `reject` and `redefine` take `line`",
+                "only `add`, `append`, `reject` and `redefine` take `line`",
             ));
         }
         if raw.action != "reject" && raw.error.is_some() {
@@ -114,8 +129,11 @@ impl<'de> Deserialize<'de> for Step {
                 "only step `move` records a reference parse error",
             ));
         }
+        if raw.action != "anchor_text" && raw.point.is_some() {
+            return Err(D::Error::custom("only `anchor_text` takes `point`"));
+        }
         match raw.action.as_str() {
-            "initial" | "undo" => {
+            "initial" | "undo" | "redo" | "reload" => {
                 if raw.label.is_some() || raw.x.is_some() || raw.y.is_some() || raw.value.is_some()
                 {
                     return Err(D::Error::custom(format!(
@@ -123,10 +141,22 @@ impl<'de> Deserialize<'de> for Step {
                         raw.action
                     )));
                 }
-                Ok(if raw.action == "undo" {
-                    Step::Undo
-                } else {
-                    Step::Initial
+                Ok(match raw.action.as_str() {
+                    "undo" => Step::Undo,
+                    "redo" => Step::Redo,
+                    "reload" => Step::Reload,
+                    _ => Step::Initial,
+                })
+            }
+            "anchor_text" => {
+                if raw.x.is_some() || raw.y.is_some() || raw.value.is_some() {
+                    return Err(D::Error::custom(
+                        "step `anchor_text` takes only `label` and `point`",
+                    ));
+                }
+                Ok(Step::AnchorText {
+                    label: raw.label.ok_or_else(|| need("label"))?,
+                    point: raw.point.ok_or_else(|| need("point"))?,
                 })
             }
             "move" => {
@@ -174,7 +204,7 @@ impl<'de> Deserialize<'de> for Step {
                     max: raw.max.ok_or_else(|| need("max"))?,
                 })
             }
-            "reject" | "add" | "redefine" => {
+            "reject" | "add" | "redefine" | "append" => {
                 if raw.label.is_some() || raw.x.is_some() || raw.y.is_some() || raw.value.is_some()
                 {
                     return Err(D::Error::custom(format!(
@@ -188,6 +218,8 @@ impl<'de> Deserialize<'de> for Step {
                         line,
                         error: raw.error,
                     })
+                } else if raw.action == "append" {
+                    Ok(Step::Append { line })
                 } else if raw.action == "add" {
                     Ok(Step::Add { line })
                 } else {
@@ -1224,6 +1256,27 @@ fn validate_case(case: &Case) -> Result<(), String> {
     let mut has_root_interval = false;
     for (i, snap) in case.snapshots.iter().enumerate() {
         let keys: BTreeSet<String> = snap.keys().cloned().collect();
+        if let Some(observe) = &case.observe {
+            if keys != *observe || keys.is_empty() {
+                return Err(format!("snapshot {i} does not match its observed labels"));
+            }
+            continue;
+        }
+        if let Step::Append { line } = &case.steps[i] {
+            let label = geo_kernel::script::assignment_label(line)
+                .ok_or_else(|| format!("snapshot {i} append must assign a label"))?;
+            let previous = previous_keys.as_ref().expect("first step is initial");
+            if !previous.is_subset(&keys)
+                || keys
+                    .difference(previous)
+                    .any(|key| key != label && indexed_prefix(key) != Some(label_prefix(label)))
+            {
+                return Err(format!("snapshot {i} has invalid labels after append"));
+            }
+            boundary_prefixes.insert(label_prefix(label));
+            previous_keys = Some(keys);
+            continue;
+        }
         match &previous_keys {
             None => {
                 // The sides and new vertices of a polygon get labels of
@@ -1365,11 +1418,12 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 check_keys(&added, &labels, |_| false).map_err(|e| format!("snapshot {i}: {e}"))?;
                 previous_keys = Some(keys);
             }
-            Some(_) if case.steps[i] == Step::Undo => {
-                if i < 2
-                    || !matches!(case.steps[i - 1], Step::Add { .. })
-                    || !case.snapshots[i - 2].keys().eq(snap.keys())
-                {
+            Some(_)
+                if case.steps[i] == Step::Undo
+                    && i >= 2
+                    && matches!(case.steps[i - 1], Step::Add { .. }) =>
+            {
+                if !case.snapshots[i - 2].keys().eq(snap.keys()) {
                     return Err(format!("snapshot {i} does not undo the preceding addition"));
                 }
                 previous_keys = Some(keys);
@@ -1559,7 +1613,9 @@ impl PolygonNames {
             }
             for vertex in &args {
                 let lower = vertex.to_lowercase();
-                if lower.encode_utf16().count() == 1 {
+                if lower == "\u{647}" {
+                    names.indexed_segments.insert("\u{647}\u{640}".into());
+                } else if lower.encode_utf16().count() == 1 {
                     names.indexed_segments.insert(lower);
                 } else {
                     names.segments.insert(lower);

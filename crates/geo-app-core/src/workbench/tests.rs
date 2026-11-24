@@ -2001,6 +2001,174 @@ fn adding_a_construction_step_can_grow_point_outputs() {
 }
 
 #[test]
+fn moving_a_workbench_point_after_rolling_back_its_anchored_text() {
+    let mut w = Workbench::from_script("A = (0, 0)").unwrap();
+    let a = w.construction.id("A").unwrap();
+    let at = w.construction.checkpoint();
+    geo_kernel::script::exec(&mut w.construction, r#"t = "abc""#).unwrap();
+    let t = w.construction.id("t").unwrap();
+    TextProperties {
+        label: "t",
+        overrides: TextOverrides {
+            position: Some(TextPosition::Point("A")),
+            ..TextOverrides::default()
+        },
+    }
+    .apply(&mut w.construction)
+    .unwrap();
+    assert_eq!(w.construction.direct_dependents(a).collect::<Vec<_>>(), [t]);
+
+    w.construction.rollback(at).unwrap();
+    assert!(w.move_point(a, 1.0, 1.0));
+    assert_eq!(w.construction.value(a), Value::Point { x: 1.0, y: 1.0 });
+}
+
+#[test]
+fn adjacent_reset_markers_cost_one_reset_in_a_snapshot() {
+    use std::fmt::Write;
+
+    let mut text = format!("# geokernel snapshot {}\n", SNAPSHOT_VERSION);
+    for i in 0..100_000 {
+        writeln!(text, "a{i} = 1").unwrap();
+    }
+    text.push_str(concat!(
+        "n = 2\n",
+        "q(x,y) = y > x^n && x > 4 && y > 0 # labels: q\n",
+        "P = Vertex(q) # labels: P_{1}\n",
+    ));
+    text.push_str("SetValue(n, 0.5)\n$resetInequalityHelpers()\n");
+    let restore = |text: &str| {
+        let mut w = Workbench::default();
+        let before = geo_kernel::expr::work_done();
+        assert!(w.restore_text(text).unwrap().is_empty());
+        let work = geo_kernel::expr::work_done() - before;
+        let c = w.construction();
+        assert_eq!(c.value(c.id("P_{1}").unwrap()), Value::Undefined);
+        assert_eq!(
+            w.snapshot_text()
+                .matches("$resetInequalityHelpers()")
+                .count(),
+            1
+        );
+        work
+    };
+    let single = restore(&text);
+    // Detect repeated resets before trying the full run of markers.
+    text.push_str("$resetInequalityHelpers()\n");
+    assert_eq!(restore(&text), single);
+    text.push_str(&"$resetInequalityHelpers()\n".repeat(99_998));
+    assert_eq!(restore(&text), single);
+}
+
+#[test]
+fn same_value_edits_do_not_repeat_snapshot_helper_resets() {
+    use std::fmt::Write;
+
+    let mut text = format!("# geokernel snapshot {}\n", SNAPSHOT_VERSION);
+    text.push_str(concat!(
+        "a = 1\nn = 2\n",
+        "q(x,y) = y > x^n && x > 4 && y > 0 # labels: q\n",
+    ));
+    for i in 0..1000 {
+        writeln!(text, "P{i} = Vertex(q) # labels: P{i}_{{1}}").unwrap();
+    }
+    // The first assignment drops the literal's exact decimal. Later ones
+    // leave the value and definition unchanged.
+    text.push_str("SetValue(n, 0.5)\nSetValue(a, 1)\n$resetInequalityHelpers()\n");
+    let restore = |text: &str| {
+        let mut w = Workbench::default();
+        let before = geo_kernel::expr::work_done();
+        assert!(w.restore_text(text).unwrap().is_empty());
+        let work = geo_kernel::expr::work_done() - before;
+        let c = w.construction();
+        assert_eq!(c.value(c.id("a").unwrap()), Value::Number(1.0));
+        for i in 0..1000 {
+            assert_eq!(
+                c.value(c.id(&format!("P{i}_{{1}}")).unwrap()),
+                Value::Undefined
+            );
+        }
+        assert_eq!(w.snapshot_text().matches("SetValue(a, 1)").count(), 1);
+        assert_eq!(
+            w.snapshot_text()
+                .matches("$resetInequalityHelpers()")
+                .count(),
+            1
+        );
+        work
+    };
+    let single = restore(&text);
+    let no_op = "SetValue(a, 1)\n$resetInequalityHelpers()\n";
+    text.push_str(no_op);
+    assert_eq!(restore(&text), single);
+    text.push_str(&no_op.repeat(99_998));
+    assert_eq!(restore(&text), single);
+}
+
+#[test]
+fn alternating_snapshot_edits_share_one_helper_reset_budget() {
+    use std::fmt::Write;
+
+    let mut text = format!("# geokernel snapshot {}\n", SNAPSHOT_VERSION);
+    text.push_str(concat!(
+        "a = 1\nn = 2\n",
+        "q(x,y) = y > x^n && x > 4 && y > 0 # labels: q\n",
+    ));
+    for i in 0..1000 {
+        writeln!(text, "P{i} = Vertex(q) # labels: P{i}_{{1}}").unwrap();
+    }
+    text.push_str("SetValue(n, 0.5)\n");
+    let alternating =
+        "SetValue(a, 0)\n$resetInequalityHelpers()\nSetValue(a, 1)\n$resetInequalityHelpers()\n";
+    let mut w = Workbench::from_script("existing = 7").unwrap();
+    for pairs in [501, 50_000] {
+        let input = text.clone() + &alternating.repeat(pairs);
+        let before = geo_kernel::expr::work_done();
+        let error = w.restore_text(&input).unwrap_err();
+        let work = geo_kernel::expr::work_done() - before;
+        assert!(error.contains("inequality helper resets exceed"), "{error}");
+        assert!(work < geo_kernel::expr::MAX_EVALUATION_WORK, "{work}");
+        let c = w.construction();
+        assert_eq!(c.value(c.id("existing").unwrap()), Value::Number(7.0));
+        assert_eq!(c.len(), 1);
+    }
+}
+
+#[test]
+fn unrelated_snapshot_edits_do_no_vertex_refresh_work() {
+    let mut text = format!("# geokernel snapshot {}\n", SNAPSHOT_VERSION);
+    text.push_str(concat!(
+        "a = 1\nn = 2\n",
+        "q(x,y) = y > x^n && x > 4 && y > 0 # labels: q\n",
+        "P = Vertex(q) # labels: P_{1}\n",
+        "SetValue(n, 0.5)\n$refreshInequalityHelpers()\n",
+    ));
+    let restore = |text: &str| {
+        let mut w = Workbench::default();
+        let before = geo_kernel::expr::work_done();
+        assert!(w.restore_text(text).unwrap().is_empty());
+        let work = geo_kernel::expr::work_done() - before;
+        let c = w.construction();
+        assert_eq!(c.value(c.id("P_{1}").unwrap()), Value::Undefined);
+        assert_eq!(c.value(c.id("a").unwrap()), Value::Number(1.0));
+        assert_eq!(
+            w.snapshot_text()
+                .matches("$refreshInequalityHelpers()")
+                .count(),
+            1
+        );
+        work
+    };
+    let edits = "SetValue(a, 0)\nSetValue(a, 1)\n";
+    let alternating =
+        "SetValue(a, 0)\n$refreshInequalityHelpers()\nSetValue(a, 1)\n$refreshInequalityHelpers()\n";
+    assert_eq!(
+        restore(&(text.clone() + &alternating.repeat(50_000))),
+        restore(&(text + &edits.repeat(50_000)))
+    );
+}
+
+#[test]
 fn deleting_a_reader_keeps_the_circle_from_the_intermediate_edit() {
     let mut w = Workbench::default();
     for line in [
@@ -2025,6 +2193,102 @@ fn deleting_a_reader_keeps_the_circle_from_the_intermediate_edit() {
         w.construction.value(w.construction.id("t").unwrap()),
         Value::Bool(true)
     );
+}
+
+#[test]
+fn repeated_edit_and_undo_keeps_inequality_vertex_history() {
+    let mut w = Workbench::from_script(concat!(
+        "n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)\n",
+        "s = Sequence(If(IsDefined(P_{1}), x(P_{1}), 0) + k, k, 1, 256)\n",
+        "a = 0\nZ = (0, 0)",
+    ))
+    .unwrap();
+    let vertex = |w: &Workbench| {
+        let c = w.construction();
+        c.value(c.id("P_{1}").unwrap())
+    };
+    for edit in 0..500 {
+        let polynomial = edit % 2 != 0;
+        let n = w.construction().id("n").unwrap();
+        assert!(w.set_number(n, if polynomial { 2.0 } else { 0.5 }));
+        let a = w.construction().id("a").unwrap();
+        assert!(w.set_number(a, 1.0));
+        assert!(w.undo(), "undo after retained edit {edit}");
+        let expected = if polynomial {
+            Value::Point { x: 4.0, y: 16.0 }
+        } else {
+            Value::Undefined
+        };
+        assert_eq!(vertex(&w), expected, "retained edit {edit}");
+    }
+
+    assert!(w.undo());
+    assert_eq!(vertex(&w), Value::Undefined);
+    assert!(w.redo());
+    assert_eq!(vertex(&w), Value::Point { x: 4.0, y: 16.0 });
+    let z = w.construction().id("Z").unwrap();
+    assert!(w.delete(z));
+    let mut reopened = Workbench::default();
+    assert!(reopened
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    assert_eq!(labelled_values(&reopened), labelled_values(&w));
+    let n = reopened.construction().id("n").unwrap();
+    assert!(reopened.set_number(n, 0.5));
+    assert_eq!(vertex(&reopened), Value::Point { x: 4.0, y: 2.0 });
+}
+
+#[test]
+fn undo_redo_and_snapshot_reload_rebuild_inequality_vertex_helpers() {
+    let mut w = Workbench::from_script(
+        "n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)\nZ = (0, 0)",
+    )
+    .unwrap();
+    let n = w.construction().id("n").unwrap();
+    assert!(w.set_number(n, 0.5));
+    let vertex = |w: &Workbench| {
+        let c = w.construction();
+        c.value(c.id("P_{1}").unwrap())
+    };
+    assert_eq!(vertex(&w), Value::Point { x: 4.0, y: 2.0 });
+
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    assert_eq!(vertex(&restored), Value::Undefined);
+    assert!(restored.delete(restored.construction().id("Z").unwrap()));
+    assert_eq!(vertex(&restored), Value::Undefined);
+
+    assert!(w.undo());
+    assert_eq!(vertex(&w), Value::Point { x: 4.0, y: 16.0 });
+    assert!(w.redo());
+    assert_eq!(vertex(&w), Value::Undefined);
+    assert!(w.delete(w.construction().id("Z").unwrap()));
+    assert_eq!(vertex(&w), Value::Undefined);
+}
+
+#[test]
+fn a_construction_step_round_trip_keeps_the_selected_newton_vertex_helper() {
+    let mut w =
+        Workbench::from_script("n = 0\nq(x,y) = n*y > x^n && x > 4 && y > 0\nP = Vertex(q)")
+            .unwrap();
+    let n = w.construction().id("n").unwrap();
+    assert!(w.set_number(n, 0.5));
+    assert!(w.set_number(n, 2.0));
+    let assert_undefined = |w: &Workbench| {
+        let c = w.construction();
+        assert_eq!(c.value(c.id("P_{1}").unwrap()), Value::Undefined);
+    };
+    assert_undefined(&w);
+
+    let current = w.construction().step();
+    w.run_line("SetConstructionStep(1)").unwrap();
+    w.run_line(&format!("SetConstructionStep({})", current + 1))
+        .unwrap();
+    assert_undefined(&w);
 }
 
 #[test]

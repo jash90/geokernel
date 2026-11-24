@@ -1,0 +1,655 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "corners-helperstate-001",
+      "group": "corners",
+      "script": [
+        "n = 0",
+        "q(x,y) = y > x^n && x > 4 && y > 0",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.5 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 16.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-helperstate-002",
+      "group": "corners",
+      "script": [
+        "n = 0",
+        "q(x,y) = n*y > x^n && x > 4 && y > 0",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.5 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-helperstate-003",
+      "group": "corners",
+      "script": [
+        "n = 2",
+        "q(x,y) = y > x^n && x > 4 && y > 0",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.5 },
+        { "action": "append", "line": "Q = Corner(q)" },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 16.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "Q_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 16.0 },
+          "Q_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-helperstate-004",
+      "group": "corners",
+      "script": [
+        "n = 2",
+        "q(x,y) = y > x^n && x > 4 && y > 0",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.5 },
+        { "action": "append", "line": "Q = Corner(q)" },
+        { "action": "delete", "label": "P_{1}" },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 16.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "Q_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "Q_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "Q_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-helperstate-005",
+      "group": "corners",
+      "script": [
+        "n = 2",
+        "q(x,y) = y > x^n && x > 4 && y > 0",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "q(x,y) = y > sqrt(x) && x > 4 && y > 0" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 16.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-helperstate-006",
+      "group": "corners",
+      "script": [
+        "b = 4",
+        "n = 2",
+        "q(x,y) = y > x^n && x > b && y > 0",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.5 },
+        { "action": "redefine", "line": "b = 6 - n" }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 16.0 }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": 5.5 },
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-helperstate-007",
+      "group": "corners",
+      "script": [
+        "n = 2",
+        "q(x,y) = y > x^n && x > 4 && y > 0",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.5 },
+        { "action": "undo" },
+        { "action": "redo" },
+        { "action": "reload" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 16.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 16.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}

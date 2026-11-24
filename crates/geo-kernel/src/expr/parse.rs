@@ -32,6 +32,7 @@ use super::{Bin, Elem, ListOp, Lit, Node, Ty, Un, NONE};
 use crate::algo::{intersect, vector};
 use crate::kernel::{Construction, Id, Kind};
 use std::f64::consts::{E, PI};
+use std::sync::Arc;
 
 /// Brackets, bars and calls nested deeper than this are rejected, so that
 /// parsing never overflows the stack.
@@ -306,9 +307,9 @@ impl Parser<'_> {
     }
 
     /// A constant that is a `MySpecialDouble` in GeoGebra, with its decimal.
-    fn push_special(&mut self, v: f64, dec: Option<Dec>) -> u32 {
+    fn push_special(&mut self, v: f64, dec: Option<Dec>, spelling: Option<Arc<str>>) -> u32 {
         let i = self.push(Node::Num(v));
-        self.lits[i as usize] = Lit::Special(dec.filter(|_| v.is_finite()));
+        self.lits[i as usize] = Lit::Special(dec.filter(|_| v.is_finite()), spelling);
         i
     }
 
@@ -615,7 +616,7 @@ impl Parser<'_> {
         }
         if op == Un::Cot {
             // `π/2 - atan(x)`
-            let pi = self.push_special(PI, Dec::parse(PI_DECIMAL));
+            let pi = self.push_special(PI, Dec::parse(PI_DECIMAL), None);
             let two = self.push(Node::Num(2.0));
             let half = self.push(Node::Bin(Bin::Div, pi, two));
             let atan = self.push(Node::Un(Un::Atan, arg));
@@ -671,8 +672,11 @@ impl Parser<'_> {
             Node::Num(v) if !(v.is_nan() && self.brackets[e as usize]) => {
                 let lit = &self.lits[e as usize];
                 if lit.special() && self.bare[e as usize] {
-                    let dec = lit.decimal().map(Dec::negated);
-                    let n = self.push_special(-v, dec);
+                    let Lit::Special(decimal, spelling) = &self.lits[e as usize] else {
+                        unreachable!("a special literal")
+                    };
+                    let dec = decimal.as_ref().map(Dec::negated);
+                    let n = self.push_special(-v, dec, spelling.clone());
                     self.bare[n as usize] = true;
                     n
                 } else {
@@ -727,7 +731,7 @@ impl Parser<'_> {
                 Some(&Tok::Power(n)) => {
                     // `convertIndexToNumber`
                     self.pos += 1;
-                    let f = self.push_special(n, Dec::from_f64(n));
+                    let f = self.push_special(n, Dec::from_f64(n), Some(n.to_string().into()));
                     exponents.push(f);
                 }
                 _ => break,
@@ -790,16 +794,17 @@ impl Parser<'_> {
             }
             Tok::Num(v) => {
                 // `MySpecialDouble.toDecimal`: the literal as written
-                let dec = Dec::parse(&self.src[token.start..token.end]);
+                let text = &self.src[token.start..token.end];
+                let dec = Dec::parse(text);
                 // `50%` is a literal (`Parser.parseDouble`)
-                let (v, dec) = if self.eat(&Tok::Percent) {
+                let (v, dec, spelling) = if self.eat(&Tok::Percent) {
                     let hundredth = Dec::parse("0.01");
                     let dec = dec.zip(hundredth).and_then(|(d, h)| d.mul(&h));
-                    (v * 0.01, dec)
+                    (v * 0.01, dec, format!("{text}%").into())
                 } else {
-                    (v, dec)
+                    (v, dec, text.into())
                 };
-                let n = self.push_special(v, dec);
+                let n = self.push_special(v, dec, Some(spelling));
                 self.bare[n as usize] = true;
                 if self.eat(&Tok::Degree) {
                     // `30°` is `30 * °` (`Parser.myDouble`)
@@ -916,7 +921,7 @@ impl Parser<'_> {
             _ => None,
         };
         if let Some((v, dec)) = letter {
-            return Ok(self.push_special(v, Dec::parse(dec)));
+            return Ok(self.push_special(v, Dec::parse(dec), None));
         }
         let constant = match text {
             // `TRUE` and `FALSE` tokens, never labels
