@@ -66,6 +66,19 @@ const MAX_LINE_WORK: u64 = 160_000_000;
 /// than expressions): twice the time of [`MAX_LINE_WORK`] in the test build.
 const SLOW: Duration = Duration::from_secs(10);
 
+/// The number of mutated runs over all case scripts of the corpus test.
+/// Every script is mutated at least once and at most 25 times; with the
+/// 25 rounds the test took 107 s locally and over 180 s on loaded hosted
+/// runners at 7,058 scripts (183,575 inputs), and its work grew with every
+/// recorded case. The budget keeps the work near 60,000 script runs plus the
+/// 20,000 context lines.
+const MUTATED_SCRIPT_RUNS: u64 = 60_000;
+const MAX_ROUNDS_PER_SCRIPT: u64 = 25;
+
+/// A hang guard for the corpus test, not a performance gate: the test
+/// checks that no mutated input panics.
+const CORPUS_TIMEOUT: u64 = 600;
+
 /// What went wrong with one input line, as a short stable key and a detail.
 struct Problem {
     key: String,
@@ -982,16 +995,17 @@ fn numbers_at_the_limits_and_oversized_lines() {
 
 #[test]
 fn mutated_corpus_lines_never_panic() {
-    with_timeout("mutated corpus", 180, || {
+    with_timeout("mutated corpus", CORPUS_TIMEOUT, || {
         let mut findings = Findings::default();
 
         // case scripts: mutate one line, run the whole script
         let scripts: Vec<Vec<String>> = case_scripts();
+        let rounds = (MUTATED_SCRIPT_RUNS / scripts.len() as u64).clamp(1, MAX_ROUNDS_PER_SCRIPT);
         for (i, script) in scripts.iter().enumerate() {
             if script.is_empty() {
                 continue;
             }
-            for round in 0..scaled(25) {
+            for round in 0..scaled(rounds) {
                 let mut rng = Rng::new(case_seed(0xAB1E, (i as u64) << 8 | round));
                 let target = rng.below(script.len());
                 let mut mutated = mutate(&mut rng, &script[target]);
