@@ -166,8 +166,6 @@ impl Op {
             Self::NextPrime | Self::PreviousPrime if a == Ty::Num(0) => Ty::Num(0),
             Self::CommonDenominator if numeric(a) && b.is_some_and(numeric) => Ty::Num(0),
             Self::Numerator | Self::Denominator if matches!(a, Ty::Num(_)) => Ty::Num(0),
-            #[cfg(feature = "giac")]
-            Self::Simplify if a == Ty::Object && b.is_none() && giac_admits() => Ty::Num(0),
             op if op.is_function() && b.is_none() && numeric(a) => Ty::Num(0),
             _ => return Err(format!("invalid arguments to `{}`", self.name())),
         };

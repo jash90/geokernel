@@ -80,6 +80,19 @@ fn hints_that_are_no_variable_or_value_are_refused() {
 }
 
 #[test]
+fn curve_coordinates_require_numbers_with_giac() {
+    // cas-edge-018: CmdCurveCartesian requires a GeoNumberValue, while
+    // CmdSimplify supplies a function for this coordinate expression.
+    if geo_kernel::giac_backend_active() {
+        let mut c = Construction::new();
+        assert_eq!(
+            rejected(&mut c, "k = Curve(1+Simplify((t-10)^2), t, t, 0, 2)"),
+            "`Curve` needs numeric coordinates"
+        );
+    }
+}
+
+#[test]
 fn objects_that_are_no_expression_are_refused() {
     let mut c = build(&[
         "g: x+y=1",

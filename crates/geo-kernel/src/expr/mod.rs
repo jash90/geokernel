@@ -2799,7 +2799,19 @@ pub(crate) fn define_parametric_coordinate(
     rhs: &str,
     parameter: &str,
 ) -> Result<Id, String> {
-    let id = numeric_function(c, label, parse::parse_parameter(c, rhs, parameter)?)?;
+    let parsed = parse::parse_parameter(c, rhs, parameter)?;
+    #[cfg(feature = "giac")]
+    if cas::giac_admits()
+        && parsed
+            .nodes
+            .iter()
+            .any(|node| matches!(node, Node::Cas(op, ..) if op.is_giac_rewrite()))
+    {
+        // CmdCurveCartesian checks for GeoNumberValue after resolving the
+        // local parameter. These commands return a function.
+        return Err("`Curve` needs numeric coordinates".into());
+    }
+    let id = numeric_function(c, label, parsed)?;
     let Def::Expr(def) = c.def(id) else {
         unreachable!("a curve coordinate is a function expression");
     };
