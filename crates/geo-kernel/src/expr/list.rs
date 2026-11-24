@@ -46,6 +46,10 @@ enum SlotExtra {
     /// A function the Giac backend read from its output (the `giac` feature).
     #[cfg(feature = "giac")]
     Giac(super::cas::GiacFunction),
+    #[cfg(feature = "giac")]
+    GiacCurve(Box<[super::cas::GiacFunction; 2]>),
+    #[cfg(feature = "giac")]
+    GiacImplicit(Vec<Vec<f64>>),
 }
 
 impl Slot {
@@ -194,6 +198,27 @@ impl Slot {
             value: Value::Function,
             extra: Some(Arc::new(SlotExtra::Giac(value))),
             ..Self::undefined(Kind::Function)
+        }
+    }
+
+    #[cfg(feature = "giac")]
+    pub(super) fn giac_curve(coordinates: [super::cas::GiacFunction; 2]) -> Slot {
+        Slot {
+            value: Value::Curve {
+                start: -10.0,
+                end: 10.0,
+            },
+            extra: Some(Arc::new(SlotExtra::GiacCurve(Box::new(coordinates)))),
+            ..Self::undefined(Kind::Curve)
+        }
+    }
+
+    #[cfg(feature = "giac")]
+    pub(super) fn giac_implicit(coefficients: Vec<Vec<f64>>) -> Slot {
+        Slot {
+            value: Value::ImplicitCurve,
+            extra: Some(Arc::new(SlotExtra::GiacImplicit(coefficients))),
+            ..Self::undefined(Kind::ImplicitCurve)
         }
     }
 
@@ -551,6 +576,43 @@ impl<'a> List<'a> {
             Some(SlotExtra::Giac(f)) => Some(f.value(x)),
             _ => c.function_value(self.function_at(k)?, x),
         }
+    }
+
+    /// The classified conic stored at this list position.
+    pub fn conic_at(&self, c: &Construction, k: usize) -> Option<ConicData> {
+        let slot = (k < self.len()).then(|| &self.slots[self.start as usize + k])?;
+        slot.conic(c)
+    }
+
+    /// Samples a Cartesian curve stored at this list position.
+    pub fn curve_sample_at(&self, c: &Construction, k: usize, t: f64) -> Option<(f64, f64)> {
+        let slot = (k < self.len()).then(|| &self.slots[self.start as usize + k])?;
+        #[cfg(feature = "giac")]
+        if let Some(SlotExtra::GiacCurve(coords)) = slot.extra.as_deref() {
+            return Some((coords[0].value(t), coords[1].value(t)));
+        }
+        c.curve_sample(slot.object_id()?, t)
+    }
+
+    /// The coefficients and equation form of an implicit curve element.
+    pub fn implicit_at(
+        &self,
+        c: &'a Construction,
+        k: usize,
+    ) -> Option<(&'a [Vec<f64>], bool, String)> {
+        let slot = (k < self.len()).then(|| &self.slots[self.start as usize + k])?;
+        #[cfg(feature = "giac")]
+        if let Some(SlotExtra::GiacImplicit(coefficients)) = slot.extra.as_deref() {
+            let equation = super::equation::implicit::raw_equation(coefficients, |n| n.to_string());
+            return Some((coefficients, false, equation));
+        }
+        let id = slot.object_id()?;
+        let user = c.equation_form(id) == Some(&crate::kernel::EquationForm::User);
+        Some((
+            c.implicit_coefficients(id)?,
+            user,
+            c.formatted_equation(id)?,
+        ))
     }
 
     /// Exact expression displayed for an inline polynomial or solution.

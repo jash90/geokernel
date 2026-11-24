@@ -167,11 +167,93 @@ pub fn compare_list(
                 let sample = |x| got.function_sample_at(c, k, x);
                 compare_sampled(w, Kind::Function, &value, &[], Some(&sample))
             }
+            Element::Value(Kind::Conic, value) => {
+                compare_conic(w, Kind::Conic, &value, got.conic_at(c, k).as_ref()).0
+            }
+            Element::Value(Kind::Curve, value) => {
+                compare_curve(w, &value, |t| got.curve_sample_at(c, k, t))
+            }
+            Element::Value(Kind::ImplicitCurve, value) if value.is_defined() => {
+                let (matrix, user, equation) =
+                    got.implicit_at(c, k).ok_or("missing implicit curve data")?;
+                compare_implicit(w, matrix, user, &equation)
+            }
             Element::Value(kind, value) => compare(w, kind, &value),
         }
         .map_err(|why| format!("element {}: {why}", k + 1))?;
     }
     Ok(Sign::NotApplicable)
+}
+
+fn compare_implicit(
+    expected: &Expected,
+    matrix: &[Vec<f64>],
+    user: bool,
+    actual: &str,
+) -> Result<Sign, String> {
+    let Some(ExpectedData::Implicit {
+        coefficients,
+        equation,
+        input_form,
+    }) = &expected.data
+    else {
+        return Err("unexpected defined implicit curve".into());
+    };
+    if !implicit_matrices_agree(coefficients, matrix) {
+        return Err(format!(
+            "expected coefficients {coefficients:?}, got {matrix:?}"
+        ));
+    }
+    if user != *input_form {
+        return Err(format!("expected input form {input_form}, got {user}"));
+    }
+    let compact = |s: &str| {
+        let mut normalized = String::new();
+        let mut previous_super = false;
+        for ch in s.chars() {
+            if let Some(i) = "⁰¹²³⁴⁵⁶⁷⁸⁹".chars().position(|digit| digit == ch) {
+                if !previous_super {
+                    normalized.push('^');
+                }
+                normalized.push(char::from(b'0' + i as u8));
+                previous_super = true;
+            } else {
+                previous_super = false;
+                if !ch.is_whitespace() && !matches!(ch, '(' | ')' | '*' | '·') {
+                    normalized.push(ch);
+                }
+            }
+        }
+        normalized
+    };
+    if compact(actual) != compact(equation) {
+        return Err(format!("expected equation {equation:?}, got {actual:?}"));
+    }
+    Ok(Sign::NotApplicable)
+}
+
+fn compare_curve(
+    expected: &Expected,
+    value: &Value,
+    sample: impl Fn(f64) -> Option<(f64, f64)>,
+) -> Result<Sign, String> {
+    let result = compare(expected, Kind::Curve, value)?;
+    if let Some(ExpectedData::Curve { samples, .. }) = &expected.data {
+        for &(t, want) in samples {
+            let got = sample(t);
+            let agrees = match (want, got) {
+                (Some((x, y)), Some((a, b))) => coordinate_agrees(x, a) && coordinate_agrees(y, b),
+                (Some((x, y)), None) => x.is_nan() && y.is_nan(),
+                (None, got) => got.is_none_or(|(x, y)| {
+                    !x.is_infinite() && !y.is_infinite() && (x.is_nan() || y.is_nan())
+                }),
+            };
+            if !agrees {
+                return Err(format!("curve at {t}: expected {want:?}, got {got:?}"));
+            }
+        }
+    }
+    Ok(result)
 }
 
 /// Compares a snapshot of one object with the live kernel, including data
@@ -246,68 +328,18 @@ pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Re
                 return Err(format!("expected {expected:?}, got {actual:?}"));
             }
         }
-        Some(ExpectedData::Implicit {
-            coefficients,
-            equation,
-            input_form,
-        }) => {
+        Some(ExpectedData::Implicit { .. }) => {
             let matrix = c
                 .implicit_coefficients(id)
                 .ok_or("missing implicit coefficients")?;
-            if !implicit_matrices_agree(coefficients, matrix) {
-                return Err(format!(
-                    "expected coefficients {coefficients:?}, got {matrix:?}"
-                ));
-            }
             let user = c.equation_form(id) == Some(&geo_kernel::kernel::EquationForm::User);
-            if user != *input_form {
-                return Err(format!("expected input form {input_form}, got {user}"));
-            }
             let actual = c
                 .formatted_equation(id)
                 .ok_or("missing implicit equation text")?;
-            let compact = |s: &str| {
-                let mut normalized = String::new();
-                let mut previous_super = false;
-                for ch in s.chars() {
-                    if let Some(i) = "⁰¹²³⁴⁵⁶⁷⁸⁹".chars().position(|digit| digit == ch)
-                    {
-                        if !previous_super {
-                            normalized.push('^');
-                        }
-                        normalized.push(char::from(b'0' + i as u8));
-                        previous_super = true;
-                    } else {
-                        previous_super = false;
-                        if !ch.is_whitespace() && !matches!(ch, '(' | ')' | '*' | '·') {
-                            normalized.push(ch);
-                        }
-                    }
-                }
-                normalized
-            };
-            if compact(&actual) != compact(equation) {
-                return Err(format!("expected equation {equation:?}, got {actual:?}"));
-            }
+            return compare_implicit(expected, matrix, user, &actual);
         }
-        Some(ExpectedData::Curve { samples, .. }) => {
-            let result = compare(expected, kind, &c.value(id))?;
-            for &(t, want) in samples {
-                let got = c.curve_sample(id, t);
-                let agrees = match (want, got) {
-                    (Some((x, y)), Some((a, b))) => {
-                        coordinate_agrees(x, a) && coordinate_agrees(y, b)
-                    }
-                    (Some((x, y)), None) => x.is_nan() && y.is_nan(),
-                    (None, got) => got.is_none_or(|(x, y)| {
-                        !x.is_infinite() && !y.is_infinite() && (x.is_nan() || y.is_nan())
-                    }),
-                };
-                if !agrees {
-                    return Err(format!("curve at {t}: expected {want:?}, got {got:?}"));
-                }
-            }
-            return Ok(result);
+        Some(ExpectedData::Curve { .. }) => {
+            return compare_curve(expected, &c.value(id), |t| c.curve_sample(id, t));
         }
         Some(ExpectedData::FunctionNVar(samples)) => {
             for &(x, y, want) in samples {
