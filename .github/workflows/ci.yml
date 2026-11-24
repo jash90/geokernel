@@ -103,7 +103,12 @@ jobs:
           cargo clippy -p geo-giac -p geo-kernel -p geo-golden --all-targets \
             --features geo-golden/giac -- -D warnings
       - name: Binding tests
-        run: cargo test -p geo-giac --features giac
+        run: |
+          cargo test -p geo-giac --features giac
+          cargo test -p geo-giac --features giac --example replay
+      - name: Replay the recorded Giac exchanges
+        run: |
+          cargo run -p geo-giac --features giac --example replay -- tools/giac/cas-exchanges.jsonl
       - name: Kernel tests with the feature
         run: |
           cargo test -p geo-kernel --features giac \
@@ -160,7 +165,9 @@ jobs:
           cargo clippy -p geo-giac -p geo-kernel -p geo-golden --all-targets \
             --features geo-golden/giac -- -D warnings
       - name: Binding tests
-        run: cargo test -p geo-giac --features giac
+        run: |
+          cargo test -p geo-giac --features giac
+          cargo test -p geo-giac --features giac --example replay
       - name: Kernel tests with the feature
         if: ${{ !cancelled() && steps.fetch.outcome == 'success' }}
         run: |
@@ -176,11 +183,9 @@ jobs:
         run: |
           env -u GEO_GIAC_LIBRARY cargo test -p geo-kernel --features giac \
             --test fuzz_script
-      # The Linux corpus records Giac outputs that differ on these platforms.
-      # Keep the golden comparisons visible and gate on strict JNI replays
-      # against the platform reference data below.
+      # The golden test checks the recorded platform variants at the
+      # affected snapshot positions and the shared corpus everywhere else.
       - name: Golden data with the feature
-        continue-on-error: true
         if: ${{ !cancelled() && steps.fetch.outcome == 'success' }}
         run: |
           cargo test -p geo-golden --features giac --test golden -- --nocapture
@@ -189,7 +194,6 @@ jobs:
         run: cargo test -p geo-golden --features giac --test command_forms
       # Without a library the feature must change nothing.
       - name: Golden data with the feature and no library
-        continue-on-error: ${{ runner.os == 'macOS' }}
         if: ${{ !cancelled() && steps.fetch.outcome == 'success' }}
         run: |
           env -u GEO_GIAC_LIBRARY cargo test -p geo-golden --features giac \
@@ -197,15 +201,10 @@ jobs:
 
       - name: Replay the recorded Giac exchanges
         if: ${{ !cancelled() && steps.fetch.outcome == 'success' }}
-        env:
-          GEO_GIAC_REPLAY_TRACE: '1'
         run: |
           fixture=tools/giac/cas-exchanges-macos-intel.jsonl
           if [ "$RUNNER_OS" = Windows ]; then
-            mkdir -p tools/giac/build
-            python -I tools/giac/replay-fixture.py --overlay "$fixture" \
-              tools/giac/cas-outputs-windows.jsonl > tools/giac/build/windows-replay.jsonl
-            fixture=tools/giac/build/windows-replay.jsonl
+            fixture=tools/giac/cas-exchanges-windows.jsonl
           fi
           cargo run -p geo-giac --features giac --example replay -- "$fixture"
 

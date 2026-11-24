@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Convert the reference harness's Giac JSON log into a replay fixture."""
+import argparse
+import hashlib
+from itertools import islice
 import json
+from pathlib import Path
 import sys
 
 
@@ -28,36 +32,40 @@ def from_harness(log_path):
                 raise ValueError(f"unknown Giac log kind {event['kind']}")
 
 
-def apply_overrides(base_path, override_path):
-    with open(override_path, encoding="utf-8") as overrides:
-        expected = {}
-        for line in overrides:
-            case, text, result = json.loads(line)
-            key = (case, text)
-            if key in expected:
-                raise ValueError(f"duplicate replay override for {case}")
-            expected[key] = result
-    used = set()
-    with open(base_path, encoding="utf-8") as base:
-        for line in base:
-            case, text, result = json.loads(line)
-            key = (case, text)
-            if key in expected:
-                used.add(key)
-                result = expected[key]
-            yield (case, text, result)
-    if unused := expected.keys() - used:
-        raise ValueError(f"unused replay overrides: {sorted(case for case, _ in unused)}")
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("log", type=Path)
+    parser.add_argument("--platform", required=True)
+    parser.add_argument("--library", type=Path, required=True)
+    parser.add_argument("--harness-revision", required=True)
+    parser.add_argument("--reference-revision", required=True)
+    parser.add_argument("--date", required=True)
+    parser.add_argument("--command", required=True, help="recording command with portable paths")
+    args = parser.parse_args()
+
+    exchange_count = 1_966
+    records = list(islice(from_harness(args.log), exchange_count + 1))
+    if len(records) != exchange_count:
+        parser.error(f"expected exactly {exchange_count} complete exchanges")
+    sha256 = hashlib.sha256()
+    with args.library.open("rb") as library:
+        for chunk in iter(lambda: library.read(1024 * 1024), b""):
+            sha256.update(chunk)
+    header = {
+        "type": "provenance",
+        "platform": args.platform,
+        "library_file": args.library.name,
+        "library_sha256": sha256.hexdigest(),
+        "harness_revision": args.harness_revision,
+        "reference_revision": args.reference_revision,
+        "date": args.date,
+        "command": args.command,
+    }
+    sys.stdout.reconfigure(encoding="utf-8", newline="\n")
+    print(json.dumps(header, ensure_ascii=False))
+    for record in records:
+        print(json.dumps(record, ensure_ascii=False))
 
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    if len(args) == 1:
-        records = from_harness(args[0])
-    elif len(args) == 3 and args[0] == "--overlay":
-        records = apply_overrides(*args[1:])
-    else:
-        sys.exit("usage: replay-fixture.py <harness log> | --overlay <base fixture> <overrides>")
-    sys.stdout.reconfigure(encoding="utf-8", newline="\n")
-    for record in records:
-        print(json.dumps(record, ensure_ascii=False))
+    main()

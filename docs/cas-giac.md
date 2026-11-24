@@ -122,32 +122,38 @@ kept for the process's lifetime (`geo_giac::backend()`):
 
 ### Fidelity check
 
-The fixture `tools/giac/cas-exchanges.jsonl` contains **1,966** complete
-input/output pairs from the 662 CAS cases in `cases/cas.json` and
-`cases/reference/cas.json`. It was recorded by the Java harness at reference
-revision `112919f2d450ec7430a5cd3b65dba226fdc43b74` on Linux x86_64 with
-Giac 70507. Four logged inputs had no corresponding printed result. To
-recreate the fixture, record the two case files with
-`GGB_HARNESS_JAVA_OPTS=-DggbHarness.giacLog=<file>` (see the
-[harness README](../tools/ggb-harness/README.md)), then pass the log to
-`python3 -I tools/giac/replay-fixture.py <file>`.
+Each fixture contains a provenance header followed by **1,966** complete
+input/output pairs from the harness case files
+`tools/ggb-harness/cases/cas.json` and `tools/ggb-harness/cases/reference/cas.json`.
+The header identifies the platform, pinned library and SHA-256, harness and
+GeoGebra revisions, recording date, and recording command. Four logged inputs
+had no printed result. To recreate a fixture, record both case files to the
+same fresh log with `-DggbHarness.giacLog=<file>` (see the
+[harness README](../tools/ggb-harness/README.md)). Run
+`python3 -I tools/giac/replay-fixture.py --help` for the converter's metadata
+arguments. The converter hashes the library file and writes the header.
+
+| Job | Fixture under `tools/giac/` |
+| --- | --- |
+| `giac-linux` | `cas-exchanges.jsonl` |
+| `giac-macos` | `cas-exchanges-macos-intel.jsonl` |
+| `giac-windows` | `cas-exchanges-windows.jsonl` |
+
+The Windows fixture is a complete recording with the pinned 70507 DLL
+and Temurin 17.0.12+7 under Wine 9.0. Interpreted mode (`-Xint`) let
+the JVM complete under Rosetta. All 1,966 rows match the previous Intel
+recording with three Windows overrides. Compared with Intel, Windows
+changes decimal formatting in `cas-start-006` and `cas-edge-017` and
+returns `-8.881784197001E-06` for one cancellation in `cas-edge-004`.
 
 ```sh
 GEO_GIAC_LIBRARY="$(tools/giac/fetch.sh)" \
   cargo run -p geo-giac --features giac --example replay -- tools/giac/cas-exchanges.jsonl
 ```
 
-Intel macOS uses `tools/giac/cas-exchanges-macos-intel.jsonl`, recorded
-with the same Java harness and case inputs against the pinned Intel Giac
-library. Its reference prints 174 results in a different order. The Rust
-bridge matched all 1,966 outputs in each platform's own recording on
-2026-11-24. Windows uses the Intel transcript with three overrides
-in `tools/giac/cas-outputs-windows.jsonl`. The first hosted Windows
-run produced those same 1,966 results. The Java harness with the pinned
-Windows DLL confirmed the three overrides under Wine.
-
-The example exits with an error for any differing result. Set
-`GEO_GIAC_REPLAY_TRACE=1` to log each case and input before evaluation.
+The three jobs require exactly 1,966 exchanges and fail on any output
+difference. Set `GEO_GIAC_REPLAY_TRACE=1` to log each case and input before
+evaluation.
 
 ## What the kernel ports
 
@@ -289,10 +295,10 @@ Evidence as of 2026-11-24:
 
 | Platform | Check | Result |
 | --- | --- | --- |
-| Linux x86_64 | `giac-linux` | Passed on main on 2026-11-24 (6m 15s). |
+| Linux x86_64 | `giac-linux` | The previous CI run passed both golden checks. The job now also gates the Linux transcript. |
 | macOS arm64 | Local replay and golden replay | Both reproduced the Giac 70507 fault on 2026-11-24. A native Giac package requires a fixed upstream build. |
-| macOS x86_64 | `giac-macos` on `macos-15-intel` | Local Intel replay matched 1,966/1,966 exchanges with the Intel reference. CI also runs the Linux-captured golden suite as a diagnostic. |
-| Windows x86_64 | `giac-windows` on `windows-latest` | On 2026-11-24 the first hosted run passed the binding, kernel, mutation, command-form and no-library golden checks. Its 177 differences from the Linux transcript are covered by the checked Windows expectations. |
+| macOS x86_64 | `giac-macos` on `macos-15-intel` | The local Intel run passed both golden checks and matched all 1,966 exchanges. |
+| Windows x86_64 | `giac-windows` on `windows-latest` | The complete Wine recording matched all 1,966 outputs from the previous hosted replay. |
 | Android | AAR extraction and host unit tests | Pinned AAR verified and both libraries extracted for all four ABIs. Directory resolution and refusal tests passed. Emulator replay pending. |
 | Web | Outside scope | The reference uses a JavaScript build of Giac. |
 
@@ -324,20 +330,31 @@ variant is unavailable until a fixed upstream build exists. The macOS GPL
 archive and the `giac-macos` job use the x86_64 library from the universal
 jar.
 
-The Linux-captured golden suite remains a diagnostic on Intel macOS.
-The local Intel run under Rosetta reported 7,091 agreements, 171 known
-gaps and 42 new discrepancies. Giac returns a different order in 41
-of these cases. The remaining discrepancy, `misc-maximizepoint-015`,
-has a point coordinate about `5e-8` from the reference. CI gates the
-binding and the byte-for-byte Intel reference replay.
+### Desktop golden allow-lists
 
-Windows also reported 7,091 agreements, 171 known gaps and 42 new
-discrepancies against the Linux golden corpus with Giac loaded. Its
-byte replay differs from Intel only in `cas-start-006` and `cas-edge-017`
-(decimal formatting) and `cas-edge-004` (the cancellation result is
-`-8.881784197001E-06` instead of `-0.999200722162641E-5`). The
-Giac-enabled Linux-captured golden comparison is diagnostic on Windows.
-The no-library golden comparison and strict Windows replay remain gates.
+The Giac-enabled allow-lists on Intel macOS and Windows both use
+[the 146 list permutations in 41 CAS cases](../crates/geo-golden/desktop-giac-orders.json).
+Each row names a case, snapshot step, and object label and gives the
+zero-based permutation of its expected elements. The case and label
+selection comes from the mismatches on the initial desktop golden runs.
+Each permutation was derived by comparing the Linux golden snapshots
+with the pinned Java harness snapshots from Intel macOS and independently
+confirmed against the complete Windows recording under Wine on 2026-11-24.
+The comparator checks every list element in the listed order at the
+existing tolerance.
+
+- Intel macOS also expects `M` at step 0 of `misc-maximizepoint-015` to
+  be `(4.000000050592005, 3.9999999494079943)` with and without Giac.
+  The hosted Intel Rust run and local Rosetta run reported that point.
+  An Intel Java harness rerun agreed with the Linux golden, so this
+  exception records the Intel Rust optimizer's deviation of about
+  `5e-8` per coordinate.
+- Windows with Giac also expects the single solution `-8.881784197001E-6`
+  at step 0 of `cas-edge-004`, label `r2`, from the Windows Java harness.
+  The Windows no-library golden run uses the shared expectations.
+
+The test applies these values in memory at the listed sites. The Linux
+golden files and known-gap overlays are the shared baseline.
 
 ### Android emulator replay
 
@@ -364,19 +381,22 @@ adb shell /data/local/tmp/geokernel-giac/replay /data/local/tmp/geokernel-giac/c
 
 ## Desktop distribution
 
-The manual **Package desktop builds** workflow builds two archives per
-desktop platform (Linux x86_64, Windows x86_64 and macOS x86_64):
+The manual **Package desktop builds** workflow uploads the unsigned
+`geokernel-<platform>.tar.gz` archive under EUPL-1.2 for Linux x86_64,
+Windows x86_64, and macOS x86_64. It contains the CLI, desktop app, `NOTICE`,
+`LICENSE`, and `REVISION`.
 
-- `geokernel-<platform>.tar.gz` contains the CLI and desktop app under
-  EUPL-1.2.
-- `geokernel-giac-<platform>.tar.gz` contains the same programs with
-  the Giac feature and the verified native library under GPL-3.0-or-later.
-  The library is beside the executables. In the macOS app bundle, the
-  library is in `Contents/Frameworks` and linked from `Contents/MacOS`.
+To also build and upload `geokernel-giac-<platform>.tar.gz` under
+GPL-3.0-or-later, provide `giac_source_url` and `giac_source_sha256` at
+dispatch. The URL must serve the exact complete corresponding source for
+javagiac 70507, including its JNI wrapper, bundled dependencies, and build
+scripts. The SHA-256 must be the lowercase digest of that archive. The
+packaging script verifies the download and includes it next to the
+executables as `giac-70507-source.archive`, with the digest recorded in
+`NOTICE`. The archive also includes the GPL licence, the application's
+source archive, and `SOURCE-OFFER.txt`.
 
-Each includes `NOTICE`, `LICENSE` and `REVISION`. The Giac variant also
-includes the GPL licence, the application's source archive and the written
-offer for Giac's exact corresponding source. Before any release, the project
-owner must arrange delivery of that source for this binary build and, for
-online distribution, make it available alongside the downloads under GPLv3
-section 6(d). CI produces unsigned build artifacts.
+The pinned native library is beside the executables. The macOS app bundle
+also puts it in `Contents/Frameworks` and links to it from
+`Contents/MacOS`. Dispatches without a source URL run only the EUPL
+builds.

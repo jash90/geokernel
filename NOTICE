@@ -24,3 +24,5 @@ Public License, version 3 or later. See GPL-3.0.txt, REVISION and
 SOURCE-OFFER.txt in that archive for the licence text, the bundled Giac
 build and how to request its complete corresponding source. The
 application's source and build scripts are in geokernel-source.tar.gz.
+The packaged Giac source is in giac-70507-source.archive. The associated
+SHA-256 is recorded below in the Giac archive's copy of this notice.

@@ -11,6 +11,22 @@ case "$variant" in
   *) echo "invalid variant: $variant" >&2; exit 2 ;;
 esac
 
+if [ "$variant" = geokernel-giac ]; then
+  if [[ "${GIAC_SOURCE_URL:-}" != https://* ]] ||
+    [[ ! "${GIAC_SOURCE_SHA256:-}" =~ ^[0-9a-f]{64}$ ]]; then
+    echo 'The GPL archive requires the exact javagiac 70507 source HTTPS URL and lowercase SHA-256.' >&2
+    exit 2
+  fi
+fi
+
+verify() {
+  if command -v shasum >/dev/null; then
+    printf '%s  %s\n' "$1" "$2" | shasum -a 256 -c --status
+  else
+    printf '%s  %s\n' "$1" "$2" | sha256sum -c --status
+  fi
+}
+
 suffix=''
 case "$(uname -s)" in
   Darwin) os=macos ;;
@@ -50,6 +66,15 @@ fi
 cp "$binaries/geokernel-app$suffix" "$app_dir/"
 
 if [ "$variant" = geokernel-giac ]; then
+  source_archive=giac-70507-source.archive
+  curl --fail --silent --show-error --location --retry 2 \
+    --proto '=https' --proto-redir '=https' -- "$GIAC_SOURCE_URL" > "$root/$source_archive"
+  if ! verify "$GIAC_SOURCE_SHA256" "$root/$source_archive"; then
+    echo 'Giac source archive SHA-256 mismatch.' >&2
+    exit 2
+  fi
+  printf '\nGiac 70507 corresponding source\nSHA-256: %s  %s\n' \
+    "$GIAC_SOURCE_SHA256" "$source_archive" >> "$root/NOTICE"
   library="$("$here/fetch.sh")"
   cp "$library" "$root/"
   if [ "$os" = macos ]; then
@@ -63,11 +88,7 @@ if [ "$variant" = geokernel-giac ]; then
   gpl_sha=3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986
   curl --fail --silent --show-error --location --retry 2 \
     https://www.gnu.org/licenses/gpl-3.0.txt -o "$root/GPL-3.0.txt"
-  if command -v shasum >/dev/null; then
-    printf '%s  %s\n' "$gpl_sha" "$root/GPL-3.0.txt" | shasum -a 256 -c --status
-  else
-    printf '%s  %s\n' "$gpl_sha" "$root/GPL-3.0.txt" | sha256sum -c --status
-  fi
+  verify "$gpl_sha" "$root/GPL-3.0.txt"
 fi
 
 archive="$variant-$platform.tar.gz"

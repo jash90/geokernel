@@ -2,6 +2,15 @@ name: Package desktop builds
 
 on:
   workflow_dispatch:
+    inputs:
+      giac_source_url:
+        description: HTTPS URL of the complete corresponding source archive for javagiac 70507
+        type: string
+        required: false
+      giac_source_sha256:
+        description: SHA-256 of that exact Giac source archive (required with the URL)
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -13,7 +22,9 @@ jobs:
       matrix:
         # Giac 70507's macOS arm64 binary violates the Apple ARM64 ABI.
         os: [ubuntu-latest, windows-latest, macos-15-intel]
-        variant: [geokernel, geokernel-giac]
+        variant: >-
+          ${{ fromJSON(inputs.giac_source_url != '' &&
+            '["geokernel", "geokernel-giac"]' || '["geokernel"]') }}
     name: ${{ matrix.variant }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -21,6 +32,9 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Explain GPL archive requirement
+        if: inputs.giac_source_url == ''
+        run: echo 'To build and upload the GPL archive, supply the exact javagiac 70507 source URL and SHA-256.'
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -44,6 +58,8 @@ jobs:
         id: archive
         env:
           VARIANT: ${{ matrix.variant }}
+          GIAC_SOURCE_URL: ${{ inputs.giac_source_url }}
+          GIAC_SOURCE_SHA256: ${{ inputs.giac_source_sha256 }}
         run: |
           archive="$(tools/giac/package-desktop.sh "$VARIANT" target/release)"
           echo "path=$archive" >> "$GITHUB_OUTPUT"

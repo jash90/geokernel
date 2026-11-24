@@ -1,3 +1,0 @@
-["cas-start-006", "ggbsort([[ggbnsans:=fsolve((((x)^(2))-(0.250000000000000)),x=0.250000000000000)],when(type(ggbnsans)==DOM_LIST,ggbnsans,[ggbnsans])][1])", "{0.5}"]
-["cas-edge-004", "ggbsort([[ggbnsans:=fsolve(((x)+(((10)^(10))*((0.123456789012346)-(0.123456789012345)))),x)],when(type(ggbnsans)==DOM_LIST,ggbnsans,[ggbnsans])][1])", "{-8.881784197001E-06}"]
-["cas-edge-017", "ggbsort([[ggbnsans:=fsolve(({((-1.50000000000000)*(x))+(y)=0, x=2}),{x, y})],when(type(ggbnsans)==DOM_LIST,ggbnsans,[ggbnsans])][1])", "{{2.0,3.0}}"]
