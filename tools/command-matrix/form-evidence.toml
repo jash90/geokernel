@@ -3372,21 +3372,21 @@ giac = true
 command = "NSolutions"
 form = "function,any"
 cases = ["cas-edge-001", "cas-edge-002", "cas-edge-004"]
-difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
 giac = true
 
 [[form]]
 command = "NSolutions"
 form = "line,any"
 cases = ["cas-edge-015", "cas-hint-008", "cas-hint-012"]
-difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
 giac = true
 
 [[form]]
 command = "NSolutions"
 form = "conic,any"
 cases = ["cas-coefficient-001", "cas-conic-008", "cas-conic-009"]
-difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
 giac = true
 
 [[form]]
@@ -4680,3 +4680,314 @@ cases = ["vector-rawscale-008", "vector-rawscale-009"]
 command = "UnitVector"
 form = "line"
 cases = ["vector-rawscale-009", "vector-rawscale-001"]
+
+[[form]]
+command = "Expand"
+form = "implicit"
+cases = ["cas-implicitrewrite-001", "cas-implicitrewrite-005", "cas-implicitrewrite-009"]
+giac = true
+
+[[form]]
+command = "Factor"
+form = "implicit"
+cases = ["cas-implicitrewrite-002", "cas-implicitrewrite-006", "cas-implicitrewrite-010"]
+giac = true
+
+[[form]]
+command = "IFactor"
+form = "implicit"
+cases = ["cas-implicitrewrite-003", "cas-implicitrewrite-007", "cas-implicitrewrite-011"]
+giac = true
+
+[[form]]
+command = "NSolutions"
+form = "function"
+cases = ["cas-solve-029"]
+giac = true
+
+[[form]]
+command = "NSolutions"
+form = "line"
+cases = ["cas-edge-003", "cas-solve-030"]
+giac = true
+
+[[form]]
+command = "NSolutions"
+form = "conic"
+cases = ["cas-conic-004", "cas-conic-010", "cas-conic-011"]
+giac = true
+
+[[form]]
+command = "NSolutions"
+form = "implicit"
+cases = ["cas-implicit-001", "cas-implicit-002", "cas-implicit-003"]
+giac = true
+
+[[form]]
+command = "NSolutions"
+form = "implicit,any"
+cases = ["cas-coefficient-002", "cas-edge-020", "cas-implicit-001"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolutions"
+form = "list,any"
+cases = ["cas-implicit-001", "cas-implicit-002", "cas-implicit-003"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "function"
+cases = ["cas-solve-025"]
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "line"
+cases = ["cas-solve-026"]
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "conic"
+cases = ["cas-conic-003", "cas-conic-010", "cas-conic-011"]
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "implicit"
+cases = ["cas-implicit-001", "cas-implicit-002", "cas-implicit-003"]
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "function,any"
+cases = ["cas-hint-003", "cas-hint-017", "cas-hint-020"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "line,any"
+cases = ["cas-hint-007", "cas-hint-011", "cas-hint-014"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "conic,any"
+cases = ["cas-conic-007", "cas-conic-009", "cas-conic-010"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "implicit,any"
+cases = ["cas-implicit-001", "cas-implicit-002", "cas-implicit-003"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "list,any"
+cases = ["cas-implicit-001", "cas-implicit-002", "cas-implicit-003"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "PlotSolve"
+form = "function"
+cases = ["cas-plot-001", "cas-plot-006", "cas-plot-009"]
+giac = true
+
+[[form]]
+command = "PlotSolve"
+form = "line"
+cases = ["cas-plot-002", "cas-plot-007", "cas-plot-008"]
+giac = true
+
+[[form]]
+command = "PlotSolve"
+form = "conic"
+cases = ["cas-plot-003", "cas-plot-010", "cas-plot-011"]
+giac = true
+
+[[form]]
+command = "PlotSolve"
+form = "implicit"
+cases = ["cas-implicit-001", "cas-implicit-002", "cas-implicit-003"]
+giac = true
+
+[[form]]
+command = "Simplify"
+form = "function"
+cases = ["cas-delegated-003", "cas-simplify-003", "cas-simplify-004"]
+giac = true
+
+[[form]]
+command = "Simplify"
+form = "line"
+cases = ["cas-simplify-007", "cas-simplify-009", "cas-simplify-010"]
+giac = true
+
+[[form]]
+command = "Simplify"
+form = "conic"
+cases = ["cas-edge-022", "cas-simplify-008", "cas-simplify-012"]
+giac = true
+
+[[form]]
+command = "Simplify"
+form = "implicit"
+cases = ["cas-implicitrewrite-004", "cas-implicitrewrite-008", "cas-implicitrewrite-012"]
+giac = true
+
+[[form]]
+command = "Simplify"
+form = "number"
+cases = ["cas-simplify-005"]
+giac = true
+
+[[form]]
+command = "Solutions"
+form = "function"
+cases = ["cas-solve-021"]
+giac = true
+
+[[form]]
+command = "Solutions"
+form = "line"
+cases = ["cas-edge-003", "cas-edge-006", "cas-solve-022"]
+giac = true
+
+[[form]]
+command = "Solutions"
+form = "conic"
+cases = ["cas-conic-002", "cas-conic-010", "cas-conic-011"]
+giac = true
+
+[[form]]
+command = "Solutions"
+form = "implicit"
+cases = ["cas-implicit-001", "cas-implicit-002", "cas-implicit-003"]
+giac = true
+
+[[form]]
+command = "Solutions"
+form = "function,any"
+cases = ["cas-edge-004", "cas-edge-009", "cas-hint-002"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "Solutions"
+form = "line,any"
+cases = ["cas-coefficient-003", "cas-coefficient-004", "cas-coefficient-005"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "Solutions"
+form = "conic,any"
+cases = ["cas-coefficient-001", "cas-coefficient-004", "cas-conic-006"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "Solutions"
+form = "implicit,any"
+cases = ["cas-coefficient-002", "cas-implicit-001", "cas-implicit-002"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "Solutions"
+form = "list,any"
+cases = ["cas-freevariable-001", "cas-freevariable-002", "cas-freevariable-003"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "Solve"
+form = "function"
+cases = ["cas-solve-017"]
+giac = true
+
+[[form]]
+command = "Solve"
+form = "line"
+cases = ["cas-edge-003", "cas-edge-006", "cas-literal-001"]
+giac = true
+
+[[form]]
+command = "Solve"
+form = "conic"
+cases = ["cas-conic-001", "cas-conic-010", "cas-conic-011"]
+giac = true
+
+[[form]]
+command = "Solve"
+form = "implicit"
+cases = ["cas-implicit-001", "cas-implicit-002", "cas-implicit-003"]
+giac = true
+
+[[form]]
+command = "Solve"
+form = "function,any"
+cases = ["cas-hint-001", "cas-hint-017", "cas-hint-021"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "Solve"
+form = "line,any"
+cases = ["cas-coefficient-003", "cas-coefficient-004", "cas-coefficient-005"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "Solve"
+form = "conic,any"
+cases = ["cas-conic-005", "cas-conic-009", "cas-conic-010"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "Solve"
+form = "implicit,any"
+cases = ["cas-implicit-001", "cas-implicit-002", "cas-implicit-003"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "Solve"
+form = "list,any"
+cases = ["cas-family-003", "cas-freevariable-001", "cas-freevariable-002"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`, `NSolutions(implicit, any)`, `NSolutions(list, any)`, `NSolve(implicit, any)`, `NSolve(list, any)`, `Solutions(line, any)`, `Solutions(conic, any)`, `Solutions(implicit, any)`, `Solutions(list, any)`, `Solve(line, any)`, `Solve(conic, any)`, `Solve(implicit, any)`, `Solve(list, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "Expand"
+form = "curve"
+cases = ["cas-curve-001", "cas-curve-004", "cas-curve-005"]
+giac = true
+
+[[form]]
+command = "Factor"
+form = "curve"
+cases = ["cas-curve-002", "cas-curve-004", "cas-curve-005"]
+giac = true
+
+[[form]]
+command = "IFactor"
+form = "curve"
+cases = ["cas-curve-003", "cas-curve-004", "cas-curve-005"]
+giac = true
+
+[[form]]
+command = "Simplify"
+form = "curve"
+cases = ["cas-curve-015", "cas-curve-016", "cas-curve-017"]
+giac = true

@@ -1,7 +1,8 @@
 # Giac as an optional CAS backend
 
-Status: optional backend for the solving commands. The feature is off by
-default. Linux x86_64 is the reference for cross-platform validation.
+Status: optional backend for solving and algebra rewrites. The feature is
+off by default, and the default build uses the kernel's exact CAS.
+Linux x86_64 is the reference for cross-platform validation.
 
 ## Why
 
@@ -89,7 +90,8 @@ The reference resets Giac before every evaluation (`CASgiacB.init`,
    reference seeds other inputs randomly; the kernel passes a fixed seed so
    runs are reproducible;
 5. `caseval(evalfa(input))`, printed; surrounding quotes removed; results
-   longer than 10,000 UTF-16 units become `?`.
+   longer than 10,000 UTF-16 units become `?`. The worker refuses input
+   larger than 64 KiB before sending it to the library.
 
 One worker thread with a 256 MiB stack owns the library and its context:
 Giac's context is not thread-safe (the reference serialises calls too) and it
@@ -198,56 +200,70 @@ feature; it takes one list, equation or function, as `CmdSolve` does):
 - Giac's printed list is read back as `evaluateToList` does for these
   results: lines from linear equations, numbers, points, functions of the one
   free variable (polynomials exactly, other expressions sampled from Giac's
-  printed form), an undefined implicit curve for an equation that is neither
-  linear, nor `y = f(x)`, nor a polynomial, nested lists, `AlgoSolve`'s extra
-  list around the solutions of a list of equations, and an undefined list for
-  an unevaluated `fsolve` or an unknown name.
+  printed form), conics and implicit curves from equations, parametric
+  curves from coordinate pairs, nested lists, and `AlgoSolve`'s extra list
+  around the solutions of a list of equations. An unevaluated `fsolve`
+  or an unknown name makes the list undefined. An affine coordinate pair
+  with a free variable reads as a line, and a single free variable can be
+  `x`, `y`, or `z`. Implicit curves that contain `z` keep their
+  two-dimensional coefficient matrix. CAS lists display the coordinates of
+  a curve and the equation of a conic or implicit curve. Affine pairs retain
+  their user form, `X = (…, …)`, alongside the carrier coefficients.
 
-Not translated yet: `Simplify`,
-`Expand`, `Factor` and `IFactor` of lines, conics, curves and implicit curves,
-conics made by commands (`Circle`, `Conic`, `Parabola`, `Ellipse` print as
-`GeoConic`'s value text, which is not ported), results that the reference
-reads as conics, defined implicit curves or parametric curves (and the points
-`(f(y), 0)` it reads as lines), and solutions in a third free variable.
+Circles made by commands use their center and radius equation. Other
+constructed conics use the selected form of their value text, with computed
+coefficients printed at 15 significant digits.
+
+`Simplify`, `Expand`, `Factor` and `IFactor` use the single-argument templates
+from `Ggb2giac`. `CmdSimplify` converts a line or conic to its function where
+it has one. Cartesian curves rewrite each coordinate and reuse the source
+bounds. The coordinates recompute when inputs change. Typed number objects
+keep their original decimal text in rewrite inputs, including when a negative
+term is written as a subtraction. Implicit curves rewrite
+the equation's left side minus its right side and read the result as a
+polynomial equal to zero. `Factor` and `IFactor` keep the returned equation
+as the display form.
 
 ## Results (Linux x86_64)
 
 `GEO_GIAC_LIBRARY=$(tools/giac/fetch.sh) cargo test -p geo-golden --features
-giac --test golden -- --nocapture` runs the golden data with the feature;
-`crates/geo-golden/known-gaps-giac.toml` lists, on top of
-`known-gaps.toml`, the cases that agree only with Giac (`agrees = true`) and
-the reason for those that still differ.
+giac --test golden -- --nocapture` runs the golden data with the feature.
+When Giac is active, `crates/geo-golden/known-gaps-giac.toml` overlays
+`known-gaps.toml`. An `agrees = true` entry removes a default gap. A
+difference entry adds or replaces a gap and gives the reason it differs.
 
-| | ggb-harness cases | agree | known gaps |
-| --- | --- | --- | --- |
-| default build | 7303 | 6819 | 485 |
-| `giac` feature, library present | 7303 | 7133 | 171 |
-| `giac` feature, no library | 7303 | 6819 | 485 |
+The replay includes 7,310 cases, 7,309 of them from the harness.
 
-Only one case that agrees without the feature differs with it:
-`cas-plot-022` records the kernel's old refusal text for `PlotSolve`, a
-command it now has; the lines are still refused (see
-`known-gaps-giac.toml`). Of the 1,394 Giac
-inputs the kernel sends for the recorded cases, all but 11 (the second
-arguments `z = 1` and `z = 0`, which the reference's two-dimensional parser
-reads as numbers, and powers of ten that the reference prints from a
-different tree) are byte for byte the reference's.
+| Profile | Agree | Known gaps |
+| --- | ---: | ---: |
+| Default build | 6,825 | 485 |
+| `giac` feature, library present | 7,236 | 74 |
+| `giac` feature, no library | 6,825 | 485 |
 
-Eight solving forms agree in every recorded case that may call them only
-with the feature and are counted as done, marked `giac = true` in
-`tools/command-matrix/form-evidence.toml` and in the matrix notes:
-`Solve(list)`, `Solutions(list)`, `NSolve(list)`, `NSolutions(list)`,
-`NSolutions(function, any)`, `NSolutions(line, any)`,
-`NSolutions(conic, any)`, `PlotSolve(list)`. Ten more forms agree in the
-cases that call them directly but stay open, because a case that is still a
-gap with the feature may call them (`cas-implicit-013`, `cas-name-004`,
-`cas-name-012`, `cas-degree-001`, `-003`, `-004`, `cas-hintobject-001`,
-`-002`): `Solve(line)`, `Solve(conic)`, `Solve(function, any)`,
-`Solutions(line)`, `Solutions(function, any)`, `NSolve(conic)`,
-`NSolve(function, any)`, `NSolve(line, any)`, `NSolve(conic, any)`,
-`NSolutions(conic)`. The implicit-curve forms stay
-open because the same cases also call `PlotSolve` of an implicit curve,
-whose curves the kernel does not read back yet.
+A nested `Simplify` of a graph, such as `f(x) = 1 + Simplify(g)` for
+`g: 2x + 3y = 6`, uses the same Giac rewrite as a standalone
+`Simplify(g)`. The result is refreshed when its input changes.
+Without Giac, the kernel handles nested graphs it can express with exact
+rational arithmetic. The reference refuses `Expand` and `Factor` of a
+line or conic in the same position (`cas-nestedrewrite-001` through `-006`).
+
+The Giac profile closes 97 of the 171 effective gaps at the start of this
+work. The remaining gaps include 73 inherited cases outside these CAS
+commands and `cas-plot-022`. For `PlotSolve(f, x)`, GeoGebra reports
+“Illegal number of arguments: 2”. The reject handler in
+`GoldenGenerator.java:263` copies the fixture's kernel-specific
+`unknown command` text. The enabled kernel reports `invalid arguments`.
+
+The list display has a few spelling differences for coordinate expressions
+outside the recorded CAS cases. For example, the kernel prints `exp(y)`,
+`sin(y)²`, and `(1 + y) * (1 - y)` where GeoGebra prints `ℯ^y`,
+`sin²(y)`, and `(1 + y) (1 - y)`.
+
+All 71 forms of `Solve`, `Solutions`, `NSolve`, `NSolutions`, `PlotSolve`,
+`Simplify`, `Expand`, `Factor`, and `IFactor` have command-matrix evidence.
+Rows that require the feature use `giac = true` in
+`tools/command-matrix/form-evidence.toml`. The matrix tests check every
+recorded case that may call each done form against its profile.
 
 Desktop feature checks run in `giac-linux`, `giac-macos` and `giac-windows`
 (.github/workflows/ci.yml).
@@ -336,13 +352,14 @@ jar.
 ### Desktop golden allow-lists
 
 The Giac-enabled allow-lists on Intel macOS and Windows both use
-[the 146 list permutations in 41 CAS cases](../crates/geo-golden/desktop-giac-orders.json).
+[the 165 list permutations in 45 CAS cases](../crates/geo-golden/desktop-giac-orders.json).
 Each row names a case, snapshot step, and object label and gives the
-zero-based permutation of its expected elements. The case and label
-selection comes from the mismatches on the initial desktop golden runs.
-Each permutation was derived by comparing the Linux golden snapshots
-with the pinned Java harness snapshots from Intel macOS and independently
-confirmed against the complete Windows recording under Wine on 2026-11-24.
+zero-based permutation of its expected elements. The original 146 entries
+come from comparisons of the Linux and Intel macOS harness snapshots,
+confirmed against the Windows recording under Wine on 2026-11-24.
+The other 19 entries cover two-branch conic solutions in `cas-conic-057`
+and `cas-order-094`, `-096` and `-097`. The Intel macOS and Windows
+transcripts both reverse the Linux branch order at those sites.
 The comparator checks every list element in the listed order at the
 existing tolerance.
 

@@ -436,7 +436,7 @@ pub(super) fn format_angle(value: f64) -> String {
     format!("{}°", format_number(degrees))
 }
 
-pub(super) fn format_number(value: f64) -> String {
+pub(in crate::expr) fn format_number(value: f64) -> String {
     format_number_with_template(value, false)
 }
 
@@ -476,6 +476,16 @@ fn format_number_with_template(value: f64, latex: bool) -> String {
     let mut out = String::new();
     crate::kernel::control::write_decimal(&mut out, value, 2);
     out
+}
+
+pub(in crate::expr) fn superscript(s: &str) -> Option<String> {
+    const DIGITS: [char; 10] = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'];
+    s.chars()
+        .map(|c| match c {
+            '-' => Some('⁻'),
+            c => Some(DIGITS[c.to_digit(10)? as usize]),
+        })
+        .collect()
 }
 
 fn format_coords(x: f64, y: f64) -> String {

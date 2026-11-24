@@ -906,5 +906,12 @@ reference.case("hintobject", ["b = 2", "result = Solutions({x^2=4}, b)"], [])
 # input (convertScientificNotationGiac of "-0.5" is "(-05/10)").
 reference.case("literal", ["g: x=-0.5", "k: x^2=-0.25+x", "r1 = Solve(g)", "r2 = Solutions(k)",
                            "r3 = Solutions(2x=-0.5)", "r4 = Solve(x+y=-0.75, y)"], [])
+# Rewrites of a graph nested in a larger function expression.
+for graph in ("g: 2x + 3y = 6", "g: y = x^2"):
+    reference.case("nestedrewrite", [graph, "f(x) = 1 + Simplify(g)"], [])
+    for command, error in (("Expand", "invalid arguments to `Expand`"), ("Factor", "`Factor` needs a function")):
+        reference.case("nestedrewrite", [graph], [
+            {"action": "reject", "line": f"f(x) = 1 + {command}(g)", "error": error},
+        ])
 reference.cases.extend(refused)
 reference.write("reference")

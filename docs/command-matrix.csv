@@ -5,9 +5,9 @@ Min,,algebra,P2,done,5,5,"Min(number, number); Min(list)"
 Max,,algebra,P2,done,5,5,"Max(number, number); Max(list)"
 LCM,,algebra,P2,done,2,2,"LCM(number, number)"
 GCD,,algebra,P2,done,2,2,"GCD(number, number)"
-Expand,,algebra,P2,partial,6,4,"Polynomial and rational functions are in scope for the 1.0 CAS. A list, a line and a conic are refused as in the reference."
-Factor,,algebra,P2,partial,6,4,"Exact polynomial and rational functions are in scope for the 1.0 CAS. A list, a line and a conic are refused as in the reference."
-Simplify,,algebra,P2,partial,8,2,"Polynomial and rational functions, number inputs and formula texts are in scope for the 1.0 CAS. A list is refused as in the reference."
+Expand,,algebra,P2,done,6,6,"Polynomial and rational functions are in scope for the 1.0 CAS. A list, a line and a conic are refused as in the reference. Done only with the giac feature (docs/cas-giac.md): Expand(implicit), Expand(curve)."
+Factor,,algebra,P2,done,6,6,"Exact polynomial and rational functions are in scope for the 1.0 CAS. A list, a line and a conic are refused as in the reference. Done only with the giac feature (docs/cas-giac.md): Factor(implicit), Factor(curve)."
+Simplify,,algebra,P2,done,8,8,"Polynomial and rational functions, number inputs and formula texts are in scope for the 1.0 CAS. A list is refused as in the reference. Done only with the giac feature (docs/cas-giac.md): Simplify(function), Simplify(line), Simplify(conic), Simplify(implicit), Simplify(number), Simplify(curve)."
 PrimeFactors,,algebra,P2,done,1,1,
 CompleteSquare,,algebra,P2,done,1,1,"Quadratic polynomials, including quadratic polynomials in a power of x."
 ToBase,,algebra,P2,done,1,1,
@@ -510,7 +510,7 @@ Reflect,Mirror,transformation,P1,done,,,
 Assume,,cas,,out_of_scope,,,
 CFactor,,cas,,out_of_scope,,,
 CIFactor,,cas,,out_of_scope,,,
-IFactor,,algebra,P2,partial,6,4,"Polynomial and rational functions are in scope for the 1.0 CAS, with bounded radical forms. A list, a line and a conic are refused as in the reference."
+IFactor,,algebra,P2,done,6,6,"Polynomial and rational functions are in scope for the 1.0 CAS, with bounded radical forms. A list, a line and a conic are refused as in the reference. Done only with the giac feature (docs/cas-giac.md): IFactor(implicit), IFactor(curve)."
 IntegralSymbolic,,cas,,out_of_scope,,,
 CommonDenominator,,algebra,P2,done,2,2,Number pairs and rational-function pairs.
 Cross,,algebra,P2,done,5,5,"point or vector pairs and list pairs of equal length 2 or 3, including row lists (vectorforms-listcross-001 and vectorforms-nestedcross-001)"
@@ -523,15 +523,15 @@ GroebnerDegRevLex,,cas,,out_of_scope,,,
 GroebnerLexDeg,,cas,,out_of_scope,,,
 NIntegral,,function,P2,done,6,6,
 NInvert,,function,P2,done,1,1,
-NSolve,,algebra,P2,partial,10,1,Bounded real polynomial equations and systems with optional variable binding. Done only with the giac feature (docs/cas-giac.md): NSolve(list).
-NSolutions,,algebra,P2,partial,10,4,"Bounded real polynomial equations and systems with optional variable binding. Done only with the giac feature (docs/cas-giac.md): NSolutions(list), NSolutions(function, any), NSolutions(line, any), NSolutions(conic, any)."
+NSolve,,algebra,P2,done,10,10,"Bounded real polynomial equations and systems with optional variable binding. Done only with the giac feature (docs/cas-giac.md): NSolve(list), NSolve(function), NSolve(line), NSolve(conic), NSolve(implicit), NSolve(function, any), NSolve(line, any), NSolve(conic, any), NSolve(implicit, any), NSolve(list, any)."
+NSolutions,,algebra,P2,done,10,10,"Bounded real polynomial equations and systems with optional variable binding. Done only with the giac feature (docs/cas-giac.md): NSolutions(list), NSolutions(function, any), NSolutions(line, any), NSolutions(conic, any), NSolutions(function), NSolutions(line), NSolutions(conic), NSolutions(implicit), NSolutions(implicit, any), NSolutions(list, any)."
 Numeric,,cas,,out_of_scope,,,
 Evaluate,,english,,out_of_scope,,,
 MixedNumber,,cas,,out_of_scope,,,
 Rationalize,,cas,,out_of_scope,,,
-Solutions,,algebra,P2,partial,10,1,Real polynomial equations and small systems are in scope for the 1.0 CAS. Done only with the giac feature (docs/cas-giac.md): Solutions(list).
-Solve,,algebra,P2,partial,10,1,Real polynomial equations and small systems are in scope for the 1.0 CAS. Done only with the giac feature (docs/cas-giac.md): Solve(list).
-PlotSolve,,function,P2,partial,5,1,Done only with the giac feature (docs/cas-giac.md): PlotSolve(list).
+Solutions,,algebra,P2,done,10,10,"Real polynomial equations and small systems are in scope for the 1.0 CAS. Done only with the giac feature (docs/cas-giac.md): Solutions(list), Solutions(function), Solutions(line), Solutions(conic), Solutions(implicit), Solutions(function, any), Solutions(line, any), Solutions(conic, any), Solutions(implicit, any), Solutions(list, any)."
+Solve,,algebra,P2,done,10,10,"Real polynomial equations and small systems are in scope for the 1.0 CAS. Done only with the giac feature (docs/cas-giac.md): Solve(list), Solve(function), Solve(line), Solve(conic), Solve(implicit), Solve(function, any), Solve(line, any), Solve(conic, any), Solve(implicit, any), Solve(list, any)."
+PlotSolve,,function,P2,done,5,5,"Done only with the giac feature (docs/cas-giac.md): PlotSolve(list), PlotSolve(function), PlotSolve(line), PlotSolve(conic), PlotSolve(implicit)."
 SolveCubic,,cas,,out_of_scope,,,
 SolveQuartic,,cas,,out_of_scope,,,
 JordanDiagonalization,,cas,,out_of_scope,,,

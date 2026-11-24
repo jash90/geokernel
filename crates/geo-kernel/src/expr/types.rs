@@ -14,6 +14,7 @@
 //! `MyError` from `Operation`); the evaluation of a new object always runs,
 //! so rejecting the same trees here gives the same lines errors.
 
+use super::cas::{self, graph};
 use super::commands;
 use super::{AlgebraOp, Bin, CallOp, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
 use crate::kernel::{Construction, Def, Id, Kind};
@@ -24,6 +25,8 @@ use crate::kernel::{Construction, Def, Id, Kind};
 #[allow(clippy::type_complexity)]
 /// The types, depths, costs and variable counts of the nodes typed so far.
 struct State {
+    body_root: u32,
+    graph_rewrites: usize,
     tys: Vec<Ty>,
     depth: Vec<u32>,
     cost: Vec<u64>,
@@ -66,6 +69,8 @@ pub(crate) fn check(c: &Construction, nodes: &[Node], root: u32) -> Result<Check
         }
     }
     let mut state = State {
+        body_root: super::body_root(nodes, root),
+        graph_rewrites: 0,
         tys: Vec::with_capacity(n),
         depth: Vec::with_capacity(n),
         cost: Vec::with_capacity(n),
@@ -479,12 +484,31 @@ fn type_node(
         Node::Cas(op, a, b) => {
             let a = a as usize;
             let b = (b != NONE).then_some(b as usize);
-            let ty = op.result_type(state.tys[a], b.map(|i| state.tys[i]))?;
+            let nested = i as u32 != state.body_root;
+            let mut argument = state.tys[a];
+            let graph = match (argument, op, b) {
+                (Ty::Object, cas::Op::Simplify, None) => graph::source(c, nodes, a as u32),
+                _ => None,
+            };
+            if let Some(id) = graph {
+                if nested && graph::admits_nested(c, id) {
+                    state.graph_rewrites += 1;
+                    if state.graph_rewrites > graph::MAX_NESTED_REWRITES {
+                        return Err("too many nested graph rewrites".into());
+                    }
+                    argument = Ty::Function;
+                }
+                #[cfg(feature = "giac")]
+                if !nested && cas::giac_admits() {
+                    argument = Ty::Function;
+                }
+            }
+            let ty = op.result_type(argument, b.map(|i| state.tys[i]))?;
             let vars = if op.is_function() {
                 state.vars[a]
                     .saturating_add(b.map_or(0, |i| state.vars[i]))
                     .max(u64::from(
-                        state.tys[a] == Ty::Function
+                        (if nested { argument } else { state.tys[a] }) == Ty::Function
                             || b.is_some_and(|i| state.tys[i] == Ty::Function),
                     ))
             } else if matches!(

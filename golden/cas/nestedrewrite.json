@@ -1,0 +1,204 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-nestedrewrite-001",
+      "group": "cas",
+      "script": [
+        "g: 2x + 3y = 6",
+        "f(x) = 1 + Simplify(g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": 3.0, "c": -6.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 8.333333333333336],
+              [-4.0, 5.666666666666668],
+              [-2.0, 4.333333333333334],
+              [-1.0, 3.666666666666667],
+              [-0.5, 3.3333333333333335],
+              [0.0, 3.0],
+              [0.5, 2.6666666666666665],
+              [1.0, 2.333333333333333],
+              [2.0, 1.666666666666666],
+              [4.0, 0.33333333333333215],
+              [8.0, -2.3333333333333357]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-nestedrewrite-002",
+      "group": "cas",
+      "script": [
+        "g: 2x + 3y = 6"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "f(x) = 1 + Expand(g)", "error": "invalid arguments to `Expand`" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": 3.0, "c": -6.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": 3.0, "c": -6.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-nestedrewrite-003",
+      "group": "cas",
+      "script": [
+        "g: 2x + 3y = 6"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "f(x) = 1 + Factor(g)", "error": "`Factor` needs a function" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": 3.0, "c": -6.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": 3.0, "c": -6.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-nestedrewrite-004",
+      "group": "cas",
+      "script": [
+        "g: y = x^2",
+        "f(x) = 1 + Simplify(g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [-1.0, 0.0, 0.0, 0.0, 0.0, 0.5],
+            "vertex": [0.0, -0.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-nestedrewrite-005",
+      "group": "cas",
+      "script": [
+        "g: y = x^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "f(x) = 1 + Expand(g)", "error": "invalid arguments to `Expand`" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [-1.0, 0.0, 0.0, 0.0, 0.0, 0.5],
+            "vertex": [0.0, -0.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "g": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [-1.0, 0.0, 0.0, 0.0, 0.0, 0.5],
+            "vertex": [0.0, -0.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-nestedrewrite-006",
+      "group": "cas",
+      "script": [
+        "g: y = x^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "f(x) = 1 + Factor(g)", "error": "`Factor` needs a function" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [-1.0, 0.0, 0.0, 0.0, 0.0, 0.5],
+            "vertex": [0.0, -0.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        },
+        {
+          "g": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [-1.0, 0.0, 0.0, 0.0, 0.0, 0.5],
+            "vertex": [0.0, -0.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

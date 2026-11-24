@@ -240,7 +240,18 @@ fn run(job: Job) -> Result<String, Error> {
     link.call(job, Duration::from_millis(limit.saturating_add(MARGIN_MS)))
 }
 
+// The worker never copies or dispatches an arbitrarily large caller string.
+const MAX_INPUT_BYTES: usize = 64 * 1024;
+
+fn check_input(text: &str) -> Result<(), Error> {
+    if text.len() > MAX_INPUT_BYTES {
+        return Err(Error::Call("Giac input is too long".to_owned()));
+    }
+    Ok(())
+}
+
 pub(crate) fn eval_raw(input: &str, timeout_ms: u64, seed: i32) -> Result<String, Error> {
+    check_input(input)?;
     run(Job::Raw {
         input: input.to_string(),
         timeout_ms,
@@ -249,12 +260,26 @@ pub(crate) fn eval_raw(input: &str, timeout_ms: u64, seed: i32) -> Result<String
 }
 
 pub(crate) fn eval_plain(text: &str) -> Result<String, Error> {
+    check_input(text)?;
     run(Job::Plain(text.to_string()))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn oversized_inputs_are_refused_before_a_worker_starts() {
+        let input = "x".repeat(65_537);
+        for result in [
+            eval_raw(&input, session::DEFAULT_TIMEOUT_MS, 1),
+            eval_plain(&input),
+        ] {
+            assert!(
+                matches!(result, Err(Error::Call(message)) if message.contains("input is too long"))
+            );
+        }
+    }
 
     #[test]
     fn resolves_android_libraries_and_refuses_incomplete_directories() {

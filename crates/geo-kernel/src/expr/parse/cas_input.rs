@@ -101,6 +101,19 @@ impl Parser<'_> {
             return Err(format!("invalid arguments to `{name}`"));
         };
         let (outer_x, outer_y) = (self.uses_var, self.uses_y);
+        #[cfg(feature = "giac")]
+        let names = if crate::expr::cas::giac_admits() {
+            if commas.len() == 1 {
+                if let Some(name) = names.iter().find(|name| {
+                    !matches!(name.as_str(), "x" | "y" | "z" | "t") && self.lookup(name).is_none()
+                }) {
+                    return Err(format!("undefined variable `{name}`"));
+                }
+            }
+            crate::expr::cas::with_cartesian_variables(names)
+        } else {
+            names
+        };
         let old = std::mem::replace(&mut self.cas_variables, names);
         let old_split = std::mem::replace(&mut self.split_names, true);
         self.expect(&Tok::LParen, "(")?;

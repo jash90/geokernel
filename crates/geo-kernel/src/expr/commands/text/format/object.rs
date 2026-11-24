@@ -198,6 +198,10 @@ impl Format {
                 return Some("?".into());
             }
             if c.equation_form(id) == Some(&EquationForm::User) {
+                #[cfg(feature = "giac")]
+                if let Some(text) = expr::equation::implicit::giac_equation(c, id) {
+                    return Some(text.to_owned());
+                }
                 if let Some(text) = self.user_equation::<M>(c, id, meter, false) {
                     return Some(text);
                 }

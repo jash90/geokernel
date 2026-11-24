@@ -1,4 +1,4 @@
-//! The solving commands evaluated by Giac (the `giac` feature).
+//! The algebra commands evaluated by Giac (the `giac` feature).
 //!
 //! The reference evaluates `Solve`, `Solutions`, `NSolve` and `NSolutions`
 //! from the algebra input with `AlgoSolve`: it prints each argument's
@@ -11,6 +11,8 @@
 //!
 //! A translation that meets a tree it cannot print gives up (`None`), and the
 //! caller keeps the kernel's own solver.
+
+pub(super) mod rewrite;
 
 use super::{Op, Slot};
 use crate::expr::eval::Ctx;
@@ -97,21 +99,21 @@ fn giac_only<const M: bool>(ctx: &Ctx<'_, M>, equations: u32, op: Op) -> bool {
 
 fn translate_and_evaluate<const M: bool>(ctx: &Ctx<'_, M>, equations: u32, op: Op) -> Evaluation {
     match translate(ctx, equations, op) {
-        Some((input, system)) => {
-            let seed = geo_giac::session::seed(&input, 1);
-            match geo_giac::eval_raw(&input, geo_giac::session::DEFAULT_TIMEOUT_MS, seed) {
-                Ok(raw) => {
-                    if std::env::var_os("GEO_GIAC_TRACE").is_some() {
-                        eprintln!("giac input: {input}\ngiac output: {raw}");
-                    }
-                    let result = post_process(&raw);
-                    Evaluation::Done(to_slots(ctx, &result, system))
-                }
-                Err(_) => Evaluation::Failed,
-            }
-        }
+        Some((input, system)) => match evaluate_raw(&input) {
+            Some(result) => Evaluation::Done(to_slots(ctx, &result, system)),
+            None => Evaluation::Failed,
+        },
         None => Evaluation::Untranslated,
     }
+}
+
+fn evaluate_raw(input: &str) -> Option<String> {
+    let seed = geo_giac::session::seed(input, 1);
+    let raw = geo_giac::eval_raw(input, geo_giac::session::DEFAULT_TIMEOUT_MS, seed).ok()?;
+    if std::env::var_os("GEO_GIAC_TRACE").is_some() {
+        eprintln!("giac input: {input}\ngiac output: {raw}");
+    }
+    Some(post_process(&raw))
 }
 
 /// The Giac input of a solving command, and whether its argument is a list.
@@ -131,20 +133,13 @@ fn translate<const M: bool>(ctx: &Ctx<'_, M>, equations: u32, op: Op) -> Option<
     };
     // The command's node keeps the text of its second argument.
     let hint = hint_of(ctx, equations)?;
-    let names = hint
-        .as_deref()
-        .and_then(|h| variable_names(h).or_else(|| start_value_names(h)))
-        .unwrap_or_else(|| vec!["x".into(), "y".into(), "z".into()]);
-    let printer = Printer {
-        c: ctx.c,
-        names: names.clone(),
-        numeric: false,
-    };
-    let numeric_printer = Printer {
-        c: ctx.c,
-        names,
-        numeric: true,
-    };
+    let names = with_cartesian_variables(
+        hint.as_deref()
+            .and_then(|h| variable_names(h).or_else(|| start_value_names(h)))
+            .unwrap_or_default(),
+    );
+    let printer = Printer::new(ctx.c, names.clone(), false);
+    let numeric_printer = Printer::new(ctx.c, names, true);
     let mut items = Vec::with_capacity(length as usize);
     let mut numeric_items = Vec::with_capacity(length as usize);
     let mut variables = std::collections::BTreeSet::new();
@@ -259,12 +254,16 @@ pub(crate) fn start_value_names(hint: &str) -> Option<Vec<String>> {
             names.push(name.to_string());
         }
     }
+    Some(with_cartesian_variables(names))
+}
+
+pub(in crate::expr) fn with_cartesian_variables(mut names: Vec<String>) -> Vec<String> {
     for name in ["x", "y", "z"] {
         if !names.iter().any(|n| n == name) {
             names.push(name.to_string());
         }
     }
-    Some(names)
+    names
 }
 
 /// Whether a printed equation names the variable.
@@ -317,6 +316,19 @@ fn print_hint(
             _ => match c.id(name).map(|id| c.value(id)) {
                 Some(Value::Number(v)) if numeric => numeric_number(v, out),
                 Some(Value::Number(v)) => number(v, out),
+                Some(Value::Point { x, y }) => {
+                    out.push_str("point(");
+                    if numeric {
+                        numeric_number(x, out);
+                        out.push(',');
+                        numeric_number(y, out);
+                    } else {
+                        number(x, out);
+                        out.push(',');
+                        number(y, out);
+                    }
+                    out.push(')');
+                }
                 Some(_) => return None,
                 None => {
                     out.push_str("ggbtmpvar");
@@ -342,6 +354,9 @@ fn print_hint(
             operand(b, out)?;
         }
         Expr::Eq(a, b) if top => {
+            if matches!(&**a, Expr::Name(name) if name == "z") {
+                return print_hint(c, b, numeric, false, out);
+            }
             print_hint(c, a, numeric, false, out)?;
             out.push('=');
             print_hint(c, b, numeric, false, out)?;
@@ -399,9 +414,36 @@ struct Printer<'a> {
     /// The numeric Giac template (`%%n` in a template): decimals as
     /// decimals, not fractions.
     numeric: bool,
+    parameter: Option<&'a str>,
+    remaining: std::cell::Cell<usize>,
+    depth: std::cell::Cell<usize>,
 }
 
-impl Printer<'_> {
+impl<'a> Printer<'a> {
+    fn new(c: &'a Construction, names: Vec<String>, numeric: bool) -> Self {
+        Self {
+            c,
+            names,
+            numeric,
+            parameter: None,
+            remaining: std::cell::Cell::new(8192),
+            depth: std::cell::Cell::new(0),
+        }
+    }
+
+    fn bounded(&self, print: impl FnOnce() -> Option<()>) -> Option<()> {
+        let remaining = self.remaining.get().checked_sub(1)?;
+        let depth = self.depth.get();
+        if depth >= 128 {
+            return None;
+        }
+        self.remaining.set(remaining);
+        self.depth.set(depth + 1);
+        let result = print();
+        self.depth.set(depth);
+        result
+    }
+
     /// An argument of a solving command: an equation `left=right` or an
     /// expression.
     fn top(&self, e: &Entry, i: u32, out: &mut String) -> Option<()> {
@@ -409,6 +451,11 @@ impl Printer<'_> {
             Node::Obj(id) | Node::FunctionObject(id) => self.object(id, out),
             Node::Bin(Bin::Sub, l, r) if matches!(&e.lits[i as usize], Lit::Text(t) if &**t == "=") =>
             {
+                if matches!(e.nodes[l as usize], Node::CasVariable(n) if self.names.get(usize::from(n)).is_some_and(|name| name == "z"))
+                    && matches!(e.nodes[r as usize], Node::Num(_) | Node::Obj(_))
+                {
+                    return self.expr(e, r, out);
+                }
                 self.expr(e, l, out)?;
                 out.push('=');
                 self.expr(e, r, out)
@@ -418,6 +465,10 @@ impl Printer<'_> {
     }
 
     fn object(&self, id: crate::Id, out: &mut String) -> Option<()> {
+        self.bounded(|| self.object_value(id, out))
+    }
+
+    fn object_value(&self, id: crate::Id, out: &mut String) -> Option<()> {
         match self.c.def(id) {
             Def::Equation(_) | Def::ImplicitCurve(_) => {
                 let left = crate::expr::equation::side_entry(self.c, id, true)?;
@@ -438,17 +489,26 @@ impl Printer<'_> {
                 out.push('}');
                 Some(())
             }
-            Def::Expr(def) if matches!(self.c.kind(id), Kind::Function) => {
+            Def::Expr(def)
+                if self.c.kind(id) == Kind::Function
+                    || self.parameter.is_some() && self.c.kind(id) == Kind::FunctionNVar =>
+            {
                 // `FunctionExpander`: a function prints as its expression.
                 let entry = crate::expr::entry(self.c, def);
-                if entry.function_of_y || entry.curve_parameter.is_some() {
+                if entry.function_of_y
+                    || entry.curve_parameter.is_some() && self.parameter.is_none()
+                {
                     return None;
                 }
+                let entry = match &entry.extra {
+                    crate::expr::StoredExtra::Cas(form) => form.tree().unwrap_or(entry),
+                    _ => entry,
+                };
                 self.expr(entry, entry.root, out)
             }
             _ => match self.c.value(id) {
                 Value::Number(v) => {
-                    self.number(v, out);
+                    self.object_number(id, v, false, out);
                     Some(())
                 }
                 // `GeoLine.toValueString` of an undefined line.
@@ -456,6 +516,7 @@ impl Printer<'_> {
                     out.push('?');
                     Some(())
                 }
+                Value::Circle { .. } | Value::Conic { .. } => self.conic(id, out),
                 Value::Line { a, b, c }
                     if self.c.kind(id) == Kind::Line
                         && matches!(
@@ -470,11 +531,57 @@ impl Printer<'_> {
         }
     }
 
+    /// AlgoSolve prints a conic without a defining equation using the
+    /// current GeoConic value, before parsing it back for the Giac template.
+    fn conic(&self, id: crate::Id, out: &mut String) -> Option<()> {
+        use crate::kernel::EquationForm;
+        let conic = self.c.conic(id)?;
+        let default = if self.c.kind(id) == Kind::Circle {
+            EquationForm::Specific
+        } else {
+            EquationForm::Implicit
+        };
+        let style = self.c.equation_form(id).unwrap_or(&default);
+        let fmt = |v: f64| format!("{}", v + 0.0);
+        let value = crate::equation::styled_conic_equation(&conic, style, false, &fmt)
+            .unwrap_or_else(|| crate::equation::conic_equation(&conic, &fmt));
+        let (left, right) = value.split_once('=')?;
+        self.computed_expression(left, out)?;
+        out.push('=');
+        self.computed_expression(right, out)
+    }
+
+    fn computed_expression(&self, text: &str, out: &mut String) -> Option<()> {
+        let mut parsed = crate::expr::parse::parse_equation(self.c, text.trim()).ok()?;
+        // The value text contains computed coefficients, which the reference
+        // prints with 15 significant digits regardless of the display precision.
+        parsed.lits.fill(Lit::Plain);
+        let e = crate::expr::function_entry(self.c, parsed);
+        self.expr(&e, e.root, out)
+    }
+
     fn number(&self, v: f64, out: &mut String) {
         if self.numeric {
             numeric_number(v, out);
         } else {
             number(v, out);
+        }
+    }
+
+    fn object_number(&self, id: crate::Id, value: f64, negated: bool, out: &mut String) {
+        // The rewrite keeps the decimal of an unchanged typed GeoNumeric.
+        // The solving templates print the computed numeric value.
+        if let Some(decimal) = self
+            .parameter
+            .and_then(|_| crate::expr::free_decimal(self.c, id))
+        {
+            if negated {
+                self.literal(&decimal.negated(), out);
+            } else {
+                self.literal(decimal, out);
+            }
+        } else {
+            self.number(if negated { -value } else { value }, out);
         }
     }
 
@@ -510,7 +617,7 @@ impl Printer<'_> {
             }
             Node::Obj(id) => match self.c.value(id) {
                 Value::Number(v) => {
-                    self.number(-v, out);
+                    self.object_number(id, v, true, out);
                     Some(())
                 }
                 _ => None,
@@ -533,6 +640,14 @@ impl Printer<'_> {
     }
 
     fn expr(&self, e: &Entry, i: u32, out: &mut String) -> Option<()> {
+        self.bounded(|| self.expression(e, i, out))
+    }
+
+    fn expression(&self, e: &Entry, i: u32, out: &mut String) -> Option<()> {
+        if let Some(result) = e.graph_rewrite(i) {
+            let tree = result.as_ref()?.tree()?;
+            return self.expr(tree, tree.root, out);
+        }
         match e.nodes[i as usize] {
             Node::Num(v) => {
                 match &e.lits[i as usize] {
@@ -546,9 +661,22 @@ impl Printer<'_> {
                 Some(())
             }
             Node::Var => {
+                let parameter = self.parameter.unwrap_or("x");
+                if !matches!(parameter, "x" | "y" | "z") {
+                    out.push_str("ggbtmpvar");
+                }
+                out.push_str(parameter);
+                Some(())
+            }
+            Node::Local(0, _) if self.parameter.is_some() => {
                 out.push('x');
                 Some(())
             }
+            Node::Local(1, _) if self.parameter.is_some() => {
+                out.push('y');
+                Some(())
+            }
+            Node::SystemFunction(2, body) if self.parameter.is_some() => self.expr(e, body, out),
             Node::VarY => {
                 out.push('y');
                 Some(())
@@ -563,7 +691,7 @@ impl Printer<'_> {
             }
             Node::Obj(id) => match self.c.value(id) {
                 Value::Number(v) => {
-                    self.number(v, out);
+                    self.object_number(id, v, false, out);
                     Some(())
                 }
                 _ => None,
@@ -572,6 +700,9 @@ impl Printer<'_> {
             // function's expression.
             Node::FunctionObject(id) => self.object(id, out),
             Node::Apply(id, a) if e.nodes[a as usize] == Node::Var => {
+                if self.parameter.is_some() {
+                    return self.object(id, out);
+                }
                 out.push('(');
                 self.object(id, out)?;
                 out.push(')');
@@ -852,7 +983,22 @@ fn post_process(s: &str) -> String {
     if ret.contains("integrate(") {
         return "?".into();
     }
-    ret.to_string()
+    // CASgiac turns n_<index> into arbint(index). The algebra input
+    // evaluates that arbitrary integer to zero.
+    let mut out = String::with_capacity(ret.len());
+    for token in ret.split_inclusive(|ch: char| !ch.is_ascii_alphanumeric() && ch != '_') {
+        let name = token.trim_end_matches(|ch: char| !ch.is_ascii_alphanumeric() && ch != '_');
+        if name
+            .strip_prefix("n_")
+            .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+        {
+            out.push('0');
+            out.push_str(&token[name.len()..]);
+        } else {
+            out.push_str(token);
+        }
+    }
+    out
 }
 
 /// A function element read from Giac's output: the printed expression in
@@ -866,12 +1012,13 @@ pub(crate) struct Function {
 
 impl Function {
     pub(crate) fn value(&self, t: f64) -> f64 {
-        let (x, y) = if self.variable == "x" {
-            (t, f64::NAN)
-        } else {
-            (f64::NAN, t)
-        };
-        value(&self.expr, x, y).unwrap_or(f64::NAN)
+        let mut args = [f64::NAN; 3];
+        args[match self.variable {
+            "x" => 0,
+            "y" => 1,
+            _ => 2,
+        }] = t;
+        value_at(&self.expr, args).unwrap_or(f64::NAN)
     }
 
     pub(crate) fn text(&self) -> &str {
@@ -1112,18 +1259,24 @@ fn shallow(e: &Expr) -> bool {
 /// The value of a printed expression at `(x, y)`; `None` for anything the
 /// reference would not read as a number.
 fn value(e: &Expr, x: f64, y: f64) -> Option<f64> {
+    value_at(e, [x, y, f64::NAN])
+}
+
+fn value_at(e: &Expr, args: [f64; 3]) -> Option<f64> {
     Some(match e {
         Expr::Num(v) => *v,
         Expr::Name(n) => match n.as_str() {
-            "x" => x,
-            "y" => y,
+            "x" => args[0],
+            "y" => args[1],
+            "z" => args[2],
             "pi" => std::f64::consts::PI,
             "e" => std::f64::consts::E,
+            "infinity" | "inf" => f64::INFINITY,
             _ => return None,
         },
-        Expr::Neg(a) => -value(a, x, y)?,
+        Expr::Neg(a) => -value_at(a, args)?,
         Expr::Bin(op, a, b) => {
-            let (a, b) = (value(a, x, y)?, value(b, x, y)?);
+            let (a, b) = (value_at(a, args)?, value_at(b, args)?);
             match op {
                 b'+' => a + b,
                 b'-' => a - b,
@@ -1132,8 +1285,13 @@ fn value(e: &Expr, x: f64, y: f64) -> Option<f64> {
                 _ => power(a, b),
             }
         }
-        Expr::Call(name, args) if args.len() == 1 => {
-            let a = value(&args[0], x, y)?;
+        Expr::Call(name, operands) if operands.len() == 1 => {
+            let operand = &operands[0];
+            if matches!(name.as_str(), "re" | "im") {
+                let (re, im) = real_and_imaginary(operand, args)?;
+                return Some(if name == "re" { re } else { im });
+            }
+            let a = value_at(operand, args)?;
             match name.as_str() {
                 "sqrt" => a.sqrt(),
                 "sin" => a.sin(),
@@ -1149,24 +1307,162 @@ fn value(e: &Expr, x: f64, y: f64) -> Option<f64> {
     })
 }
 
+// PlotSolve wraps roots in re/im before it builds a coordinate pair.
+fn real_and_imaginary(e: &Expr, args: [f64; 3]) -> Option<(f64, f64)> {
+    let real = value_at(e, args)?;
+    if !real.is_nan() {
+        return Some((real, 0.0));
+    }
+    match e {
+        Expr::Call(name, operands) if name == "sqrt" && operands.len() == 1 => {
+            let base = value_at(&operands[0], args)?;
+            Some((0.0, (-base).sqrt()))
+        }
+        Expr::Bin(b'^', base, exponent) => {
+            let base = value_at(base, args)?;
+            let exponent = value_at(exponent, args)?;
+            let distance = (-base).powf(exponent);
+            let (sin, cos) = (std::f64::consts::PI * exponent).sin_cos();
+            Some((distance * cos, distance * sin))
+        }
+        _ => Some((real, real)),
+    }
+}
+
 /// Whether every name and function of the expression is one the
 /// reference's parser reads as a number or a variable.
 fn known(e: &Expr) -> bool {
     match e {
         Expr::Num(_) => true,
-        Expr::Name(n) => matches!(n.as_str(), "x" | "y" | "pi" | "e"),
+        Expr::Name(n) => matches!(
+            n.as_str(),
+            "x" | "y" | "z" | "pi" | "e" | "inf" | "infinity"
+        ),
         Expr::Neg(a) => known(a),
         Expr::Bin(_, a, b) | Expr::Eq(a, b) => known(a) && known(b),
         Expr::Call(name, args) => {
             args.len() == 1
                 && matches!(
                     name.as_str(),
-                    "sqrt" | "sin" | "cos" | "tan" | "exp" | "ln" | "log" | "abs"
+                    "sqrt" | "sin" | "cos" | "tan" | "exp" | "ln" | "log" | "abs" | "re" | "im"
                 )
                 && known(&args[0])
         }
         Expr::List(items) | Expr::Tuple(items) => items.iter().all(known),
     }
+}
+
+/// Algebra text for the coordinate expressions and equations read back
+/// from Giac. The reader bounds the depth and the session bounds the size.
+struct Algebra<'a>(&'a Expr, u8);
+
+impl std::fmt::Display for Algebra<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use crate::expr::commands::text::{format_number, superscript};
+
+        let Self(expr, outer) = *self;
+        let precedence = match expr {
+            Expr::Bin(b'+' | b'-', ..) => 1,
+            Expr::Bin(b'*' | b'/', ..) => 2,
+            Expr::Neg(_) => 3,
+            Expr::Bin(b'^', ..) => 4,
+            _ => 5,
+        };
+        if precedence < outer {
+            f.write_str("(")?;
+        }
+        match expr {
+            Expr::Num(n) => f.write_str(&format_number(*n))?,
+            Expr::Name(name) => f.write_str(match name.as_str() {
+                "pi" => "π",
+                "e" => "ℯ",
+                "inf" | "infinity" => "∞",
+                name => name,
+            })?,
+            Expr::Neg(a) => write!(f, "-{}", Self(a, precedence))?,
+            Expr::Bin(b'^', a, b) => {
+                write!(f, "{}", Self(a, precedence + 1))?;
+                let exponent = match b.as_ref() {
+                    Expr::Num(n) => Some(*n),
+                    Expr::Neg(inner) => match inner.as_ref() {
+                        Expr::Num(n) => Some(-n),
+                        _ => None,
+                    },
+                    _ => None,
+                };
+                if let Some(digits) = exponent.and_then(|n| superscript(&n.to_string())) {
+                    f.write_str(&digits)?;
+                } else {
+                    write!(f, "^({})", Self(b, 0))?;
+                }
+            }
+            Expr::Bin(op, a, b) => {
+                let (op, right) = match (*op, b.as_ref()) {
+                    (b'+', Expr::Neg(right)) => (b'-', right.as_ref()),
+                    (b'-', Expr::Neg(right)) => (b'+', right.as_ref()),
+                    _ => (*op, b.as_ref()),
+                };
+                let separator = match op {
+                    b'+' => " + ",
+                    b'-' => " - ",
+                    b'/' => " / ",
+                    _ => {
+                        let base = match right {
+                            Expr::Bin(b'^', base, _) => base.as_ref(),
+                            _ => right,
+                        };
+                        match (a.as_ref(), base) {
+                            (Expr::Num(_), Expr::Name(_)) => "",
+                            (_, Expr::Name(_)) => " ",
+                            _ => " * ",
+                        }
+                    }
+                };
+                let left = Self(
+                    a,
+                    if op == b'/' {
+                        precedence + 1
+                    } else {
+                        precedence
+                    },
+                );
+                write!(f, "{left}{separator}{}", Self(right, precedence + 1))?;
+            }
+            Expr::Call(name, args) => {
+                let name = match name.as_str() {
+                    "re" => "real",
+                    "im" => "imaginary",
+                    "log" => "ln",
+                    name => name,
+                };
+                f.write_str(name)?;
+                algebra_sequence(f, args, "(", ")")?;
+            }
+            Expr::Tuple(items) => algebra_sequence(f, items, "(", ")")?,
+            Expr::List(items) => algebra_sequence(f, items, "{", "}")?,
+            Expr::Eq(a, b) => write!(f, "{} = {}", Self(a, 0), Self(b, 0))?,
+        }
+        if precedence < outer {
+            f.write_str(")")?;
+        }
+        Ok(())
+    }
+}
+
+fn algebra_sequence(
+    f: &mut std::fmt::Formatter<'_>,
+    items: &[Expr],
+    open: &str,
+    close: &str,
+) -> std::fmt::Result {
+    f.write_str(open)?;
+    for (i, item) in items.iter().enumerate() {
+        if i != 0 {
+            f.write_str(", ")?;
+        }
+        write!(f, "{}", Algebra(item, 0))?;
+    }
+    f.write_str(close)
 }
 
 /// `a^b`, with the real root of a negative base for an exponent with an
@@ -1176,7 +1472,7 @@ fn power(a: f64, b: f64) -> f64 {
         for d in (3..100).step_by(2) {
             let n = b * f64::from(d);
             if (n - n.round()).abs() < 1e-12 {
-                let magnitude = (-a).powf(b);
+                let magnitude = crate::expr::math::my_pow(-a, b);
                 return if (n.round() as i64) % 2 == 0 {
                     magnitude
                 } else {
@@ -1185,7 +1481,7 @@ fn power(a: f64, b: f64) -> f64 {
             }
         }
     }
-    a.powf(b)
+    crate::expr::math::my_pow(a, b)
 }
 
 fn has_name(e: &Expr, name: &str) -> bool {
@@ -1202,7 +1498,16 @@ fn has_name(e: &Expr, name: &str) -> bool {
 
 /// One element of the list `AlgebraProcessor.evaluateToList` builds.
 fn element<const M: bool>(ctx: &Ctx<'_, M>, e: &Expr) -> Option<Slot> {
-    if !known(e) {
+    if let Expr::Eq(left, right) = e {
+        // A scalar assigned to a name outside the two-dimensional equation
+        // variables has an equation definition but no defined line.
+        if matches!(&**left, Expr::Name(name) if name.starts_with("ggbtmpvar"))
+            && finite_number(right).is_some()
+        {
+            return Some(Slot::undefined(Kind::Line));
+        }
+    }
+    if !known(e) && !matches!(e, Expr::List(_)) {
         // `fsolve(...)` left unevaluated, an unknown variable: the reference
         // reads an undefined object, which makes the list undefined.
         return None;
@@ -1216,50 +1521,174 @@ fn element<const M: bool>(ctx: &Ctx<'_, M>, e: &Expr) -> Option<Slot> {
             let (start, len) = ctx.cas_slots(slots.into_iter())?;
             Some(Slot::list(start, len))
         }
-        // `y = f(x)` that is not a line defines a function of x.
-        Expr::Eq(left, right)
-            if matches!(&**left, Expr::Name(n) if n == "y")
-                && !has_name(right, "y")
-                && line_slot(left, right).is_none() =>
-        {
-            Some(function_slot(right, "x"))
-        }
-        Expr::Eq(left, right) => {
-            match line_slot(left, right) {
-                Some(line) => Some(line),
-                // The reference reads any other equation as an implicit
-                // curve, which is undefined unless it is a polynomial; the
-                // kernel builds no curves from Giac output.
-                None if !is_polynomial(left) || !is_polynomial(right) => {
-                    Some(Slot::undefined(Kind::ImplicitCurve))
-                }
-                None => None,
-            }
-        }
-        Expr::Tuple(items) if items.len() == 2 => {
-            if has_name(e, "x") || has_name(e, "y") {
-                return None;
-            }
-            let x = finite_number(&items[0])?;
-            let y = finite_number(&items[1])?;
-            Some(Slot::point(Value::Point { x, y }))
-        }
-        // `{x}`: every number solves the equation; the reference reads the
-        // function x.
-        Expr::Name(name) if name == "x" => Some(Slot::polynomial(crate::cas::Poly::variable(0))),
+        Expr::Eq(left, right) => equation_slot(left, right),
+        Expr::Tuple(items) if items.len() == 2 => tuple_slot(&items[0], &items[1]),
         _ => {
-            let (x, y) = (has_name(e, "x"), has_name(e, "y"));
-            if x || y {
-                // An expression in one free variable reads as a function of it.
-                if x && y {
-                    return None;
-                }
-                let variable = if x { "x" } else { "y" };
+            if let Some(variable) = free_variable(e) {
                 return Some(function_slot(e, variable));
             }
-            Some(Slot::number(finite_number(e)?))
+            let n = value(e, 0.0, 0.0)?;
+            (!n.is_nan()).then(|| Slot::number(n))
         }
     }
+}
+
+fn free_variable(e: &Expr) -> Option<&'static str> {
+    let mut variables = ["x", "y", "z"].into_iter().filter(|name| has_name(e, name));
+    let variable = variables.next()?;
+    variables.next().is_none().then_some(variable)
+}
+
+/// ParametricProcessor first attempts an affine parametric line. Nonlinear
+/// tuples become Cartesian curves over the algebra input's default domain.
+fn tuple_slot(x: &Expr, y: &Expr) -> Option<Slot> {
+    let tuple = Expr::Tuple(vec![x.clone(), y.clone()]);
+    let Some(parameter) = free_variable(&tuple) else {
+        return Some(Slot::point(Value::Point {
+            x: finite_number(x)?,
+            y: finite_number(y)?,
+        }));
+    };
+    if let (Some([dx, x0]), Some([dy, y0])) = (affine(x, parameter), affine(y, parameter)) {
+        return Some(
+            Slot::line(Value::Line {
+                a: -dy,
+                b: dx,
+                c: dy * x0 - dx * y0,
+            })
+            .with_symbolic(format!("X = ({}, {})", Algebra(x, 0), Algebra(y, 0))),
+        );
+    }
+    let coordinate = |expr: &Expr| Function {
+        expr: expr.clone(),
+        variable: parameter,
+        text: Algebra(expr, 0).to_string(),
+    };
+    Some(Slot::giac_curve([coordinate(x), coordinate(y)]))
+}
+
+fn affine(e: &Expr, variable: &str) -> Option<[f64; 2]> {
+    if !has_name(e, variable) {
+        return Some([0.0, finite_number(e)?]);
+    }
+    Some(match e {
+        Expr::Name(_) => [1.0, 0.0],
+        Expr::Neg(a) => affine(a, variable)?.map(|n| -n),
+        Expr::Bin(op @ (b'+' | b'-'), a, b) => {
+            let [p, q] = affine(a, variable)?;
+            let [r, s] = affine(b, variable)?;
+            let sign = if *op == b'+' { 1.0 } else { -1.0 };
+            [p + sign * r, q + sign * s]
+        }
+        Expr::Bin(b'*', a, b) if !has_name(a, variable) => {
+            let k = finite_number(a)?;
+            affine(b, variable)?.map(|n| k * n)
+        }
+        Expr::Bin(b'*', a, b) if !has_name(b, variable) => {
+            let k = finite_number(b)?;
+            affine(a, variable)?.map(|n| k * n)
+        }
+        _ => return None,
+    })
+}
+
+fn equation_slot(left: &Expr, right: &Expr) -> Option<Slot> {
+    let has_z = has_name(left, "z") || has_name(right, "z");
+    if left == right {
+        return Some(Slot::undefined(Kind::Line));
+    }
+    if !has_z {
+        if let Some(line) = line_slot(left, right) {
+            return Some(line);
+        }
+    }
+    if let Some(coefficients) = equation_coefficients(left, right) {
+        if !has_z
+            && coefficients
+                .iter()
+                .enumerate()
+                .any(|(x, row)| row.iter().enumerate().any(|(y, n)| x + y == 2 && *n != 0.0))
+            && coefficients
+                .iter()
+                .enumerate()
+                .all(|(x, row)| row.iter().enumerate().all(|(y, n)| x + y <= 2 || *n == 0.0))
+        {
+            let coefficient = |x: usize, y: usize| {
+                coefficients
+                    .get(x)
+                    .and_then(|row| row.get(y))
+                    .copied()
+                    .unwrap_or(0.0)
+            };
+            let mut conic = crate::algo::conic_nd::ConicData::new();
+            conic.set_matrix([
+                coefficient(2, 0),
+                coefficient(0, 2),
+                coefficient(0, 0),
+                coefficient(1, 1) / 2.0,
+                coefficient(1, 0) / 2.0,
+                coefficient(0, 1) / 2.0,
+            ]);
+            let value = crate::algo::general_conic::value(Kind::Conic, &conic);
+            let equation = format!("{} = {}", Algebra(left, 0), Algebra(right, 0));
+            return Some(Slot::giac_conic(conic, value, equation));
+        }
+        if has_z || !matches!(left, Expr::Name(n) if n == "y" && !has_name(right, "y")) {
+            let equation = format!("{} = {}", Algebra(left, 0), Algebra(right, 0));
+            return Some(Slot::giac_implicit(coefficients, equation));
+        }
+    }
+    if !has_z && matches!(left, Expr::Name(n) if n == "y") && !has_name(right, "y") {
+        return Some(function_slot(right, "x"));
+    }
+    Some(Slot::undefined(Kind::ImplicitCurve))
+}
+
+fn equation_coefficients(left: &Expr, right: &Expr) -> Option<Vec<Vec<f64>>> {
+    use crate::cas::Rat;
+
+    let used = std::cell::Cell::new(0u64);
+    let charge = |units| {
+        used.set(used.get().saturating_add(units as u64));
+        used.get() <= POLYNOMIAL_BUDGET
+    };
+    let work = &mut super::Work::new(&charge);
+    let variables = &["x", "y", "z"];
+    let q = quotient(left, variables, work)?.sub(quotient(right, variables, work)?, work)?;
+    let scale = Rat::ONE.div(q.denominator.scalar()?)?;
+    let mut poly = q.numerator.scale(scale, work)?.0;
+    let (nx, ny) = poly.keys().try_fold((0, 0), |(nx, ny), &[x, y, z]| {
+        (u32::from(x) + u32::from(y) + u32::from(z) <= crate::expr::equation::implicit::MAX_DEGREE)
+            .then_some((nx.max(usize::from(x)), ny.max(usize::from(y))))
+    })?;
+    let mut matrix = vec![vec![0.0; ny + 1]; nx + 1];
+    if poly.keys().any(|powers| powers[2] != 0) {
+        // Polynomial.getCoeff("x", "y") assigns each term's coefficient
+        // to its x/y powers, in order. A later monomial that differs only
+        // in z overwrites the earlier entry instead of adding to it.
+        let mut pending = vec![right, left];
+        while let Some(term) = pending.pop() {
+            work.spend(1)?;
+            match term {
+                Expr::Bin(b'+' | b'-', a, b) => pending.extend([&**b, &**a]),
+                Expr::Neg(a) => pending.push(a),
+                _ => {
+                    for powers @ [x, y, _] in
+                        quotient(term, variables, work)?.numerator.0.into_keys()
+                    {
+                        if let Some(coefficient) = poly.remove(&powers) {
+                            matrix[usize::from(x)][usize::from(y)] = coefficient.to_f64();
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        for ([x, y, _], coefficient) in poly {
+            matrix[usize::from(x)][usize::from(y)] = coefficient.to_f64();
+        }
+    }
+    Some(matrix)
 }
 
 /// The value of a constant result; an infinite or undefined value makes the
@@ -1300,28 +1729,6 @@ fn linear(e: &Expr) -> Option<[f64; 3]> {
     })
 }
 
-/// Whether the expression is a polynomial in x and y: sums, differences
-/// and products of numbers and variables, divided by numbers only, raised to
-/// whole non-negative powers.
-fn is_polynomial(e: &Expr) -> bool {
-    let constant =
-        |e: &Expr| !has_name(e, "x") && !has_name(e, "y") && value(e, 0.0, 0.0).is_some();
-    match e {
-        Expr::Num(_) => true,
-        Expr::Name(n) => matches!(n.as_str(), "x" | "y" | "pi" | "e"),
-        Expr::Neg(a) => is_polynomial(a),
-        Expr::Bin(b'+' | b'-' | b'*', a, b) => is_polynomial(a) && is_polynomial(b),
-        Expr::Bin(b'/', a, b) => is_polynomial(a) && constant(b),
-        Expr::Bin(_, a, b) => {
-            is_polynomial(a)
-                && constant(b)
-                && value(b, 0.0, 0.0).is_some_and(|n| n >= 0.0 && n.fract() == 0.0)
-        }
-        Expr::Call(..) => constant(e),
-        _ => false,
-    }
-}
-
 /// `left = right` as a line, when it is linear in x and y.
 fn line_slot(left: &Expr, right: &Expr) -> Option<Slot> {
     let (l, r) = (linear(left)?, linear(right)?);
@@ -1345,7 +1752,7 @@ fn function_slot(e: &Expr, variable: &'static str) -> Slot {
         used.get() <= POLYNOMIAL_BUDGET
     };
     let work = &mut super::Work::new(&charge);
-    if let Some(q) = quotient(e, variable, work) {
+    if let Some(q) = quotient(e, &[variable], work) {
         if let Some(polynomial) = q
             .denominator
             .scalar()
@@ -1363,17 +1770,29 @@ fn function_slot(e: &Expr, variable: &'static str) -> Slot {
 }
 
 /// An exact rational function of `variable` (the function's input).
-fn quotient(e: &Expr, variable: &str, work: &mut super::Work<'_>) -> Option<crate::cas::Quotient> {
+fn quotient(
+    e: &Expr,
+    variables: &[&str],
+    work: &mut super::Work<'_>,
+) -> Option<crate::cas::Quotient> {
     use crate::cas::{Poly, Quotient, Rat};
     Some(match e {
         Expr::Num(v) => Quotient::polynomial(Poly::constant(Rat::from_value(*v)?)),
-        Expr::Name(n) if n == variable => Quotient::polynomial(Poly::variable(0)),
+        Expr::Name(n) => {
+            if let Some(i) = variables.iter().position(|name| n == name) {
+                Quotient::polynomial(Poly::variable(i))
+            } else if matches!(n.as_str(), "pi" | "e") {
+                Quotient::polynomial(Poly::constant(Rat::from_value(finite_number(e)?)?))
+            } else {
+                return None;
+            }
+        }
         Expr::Neg(a) => {
             let zero = Quotient::polynomial(Poly::constant(Rat::new(0, 1)?));
-            zero.sub(quotient(a, variable, work)?, work)?
+            zero.sub(quotient(a, variables, work)?, work)?
         }
         Expr::Bin(op, a, b) => {
-            let (a, b) = (quotient(a, variable, work)?, quotient(b, variable, work)?);
+            let (a, b) = (quotient(a, variables, work)?, quotient(b, variables, work)?);
             match op {
                 b'+' => a.add(b, work)?,
                 b'-' => a.sub(b, work)?,
@@ -1388,6 +1807,13 @@ fn quotient(e: &Expr, variable: &str, work: &mut super::Work<'_>) -> Option<crat
                     a.pow(exponent as i128, work)?
                 }
             }
+        }
+        Expr::Call(..)
+            if ["x", "y", "z"]
+                .into_iter()
+                .all(|variable| !has_name(e, variable)) =>
+        {
+            Quotient::polynomial(Poly::constant(Rat::from_value(finite_number(e)?)?))
         }
         _ => return None,
     })
@@ -1414,6 +1840,266 @@ fn to_slots<const M: bool>(ctx: &Ctx<'_, M>, result: &str, list_input: bool) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn with_result(result: &str, check: impl FnOnce(crate::expr::List<'_>)) {
+        let c = crate::script::load("f(x) = x").unwrap();
+        let Def::Expr(def) = c.def(c.id("f").unwrap()) else {
+            panic!("missing function definition");
+        };
+        let lists = crate::expr::eval::Lists::new(Vec::new());
+        let ctx = Ctx::<true> {
+            lists: Some(&lists),
+            ..Ctx::new(
+                &c,
+                crate::expr::entry(&c, def),
+                &crate::expr::eval::Env::None,
+            )
+        };
+        let (start, len) = to_slots(&ctx, &post_process(result), false).unwrap();
+        let slots = lists.into_arena();
+        check(crate::expr::List::from_run(&slots, start, len));
+    }
+
+    #[test]
+    fn plotsolve_reads_recorded_parametric_results() {
+        use crate::expr::Element;
+        // cas-plot-007: an affine parameterization gives a line.
+        with_result("{(-3/2*y+3,0)}", |list| {
+            assert!(matches!(
+                list.get(0),
+                Some(Element::Value(
+                    Kind::Line,
+                    Value::Line {
+                        a: 0.0,
+                        b: -1.5,
+                        c: 0.0
+                    }
+                ))
+            ));
+        });
+        // cas-plot-024: a variable in a denominator gives a curve.
+        with_result("{(1/y,0)}", |list| {
+            assert!(matches!(
+                list.get(0),
+                Some(Element::Value(
+                    Kind::Curve,
+                    Value::Curve {
+                        start: -10.0,
+                        end: 10.0
+                    }
+                ))
+            ));
+        });
+        // cas-plot-023: a coordinate can contain the real or imaginary part of a root.
+        with_result("{(re(√(-y^2+4)),im(√(-y^2+4)))}", |list| {
+            let c = Construction::new();
+            assert_eq!(list.curve_sample_at(&c, 0, 0.0), Some((2.0, 0.0)));
+            assert_eq!(
+                list.curve_sample_at(&c, 0, 3.0),
+                Some((0.0, 5.0_f64.sqrt()))
+            );
+        });
+        // cas-plot-025: the arbitrary integer is zero in the algebra view.
+        with_result("{(n_0*pi,0)}", |list| {
+            assert!(matches!(
+                list.get(0),
+                Some(Element::Value(Kind::Point, Value::Point { x: 0.0, y: 0.0 }))
+            ));
+        });
+    }
+
+    #[test]
+    fn cas_curve_displays_log_as_natural_log() {
+        with_result("{(log(y),0)}", |list| {
+            assert_eq!(super::super::display_list(list), "{(ln(y), 0)}");
+        });
+    }
+
+    #[test]
+    fn cas_lists_display_cartesian_coordinates() {
+        // cas-plot-024, as GeoCurveCartesian.toValueString displays it.
+        with_result("{(1/y,0)}", |list| {
+            assert_eq!(super::super::display_list(list), "{(1 / y, 0)}");
+        });
+        // cas-plot-023 also reads re/im of a square root as coordinates.
+        with_result("{(re(√(-y^2+4)),im(√(-y^2+4)))}", |list| {
+            assert_eq!(
+                super::super::display_list(list),
+                "{(real(sqrt(-y² + 4)), imaginary(sqrt(-y² + 4)))}"
+            );
+        });
+    }
+
+    #[test]
+    fn cas_lists_display_the_conic_equation() {
+        // cas-conic-060, as GeoConicND displays the user equation.
+        with_result("{y=(x^2+x)}", |list| {
+            assert_eq!(super::super::display_list(list), "{y = x² + x}");
+        });
+    }
+
+    #[test]
+    fn cas_lists_display_the_implicit_equation() {
+        // cas-implicit-004, as GeoImplicitCurve displays the equation.
+        with_result("{x=(y^3)}", |list| {
+            assert_eq!(super::super::display_list(list), "{x = y³}");
+        });
+        // cas-freevariable-005 keeps a third variable in the display.
+        with_result("{{x=(-z+1)}}", |list| {
+            assert_eq!(super::super::display_list(list), "{{x = -z + 1}}");
+        });
+    }
+
+    #[test]
+    fn cas_lists_display_affine_tuples_as_parametric_lines() {
+        // cas-plot-007, as ParametricProcessor sets the line's user form.
+        with_result("{(-3/2*y+3,0)}", |list| {
+            assert_eq!(super::super::display_list(list), "{X = (-3 / 2 y + 3, 0)}");
+        });
+    }
+
+    #[test]
+    fn solve_reads_recorded_quadratic_and_cubic_equations() {
+        use crate::expr::Element;
+        // cas-conic-060 and cas-implicit-004.
+        for (result, kind) in [
+            ("{y=(x^2+x)}", Kind::Conic),
+            ("{x=(y^3)}", Kind::ImplicitCurve),
+        ] {
+            with_result(result, |list| {
+                assert!(
+                    matches!(list.get(0), Some(Element::Value(k, v)) if k == kind && v.is_defined())
+                );
+            });
+        }
+    }
+
+    #[test]
+    fn solves_with_a_third_free_variable_read_back_in_two_dimensions() {
+        use crate::expr::Element;
+        // cas-freevariable-005.
+        with_result("{{-z+1,y,z}}", |list| {
+            let Some(Element::List(row)) = list.get(0) else {
+                panic!("expected a tuple of solutions");
+            };
+            for (i, value) in [-2.0, 3.0, 3.0].into_iter().enumerate() {
+                assert_eq!(
+                    row.function_sample_at(&Construction::new(), i, 3.0),
+                    Some(value)
+                );
+            }
+        });
+        with_result("{{x=(-z+1),y=y,z=z}}", |list| {
+            let Some(Element::List(row)) = list.get(0) else {
+                panic!("expected a tuple of assignments");
+            };
+            assert!(matches!(
+                row.get(0),
+                Some(Element::Value(Kind::ImplicitCurve, Value::ImplicitCurve))
+            ));
+            assert!(matches!(
+                row.get(2),
+                Some(Element::Value(Kind::Line, Value::Undefined))
+            ));
+        });
+    }
+
+    #[test]
+    fn implicit_coefficient_projection_keeps_the_last_term() {
+        // cas-freevariable-010, the first two assignments printed by Giac.
+        with_result("{x=(-2*z+1),y=z}", |list| {
+            let c = Construction::new();
+            assert_eq!(list.implicit_at(&c, 0).unwrap().0, &[vec![-1.0], vec![1.0]]);
+            assert_eq!(list.implicit_at(&c, 1).unwrap().0, &[vec![-1.0, 1.0]]);
+        });
+    }
+
+    #[test]
+    fn translates_the_recorded_three_variable_system() {
+        // cas-freevariable-005.
+        let c = crate::script::load("r = Solutions({x+z=1}, {x,y,z})").unwrap();
+        let Def::Expr(def) = c.def(c.id("r").unwrap()) else {
+            panic!("expected a list expression");
+        };
+        let e = crate::expr::entry(&c, def);
+        let Node::Cas(op, equations, _) = e.nodes[e.root as usize] else {
+            panic!("expected a solving command");
+        };
+        let ctx = Ctx::<true>::new(&c, e, &crate::expr::eval::Env::None);
+        // Tests also run without a native library, where the parser does not
+        // retain Giac's hint text.
+        let mut parsed = crate::expr::parse::parse(&c, "Solutions({x+z=1}, {x,y,z})").unwrap();
+        let root = parsed.root as usize;
+        parsed.lits[root] = Lit::Text("{x,y,z}".into());
+        let e = crate::expr::function_entry(&c, parsed);
+        let ctx = Ctx::<true> { e: &e, ..ctx };
+        let (input, system) = translate(&ctx, equations, op).unwrap();
+        assert!(system);
+        assert_eq!(input, "ggbsort(normal(solve({(x)+(z)=1},{x, y, z},'!=')))");
+    }
+
+    #[test]
+    fn constructed_conics_print_as_in_recorded_solving_inputs() {
+        // cas-conic-057 and cas-order-097.
+        let c = crate::script::load(
+            "A = (1, 2)\nk = Circle(A, 3)\nF = (1, 1)\ng: x+y=-1\np = Parabola(F, g)",
+        )
+        .unwrap();
+        let printer = Printer::new(&c, vec!["x".into(), "y".into(), "z".into()], false);
+        let mut text = String::new();
+        printer.object(c.id("k").unwrap(), &mut text).unwrap();
+        assert_eq!(text, "(((x)-(1))^(2))+(((y)-(2))^(2))=9");
+        text.clear();
+        printer.object(c.id("p").unwrap(), &mut text).unwrap();
+        assert_eq!(
+            text,
+            "(((((x)^(2))-(((2)*(x))*(y)))+((y)^(2)))-((6)*(x)))-((6)*(y))=-3"
+        );
+    }
+
+    #[test]
+    fn constructed_conics_keep_the_recorded_computed_coefficients() {
+        // cas-order-094, cas-order-096 and cas-order-097.
+        for (script, id, expected) in [
+            ("A = (0.37, -1.21)\nk = Circle(A, 1.7)", "k", "(((x)-((370000000000000/1000000000000000)))^(2))+(((y)+((121000000000000/100000000000000)))^(2))=(289000000000000/100000000000000)"),
+            ("A = (1, 2)\nB = (3, -1)\nC = (-2, 0.5)\nD = (0.5, 3)\nE = (-1, -2)\nk = Conic(A, B, C, D, E)", "k", "((((((-513750000000000/1000000000000))*((x)^(2)))-((((594375000000000/1000000000000))*(x))*(y)))-(((862500000000000/10000000000000))*((y)^(2))))+(((251250000000000/1000000000000))*(x)))-(((125625000000000/1000000000000))*(y))=(-204750000000000/100000000000)"),
+            ("F = (1, 1)\ng: x+y=-1\nk = Parabola(F, g)\nP = (0, 0)\nQ = (2, 1)\nR = (3, 2)\nh = Ellipse(P, Q, R)", "h", "((((((847921561087423/10000000000000))*((x)^(2)))-(((16)*(x))*(y)))+(((967921561087423/10000000000000))*((y)^(2))))-(((161584312217485/1000000000000))*(x)))-(((807921561087423/10000000000000))*(y))=(407960780543712/1000000000000)"),
+        ] {
+            let c = crate::script::load(script).unwrap();
+            let printer = Printer::new(&c, Vec::new(), false);
+            let mut text = String::new();
+            printer.object(c.id(id).unwrap(), &mut text).unwrap();
+            assert_eq!(text, expected, "{script}");
+        }
+    }
+
+    #[test]
+    fn radicals_in_a_free_variable_stay_variable() {
+        // cas-shape-024.
+        with_result("{{√(-x^2+4)},{-√(-x^2+4)}}", |list| {
+            let c = Construction::new();
+            let Some(crate::expr::Element::List(row)) = list.get(0) else {
+                panic!("expected one row per solution");
+            };
+            assert!(row.function_sample_at(&c, 0, -8.0).unwrap().is_nan());
+            assert_eq!(row.function_sample_at(&c, 0, 0.0), Some(2.0));
+        });
+    }
+
+    #[test]
+    fn repeated_subtrees_cannot_expand_into_an_oversized_request() {
+        let c = Construction::new();
+        let mut builder = crate::expr::equation::Builder::empty();
+        let mut root = builder.push(Node::Var);
+        for _ in 0..18 {
+            root = builder.push(Node::Bin(Bin::Add, root, root));
+        }
+        let e = crate::expr::function_entry(&c, builder.finish(&c, root).unwrap());
+        let printer = Printer::new(&c, Vec::new(), false);
+        let mut text = String::new();
+        assert!(printer.expr(&e, root, &mut text).is_none());
+        assert!(text.len() < 64 * 1024);
+    }
 
     #[test]
     fn numbers_print_like_the_giac_template() {
@@ -1487,7 +2173,7 @@ mod tests {
         };
         let work = &mut super::super::Work::new(&charge);
         let start = std::time::Instant::now();
-        assert!(quotient(&e, "x", work).is_none());
+        assert!(quotient(&e, &["x"], work).is_none());
         assert!(start.elapsed() < std::time::Duration::from_secs(10));
         // The function element still samples Giac's printed form.
         assert!(function_slot(&e, "x").numeric_cell().is_none());
@@ -1503,7 +2189,7 @@ mod tests {
 
     #[test]
     fn unknown_names_and_calls_are_not_known() {
-        for text in ["fsolve(x^2=2,x)", "z", "ggbtmpvart", "{n_0*pi}", "f(1,2)"] {
+        for text in ["fsolve(x^2=2,x)", "ggbtmpvart", "{n_0*pi}", "f(1,2)"] {
             assert!(!known(&parse(text).unwrap()), "{text}");
         }
         assert!(known(&parse("{x=-√3,(1,2),sin(pi)}").unwrap()));

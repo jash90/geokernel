@@ -5,7 +5,7 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-use super::{Format, MAX_TEXT_BYTES};
+use super::{super::superscript, Format, MAX_TEXT_BYTES};
 use crate::expr::eval::{Ctx, Env};
 use crate::expr::{self, Bin, Entry, Lit, Node, Un, NONE};
 
@@ -449,16 +449,6 @@ fn comparison_sign(op: Bin) -> &'static str {
         Bin::Equal => " ≟ ",
         _ => " ≠ ",
     }
-}
-
-fn superscript(s: &str) -> Option<String> {
-    const DIGITS: [char; 10] = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'];
-    s.chars()
-        .map(|c| match c {
-            '-' => Some('⁻'),
-            c => Some(DIGITS[c.to_digit(10)? as usize]),
-        })
-        .collect()
 }
 
 fn unary_name(op: Un) -> &'static str {

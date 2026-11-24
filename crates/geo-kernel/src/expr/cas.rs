@@ -3,8 +3,13 @@
 mod functional;
 #[cfg(feature = "giac")]
 mod giac;
+pub(super) mod graph;
 #[cfg(feature = "giac")]
-pub(super) use giac::{start_value_names, Function as GiacFunction};
+pub(super) use giac::rewrite::Scalar as GiacScalar;
+#[cfg(feature = "giac")]
+pub(crate) use giac::rewrite::{geometry as rewrite_geometry, implicit as rewrite_implicit};
+#[cfg(feature = "giac")]
+pub(super) use giac::{start_value_names, with_cartesian_variables, Function as GiacFunction};
 
 /// Whether the parser takes the forms only the Giac backend evaluates
 /// (`PlotSolve`, start values and other second arguments): not when the
@@ -23,7 +28,7 @@ use super::{Entry, Node, Slot, Ty};
 use crate::cas::{Poly, Quotient, Rat, Work};
 use crate::{Construction, Kind};
 
-pub(super) use functional::{evaluate as function_at, function, print_poly, FunctionResult};
+pub(super) use functional::{function, print_poly, FunctionResult};
 use input::read;
 
 pub(super) const NAMES: &[&str] = &[
@@ -169,6 +174,13 @@ impl Op {
     }
 }
 
+pub(super) fn function_is_defined(ctx: &Ctx<'_, true>, i: u32, op: Op, a: u32, b: u32) -> bool {
+    match ctx.e.graph_rewrite(i) {
+        Some(result) => result.is_some(),
+        None => functional::evaluate(ctx, op, a, b).is_some(),
+    }
+}
+
 impl<const M: bool> Ctx<'_, M> {
     pub(super) fn cas_scalar(&self, i: u32, op: Op, a: u32, b: u32) -> Ex {
         use Val::{B, N};
@@ -182,8 +194,11 @@ impl<const M: bool> Ctx<'_, M> {
                     return Ex::plain(N(result.value(self.c, x, y)));
                 }
             }
-            let value = functional::evaluate(self, op, a, b)
-                .map_or(f64::NAN, |result| result.value(self.c, x, y));
+            let value = match self.e.graph_rewrite(i) {
+                Some(result) => result.as_ref().map(|r| r.value(self.c, x, y)),
+                None => functional::evaluate(self, op, a, b).map(|r| r.value(self.c, x, y)),
+            };
+            let value = value.unwrap_or(f64::NAN);
             return Ex::plain(N(value));
         }
         let allowance = super::eval::Lists::new(Vec::new());
@@ -270,10 +285,7 @@ fn argument_tree<'a>(c: &'a Construction, e: &'a Entry, root: u32) -> Option<(&'
         _ => return None,
     };
     let entry = match &entry.extra {
-        super::StoredExtra::Cas(result) => match result.as_ref() {
-            FunctionResult::Tree(tree) => tree,
-            _ => entry,
-        },
+        super::StoredExtra::Cas(result) => result.tree().unwrap_or(entry),
         _ => entry,
     };
     Some((entry, entry.root))

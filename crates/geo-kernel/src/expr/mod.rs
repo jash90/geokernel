@@ -70,6 +70,8 @@
 //! it in `commands/mod.rs`.
 
 mod cas;
+#[cfg(feature = "giac")]
+pub(crate) use cas::rewrite_geometry;
 mod commands;
 
 /// The order of `GeoText.getComparator`: texts compared without accents,
@@ -832,6 +834,7 @@ pub(crate) struct Entry {
     /// when not.
     raw: Raw,
     extra: StoredExtra,
+    graph_rewrites: cas::graph::Rewrites,
     /// Whether the tree has a list in it, which its evaluation builds in a
     /// scratch buffer.
     lists: bool,
@@ -961,6 +964,13 @@ pub(crate) fn reset_transpose_flags(c: &Construction, d: ExprDef) -> bool {
     true
 }
 
+fn body_root(nodes: &[Node], root: u32) -> u32 {
+    match nodes[root as usize] {
+        Node::SystemFunction(_, inner) => inner,
+        _ => root,
+    }
+}
+
 impl Entry {
     fn kept_list_shape(&self, node: u32) -> Option<std::sync::Arc<[Kind]>> {
         self.list_history
@@ -1013,7 +1023,7 @@ impl Entry {
             && p.nodes
                 .iter()
                 .any(|node| matches!(node, Node::If(IfMode::Algo | IfMode::AlgoNext, ..)));
-        Entry {
+        let mut e = Entry {
             stuck: Stuck::default(),
             list_history: ListHistory::default(),
             checks_branches,
@@ -1036,11 +1046,14 @@ impl Entry {
             inputs: p.inputs,
             raw: Raw::Num(f64::NAN),
             extra: StoredExtra::None,
+            graph_rewrites: None,
             depth: p.depth,
             cost: p.cost,
             vars: p.vars,
             segment_operands: Vec::new(),
-        }
+        };
+        e.graph_rewrites = cas::graph::initial(c, &e);
+        e
     }
 
     fn text(&self) -> Option<&str> {
@@ -1061,11 +1074,19 @@ impl Entry {
         }
     }
 
+    fn body_root(&self) -> u32 {
+        body_root(&self.nodes, self.root)
+    }
+
+    fn graph_rewrite(&self, node: u32) -> Option<&Option<cas::FunctionResult>> {
+        self.graph_rewrites
+            .as_ref()?
+            .iter()
+            .find_map(|(i, result)| (*i == node).then_some(result))
+    }
+
     fn cas_root(&self) -> Option<(u32, cas::Op, u32, u32)> {
-        let root = match self.nodes[self.root as usize] {
-            Node::SystemFunction(_, inner) => inner,
-            _ => self.root,
-        };
+        let root = self.body_root();
         match self.nodes[root as usize] {
             Node::Cas(op, a, b) if op.is_function() => Some((root, op, a, b)),
             _ => None,
@@ -1766,7 +1787,7 @@ fn initialize_value(c: &mut Construction, id: Id, d: ExprDef) -> Result<Value, E
         let ((value, _), invalid) = update_lists(c, d);
         (value, invalid)
     } else {
-        let (value, _) = update(c, id, d);
+        let (value, _) = update_value(c, id, d);
         let invalid = matches!(&entry(c, d).extra, StoredExtra::Text(result)
             if result.invalid_transform_list);
         (value, invalid)
@@ -1782,6 +1803,7 @@ fn initialize_value(c: &mut Construction, id: Id, d: ExprDef) -> Result<Value, E
 pub(crate) struct SavedResult {
     raw: Raw,
     extra: StoredExtra,
+    graph_rewrites: cas::graph::Rewrites,
     interval: Option<FunctionInterval>,
     items: Vec<Slot>,
     coordinate_layout: Option<list::CoordinateLayout>,
@@ -1815,6 +1837,7 @@ impl SavedResult {
         reserve_work(work).then(|| Self {
             raw: e.raw,
             extra: e.extra.clone(),
+            graph_rewrites: e.graph_rewrites.clone(),
             interval: e.interval,
             items: e.items.clone(),
             coordinate_layout: e.coordinate_layout,
@@ -1829,6 +1852,7 @@ impl SavedResult {
         let e = &mut c.exprs.entries[d.index as usize];
         e.raw = self.raw;
         e.extra = self.extra;
+        e.graph_rewrites = self.graph_rewrites;
         e.interval = self.interval;
         e.items = self.items;
         e.root_transform = self.root_transform;
@@ -1844,6 +1868,14 @@ impl SavedResult {
 /// Recomputes the expression object `d` and keeps its result; its value,
 /// and whether it changed (see [`store`]).
 pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) {
+    let e = entry(c, d);
+    if e.graph_rewrites.is_some() {
+        c.exprs.entries[d.index as usize].graph_rewrites = cas::graph::refresh(c, e);
+    }
+    update_value(c, id, d)
+}
+
+fn update_value(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) {
     let e = entry(c, d);
     if matches!(e.nodes[e.root as usize], Node::FunctionAsymptotes(a) if matches!(e.nodes[a as usize], Node::Obj(_)))
         && c.exists(id)
@@ -2019,7 +2051,7 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
         // CmdLength supplies a numeric helper for a point or vector.
         Node::Un(Un::Length, a) => defined_below(ctx, a) && !ctx.full_number(i).is_nan(),
         Node::Inverse(a) => defined_below(ctx, a) && inverse::sample(ctx, a, 1.0).is_some(),
-        Node::Cas(op, a, b) if op.is_function() => cas::function_at(ctx, op, a, b).is_some(),
+        Node::Cas(op, a, b) if op.is_function() => cas::function_is_defined(ctx, i, op, a, b),
         Node::PolynomialPart(remainder, a, b) => {
             commands::polynomial::divide(ctx.c, ctx.e, remainder, a, b).is_some()
         }
@@ -2797,7 +2829,19 @@ pub(crate) fn define_parametric_coordinate(
     rhs: &str,
     parameter: &str,
 ) -> Result<Id, String> {
-    let id = numeric_function(c, label, parse::parse_parameter(c, rhs, parameter)?)?;
+    let parsed = parse::parse_parameter(c, rhs, parameter)?;
+    #[cfg(feature = "giac")]
+    if cas::giac_admits()
+        && parsed
+            .nodes
+            .iter()
+            .any(|node| matches!(node, Node::Cas(op, ..) if op.is_giac_rewrite()))
+    {
+        // CmdCurveCartesian checks for GeoNumberValue after resolving the
+        // local parameter. These commands return a function.
+        return Err("`Curve` needs numeric coordinates".into());
+    }
+    let id = numeric_function(c, label, parsed)?;
     let Def::Expr(def) = c.def(id) else {
         unreachable!("a curve coordinate is a function expression");
     };

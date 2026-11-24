@@ -62,13 +62,20 @@ fn read_at(
     work.spend(1)?;
     if i == e.root {
         if let StoredExtra::Cas(form) = &e.extra {
-            if let super::FunctionResult::Tree(tree) = form.as_ref() {
+            if let Some(tree) = form.tree() {
                 return read_at(c, tree, tree.root, vars, work, depth + 1);
             }
         }
         if let Some(value) = cached_function(e) {
             return substitute(value, vars, work);
         }
+    }
+    if let Some(result) = e.graph_rewrite(i) {
+        let result = result.as_ref()?;
+        if let Some(tree) = result.tree() {
+            return read_at(c, tree, tree.root, vars, work, depth + 1);
+        }
+        return substitute(result.quotient()?, vars, work);
     }
     let args = |index, work: &mut Work<'_>| read_at(c, e, index, vars, work, depth + 1);
     let function = |id, arguments: &[Quotient; 3], work: &mut Work<'_>| {

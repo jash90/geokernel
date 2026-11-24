@@ -30,7 +30,7 @@ pub(in crate::expr) struct Function {
 }
 
 impl Function {
-    fn new(expanded: Quotient) -> Self {
+    pub(super) fn new(expanded: Quotient) -> Self {
         Self {
             expanded,
             form: Form::Expanded,
@@ -71,6 +71,11 @@ impl Function {
 pub(in crate::expr) enum FunctionResult {
     Exact(Function),
     Tree(Arc<Entry>),
+    #[cfg(feature = "giac")]
+    Giac {
+        tree: Arc<Entry>,
+        result: Arc<super::GiacScalar>,
+    },
     Number(f64),
 }
 
@@ -79,6 +84,8 @@ impl PartialEq for FunctionResult {
         match (self, other) {
             (Self::Exact(a), Self::Exact(b)) => a == b,
             (Self::Tree(a), Self::Tree(b)) => Arc::ptr_eq(a, b),
+            #[cfg(feature = "giac")]
+            (Self::Giac { result: a, .. }, Self::Giac { result: b, .. }) => a == b,
             (Self::Number(a), Self::Number(b)) => a == b,
             _ => false,
         }
@@ -90,7 +97,18 @@ impl FunctionResult {
         match self {
             Self::Exact(result) => result.value(x, y),
             Self::Tree(entry) => eval::sample(c, entry, x),
+            #[cfg(feature = "giac")]
+            Self::Giac { result, .. } => result.value(x, y),
             Self::Number(value) => *value,
+        }
+    }
+
+    pub(in crate::expr) fn tree(&self) -> Option<&Entry> {
+        match self {
+            Self::Tree(entry) => Some(entry),
+            #[cfg(feature = "giac")]
+            Self::Giac { tree, .. } => Some(tree),
+            _ => None,
         }
     }
 
@@ -104,6 +122,8 @@ impl FunctionResult {
     pub(super) fn displayed(&self) -> Option<String> {
         match self {
             Self::Exact(result) => Some(result.to_string()),
+            #[cfg(feature = "giac")]
+            Self::Giac { result, .. } => Some(result.text().to_owned()),
             _ => None,
         }
     }
@@ -116,6 +136,10 @@ pub(in crate::expr) fn function(
     a: u32,
     b: u32,
 ) -> Option<FunctionResult> {
+    #[cfg(feature = "giac")]
+    if let Some(result) = super::giac::rewrite::function(c, e, op, a) {
+        return result;
+    }
     evaluate(&eval::Ctx::<true>::new(c, e, &eval::Env::None), op, a, b)
 }
 
