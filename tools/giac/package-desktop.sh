@@ -12,11 +12,7 @@ case "$variant" in
 esac
 
 if [ "$variant" = geokernel-giac ]; then
-  if [[ "${GIAC_SOURCE_URL:-}" != https://* ]] ||
-    [[ ! "${GIAC_SOURCE_SHA256:-}" =~ ^[0-9a-f]{64}$ ]]; then
-    echo 'The GPL archive requires the exact javagiac 70507 source HTTPS URL and lowercase SHA-256.' >&2
-    exit 2
-  fi
+  source_path="$("$here/fetch-source.sh")"
 fi
 
 verify() {
@@ -67,12 +63,7 @@ cp "$binaries/geokernel-app$suffix" "$app_dir/"
 
 if [ "$variant" = geokernel-giac ]; then
   source_archive=giac-70507-source.archive
-  curl --fail --silent --show-error --location --retry 2 \
-    --proto '=https' --proto-redir '=https' -- "$GIAC_SOURCE_URL" > "$root/$source_archive"
-  if ! verify "$GIAC_SOURCE_SHA256" "$root/$source_archive"; then
-    echo 'Giac source archive SHA-256 mismatch.' >&2
-    exit 2
-  fi
+  cp "$source_path" "$root/$source_archive"
   printf '\nGiac 70507 corresponding source\nSHA-256: %s  %s\n' \
     "$GIAC_SOURCE_SHA256" "$source_archive" >> "$root/NOTICE"
   library="$("$here/fetch.sh")"

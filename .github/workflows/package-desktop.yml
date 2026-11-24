@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       giac_source_url:
-        description: HTTPS URL of the complete corresponding source archive for javagiac 70507
+        description: HTTPS URL of the pinned javagiac 70507 publisher archive
         type: string
         required: false
       giac_source_sha256:
-        description: SHA-256 of that exact Giac source archive (required with the URL)
+        description: Pinned SHA-256 of the publisher archive (see docs/cas-giac.md)
         type: string
         required: false
 
@@ -32,9 +32,9 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Explain GPL archive requirement
+      - name: Explain GPL archive status
         if: inputs.giac_source_url == ''
-        run: echo 'To build and upload the GPL archive, supply the exact javagiac 70507 source URL and SHA-256.'
+        run: echo 'GPL packaging requires the pinned Giac 70507 source and the source of its bundled dependencies. See docs/cas-giac.md.'
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -45,6 +45,15 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             libxkbcommon-dev libxcb-render0-dev libxcb-shape0-dev \
             libxcb-xfixes0-dev
+      - name: Verify the publisher's Giac 70507 source
+        if: matrix.variant == 'geokernel-giac'
+        env:
+          GIAC_SOURCE_URL: ${{ inputs.giac_source_url }}
+          GIAC_SOURCE_SHA256: ${{ inputs.giac_source_sha256 }}
+        run: |
+          tools/giac/fetch-source.sh
+          echo '::error::GPL distribution awaits verified corresponding source for the bundled GMP and MPFR builds.'
+          exit 1
       - name: Build
         env:
           VARIANT: ${{ matrix.variant }}

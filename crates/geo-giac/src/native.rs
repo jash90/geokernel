@@ -65,28 +65,28 @@ pub(crate) const LIBRARY_NAME: Option<&str> =
 /// SHA-256 of the Giac 70507 library for this platform, as extracted from
 /// the reference's release (`tools/giac/fetch.sh` pins the same values).
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-const PINNED: Option<&str> =
+pub(crate) const PINNED: Option<&str> =
     Some("d4c7f38357f06cc6a364d551ac3c375568b703c3abc4da76674e9642ce0316ec");
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-const PINNED: Option<&str> =
+pub(crate) const PINNED: Option<&str> =
     Some("a2ed7741e02e8569c9cc9354c9818d883e3d3175de8389c557930f13bd48c498");
 #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
-const PINNED: Option<&str> =
+pub(crate) const PINNED: Option<&str> =
     Some("b9abc2abb81c3dbc8397754e716483a61ace680106b15ccb66e19507fca10939");
 #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
-const PINNED: Option<&str> =
+pub(crate) const PINNED: Option<&str> =
     Some("d54fbab833cc4a6bc07cb5e7f9c3a83cb5b08c33402198b3ca0495c77bdf0d71");
 #[cfg(all(target_os = "android", target_arch = "aarch64"))]
-const PINNED: Option<&str> =
+pub(crate) const PINNED: Option<&str> =
     Some("f84e31b6f8a55974ff6eaffcd03e12bf911f45190323f52914f3d7c9deb1ae6e");
 #[cfg(all(target_os = "android", target_arch = "arm"))]
-const PINNED: Option<&str> =
+pub(crate) const PINNED: Option<&str> =
     Some("a8a7823594fa2bc6b6395cf16d960fc91f8f51a6c007510911e0703050ed59b7");
 #[cfg(all(target_os = "android", target_arch = "x86"))]
-const PINNED: Option<&str> =
+pub(crate) const PINNED: Option<&str> =
     Some("b03501ebf9d53b92c54ee49e8da5b19017936715797e6f69a663e1073ab0332f");
 #[cfg(all(target_os = "android", target_arch = "x86_64"))]
-const PINNED: Option<&str> =
+pub(crate) const PINNED: Option<&str> =
     Some("8a737510102704b6c59a5d817bdfde7475e0c1723bd2404665f0cd73c99b3983");
 #[cfg(not(any(
     all(target_os = "linux", target_arch = "x86_64"),
@@ -105,7 +105,7 @@ const PINNED: Option<&str> =
         )
     ),
 )))]
-const PINNED: Option<&str> = None;
+pub(crate) const PINNED: Option<&str> = None;
 
 #[cfg(target_os = "android")]
 const CXX_PINNED: &str = match std::env::consts::ARCH.as_bytes() {

@@ -89,6 +89,12 @@ pub fn backend() -> Backend {
     }
 }
 
+/// The SHA-256 of the Giac library accepted on this target.
+#[cfg(feature = "giac")]
+pub fn pinned_library_sha256() -> Option<&'static str> {
+    native::PINNED
+}
+
 /// On Android, initialize Giac from the application's native library
 /// directory (for example, `ApplicationInfo.nativeLibraryDir`).
 ///

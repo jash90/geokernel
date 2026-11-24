@@ -124,7 +124,7 @@ jobs:
             --test fuzz_script
       - name: Golden data with the feature
         run: |
-          cargo test -p geo-golden --features giac --test golden -- --nocapture
+          GEO_GOLDEN_REQUIRE_GIAC=1 cargo test -p geo-golden --features giac --test golden -- --nocapture
       - name: Command forms with the feature
         run: cargo test -p geo-golden --features giac --test command_forms
       # Without a library the feature must change nothing.
@@ -188,7 +188,7 @@ jobs:
       - name: Golden data with the feature
         if: ${{ !cancelled() && steps.fetch.outcome == 'success' }}
         run: |
-          cargo test -p geo-golden --features giac --test golden -- --nocapture
+          GEO_GOLDEN_REQUIRE_GIAC=1 cargo test -p geo-golden --features giac --test golden -- --nocapture
       - name: Command forms with the feature
         if: ${{ !cancelled() && steps.fetch.outcome == 'success' }}
         run: cargo test -p geo-golden --features giac --test command_forms

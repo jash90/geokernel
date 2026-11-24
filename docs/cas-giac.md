@@ -151,9 +151,12 @@ GEO_GIAC_LIBRARY="$(tools/giac/fetch.sh)" \
   cargo run -p geo-giac --features giac --example replay -- tools/giac/cas-exchanges.jsonl
 ```
 
-The three jobs require exactly 1,966 exchanges and fail on any output
-difference. Set `GEO_GIAC_REPLAY_TRACE=1` to log each case and input before
-evaluation.
+The three jobs require each of the 1,966 recorded (case ID, input) pairs
+exactly once. The header's SHA-256 must match the pinned Giac library for
+the running target. Any output difference fails the replay. Set
+`GEO_GIAC_REPLAY_TRACE=1` to log each case and input before evaluation.
+The Giac-enabled golden steps set `GEO_GOLDEN_REQUIRE_GIAC=1` to require a
+successful kernel `PlotSolve` exchange before comparing the corpus.
 
 ## What the kernel ports
 
@@ -363,9 +366,11 @@ golden files and known-gap overlays are the shared baseline.
 ignored build directory. The four ABI folders each contain
 `libjavagiac.so` and `libc++_shared.so`.
 
-The next validation step is the following replay on a booted x86_64
-emulator. Set `ANDROID_NDK_HOME` and use the host prebuilt directory for
-your NDK installation (the example uses the Linux host).
+The next validation step is a replay on a booted x86_64 emulator. It
+requires a transcript recorded with the Android x86_64 library, with its
+own library SHA-256 in the header. Set `ANDROID_GIAC_FIXTURE` to that
+transcript once available. Set `ANDROID_NDK_HOME` and use the host
+prebuilt directory for your NDK installation (the example uses Linux).
 
 ```sh
 rustup target add x86_64-linux-android
@@ -373,10 +378,11 @@ export CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER="$ANDROID_NDK_HOME/toolchains/ll
 cargo build -p geo-giac --features giac --target x86_64-linux-android --example replay
 jni_libs="$(tools/giac/android.sh)"
 adb shell mkdir -p /data/local/tmp/geokernel-giac
-adb push target/x86_64-linux-android/debug/examples/replay tools/giac/cas-exchanges.jsonl \
+adb push target/x86_64-linux-android/debug/examples/replay \
   "$jni_libs/x86_64/libjavagiac.so" "$jni_libs/x86_64/libc++_shared.so" /data/local/tmp/geokernel-giac/
+adb push "$ANDROID_GIAC_FIXTURE" /data/local/tmp/geokernel-giac/cas-exchanges-android.jsonl
 adb shell chmod 755 /data/local/tmp/geokernel-giac/replay
-adb shell /data/local/tmp/geokernel-giac/replay /data/local/tmp/geokernel-giac/cas-exchanges.jsonl /data/local/tmp/geokernel-giac
+adb shell /data/local/tmp/geokernel-giac/replay /data/local/tmp/geokernel-giac/cas-exchanges-android.jsonl /data/local/tmp/geokernel-giac
 ```
 
 ## Desktop distribution
@@ -386,15 +392,38 @@ The manual **Package desktop builds** workflow uploads the unsigned
 Windows x86_64, and macOS x86_64. It contains the CLI, desktop app, `NOTICE`,
 `LICENSE`, and `REVISION`.
 
-To also build and upload `geokernel-giac-<platform>.tar.gz` under
-GPL-3.0-or-later, provide `giac_source_url` and `giac_source_sha256` at
-dispatch. The URL must serve the exact complete corresponding source for
-javagiac 70507, including its JNI wrapper, bundled dependencies, and build
-scripts. The SHA-256 must be the lowercase digest of that archive. The
-packaging script verifies the download and includes it next to the
-executables as `giac-70507-source.archive`, with the digest recorded in
-`NOTICE`. The archive also includes the GPL licence, the application's
-source archive, and `SOURCE-OFFER.txt`.
+The GPL-3.0-or-later variant is pending complete corresponding source
+for the bundled dependencies. Its dispatch inputs, `giac_source_url`
+and `giac_source_sha256`, identify the Giac tree. GeoGebra's [release repository][javagiac-70507] publishes the
+70507 binaries. The source is in GeoGebra's Giac mirror at
+[commit `19a710aea9d5`][giac-mirror-70507], whose SVN import records
+`trunk/geogebra/giac@70507`. Use the [publisher's source tarball][giac-source-70507]
+(or a byte-identical HTTPS mirror) and its pinned SHA-256
+`a7f63cf3cd19040b81be7e35ccf0a396d2b2d9629a6db902c47529cf95ef6e36`.
+
+Before considering a GPL build or staging a local package, the source check
+requires the pinned digest and the mirror's top-level source directory.
+It checks the Giac core source and header, the JNI wrapper,
+`src/test/regression` (the mirror's regression checks), and the CMake,
+Gradle, deploy and Jenkins build files. Local staging puts the verified
+tarball beside the executables as `giac-70507-source.archive` and records
+its digest in `NOTICE`. It also includes the GPL licence, the
+application's source archive and `SOURCE-OFFER.txt`.
+
+The mirror contains prebuilt GMP and MPFR archives for the desktop
+targets. GeoGebra documents its [Linux build][linux-deps] (GMP 6.0.0a,
+MPFR 3.1.2) and [Intel macOS build][mac-deps] (GMP 5.1.2, MPFR 3.1.2).
+The [Windows dependency update][win-deps] supplies the binary archives.
+The packaging workflow stops before building the GPL variant until the
+exact corresponding GMP and MPFR sources and build instructions for
+the bundled binaries can be verified and supplied with it.
+
+[javagiac-70507]: https://repo.geogebra.net/releases/fr/ujf-grenoble/javagiac/70507/
+[giac-mirror-70507]: https://github.com/geogebra/giac/commit/19a710aea9d528afa272ea582f3283f242e17af3
+[giac-source-70507]: https://codeload.github.com/geogebra/giac/tar.gz/19a710aea9d528afa272ea582f3283f242e17af3
+[linux-deps]: https://github.com/geogebra/giac/blob/19a710aea9d528afa272ea582f3283f242e17af3/src/jni/prebuilt/linux/x86-64/README.txt
+[mac-deps]: https://github.com/geogebra/giac/blob/19a710aea9d528afa272ea582f3283f242e17af3/src/jni/prebuilt/osx/x86-64/README.txt
+[win-deps]: https://github.com/geogebra/giac/commit/8d255d0401ff
 
 The pinned native library is beside the executables. The macOS app bundle
 also puts it in `Contents/Frameworks` and links to it from

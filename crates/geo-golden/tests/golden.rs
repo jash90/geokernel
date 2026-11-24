@@ -43,6 +43,9 @@ fn projective_update_cases_agree() {
 
 #[test]
 fn kernel_agrees_with_golden_data() {
+    if std::env::var_os("GEO_GOLDEN_REQUIRE_GIAC").is_some() {
+        require_giac();
+    }
     let mut cases = model::load_all(&repo_root()).unwrap_or_else(|e| panic!("golden data:\n{e}"));
     let gaps = gaps::load().unwrap_or_else(|e| panic!("{e}"));
     apply_desktop_expectations(&mut cases);
@@ -58,6 +61,36 @@ fn kernel_agrees_with_golden_data() {
         "{}\n{}",
         r.summary(),
         r.failures.join("\n")
+    );
+}
+
+#[cfg(not(feature = "giac"))]
+fn require_giac() {
+    panic!("the Giac golden profile requires the geo-golden giac feature");
+}
+
+#[cfg(feature = "giac")]
+fn require_giac() {
+    assert!(
+        geo_kernel::giac_backend_active(),
+        "the Giac golden profile requires geo-kernel/giac and a working Giac library"
+    );
+
+    // PlotSolve has no kernel-only implementation.
+    let c = script::load("f(x) = x - 2\nresult = PlotSolve(f)").expect("run the Giac kernel probe");
+    let points = c
+        .elements(c.id("result").unwrap())
+        .expect("Giac must return the probe's list of points");
+    let points: Vec<_> = points.iter().collect();
+    assert!(
+        matches!(
+            points.as_slice(),
+            [geo_kernel::expr::Element::Value(
+                Kind::Point,
+                Value::Point { x: 2.0, y: 0.0 }
+            )]
+        ),
+        "the Giac kernel probe must return [(2, 0)], got {points:?}"
     );
 }
 
