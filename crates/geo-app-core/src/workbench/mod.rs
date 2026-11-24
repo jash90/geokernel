@@ -972,11 +972,12 @@ impl Workbench {
         }
         // Compared by bits, as the kernel does: `0` to `-0` is a change.
         let bits = |v: Value| match v {
-            Value::Point { x, y } | Value::Vector { x, y } => Some((x.to_bits(), y.to_bits())),
+            Value::Point { x, y } | Value::Vector { x, y } => Some([x, y, 1.0].map(f64::to_bits)),
+            Value::HomogeneousPoint { x, y, z } => Some([x, y, z].map(f64::to_bits)),
             _ => None,
         };
-        let old = bits(self.construction.value(id));
-        let same = old == Some((x.to_bits(), y.to_bits()));
+        let old = bits(self.construction.stored_value(id));
+        let same = old == Some([x, y, 1.0].map(f64::to_bits));
         let Ok(recomputed) = self.construction.move_point(id, x, y) else {
             return false;
         };
@@ -985,7 +986,7 @@ impl Workbench {
         }
         // A point on a path goes where the kernel projects the position: it
         // may stay where it was.
-        if bits(self.construction.value(id)) == old {
+        if bits(self.construction.stored_value(id)) == old {
             return false;
         }
         // The journal does not have the move yet: the undo step is taken

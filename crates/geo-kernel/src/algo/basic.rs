@@ -18,8 +18,23 @@ use crate::kernel::{Construction, Id, Value};
 
 /// `AlgoJoinPoints`: `GeoVec3D.lineThroughPoints(P, Q)`.
 pub(crate) fn line(c: &Construction, p: Id, q: Id) -> Option<Value> {
-    let (x, y, z) = join(c.point(p)?, c.point(q)?);
+    let (x, y, z) = raw_line_through(c, p, q)?;
     line_value(x, y, z)
+}
+
+pub(crate) fn raw_line_through(c: &Construction, p: Id, q: Id) -> Option<(f64, f64, f64)> {
+    match (c.point_at_infinity(p), c.point_at_infinity(q)) {
+        (Some(_), Some(_)) => None,
+        (Some((x, y, _)), None) => {
+            let (qx, qy) = c.point(q)?;
+            Some((y, -x, x * qy - y * qx))
+        }
+        (None, Some((x, y, _))) => {
+            let (px, py) = c.point(p)?;
+            Some((-y, x, px * y - py * x))
+        }
+        (None, None) => Some(join(c.point(p)?, c.point(q)?)),
+    }
 }
 
 pub(crate) fn segment(c: &Construction, p: Id, q: Id) -> Option<Value> {
@@ -44,7 +59,10 @@ pub(crate) fn distance(c: &Construction, p: Id, q: Id) -> Option<Value> {
 }
 
 /// Cross a point with the homogeneous direction of a line.
-fn cross_direction((px, py, weight): (f64, f64, f64), (vx, vy): (f64, f64)) -> (f64, f64, f64) {
+pub(crate) fn cross_direction(
+    (px, py, weight): (f64, f64, f64),
+    (vx, vy): (f64, f64),
+) -> (f64, f64, f64) {
     (
         py * 0.0 - weight * vy,
         weight * vx - px * 0.0,

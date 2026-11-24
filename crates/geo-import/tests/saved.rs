@@ -899,3 +899,32 @@ fn a_saved_self_intersection_follows_the_reference_load_order() {
         assert_eq!(value("Q"), value("X"), "{name}");
     }
 }
+
+#[test]
+fn saved_free_points_keep_homogeneous_coordinates() {
+    let (snapshot, imported) = fixture("saved-projective-001");
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    check_review_values(&snapshot, &c, &[]);
+    for (label, expected) in [
+        (
+            "P",
+            Value::HomogeneousPoint {
+                x: 2.0,
+                y: 4.0,
+                z: 2.0,
+            },
+        ),
+        (
+            "T",
+            Value::HomogeneousPoint {
+                x: 2.0,
+                y: 1.0,
+                z: 0.0,
+            },
+        ),
+    ] {
+        assert_eq!(c.stored_value(c.id(label).unwrap()), expected);
+    }
+}

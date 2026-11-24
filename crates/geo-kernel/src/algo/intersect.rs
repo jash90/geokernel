@@ -527,15 +527,24 @@ pub(crate) fn lines(c: &Construction, l: Id, m: Id) -> Option<Value> {
 }
 
 pub(crate) fn closest_lines(c: &Construction, l: Id, m: Id) -> Option<Value> {
-    let point = cross_lines(c.raw_carrier(l)?, c.raw_carrier(m)?)?.cartesian();
-    let Value::Point { x, y } = point else {
-        return None;
-    };
-    // A recomputation treats both signs of zero as equal. Store a canonical
-    // zero so the point has the same coordinates after a fresh replay.
-    (within_carrier(c, l, (x, y)) && within_carrier(c, m, (x, y))).then_some(Value::Point {
-        x: if x == 0.0 { 0.0 } else { x },
-        y: if y == 0.0 { 0.0 } else { y },
+    let point = cross_lines(c.raw_carrier(l)?, c.raw_carrier(m)?)?;
+    if c.kind(l) != Kind::Line || c.kind(m) != Kind::Line {
+        let Value::Point { x, y } = point.cartesian() else {
+            return None;
+        };
+        if !(within_carrier(c, l, (x, y)) && within_carrier(c, m, (x, y))) {
+            return None;
+        }
+    }
+    let (x, y, z) = point.point_coords()?;
+    // Keep the homogeneous weight and canonicalize zero as before.
+    let zero = |v: f64| if v == 0.0 { 0.0 } else { v };
+    Some(match point {
+        Value::NormalizedPointAtInfinity { .. } => Value::NormalizedPointAtInfinity {
+            x: zero(x),
+            y: zero(y),
+        },
+        _ => Value::homogeneous_point(zero(x), zero(y), z),
     })
 }
 
@@ -560,7 +569,11 @@ fn within_carrier(c: &Construction, id: Id, (x, y): (f64, f64)) -> bool {
 }
 
 fn cross_lines((a1, b1, c1): (f64, f64, f64), (a2, b2, c2): (f64, f64, f64)) -> Option<Value> {
-    let (mut x, mut y, mut z) = (b1 * c2 - c1 * b2, c1 * a2 - a1 * c2, a1 * b2 - b1 * a2);
+    let point = Value::homogeneous_point(b1 * c2 - c1 * b2, c1 * a2 - a1 * c2, a1 * b2 - b1 * a2);
+    let (mut x, mut y, mut z) = point.point_coords()?;
+    // GeoVec3D.cross calls GeoPoint.setCoords before normalizing the triple.
+    // GeoLine.isOnFullLine uses that classification with the resulting fields.
+    let infinite = point_at_infinity(x, y, z);
     if (z.is_finite() && z.abs() > INV_MAX_DOUBLE_PRECISION)
         || (z != 0.0 && z.abs() < MAX_PRECISION)
     {
@@ -568,17 +581,21 @@ fn cross_lines((a1, b1, c1): (f64, f64, f64), (a2, b2, c2): (f64, f64, f64)) -> 
         y /= z;
         z = 1.0;
     }
-    let point = Value::homogeneous_point(x, y, z);
-    let (x, y, z) = point.point_coords()?;
     let incident = |(a, b, cc): (f64, f64, f64)| {
-        let residual = if point_at_infinity(x, y, z) {
+        let residual = if infinite {
             a * x + b * y
         } else {
             a * (x / z) + b * (y / z) + cc
         };
         residual.abs() < MIN_PRECISION * (a.abs() + b.abs())
     };
-    (incident((a1, b1, c1)) && incident((a2, b2, c2))).then_some(point)
+    (incident((a1, b1, c1)) && incident((a2, b2, c2))).then(|| {
+        if infinite && z == 1.0 {
+            Value::NormalizedPointAtInfinity { x, y }
+        } else {
+            Value::homogeneous_point(x, y, z)
+        }
+    })
 }
 
 /// `DoubleUtil.isEpsilon(e, x, y)`: whether `e` is zero compared with

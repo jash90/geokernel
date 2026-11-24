@@ -574,4 +574,17 @@ case("itself", [pt("A", 0, 0), pt("B", 3, 4), "k = Circle(A, B)", pt("C", -6, 1)
 case("itself", [pt("A", 1, 2), pt("B", 1, 2), "k = Circle(A, B)", "P = Intersect(k, k, 1)"],
      [mv("B", 4, 6), mv("A", -2, 0), mv("B", 1, 2)])
 
+case("nearparallel", ["A = (0, 0)", "B = (1, 1)", "C = (0, 1)",
+                      "D = (1, 2.000000000000057)", "l = Line(A, B)",
+                      "m = Line(C, D)", "S = Intersect(l, m)"], [])
+# A smaller offset leaves the near-parallel intersection finite.
+case("nearparallel", ["A = (0, 0)", "B = (1, 1)", "C = (0, 0.000001)",
+                      "D = (1, 1.000001000000057)", "l = Line(A, B)",
+                      "m = Line(C, D)", "S = Intersect(l, m)", "g = Line(S, l)",
+                      "d = Direction(g)"], [])
+# A cross product classified as infinite can also pass incidence after rescaling.
+case("nearparallel", ["A = (0, 0)", "B = (1, 1)", "C = (0, 0.00001)",
+                      "D = (1, 1.000010000000057)", "l = Line(A, B)",
+                      "m = Line(C, D)", "S = Intersect(l, m)", "g = Line(S, l)",
+                      "d = Direction(g)"], [])
 cases.write()

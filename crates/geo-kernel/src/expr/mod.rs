@@ -1953,8 +1953,8 @@ fn function_input_defined(c: &Construction, id: Id) -> bool {
     // A projective point is defined in GeoGebra. Its Cartesian coordinates
     // still evaluate to NaN, and commands that require them stay undefined.
     object_defined(c, id)
-        || matches!(c.stored_value(id), Value::HomogeneousPoint { x, y, z }
-            if crate::kernel::point_at_infinity(x, y, z) && (x != 0.0 || y != 0.0))
+        || c.point_at_infinity(id)
+            .is_some_and(|(x, y, _)| x != 0.0 || y != 0.0)
 }
 
 fn command_defined(c: &Construction, def: Def, hint: crate::algo::intersect::Hint) -> bool {

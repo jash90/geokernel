@@ -794,8 +794,8 @@ impl Log {
             to,
             ordered,
         };
-        // Keep edits that affect retained geometry, hidden intersection
-        // starts, inequality helpers or dependent slider clamps.
+        // Keep edits that change retained geometry (including closest-circle
+        // angles), hidden starts, inequality helpers or slider clamps.
         if !ordered
             && matches!(
                 self.ops.last(),

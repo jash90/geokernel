@@ -223,6 +223,12 @@ pub enum Value {
         y: f64,
         z: f64,
     },
+    /// A direction classified before GeoGebra rescales its raw weight to one.
+    #[doc(hidden)]
+    NormalizedPointAtInfinity {
+        x: f64,
+        y: f64,
+    },
     /// `a*x + b*y + c = 0` with the raw coefficients GeoGebra's `GeoLine`
     /// holds (its `x`, `y`, `z`) for the same definition. They are not
     /// normalised: the algorithm that makes the line decides their scale, and
@@ -346,7 +352,7 @@ impl Value {
 
     pub(crate) fn point_coords(self) -> Option<(f64, f64, f64)> {
         match self {
-            Self::Point { x, y } => Some((x, y, 1.0)),
+            Self::Point { x, y } | Self::NormalizedPointAtInfinity { x, y } => Some((x, y, 1.0)),
             Self::HomogeneousPoint { x, y, z } => Some((x, y, z)),
             _ => None,
         }
@@ -361,7 +367,9 @@ impl Value {
                 }
                 Self::Undefined
             }
-            Self::HomogeneousPoint { .. } => Self::Undefined,
+            Self::HomogeneousPoint { .. } | Self::NormalizedPointAtInfinity { .. } => {
+                Self::Undefined
+            }
             Self::Arc { length } if !length.is_finite() => Self::Undefined,
             Self::Sector { area } if !area.is_finite() => Self::Undefined,
             _ => self,
@@ -392,6 +400,7 @@ impl Value {
             match *v {
                 Value::Point { x, y } | Value::Vector { x, y } => [x, y, 0.0, 0.0, 0.0],
                 Value::HomogeneousPoint { x, y, z } => [x, y, z, 0.0, 0.0],
+                Value::NormalizedPointAtInfinity { x, y } => [x, y, 1.0, 0.0, 0.0],
                 Value::Line { a, b, c } => [a, b, c, 0.0, 0.0],
                 Value::Segment { x1, y1, x2, y2 } => [x1, y1, x2, y2, 0.0],
                 Value::Circle { cx, cy, r } => [cx, cy, r, 0.0, 0.0],
@@ -423,7 +432,9 @@ impl Value {
 
     fn is_valid(&self) -> bool {
         match *self {
-            Value::Point { x, y } => !(x.is_nan() || y.is_nan()),
+            Value::Point { x, y } | Value::NormalizedPointAtInfinity { x, y } => {
+                !(x.is_nan() || y.is_nan())
+            }
             Value::HomogeneousPoint { x, y, z } => !(x.is_nan() || y.is_nan() || z.is_nan()),
             Value::Line { a, b, c } => a.is_finite() && b.is_finite() && c.is_finite(),
             Value::Segment { x1, y1, x2, y2 } => {
@@ -1145,6 +1156,8 @@ pub struct Construction {
     conic_intersections: Vec<(usize, PairState)>,
     /// Raw coordinates of points with a non-unit weight, indexed by object.
     homogeneous_points: BTreeMap<usize, (f64, f64, f64)>,
+    /// Directions whose triple has weight one after normalization.
+    normalized_directions: BTreeSet<usize>,
     /// The last valid parameter of each closest point on a circle.
     closest_circle_parameters: BTreeMap<usize, f64>,
     line_conic_outputs: Vec<LineConicOutput>,
@@ -1596,7 +1609,11 @@ impl Construction {
     /// fields see scale changes even when the Cartesian value is unchanged.
     pub fn stored_value(&self, id: Id) -> Value {
         if let Some(&(x, y, z)) = self.homogeneous_points.get(&id.0) {
-            return Value::HomogeneousPoint { x, y, z };
+            return if self.normalized_directions.contains(&id.0) {
+                Value::NormalizedPointAtInfinity { x, y }
+            } else {
+                Value::HomogeneousPoint { x, y, z }
+            };
         }
         self.values
             .get(id.0)
@@ -1606,16 +1623,26 @@ impl Construction {
 
     pub(crate) fn point_at_infinity(&self, id: Id) -> Option<(f64, f64, f64)> {
         let &(x, y, z) = self.homogeneous_points.get(&id.0)?;
-        point_at_infinity(x, y, z).then_some((x, y, z))
+        (point_at_infinity(x, y, z) || self.normalized_directions.contains(&id.0))
+            .then_some((x, y, z))
     }
 
     fn store_point_coordinates(&mut self, i: usize, value: Value) -> Value {
-        if let Value::HomogeneousPoint { x, y, z } = value {
-            self.homogeneous_points.insert(i, (x, y, z));
-            value.cartesian()
-        } else {
-            self.homogeneous_points.remove(&i);
-            value
+        self.normalized_directions.remove(&i);
+        match value {
+            Value::HomogeneousPoint { x, y, z } => {
+                self.homogeneous_points.insert(i, (x, y, z));
+                value.cartesian()
+            }
+            Value::NormalizedPointAtInfinity { x, y } => {
+                self.homogeneous_points.insert(i, (x, y, 1.0));
+                self.normalized_directions.insert(i);
+                Value::Undefined
+            }
+            _ => {
+                self.homogeneous_points.remove(&i);
+                value
+            }
         }
     }
 
@@ -1951,7 +1978,9 @@ impl Construction {
             }
             Def::Arc(_) => ProtocolFields::Arc(Box::new(self.arcs[self.arc_slot(i)?].1)),
             Def::Path(_) => ProtocolFields::Path(self.paths[self.path_slot(i)?].1),
-            Def::Point(PointDef::Closest { path, .. }) if self.kind(path) == Kind::Circle => {
+            Def::Point(PointDef::Closest { path, .. })
+                if matches!(self.kind(path), Kind::Circle | Kind::Conic) =>
+            {
                 ProtocolFields::ClosestCircle(self.closest_circle_parameters.get(&i).copied())
             }
             Def::Polygon(PolygonDef::RegularVertex { .. }) => ProtocolFields::Vertex,
@@ -2145,6 +2174,7 @@ impl Construction {
                 .partition_point(|&(owner, _)| owner < at.len),
         );
         self.homogeneous_points.split_off(&at.len);
+        self.normalized_directions.split_off(&at.len);
         self.closest_circle_parameters.split_off(&at.len);
         self.tangent_outputs.truncate(
             self.tangent_outputs
@@ -2354,6 +2384,7 @@ impl Construction {
                     | Def::Expr(_)
                     | Def::Measure(MeasureDef::Slope(_))
                     | Def::Path(PathDef::On { .. } | PathDef::OnParam { .. })
+                    | Def::Point(PointDef::Closest { .. })
             )
         };
         let old = self.def(id);
@@ -2494,6 +2525,7 @@ impl Construction {
         }
         let hint = self.hints[new.0];
         let path = self.path_state(new);
+        let closest_angle = self.closest_circle_parameters.remove(&new.0);
         let mut source = self.construction_sources.remove(&new);
         if matches!(old, Def::Number(_))
             && matches!(def, Def::Expr(d) if d.kind() == Kind::Number && expr::undefined_literal(self, d))
@@ -2535,6 +2567,10 @@ impl Construction {
         }
         // a redefined object is a new circle without a record
         self.forget_circle_record(id.0);
+        self.closest_circle_parameters.remove(&id.0);
+        if let Some(angle) = closest_angle {
+            self.closest_circle_parameters.insert(id.0, angle);
+        }
         self.defs[id.0] = def;
         self.values[id.0] = self.store_point_coordinates(id.0, value);
         self.hints[id.0] = hint;
@@ -3013,9 +3049,7 @@ impl Construction {
         // compute reads the hint of the new object from `hints`
         self.hints.push(algo::intersect::hint(self, &def));
         let value = match def {
-            Def::Point(PointDef::Closest { path, point }) if self.kind(path) == Kind::Circle => {
-                self.closest_circle_point(id.0, path, point)
-            }
+            Def::Point(PointDef::Closest { path, point }) => self.closest_point(id.0, path, point),
             Def::Lines(LineDef::TangentPoint { .. } | LineDef::TangentLine { .. })
             | Def::ConicPart(
                 ConicPartDef::TangentPoint { .. } | ConicPartDef::TangentLine { .. },
@@ -3408,12 +3442,12 @@ impl Construction {
         }
         // Bit equality, as in `set_number`: `0` to `-0` is a change.
         let same = |a: f64, b: f64| a.to_bits() == b.to_bits();
-        if same(old.0, x) && same(old.1, y) {
+        if same(old.0, x) && same(old.1, y) && !self.homogeneous_points.contains_key(&id.0) {
             return Ok(0);
         }
         self.construction_sources.remove(&id);
         self.defs[id.0] = def;
-        self.values[id.0] = new;
+        self.values[id.0] = self.store_point_coordinates(id.0, new);
         Ok(self.propagate(id))
     }
 
@@ -3439,12 +3473,15 @@ impl Construction {
             let Def::FreePoint { x: old_x, y: old_y } = self.defs[id.0] else {
                 unreachable!("all points were validated before moving");
             };
-            if old_x.to_bits() == x.to_bits() && old_y.to_bits() == y.to_bits() {
+            if old_x.to_bits() == x.to_bits()
+                && old_y.to_bits() == y.to_bits()
+                && !self.homogeneous_points.contains_key(&id.0)
+            {
                 continue;
             }
             self.construction_sources.remove(&id);
             self.defs[id.0] = Def::FreePoint { x, y };
-            self.values[id.0] = Value::Point { x, y };
+            self.values[id.0] = self.store_point_coordinates(id.0, Value::Point { x, y });
             first = first.min(self.evaluation_rank(id));
             for child in self.children[id.0].iter() {
                 dirty.insert(self.evaluation_rank(child));
@@ -4007,10 +4044,8 @@ impl Construction {
                         self.inequality_helpers.pending.insert(Id(i));
                     }
                     let new = match def {
-                        Def::Point(PointDef::Closest { path, point })
-                            if self.kind(path) == Kind::Circle =>
-                        {
-                            self.closest_circle_point(i, path, point)
+                        Def::Point(PointDef::Closest { path, point }) => {
+                            self.closest_point(i, path, point)
                         }
                         _ => self.compute(def, i),
                     };
@@ -4844,6 +4879,25 @@ impl Construction {
         }
     }
 
+    pub(crate) fn add_saved_homogeneous_point(
+        &mut self,
+        label: &str,
+        [x, y, z]: [f64; 3],
+    ) -> Result<Id, Error> {
+        if ![x, y, z].into_iter().all(f64::is_finite) {
+            return Err(Error::NotFinite);
+        }
+        let value = Value::homogeneous_point(x, y, z);
+        let (x, y) = match value.cartesian() {
+            Value::Point { x, y } => (x, y),
+            _ if point_at_infinity(x, y, z) => (0.0, 0.0),
+            _ => return Err(Error::NotFinite),
+        };
+        let id = self.add(label, Def::FreePoint { x, y })?;
+        self.values[id.0] = self.store_point_coordinates(id.0, value);
+        Ok(id)
+    }
+
     pub(crate) fn add_saved_path_point(
         &mut self,
         label: &str,
@@ -5171,7 +5225,44 @@ impl Construction {
         }
     }
 
-    fn closest_circle_point(&mut self, i: usize, path: Id, point: Id) -> Value {
+    /// Recover the retained circle parameter from the saved projection when
+    /// the current input cannot supply an angle.
+    pub fn saved_closest_circle_angle(&self, id: Id, x: f64, y: f64) -> Option<f64> {
+        let Def::Point(PointDef::Closest { path, point }) = self.def(id) else {
+            return None;
+        };
+        let (_, parameter) = algo::point::closest_circle(self, path, point, 0.0)?;
+        if parameter.is_some() {
+            return None;
+        }
+        algo::point::circle_angle_from_position(self, path, (x, y))
+    }
+
+    pub(crate) fn restore_closest_circle_angle(&mut self, id: Id, angle: f64) -> Result<(), Error> {
+        let Def::Point(PointDef::Closest { path, point }) = self.def(id) else {
+            return Err(Error::NotFree(self.label(id).to_owned()));
+        };
+        if !angle.is_finite() {
+            return Err(Error::NotFinite);
+        }
+        let Some((value, None)) = algo::point::closest_circle(self, path, point, angle) else {
+            return Ok(());
+        };
+        if !value.is_valid() {
+            return Err(Error::NotFinite);
+        }
+        self.closest_circle_parameters.insert(id.0, angle);
+        if !self.values[id.0].identical(&value) {
+            self.values[id.0] = value;
+            self.propagate(id);
+        }
+        Ok(())
+    }
+
+    fn closest_point(&mut self, i: usize, path: Id, point: Id) -> Value {
+        if algo::point::circle_geometry(self, path).is_none() {
+            return self.compute(Def::Point(PointDef::Closest { path, point }), i);
+        }
         let previous = self
             .closest_circle_parameters
             .get(&i)
@@ -5185,9 +5276,10 @@ impl Construction {
             return Value::Undefined;
         }
         if let Some(parameter) = parameter {
+            // A later input can leave this angle unchanged. Replay the edit
+            // that established it before a consecutive move can replace it.
+            self.last_update_requires_replay |= previous.to_bits() != parameter.to_bits();
             self.closest_circle_parameters.insert(i, parameter);
-        } else if self.point_at_infinity(point).is_some() {
-            self.last_update_requires_replay = true;
         }
         value
     }

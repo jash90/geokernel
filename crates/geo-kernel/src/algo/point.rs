@@ -452,6 +452,33 @@ fn closest_on_circle(cx: f64, cy: f64, r: f64, p: (f64, f64)) -> Value {
     circle_point(cx, cy, r, circle_parameter(cx, cy, r, p))
 }
 
+/// Circles made by conic commands have a conic value rather than a radius value.
+pub(crate) fn circle_geometry(c: &Construction, path: Id) -> Option<(f64, f64, f64)> {
+    match c.value(path) {
+        Value::Circle { cx, cy, r } => Some((cx, cy, r)),
+        Value::Conic {
+            ty: super::conic_nd::ConicType::Circle,
+        } => {
+            let conic = c.conic(path)?;
+            Some((conic.midpoint[0], conic.midpoint[1], conic.half_axes[0]))
+        }
+        _ => None,
+    }
+}
+
+pub(crate) fn circle_angle_from_position(
+    c: &Construction,
+    path: Id,
+    point: (f64, f64),
+) -> Option<f64> {
+    let (cx, cy, r) = circle_geometry(c, path)?;
+    if r < STANDARD_PRECISION {
+        return None;
+    }
+    let t = circle_parameter(cx, cy, r, point);
+    t.is_finite().then_some(t)
+}
+
 /// `GeoPoint.getCoordsInD2` divides by the weight before projection.
 /// If the resulting angle is NaN, `PathParameter.setT` keeps its old value.
 pub(crate) fn closest_circle(
@@ -460,9 +487,7 @@ pub(crate) fn closest_circle(
     point: Id,
     previous: f64,
 ) -> Option<(Value, Option<f64>)> {
-    let Value::Circle { cx, cy, r } = c.value(path) else {
-        return None;
-    };
+    let (cx, cy, r) = circle_geometry(c, path)?;
     let p = if let Some((x, y, z)) = c.point_at_infinity(point) {
         (x / z, y / z)
     } else {

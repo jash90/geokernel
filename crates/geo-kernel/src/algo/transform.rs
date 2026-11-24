@@ -375,6 +375,7 @@ impl Map {
             | Value::Sector { .. }
             | Value::Locus { .. }
             | Value::HomogeneousPoint { .. }
+            | Value::NormalizedPointAtInfinity { .. }
             | Value::Curve { .. }
             | Value::Button
             | Value::InputBox

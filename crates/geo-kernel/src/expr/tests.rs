@@ -1086,3 +1086,85 @@ R = ClosestPoint(k, S)
     c.move_point(c.id("F").unwrap(), 0.0, 6.0).unwrap();
     assert_homogeneous_pair(homogeneous_case_value(&c, "R"), (-2.0, -1.0000000000000004));
 }
+
+const PROJECTIVE_LINES: &str = "A = (0, 0)\nB = (2, 1)\nC = (0, 3)\n\
+    l = Line(A, B)\nm = Line(C, D)\nS = Intersect(l, m)\n";
+
+#[test]
+fn closest_circle_redefinition_replaces_angle() {
+    let mut c = load(&format!(
+        "D = (2, 5)\n{PROJECTIVE_LINES}F = (5, 5)\nP = ClosestPoint(l, S)\n\
+         Q = ClosestPoint(S, l)\nk = Circle(A, B)\nR = ClosestPoint(k, B)"
+    ))
+    .unwrap();
+    exec(&mut c, "R = ClosestPoint(k, S)").unwrap();
+    c.move_point(c.id("D").unwrap(), 2.0, 4.0).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "R"), (-2.0, -1.0));
+}
+
+#[test]
+fn perpendicular_through_intersection_uses_weight() {
+    let c = load(
+        "A = (0, 1)\nB = (2, 1)\nl = Line(A, B)\nS = Intersect(l, yAxis)\n\
+                  v = (1, 0)\ng = OrthogonalLine(S, v)\nd = Direction(g)",
+    )
+    .unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "d"), (0.0, 2.0));
+}
+
+#[test]
+fn near_parallel_intersection_classifies_before_rescaling() {
+    let c = load(
+        "A = (0, 0)\nB = (1, 1)\nC = (0, 1)\nD = (1, 2.000000000000057)\n\
+                  l = Line(A, B)\nm = Line(C, D)\nS = Intersect(l, m)",
+    )
+    .unwrap();
+    assert_eq!(c.stored_value(c.id("S").unwrap()), Value::Undefined);
+
+    let c = load(
+        "A = (0, 0)\nB = (1, 1)\nC = (0, 0.00001)\nD = (1, 1.000010000000057)\n\
+                  l = Line(A, B)\nm = Line(C, D)\nS = Intersect(l, m)\n\
+                  g = Line(S, l)\nd = Direction(g)",
+    )
+    .unwrap();
+    let s = c.id("S").unwrap();
+    assert_eq!(c.value(s), Value::Undefined);
+    assert_eq!(c.stored_value(s).point_coords().unwrap().2, 1.0);
+    assert_homogeneous_pair(homogeneous_case_value(&c, "d"), (1.0, 1.0));
+}
+
+#[test]
+fn parallel_through_closest_lines_uses_weight() {
+    let c = load(
+        "A = (0, 1)\nB = (2, 1)\nl = Line(A, B)\nS = ClosestPoint(l, yAxis)\n\
+                  g = Line(S, l)\nd = Direction(g)",
+    )
+    .unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "d"), (4.0, 0.0));
+}
+
+#[test]
+fn direction_of_line_and_ray_through_infinity() {
+    let c = load(&format!(
+        "D = (2, 4)\n{PROJECTIVE_LINES}g = Line(A, S)\nh = Ray(S, C)\nd = Direction(g)\ne = Direction(h)"
+    ))
+    .unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "d"), (-12.0, -6.0));
+    assert_homogeneous_pair(homogeneous_case_value(&c, "e"), (12.0, 6.0));
+}
+
+#[test]
+fn matrix_circle_projects_a_point_at_infinity() {
+    let mut c = load(&format!(
+        "D = (2, 4)\n{PROJECTIVE_LINES}c = Conic({{{{1,0,0}},{{0,1,0}},{{0,0,-4}}}})\nP = ClosestPoint(c, S)"
+    ))
+    .unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "P"), (2.0, 0.0));
+    for y in [5.0, 4.0] {
+        c.move_point(c.id("D").unwrap(), 2.0, y).unwrap();
+        assert_homogeneous_pair(
+            homogeneous_case_value(&c, "P"),
+            (-4.0 / 5.0_f64.sqrt(), -2.0 / 5.0_f64.sqrt()),
+        );
+    }
+}

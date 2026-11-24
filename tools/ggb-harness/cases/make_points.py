@@ -193,4 +193,27 @@ case("pathpair", [pt("A", 0, 0), pt("B", 2, 1), pt("C", 0, 3), pt("D", 2, 4), "l
                   "m = Line(C, D)", "P = ClosestPoint(l, m)"],
      [mv("D", 4, 1), mv("D", 2, 4), mv("D", 2, 4.000001), mv("B", 2, 0), mv("D", 4, 3)])
 
+PROJECTIVE = ["A = (0, 0)", "B = (2, 1)", "C = (0, 3)",
+              "l = Line(A, B)", "m = Line(C, D)", "S = Intersect(l, m)"]
+CIRCLE_PROJECTION = ["k = Circle(A, B)", "R = ClosestPoint(k, S)"]
+
+case("infinityedit", ["D = (2, 5)"] + PROJECTIVE +
+     ["F = (5, 5)", "P = ClosestPoint(l, S)", "Q = ClosestPoint(S, l)",
+      "k = Circle(A, B)", "R = ClosestPoint(k, B)"],
+     [{"action": "redefine", "line": "R = ClosestPoint(k, S)"}, mv("D", 2, 4)])
+case("infinityedit", ["D = (2, 5)"] + PROJECTIVE + CIRCLE_PROJECTION,
+     [mv("D", 0, 3), mv("D", 2, 4), {"action": "add", "line": "J = (5, 5)"},
+      {"action": "undo"}])
+case("infinityedit", ["D = (2, 4)"] + PROJECTIVE + CIRCLE_PROJECTION,
+     [mv("D", 2, 5), mv("D", 2, 4), {"action": "reload_ggb"}])
+case("infinityedit", ["D = (2, 4)"] + PROJECTIVE +
+     ["c = Conic({{1,0,0},{0,1,0},{0,0,-4}})", "P = ClosestPoint(c, S)"],
+     [mv("D", 2, 5), mv("D", 2, 4)])
+case("infinityedit", ["D = (2, 4)"] + PROJECTIVE +
+     ["r = 2", "k = Circle(A, r)", "R = ClosestPoint(k, S)"],
+     [setn("r", 3), setn("r", 4), setn("r", 5)])
+case("infinityedit", ["D = (2, 4)"] + PROJECTIVE + CIRCLE_PROJECTION,
+     [mv("D", 2, 5), mv("D", 0, 3), mv("D", 2, 4),
+      {"action": "add", "line": "J = (5, 5)"}, {"action": "undo"}])
+
 cases.write()
