@@ -70,6 +70,13 @@ fn read_at(
             return substitute(value, vars, work);
         }
     }
+    if let Some(result) = e.graph_rewrite(i) {
+        let result = result.as_ref()?;
+        if let Some(tree) = result.tree() {
+            return read_at(c, tree, tree.root, vars, work, depth + 1);
+        }
+        return substitute(result.quotient()?, vars, work);
+    }
     let args = |index, work: &mut Work<'_>| read_at(c, e, index, vars, work, depth + 1);
     let function = |id, arguments: &[Quotient; 3], work: &mut Work<'_>| {
         let value = c.value(id);

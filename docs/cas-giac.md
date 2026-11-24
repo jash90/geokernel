@@ -232,13 +232,20 @@ When Giac is active, `crates/geo-golden/known-gaps-giac.toml` overlays
 `known-gaps.toml`. An `agrees = true` entry removes a default gap. A
 difference entry adds or replaces a gap and gives the reason it differs.
 
-The replay includes 7,304 cases, 7,303 of them from the harness.
+The replay includes 7,310 cases, 7,309 of them from the harness.
 
 | Profile | Agree | Known gaps |
 | --- | ---: | ---: |
-| Default build | 6,819 | 485 |
-| `giac` feature, library present | 7,230 | 74 |
-| `giac` feature, no library | 6,819 | 485 |
+| Default build | 6,825 | 485 |
+| `giac` feature, library present | 7,236 | 74 |
+| `giac` feature, no library | 6,825 | 485 |
+
+A nested `Simplify` of a graph, such as `f(x) = 1 + Simplify(g)` for
+`g: 2x + 3y = 6`, uses the same Giac rewrite as a standalone
+`Simplify(g)`. The result is refreshed when its input changes.
+Without Giac, the kernel handles nested graphs it can express with exact
+rational arithmetic. The reference refuses `Expand` and `Factor` of a
+line or conic in the same position (`cas-nestedrewrite-001` through `-006`).
 
 The Giac profile closes 97 of the 171 effective gaps at the start of this
 work. The remaining gaps include 73 inherited cases outside these CAS

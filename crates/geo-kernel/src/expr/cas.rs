@@ -3,6 +3,7 @@
 mod functional;
 #[cfg(feature = "giac")]
 mod giac;
+pub(super) mod graph;
 #[cfg(feature = "giac")]
 pub(super) use giac::rewrite::Scalar as GiacScalar;
 #[cfg(feature = "giac")]
@@ -27,7 +28,7 @@ use super::{Entry, Node, Slot, Ty};
 use crate::cas::{Poly, Quotient, Rat, Work};
 use crate::{Construction, Kind};
 
-pub(super) use functional::{evaluate as function_at, function, print_poly, FunctionResult};
+pub(super) use functional::{function, print_poly, FunctionResult};
 use input::read;
 
 pub(super) const NAMES: &[&str] = &[
@@ -173,6 +174,13 @@ impl Op {
     }
 }
 
+pub(super) fn function_is_defined(ctx: &Ctx<'_, true>, i: u32, op: Op, a: u32, b: u32) -> bool {
+    match ctx.e.graph_rewrite(i) {
+        Some(result) => result.is_some(),
+        None => functional::evaluate(ctx, op, a, b).is_some(),
+    }
+}
+
 impl<const M: bool> Ctx<'_, M> {
     pub(super) fn cas_scalar(&self, i: u32, op: Op, a: u32, b: u32) -> Ex {
         use Val::{B, N};
@@ -186,8 +194,11 @@ impl<const M: bool> Ctx<'_, M> {
                     return Ex::plain(N(result.value(self.c, x, y)));
                 }
             }
-            let value = functional::evaluate(self, op, a, b)
-                .map_or(f64::NAN, |result| result.value(self.c, x, y));
+            let value = match self.e.graph_rewrite(i) {
+                Some(result) => result.as_ref().map(|r| r.value(self.c, x, y)),
+                None => functional::evaluate(self, op, a, b).map(|r| r.value(self.c, x, y)),
+            };
+            let value = value.unwrap_or(f64::NAN);
             return Ex::plain(N(value));
         }
         let allowance = super::eval::Lists::new(Vec::new());

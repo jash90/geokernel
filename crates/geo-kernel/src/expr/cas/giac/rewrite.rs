@@ -2,7 +2,7 @@
 //! AlgoCasBaseSingleArgument, Ggb2giac and AlgebraicExpression implementations.
 
 use super::*;
-use crate::expr::cas::FunctionResult;
+use crate::expr::cas::{graph, FunctionResult};
 use std::sync::Arc;
 
 // Ggb2giac, as instantiated for the first evaluation in a session.
@@ -35,47 +35,21 @@ fn input(op: Op, argument: &str) -> Option<String> {
 /// CmdSimplify converts a line, segment or conic to a function. An
 /// equation with y alone on the left preserves its input expression.
 fn graph_argument(printer: &Printer<'_>, id: crate::Id, out: &mut String) -> Option<()> {
-    if let (Some(left), Some(right)) = (
-        crate::expr::equation::side_entry(printer.c, id, true),
-        crate::expr::equation::side_entry(printer.c, id, false),
-    ) {
-        if left.nodes[left.root as usize] == Node::VarY && !right.nodes.contains(&Node::VarY) {
-            return printer.expr(right, right.root, out);
-        }
+    let c = printer.c;
+    if let Some(right) = graph::right_side(c, id) {
+        return printer.expr(right, right.root, out);
     }
 
-    let c = printer.c;
-    let carrier = c.raw_carrier(id).or_else(|| {
-        matches!(c.kind(id), Kind::Line | Kind::Segment | Kind::Ray).then_some((
-            f64::NAN,
-            f64::NAN,
-            f64::NAN,
-        ))
-    });
-    let coefficients = if let Some((a, b, c)) = carrier {
-        [0.0, a, c, b]
-    } else {
-        let [xx, yy, constant, xy, x, y] = c.conic(id)?.matrix;
-        if xy.abs() >= crate::tol::STANDARD_PRECISION || yy.abs() >= crate::tol::STANDARD_PRECISION
-        {
-            return None;
-        }
-        [xx, 2.0 * x, constant, 2.0 * y]
-    };
+    let carrier = matches!(c.kind(id), Kind::Line | Kind::Segment | Kind::Ray);
+    let coefficients = graph::coefficients(c, id, crate::tol::STANDARD_PRECISION)
+        .or_else(|| carrier.then_some([0.0, f64::NAN, f64::NAN, f64::NAN]))?;
     let [quadratic, linear, constant, divisor] = coefficients;
-    if carrier.is_none() && (divisor == 0.0 || !c.value(id).is_defined()) {
+    if !carrier && divisor == 0.0 {
         return None;
     }
     let mut terms = Vec::new();
     for (coefficient, variable) in [
-        (
-            if carrier.is_none() {
-                -quadratic / divisor
-            } else {
-                0.0
-            },
-            "(x)^(2)",
-        ),
+        (if !carrier { -quadratic / divisor } else { 0.0 }, "(x)^(2)"),
         (-linear / divisor, "x"),
         (-constant / divisor, ""),
     ] {
@@ -101,7 +75,7 @@ fn graph_argument(printer: &Printer<'_>, id: crate::Id, out: &mut String) -> Opt
         let term = match variable {
             "" => number,
             _ if coefficient == 1.0 => variable.into(),
-            _ if carrier.is_none() => format!("({variable})*({number})"),
+            _ if !carrier => format!("({variable})*({number})"),
             _ => format!("({number})*({variable})"),
         };
         terms.push((sign, term));
@@ -115,13 +89,6 @@ fn graph_argument(printer: &Printer<'_>, id: crate::Id, out: &mut String) -> Opt
     }
     out.push_str(&result);
     Some(())
-}
-
-fn is_graph(kind: Kind) -> bool {
-    matches!(
-        kind,
-        Kind::Line | Kind::Segment | Kind::Ray | Kind::Conic | Kind::Circle
-    )
 }
 
 pub(in crate::expr) fn function(
@@ -148,7 +115,7 @@ pub(in crate::expr) fn function(
     let mut printer = Printer::new(c, vec!["x".into(), "y".into(), "z".into()], false);
     printer.parameter = Some(parameter);
     let mut argument = String::new();
-    let graph = source.filter(|&id| op == Op::Simplify && is_graph(c.kind(id)));
+    let graph = source.filter(|&id| op == Op::Simplify && graph::is_graph(c.kind(id)));
     if let Some(id) = graph {
         if graph_argument(&printer, id, &mut argument).is_none() {
             return Some(None);
@@ -316,7 +283,7 @@ pub(crate) fn geometry(
     if let Some(source) = named {
         let kind = c.kind(source);
         if !(matches!(kind, Kind::Curve | Kind::ImplicitCurve)
-            || op == Op::Simplify && is_graph(kind))
+            || op == Op::Simplify && graph::is_graph(kind))
         {
             return None;
         }
@@ -339,7 +306,7 @@ pub(crate) fn geometry(
             }
         };
         let result = match c.kind(source) {
-            kind if op == Op::Simplify && is_graph(kind) => coordinate(c, label, source, op),
+            kind if op == Op::Simplify && graph::is_graph(kind) => coordinate(c, label, source, op),
             Kind::Function if inline => coordinate(c, label, source, op),
             Kind::ImplicitCurve => {
                 crate::expr::equation::implicit::add_giac_rewrite(c, label, source, op)

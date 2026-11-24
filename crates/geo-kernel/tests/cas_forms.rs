@@ -93,6 +93,36 @@ fn curve_coordinates_require_numbers_with_giac() {
 }
 
 #[test]
+fn nested_simplify_samples_graphs_after_input_changes() {
+    let mut c = build(&[
+        "a = 6",
+        "b = 1",
+        "g: 2x + 3y = a",
+        "k: y = b*x^2",
+        "f(x) = 1 + Simplify(g)",
+        "h(x) = 1 + Simplify(k)",
+    ]);
+    let value_at = |c: &Construction, label| c.function_value(id(c, label), 3.0);
+    assert!((value_at(&c, "f").unwrap() - 1.0).abs() < 1e-12);
+    assert_eq!(value_at(&c, "h"), Some(10.0));
+
+    c.set_number(id(&c, "a"), 12.0).unwrap();
+    c.set_number(id(&c, "b"), 2.0).unwrap();
+    assert!((value_at(&c, "f").unwrap() - 3.0).abs() < 1e-12);
+    assert_eq!(value_at(&c, "h"), Some(19.0));
+}
+
+#[test]
+fn nested_simplify_limits_graph_rewrites() {
+    let mut c = build(&["g: 2x + 3y = 6"]);
+    let expression = ["Simplify(g)"; 9].join(" + ");
+    assert_eq!(
+        rejected(&mut c, &format!("f(x) = {expression}")),
+        "too many nested graph rewrites"
+    );
+}
+
+#[test]
 fn objects_that_are_no_expression_are_refused() {
     let mut c = build(&[
         "g: x+y=1",

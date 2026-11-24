@@ -644,6 +644,10 @@ impl<'a> Printer<'a> {
     }
 
     fn expression(&self, e: &Entry, i: u32, out: &mut String) -> Option<()> {
+        if let Some(result) = e.graph_rewrite(i) {
+            let tree = result.as_ref()?.tree()?;
+            return self.expr(tree, tree.root, out);
+        }
         match e.nodes[i as usize] {
             Node::Num(v) => {
                 match &e.lits[i as usize] {
@@ -1428,7 +1432,7 @@ impl std::fmt::Display for Algebra<'_> {
                 let name = match name.as_str() {
                     "re" => "real",
                     "im" => "imaginary",
-                    "log" => "lg",
+                    "log" => "ln",
                     name => name,
                 };
                 f.write_str(name)?;
@@ -1901,6 +1905,13 @@ mod tests {
                 list.get(0),
                 Some(Element::Value(Kind::Point, Value::Point { x: 0.0, y: 0.0 }))
             ));
+        });
+    }
+
+    #[test]
+    fn cas_curve_displays_log_as_natural_log() {
+        with_result("{(log(y),0)}", |list| {
+            assert_eq!(super::super::display_list(list), "{(ln(y), 0)}");
         });
     }
 

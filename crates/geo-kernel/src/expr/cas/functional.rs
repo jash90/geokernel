@@ -30,7 +30,7 @@ pub(in crate::expr) struct Function {
 }
 
 impl Function {
-    fn new(expanded: Quotient) -> Self {
+    pub(super) fn new(expanded: Quotient) -> Self {
         Self {
             expanded,
             form: Form::Expanded,
