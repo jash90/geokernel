@@ -461,4 +461,25 @@ cases.case("rebuiltdetails", RADIUS_CIRCLE, REBUILD_RADIUS + [
     add("q_2 = ProveDetails(AreCollinear(A, B, Q))"),
 ])
 
+
+cases.case("identicalthrough", THROUGH_CIRCLE, [
+    redefine("D = (2, 0)"), redefine("h = Line(C, D)"),
+    add("p_2 = Prove(AreCollinear(A, B, Q))"),
+])
+for line in ("g", "Line(A, B)"):
+    cases.case("typedrecovery", [
+        entry.replace("Intersect(Line(A, B), c", f"Intersect({line}, c") for entry in THROUGH_CIRCLE
+    ], [
+        redefine("D = (2, 0)"), redefine("b = false"),
+        add("p_2 = Prove(AreCollinear(A, B, Q))"),
+        redefine("D = (1, 2)"), add("p_3 = Prove(AreCollinear(A, B, Q))"),
+    ])
+cases.case("zeroradiusdetails", [
+    "O = (0, 0)", "H = (0, 0)", "A = (-3, 0)", "B = (3, 0)", "c = Circle(O, H)",
+    "Q = Intersect(Line(A, B), c, 1)", "q = ProveDetails(AreCollinear(A, B, Q))",
+], [])
+proof("namedpointselector", PARABOLA + [
+    "s = Line(A, B)", "U = If(x(B) > 0, (1, 0), (2, 0))", "n = x(U)", "P = Intersect(s, k, n)",
+], "AreCollinear(A, B, P)")
+
 cases.write()

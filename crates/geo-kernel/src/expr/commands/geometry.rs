@@ -494,15 +494,22 @@ pub(in crate::expr) fn map_list<const M: bool>(
     let retain = !root && ctx.locals.is_none();
     let previous_output = ctx.e.nested_transforms.get(&node);
     let (previous_items, previous_len, previous_active) = if root {
-        match ctx.e.raw {
-            crate::expr::Raw::List(len) => (&ctx.e.items[..], len, ctx.e.root_transform_active),
+        match (ctx.e.raw, ctx.e.root_transform.as_ref()) {
+            (crate::expr::Raw::List(len), Some(active)) => (&ctx.e.items[..], len, Some(active)),
             _ => (&[][..], 0, None),
         }
     } else {
         previous_output.map_or((&[][..], 0, None), |out| {
-            (out.items.as_slice(), out.len, out.active)
+            (out.items.as_slice(), out.len, Some(&out.active))
         })
     };
+    let previous_index = previous_active.and_then(|active| active.index);
+    let previous_leaf = previous_active.and_then(|active| {
+        active
+            .index
+            .map(|index| &previous_items[index as usize])
+            .or(active.detached.as_deref())
+    });
     let mut current = (start, out, len, (0, previous_len));
     let mut active = None;
     // When a scalar precedes the retained active slot, the transformation
@@ -513,7 +520,23 @@ pub(in crate::expr) fn map_list<const M: bool>(
         if size == 0 {
             let Some(next) = pending.pop() else {
                 if root || retain {
-                    lists.remember_transform(node, out, len, active, root);
+                    let detached = if active.is_none() {
+                        pending_value
+                            .or_else(|| previous_leaf.cloned())
+                            .map(Box::new)
+                    } else {
+                        None
+                    };
+                    lists.remember_transform(
+                        node,
+                        out,
+                        len,
+                        crate::expr::TransformActive {
+                            index: active,
+                            detached,
+                        },
+                        root,
+                    );
                 }
                 return Some((out, len));
             };
@@ -573,16 +596,14 @@ pub(in crate::expr) fn map_list<const M: bool>(
                 start,
                 len,
                 if retain { 2 } else { 1 },
-                previous_active,
+                previous_index,
                 pending_value.as_ref(),
             )?;
             if let Some(leaf) = active.or(retained_active) {
                 lists.set(leaf, transformed(lists.read(ctx.c, leaf)));
                 active = Some(leaf);
-            } else if let Some(index) = previous_active {
-                let point = pending_value
-                    .take()
-                    .unwrap_or_else(|| previous_items[index as usize].clone());
+            } else if let Some(previous) = previous_leaf {
+                let point = pending_value.take().unwrap_or_else(|| previous.clone());
                 pending_value = Some(transformed(point));
             }
             list
@@ -598,10 +619,8 @@ pub(in crate::expr) fn map_list<const M: bool>(
             if slot.kind != Kind::List {
                 if let Some(leaf) = active {
                     lists.set(leaf, transformed(lists.read(ctx.c, leaf)));
-                } else if let Some(index) = previous_active {
-                    let point = pending_value
-                        .take()
-                        .unwrap_or_else(|| previous_items[index as usize].clone());
+                } else if let Some(previous) = previous_leaf {
+                    let point = pending_value.take().unwrap_or_else(|| previous.clone());
                     pending_value = Some(transformed(point));
                 } else {
                     // AlgoApplyMatrix and AlgoDilate reuse the most recent

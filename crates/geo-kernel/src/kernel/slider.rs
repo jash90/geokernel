@@ -247,7 +247,7 @@ impl Construction {
             Some(match self.numeric_value(source) {
                 Some(f64::INFINITY) => "Infinity".to_owned(),
                 Some(f64::NEG_INFINITY) => "-Infinity".to_owned(),
-                Some(value) if !value.is_nan() => value.to_string(),
+                Some(value) => value.to_string(),
                 _ => source.to_owned(),
             })
         });

@@ -983,6 +983,7 @@ enum Propagation<'a> {
     Redefinition {
         refresh: DefinitionRefresh,
         rebuild_records: bool,
+        refresh_proofs: bool,
     },
     Reload,
     RecordProtocol(&'a mut BTreeMap<usize, ProtocolRecord>),
@@ -2367,7 +2368,9 @@ impl Construction {
                 })
             });
             let old_bounds = self.saved_slider_bounds.get(&id).copied();
-            if !supported(old)
+            let def = self.defs[new.0];
+            let same_line = matches!(old, Def::Line(..)) && old == def;
+            if (!supported(old) && !same_line)
                 || ((self.slider_interval(id).is_some() || old_bounds.is_some())
                     && new_bounds.is_none())
             {
@@ -2382,8 +2385,7 @@ impl Construction {
             {
                 return Err(refuse("a replacement must have one visible output"));
             }
-            let def = self.defs[new.0];
-            if !supported(def) {
+            if !supported(def) && !same_line {
                 return Err(refuse("this replacement cannot be installed in place"));
             }
             if def.kind() != old.kind() && !self.children[id.0].is_empty() {
@@ -2452,8 +2454,14 @@ impl Construction {
             }
         };
 
-        let rebuilds_construction = self.replacement_rebuilds_construction(id, def);
+        let same_definition = expr::same_definition(self, old, def);
+        let rebuilds_construction =
+            !same_definition && self.replacement_rebuilds_construction(id, def);
         let rebuilds = rebuilds_construction && !self.inequality_helpers.outputs().is_empty();
+        // Typing new coordinates still moves an independent point. Its
+        // symbolic definition stays free, as it does during a drag.
+        let refresh_proofs = !same_definition
+            && !matches!((old, def), (Def::FreePoint { .. }, Def::FreePoint { .. }));
 
         let slider_options = self.slider_animation_options.remove(&new);
         let mut value = self.values[new.0];
@@ -2553,12 +2561,15 @@ impl Construction {
         }
         // Assignments and childless replacements keep the existing
         // construction, including retained geometry outside the edit.
-        let rebuild_records = !self.children[id.0].is_empty()
-            && !(old.is_free() && def.is_free() && old.kind() == def.kind());
+        let rebuild_records = rebuilds_construction;
         if rebuild_records {
-            for (i, &def) in self.defs.iter().enumerate() {
-                if matches!(def, Def::Expr(d) if expr::reset_list_records(self, d)) {
-                    dirty.insert(self.evaluation_rank(Id(i)));
+            for i in 0..self.len() {
+                if let Def::Expr(d) = self.defs[i] {
+                    let lists = expr::reset_list_records(self, d);
+                    let transforms = expr::reset_transform_outputs(self, d);
+                    if lists || transforms {
+                        dirty.insert(self.evaluation_rank(Id(i)));
+                    }
                 }
             }
             for &i in self
@@ -2591,6 +2602,7 @@ impl Construction {
             Propagation::Redefinition {
                 refresh,
                 rebuild_records,
+                refresh_proofs,
             },
         );
         if rebuilds {
@@ -2607,18 +2619,16 @@ impl Construction {
         Ok(Some(id))
     }
 
-    /// AlgebraProcessor updates independent values in place. Construction.replace
-    /// also skips the XML rebuild for identical definitions, compatible command
-    /// edits on constant inputs, and objects without dependents.
+    /// For a changed definition, Construction.replace skips the XML rebuild
+    /// for compatible edits on constant inputs and objects without dependents.
+    /// AlgebraProcessor updates independent values in place.
     fn replacement_rebuilds_construction(&self, id: Id, replacement: Def) -> bool {
         if self.children[id.0].is_empty() {
             return false;
         }
         let old = self.def(id);
         let independent = |def| expr::independent_definition(self, def);
-        if (old.kind() == replacement.kind() && independent(old) && independent(replacement))
-            || expr::same_definition(self, old, replacement)
-        {
+        if old.kind() == replacement.kind() && independent(old) && independent(replacement) {
             return false;
         }
         if let (
@@ -3714,17 +3724,29 @@ impl Construction {
             }
         }
         let mut clamped_slider = false;
+        let mut transient = DirtySet::default();
         for child in sliders.drain(..) {
             let changed = self.update_slider_bounds(child);
             if changed {
                 clamped_slider = true;
                 self.construction_sources.remove(&child);
+                if refresh_definitions && !self.values[child.0].is_defined() {
+                    // A direct lower bound can invalidate the slider before
+                    // the redefinition sweep updates its upper bound.
+                    transient.fit(self.len());
+                    for dependent in self.children[child.0].iter() {
+                        transient.insert(self.evaluation_rank(dependent));
+                    }
+                }
             }
             if changed || refresh_definitions {
                 dirty.insert(self.evaluation_rank(child));
             }
         }
         self.slider_updates = sliders;
+        if transient.len != 0 {
+            self.propagate_dirty(transient, 0);
+        }
         clamped_slider
     }
 
@@ -3811,6 +3833,13 @@ impl Construction {
             } | Propagation::Reload
         );
         let redefining = matches!(mode, Propagation::Redefinition { .. });
+        let refresh_proofs = matches!(
+            mode,
+            Propagation::Redefinition {
+                refresh_proofs: true,
+                ..
+            }
+        );
         self.last_update_requires_replay = false;
         self.inequality_helpers.begin_update();
         self.function_roots.clear();
@@ -3962,7 +3991,7 @@ impl Construction {
                 }
                 // A redefinition can change the structure the proof reads
                 // (a free point put on a path): the reference rebuilds it.
-                Def::Prove(d) if refresh_definitions => {
+                Def::Prove(d) if refresh_definitions && refresh_proofs => {
                     self.proof_intersections.replay_rank = Some(self.proof_rank(Id(i)));
                     // A redefined statement is rewritten again, and the
                     // reference's rebuild then reads the rewritten Boolean.
@@ -4839,6 +4868,24 @@ impl Construction {
             self.dirty = dirty;
         }
         changed
+    }
+
+    /// Reloading an undo snapshot starts each list transformation with fresh outputs.
+    pub fn reset_transform_outputs(&mut self) -> bool {
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.len());
+        for i in 0..self.len() {
+            let def = self.defs[i];
+            if matches!(def, Def::Expr(d) if expr::reset_transform_outputs(self, d)) {
+                dirty.insert(self.evaluation_rank(Id(i)));
+            }
+        }
+        if dirty.len == 0 {
+            self.dirty = dirty;
+            return false;
+        }
+        self.propagate_dirty(dirty, 0);
+        true
     }
 
     fn forget_circle_record(&mut self, i: usize) -> bool {

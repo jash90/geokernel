@@ -967,3 +967,97 @@ fn followup_an_omitted_infinite_step_stays_frozen_after_widening() {
     let step = c.slider_animation_options(a)[0].unwrap();
     assert_eq!(c.numeric_value(step), Some(f64::INFINITY));
 }
+
+const ROUND2_TRANSFORMS: [&str; 2] = ["Dilate(L, 2)", "ApplyMatrix({{2, 0}, {0, 2}}, L)"];
+const ROUND2_NESTED: &str =
+    "t = 2\nA = (1, 2)\nB = (3, 5)\nL = If(t > 1, {{A}, {B}}, If(t > 0, {{A}, 4}, {3, 4}))";
+
+fn first_nested_x(c: &Construction) -> f64 {
+    let result = c.elements(c.id("M").unwrap()).unwrap();
+    let Some(super::Element::List(nested)) = result.get(0) else {
+        panic!("expected nested list");
+    };
+    let Some(super::Element::Value(Kind::Point, Value::Point { x, .. })) = nested.get(0) else {
+        panic!("expected point");
+    };
+    x
+}
+
+#[test]
+fn round2_value_stable_selector_updates_the_active_transform() {
+    for command in ROUND2_TRANSFORMS {
+        for source in [
+            ROUND2_NESTED.to_owned(),
+            ROUND2_NESTED.replace("{3, 4}))", "If(t == 0, {3, 4}, {5, 6})))"),
+        ] {
+            let mut c = load(&format!("{source}\nM = {command}")).unwrap();
+            let t = c.id("t").unwrap();
+            c.set_number(t, 1.0).unwrap();
+            assert_eq!(first_nested_x(&c), 4.0);
+            c.set_number(t, 0.0).unwrap();
+            assert_eq!(first_nested_x(&c), 16.0);
+            c.set_number(t, -1.0).unwrap();
+            assert_eq!(first_nested_x(&c), 64.0);
+        }
+    }
+}
+
+#[test]
+fn round2_structural_rebuild_restarts_nested_transform_slots() {
+    for command in ROUND2_TRANSFORMS {
+        let mut c = load(&format!(
+            "{ROUND2_NESTED}\nM = {command}\nq = 10\nw = q + 1"
+        ))
+        .unwrap();
+        c.set_number(c.id("t").unwrap(), 1.0).unwrap();
+        crate::script::exec(&mut c, "q = x(A)").unwrap();
+        assert_eq!(first_nested_x(&c), 4.0);
+        assert!(matches!(
+            c.elements(c.id("M").unwrap()).unwrap().get(1),
+            Some(super::Element::Value(Kind::Number, Value::Number(4.0)))
+        ));
+    }
+}
+
+#[test]
+fn round2_empty_list_keeps_the_active_transform() {
+    for command in ROUND2_TRANSFORMS {
+        let mut c = load(&format!(
+            "t = 2\nA = (1, 2)\nL = If(t > 1, {{{{A}}}}, If(t > 0, {{}}, {{3}}))\nM = {command}"
+        ))
+        .unwrap();
+        let (t, m) = (c.id("t").unwrap(), c.id("M").unwrap());
+        c.set_number(t, 1.0).unwrap();
+        assert_eq!(c.elements(m).unwrap().len(), 0);
+        c.set_number(t, 0.0).unwrap();
+        let list = c.elements(m).unwrap();
+        assert_eq!(list.len(), 1);
+        assert!(matches!(
+            list.get(0),
+            Some(super::Element::Value(Kind::Number, Value::Number(3.0)))
+        ));
+    }
+}
+
+#[test]
+fn round2_slider_dependents_observe_transient_undefined() {
+    let mut c = load(
+        "u = -4\nhi = u + 3\na = Slider(u, hi)\nb = IsDefined(a)\nP = (1, 2)\nQ = (3, 5)\n\
+         L = If(b, If(a < 0, {{P}, {Q}}, {3, 4}), {{P}, 4})\nM = Dilate(L, 2)",
+    )
+    .unwrap();
+    crate::script::exec(&mut c, "u = -0.5").unwrap();
+    assert_eq!(first_nested_x(&c), 16.0);
+}
+
+#[test]
+fn round2_omitted_nan_step_stays_frozen() {
+    let mut c = load("h = 0.2\na = Slider(0, 6, h, 2)").unwrap();
+    let a = c.id("a").unwrap();
+    c.set_number(a, 5.0).unwrap();
+    crate::script::exec(&mut c, "h = sqrt(a - 3)").unwrap();
+    crate::script::exec(&mut c, "a = Slider(0, 2)").unwrap();
+    crate::script::exec(&mut c, "a = Slider(0, 6)").unwrap();
+    c.set_number(a, 5.0).unwrap();
+    assert_eq!(c.slider_animation_options(a)[0], Some("NaN"));
+}

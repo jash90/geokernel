@@ -869,6 +869,72 @@ mod tests {
         }
     }
 
+    const ROUND2_THROUGH_CIRCLE: &str =
+        "O = (0, 0)\nA = (-3, 0)\nB = (3, 0)\nC = (1, 0)\nD = (1, 2)\n\
+        g = Line(A, B)\nh = Line(C, D)\nH = Intersect(g, h)\nc = Circle(O, H)";
+
+    #[test]
+    fn round2_identical_line_redefinition_keeps_the_retained_circle_type() {
+        let mut c = crate::script::load(&format!(
+            "{ROUND2_THROUGH_CIRCLE}\nQ = Intersect(Line(A, B), c, 1)\nb = A == B\np = Prove(b)"
+        ))
+        .unwrap();
+        for line in [
+            "D = (2, 0)",
+            "h = Line(C, D)",
+            "p_2 = Prove(AreCollinear(A, B, Q))",
+        ] {
+            crate::script::exec(&mut c, line).unwrap();
+        }
+        assert_eq!(c.value(c.id("p_2").unwrap()), Value::Bool(true));
+    }
+
+    #[test]
+    fn round2_typed_radius_recovery_keeps_the_existing_unknown_proof() {
+        for line in ["g", "Line(A, B)"] {
+            let mut c = crate::script::load(&format!(
+                "{ROUND2_THROUGH_CIRCLE}\nQ = Intersect({line}, c, 1)\nb = A == B\np = Prove(b)"
+            ))
+            .unwrap();
+            for edit in [
+                "D = (2, 0)",
+                "b = false",
+                "p_2 = Prove(AreCollinear(A, B, Q))",
+            ] {
+                crate::script::exec(&mut c, edit).unwrap();
+            }
+            let p = c.id("p_2").unwrap();
+            assert_eq!(c.value(p), Value::Undefined);
+            crate::script::exec(&mut c, "D = (1, 2)").unwrap();
+            assert_eq!(c.value(p), Value::Undefined);
+            let fresh = crate::script::exec(&mut c, "p_3 = Prove(AreCollinear(A, B, Q))")
+                .unwrap()
+                .unwrap();
+            assert_eq!(c.value(fresh), Value::Bool(true));
+        }
+    }
+
+    #[test]
+    fn round2_zero_radius_circle_has_empty_proof_details() {
+        let c = crate::script::load(
+            "O = (0, 0)\nH = (0, 0)\nA = (-3, 0)\nB = (3, 0)\nc = Circle(O, H)\n\
+             Q = Intersect(Line(A, B), c, 1)\nq = ProveDetails(AreCollinear(A, B, Q))",
+        )
+        .unwrap();
+        assert_eq!(c.elements(c.id("q").unwrap()).unwrap().len(), 0);
+    }
+
+    #[test]
+    fn round2_named_conditional_point_has_empty_proof_details() {
+        let c = crate::script::load(
+            "D = (-3, -1)\nE = (3, -1)\nd = Line(D, E)\nF = (0, 1)\nk = Parabola(F, d)\n\
+             A = (-4, 1)\nB = (4, 1)\ns = Line(A, B)\nU = If(x(B) > 0, (1, 0), (2, 0))\n\
+             n = x(U)\nP = Intersect(s, k, n)\nb = AreCollinear(A, B, P)\nq = ProveDetails(b)",
+        )
+        .unwrap();
+        assert_eq!(c.elements(c.id("q").unwrap()).unwrap().len(), 0);
+    }
+
     const FOLLOWUP_RADIUS: &str = "O = (0, 0)\nA = (-3, 0)\nB = (3, 0)\nn = 2\nc = Circle(O, n)\n\
          Q = Intersect(Line(A, B), c, 1)\nb = A == B\np = Prove(b)";
 

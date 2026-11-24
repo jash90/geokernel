@@ -2448,3 +2448,37 @@ fn undo_reloads_an_undefined_circumcircle_arc() {
     assert!(w.delete(w.construction.id("P").unwrap()));
     assert_eq!(actual(&w, "e"), Value::Bool(false));
 }
+
+#[test]
+fn round2_undo_restarts_nested_transform_slots() {
+    for command in ["Dilate(L, 2)", "ApplyMatrix({{2, 0}, {0, 2}}, L)"] {
+        let mut w = Workbench::from_script(&format!(
+            "t = 2\nA = (1, 2)\nB = (3, 5)\n\
+             L = If(t > 1, {{{{A}}, {{B}}}}, If(t > 0, {{{{A}}, 4}}, {{3, 4}}))\nM = {command}"
+        ))
+        .unwrap();
+        let t = w.construction().id("t").unwrap();
+        assert!(w.set_number(t, 1.0));
+        assert!(w.set_number(t, 0.0));
+        assert!(w.undo());
+        let c = w.construction();
+        let list = c.elements(c.id("M").unwrap()).unwrap();
+        let Some(geo_kernel::expr::Element::List(first)) = list.get(0) else {
+            panic!("expected nested list");
+        };
+        assert!(matches!(
+            first.get(0),
+            Some(geo_kernel::expr::Element::Value(
+                Kind::Point,
+                Value::Point { x: 4.0, y: 8.0 }
+            ))
+        ));
+        assert!(matches!(
+            list.get(1),
+            Some(geo_kernel::expr::Element::Value(
+                Kind::Number,
+                Value::Number(4.0)
+            ))
+        ));
+    }
+}

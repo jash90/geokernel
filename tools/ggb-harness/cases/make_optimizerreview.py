@@ -156,4 +156,31 @@ cases.case("infinitestep", ["h = 0.2", "a = Slider(0, 6, h, 2)"], [
     redefine("a = Slider(0, 6)"), setn("a", 5),
     {"action": "slider_animation", "label": "a"},
 ])
+
+for command in ["Dilate(L, 2)", "ApplyMatrix({{2, 0}, {0, 2}}, L)"]:
+    nested = [
+        "t = 2", "A = (1, 2)", "B = (3, 5)",
+        "L = If(t > 1, {{A}, {B}}, If(t > 0, {{A}, 4}, {3, 4}))", f"M = {command}",
+    ]
+    cases.case("nestedthirdedit", nested, [setn("t", 1), setn("t", 0), setn("t", -1)])
+    cases.case("nestedthirdedit", [
+        line.replace("{3, 4}))", "If(t == 0, {3, 4}, {5, 6})))") for line in nested
+    ], [setn("t", 1), setn("t", 0), setn("t", -1)])
+    cases.case("nestedundo", nested, [setn("t", 1), setn("t", 0), {"action": "undo"}])
+    cases.case("nestedrebuild", nested + ["q = 10", "w = q + 1"], [
+        setn("t", 1), redefine("q = x(A)"),
+    ])
+    cases.case("nestedempty", [
+        "t = 2", "A = (1, 2)", "L = If(t > 1, {{A}}, If(t > 0, {}, {3}))", f"M = {command}",
+    ], [setn("t", 1), setn("t", 0)])
+cases.case("endpointcascade", [
+    "u = -4", "hi = u + 3", "a = Slider(u, hi)", "b = IsDefined(a)", "P = (1, 2)", "Q = (3, 5)",
+    "L = If(b, If(a < 0, {{P}, {Q}}, {3, 4}), {{P}, 4})", "M = Dilate(L, 2)",
+], [redefine("u = -0.5")])
+cases.case("nanstep", ["h = 0.2", "a = Slider(0, 6, h, 2)"], [
+    setn("a", 5), redefine("h = sqrt(a - 3)"), redefine("a = Slider(0, 2)"),
+    redefine("a = Slider(0, 6)"), setn("a", 5),
+    {"action": "slider_animation", "label": "a"},
+])
+
 cases.write()

@@ -789,10 +789,17 @@ struct FunctionInterval {
 }
 
 #[derive(Clone)]
+struct TransformActive {
+    index: Option<u32>,
+    // Removing a list slot leaves the algorithm's active object alive.
+    detached: Option<Box<Slot>>,
+}
+
+#[derive(Clone)]
 struct TransformOutput {
     len: u32,
     items: Vec<Slot>,
-    active: Option<u32>,
+    active: TransformActive,
 }
 
 type NestedTransforms = std::collections::BTreeMap<u32, TransformOutput>;
@@ -830,7 +837,7 @@ pub(crate) struct Entry {
     lists: bool,
     /// The elements of a list result (see [`list`]).
     items: Vec<Slot>,
-    root_transform_active: Option<u32>,
+    root_transform: Option<TransformActive>,
     nested_transforms: NestedTransforms,
     coordinate_layout: Option<list::CoordinateLayout>,
     depth: u32,
@@ -938,6 +945,13 @@ pub(crate) fn reset_list_records(c: &Construction, d: ExprDef) -> bool {
     true
 }
 
+pub(crate) fn reset_transform_outputs(c: &mut Construction, d: ExprDef) -> bool {
+    let e = &mut c.exprs.entries[d.index as usize];
+    let had_outputs = e.root_transform.take().is_some() || !e.nested_transforms.is_empty();
+    e.nested_transforms.clear();
+    had_outputs
+}
+
 pub(crate) fn reset_transpose_flags(c: &Construction, d: ExprDef) -> bool {
     let e = entry(c, d);
     if !e.lists {
@@ -1001,7 +1015,6 @@ impl Entry {
         });
         let lists = reads_list(&p.nodes, &p.tys);
         let has_if_algorithm = !function
-            && matches!(p.tys[p.root as usize], Ty::Num(_))
             && p.nodes
                 .iter()
                 .any(|node| matches!(node, Node::If(IfMode::Algo | IfMode::AlgoNext, ..)));
@@ -1013,7 +1026,7 @@ impl Entry {
             inverts,
             lists,
             items: Vec::new(),
-            root_transform_active: None,
+            root_transform: None,
             nested_transforms: NestedTransforms::new(),
             coordinate_layout: None,
             interval: None,
@@ -1779,7 +1792,7 @@ pub(crate) struct SavedResult {
     coordinate_layout: Option<list::CoordinateLayout>,
     stuck: Vec<u32>,
     list_records: Option<ListRecords>,
-    root_transform_active: Option<u32>,
+    root_transform: Option<TransformActive>,
     nested_transforms: NestedTransforms,
 }
 
@@ -1812,7 +1825,7 @@ impl SavedResult {
             coordinate_layout: e.coordinate_layout,
             stuck: stuck.clone(),
             list_records: list_records.as_deref().cloned(),
-            root_transform_active: e.root_transform_active,
+            root_transform: e.root_transform.clone(),
             nested_transforms: e.nested_transforms.clone(),
         })
     }
@@ -1823,7 +1836,7 @@ impl SavedResult {
         e.extra = self.extra;
         e.interval = self.interval;
         e.items = self.items;
-        e.root_transform_active = self.root_transform_active;
+        e.root_transform = self.root_transform;
         e.nested_transforms = self.nested_transforms;
         e.coordinate_layout = self.coordinate_layout;
         *e.stuck.nodes() = self.stuck;
@@ -1917,10 +1930,10 @@ fn update_lists(c: &mut Construction, d: ExprDef) -> ((Value, bool), bool) {
     let out = evaluate_lists(c, d, &lists, &mut items);
     let invalid_transform_list = lists.invalid_transform_list.get();
     let transforms = lists.take_nested_transforms();
-    let root_transform_active = lists.root_transform.get().flatten();
+    let root_transform = lists.root_transform.take();
     c.exprs.arena = lists.into_arena();
     let e = &mut c.exprs.entries[d.index as usize];
-    e.root_transform_active = root_transform_active;
+    e.root_transform = root_transform;
     e.nested_transforms.extend(transforms);
     let items_changed = !list::same_slots(&e.items, &items);
     if items_changed {
@@ -1936,7 +1949,13 @@ fn update_lists(c: &mut Construction, d: ExprDef) -> ((Value, bool), bool) {
     c.exprs.out = items;
     let v = value(d, out.raw);
     let changed = store(c, d, out);
-    ((v, changed || items_changed), invalid_transform_list)
+    // A list selector's dependents run even if the selected elements kept
+    // the same values. List transforms can act on retained output objects.
+    let selector_updated = d.kind == Kind::List && entry(c, d).has_if_algorithm;
+    (
+        (v, changed || items_changed || selector_updated),
+        invalid_transform_list,
+    )
 }
 
 /// `AlgoDependentFunction.inputDefined`: a function is defined when every

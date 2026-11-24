@@ -786,6 +786,12 @@ impl Log {
             self.ops
                 .push(Op::SavedProperty(Box::new(Property::ResetTransposeFlags)));
         }
+        if c.reset_transform_outputs()
+            && !matches!(self.ops.last(), Some(Op::SavedProperty(p)) if **p == Property::ResetTransformOutputs)
+        {
+            self.ops
+                .push(Op::SavedProperty(Box::new(Property::ResetTransformOutputs)));
+        }
     }
 
     fn push_set(&mut self, label: &str, to: Setting, ordered: bool) {

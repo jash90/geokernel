@@ -269,14 +269,14 @@ impl System {
                 self.point(q)?;
                 self.free_vars[x] = true;
             }
-            Def::Expr(d) if c.kind(id) == Kind::Number => {
-                let entry = crate::expr::source_entry(c, d);
-                if entry.has_if_algorithm {
-                    self.unknown = true;
-                    return None;
-                }
-                return Some(());
+            Def::Expr(d)
+                if matches!(d.kind(), Kind::Number | Kind::Point)
+                    && crate::expr::source_entry(c, d).has_if_algorithm =>
+            {
+                self.unknown = true;
+                return None;
             }
+            Def::Expr(d) if d.kind() == Kind::Number => return Some(()),
             Def::FreePoint { .. } => {
                 let x = self.new_var(true)?;
                 let y = self.new_var(true)?;
@@ -481,8 +481,14 @@ impl System {
             if missing_second || missing_first {
                 // The reference reports an unknown proof if an undefined
                 // conic has no retained circle type for the intersection.
-                self.unknown = (missing_second && !c.value(second).is_defined())
-                    || (missing_first && !c.value(first).is_defined());
+                let unsupported_circle_type = |circle| {
+                    matches!(
+                        c.value(circle),
+                        Value::Undefined | Value::Circle { r: 0.0, .. }
+                    )
+                };
+                self.unknown = (missing_second && unsupported_circle_type(second))
+                    || (missing_first && unsupported_circle_type(first));
                 return None;
             }
         }
