@@ -345,13 +345,14 @@ jar.
 ### Desktop golden allow-lists
 
 The Giac-enabled allow-lists on Intel macOS and Windows both use
-[the 146 list permutations in 41 CAS cases](../crates/geo-golden/desktop-giac-orders.json).
+[the 165 list permutations in 45 CAS cases](../crates/geo-golden/desktop-giac-orders.json).
 Each row names a case, snapshot step, and object label and gives the
-zero-based permutation of its expected elements. The case and label
-selection comes from the mismatches on the initial desktop golden runs.
-Each permutation was derived by comparing the Linux golden snapshots
-with the pinned Java harness snapshots from Intel macOS and independently
-confirmed against the complete Windows recording under Wine on 2026-11-24.
+zero-based permutation of its expected elements. The original 146 entries
+come from comparisons of the Linux and Intel macOS harness snapshots,
+confirmed against the Windows recording under Wine on 2026-11-24.
+The other 19 entries cover two-branch conic solutions in `cas-conic-057`
+and `cas-order-094`, `-096` and `-097`. The Intel macOS and Windows
+transcripts both reverse the Linux branch order at those sites.
 The comparator checks every list element in the listed order at the
 existing tolerance.
 
