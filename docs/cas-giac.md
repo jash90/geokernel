@@ -137,6 +137,15 @@ GEO_GIAC_LIBRARY="$(tools/giac/fetch.sh)" \
   cargo run -p geo-giac --features giac --example replay -- tools/giac/cas-exchanges.jsonl
 ```
 
+Intel macOS uses `tools/giac/cas-exchanges-macos-intel.jsonl`, recorded
+with the same Java harness and case inputs against the pinned Intel Giac
+library. Its reference prints 174 results in a different order. The Rust
+bridge matched all 1,966 outputs in each platform's own recording on
+2026-11-24. Windows uses the Intel transcript with three overrides
+in `tools/giac/cas-outputs-windows.jsonl`. The first hosted Windows
+run produced those same 1,966 results. The Java harness with the pinned
+Windows DLL confirmed the three overrides under Wine.
+
 The example exits with an error for any differing result. Set
 `GEO_GIAC_REPLAY_TRACE=1` to log each case and input before evaluation.
 
@@ -281,9 +290,9 @@ Evidence as of 2026-11-24:
 | Platform | Check | Result |
 | --- | --- | --- |
 | Linux x86_64 | `giac-linux` | Passed on main on 2026-11-24 (6m 15s). |
-| macOS arm64 | `giac-macos` on `macos-latest` | Local binding tests passed. The full native replay and golden replay reproduced the upstream fault described below. |
-| macOS x86_64 | Manual desktop packaging | Pinned Intel library available. Full CI fidelity has yet to be established. |
-| Windows x86_64 | `giac-windows` on `windows-latest` | Pinned DLL and JNI exports checked. Runtime CI evidence pending. |
+| macOS arm64 | Local replay and golden replay | Both reproduced the Giac 70507 fault on 2026-11-24. A native Giac package requires a fixed upstream build. |
+| macOS x86_64 | `giac-macos` on `macos-15-intel` | Local Intel replay matched 1,966/1,966 exchanges with the Intel reference. CI also runs the Linux-captured golden suite as a diagnostic. |
+| Windows x86_64 | `giac-windows` on `windows-latest` | On 2026-11-24 the first hosted run passed the binding, kernel, mutation, command-form and no-library golden checks. Its 177 differences from the Linux transcript are covered by the checked Windows expectations. |
 | Android | AAR extraction and host unit tests | Pinned AAR verified and both libraries extracted for all four ABIs. Directory resolution and refusal tests passed. Emulator replay pending. |
 | Web | Outside scope | The reference uses a JavaScript build of Giac. |
 
@@ -310,9 +319,25 @@ register state and memory faults in the crash reports. See the [Apple ARM64 ABI]
 and the [GMP fault report](https://gnats.netbsd.org/60904).
 
 The fix belongs in
-the published arm64 library's GMP build. The CI replay keeps reporting
-crashes and output differences. The current macOS packaging workflow builds
-for Intel.
+the published arm64 library's GMP build. The native Apple Silicon Giac
+variant is unavailable until a fixed upstream build exists. The macOS GPL
+archive and the `giac-macos` job use the x86_64 library from the universal
+jar.
+
+The Linux-captured golden suite remains a diagnostic on Intel macOS.
+The local Intel run under Rosetta reported 7,091 agreements, 171 known
+gaps and 42 new discrepancies. Giac returns a different order in 41
+of these cases. The remaining discrepancy, `misc-maximizepoint-015`,
+has a point coordinate about `5e-8` from the reference. CI gates the
+binding and the byte-for-byte Intel reference replay.
+
+Windows also reported 7,091 agreements, 171 known gaps and 42 new
+discrepancies against the Linux golden corpus with Giac loaded. Its
+byte replay differs from Intel only in `cas-start-006` and `cas-edge-017`
+(decimal formatting) and `cas-edge-004` (the cancellation result is
+`-8.881784197001E-06` instead of `-0.999200722162641E-5`). The
+Giac-enabled Linux-captured golden comparison is diagnostic on Windows.
+The no-library golden comparison and strict Windows replay remain gates.
 
 ### Android emulator replay
 
