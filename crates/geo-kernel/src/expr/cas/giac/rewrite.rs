@@ -439,7 +439,7 @@ pub(crate) fn implicit(c: &Construction, id: crate::Id, op: Op) -> Option<(Vec<V
 
 #[cfg(test)]
 mod tests {
-    use super::super::*;
+    use super::*;
 
     #[test]
     fn simplify_uses_the_recorded_template() {
