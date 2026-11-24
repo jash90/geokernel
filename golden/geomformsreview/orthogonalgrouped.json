@@ -1,0 +1,32 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomformsreview-orthogonalgrouped-001",
+      "group": "geomformsreview",
+      "script": [
+        "P = (2, 2)",
+        "g: y = 2",
+        "h = OrthogonalLine(P, g, (space))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 3.0, "y": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "h": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 2.0 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "h": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 3.0 }
+        }
+      ]
+    }
+  ]
+}

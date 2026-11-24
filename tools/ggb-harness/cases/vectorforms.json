@@ -23,6 +23,8 @@
     {"id": "vectorforms-crossrows-001", "group": "vectorforms", "script": ["a = Cross({{1, 2}, 3}, {4, {5, 6}})", "b = Cross({{1, 2}, {3, 4, 5}}, {{6, 7, 8}, {9, 10}})"], "steps": [{"action": "initial"}]},
     {"id": "vectorforms-listdot-001", "group": "vectorforms", "script": ["a = Dot({{1, 2}, {3, 4}}, {{5, 6}, {7, 8}})", "b = Dot({true, false}, {2, 3})", "c = Dot(3, {1, 2})"], "steps": [{"action": "initial"}]},
     {"id": "vectorforms-listdot-002", "group": "vectorforms", "script": ["l = {1, 2}"], "steps": [{"action": "initial"}, {"action": "reject", "line": "a = Dot({1, 2}, 3)"}, {"action": "reject", "line": "a = Dot(l, 3)"}]},
-    {"id": "vectorforms-matrixbudget-001", "group": "vectorforms", "script": ["d = Determinant(Identity(431))", "r = MatrixRank(Identity(431))"], "steps": [{"action": "initial"}]}
+    {"id": "vectorforms-matrixbudget-001", "group": "vectorforms", "script": ["d = Determinant(Identity(431))", "r = MatrixRank(Identity(431))"], "steps": [{"action": "initial"}]},
+    {"id": "vectorforms-pointforms-001", "group": "vectorforms", "script": ["A = (3, 7)", "B = (3, 4)", "d = Dimension(A)", "u = UnitOrthogonalVector(B)"], "steps": [{"action": "initial"}, {"action": "move", "label": "A", "x": 0.0, "y": 0.0}, {"action": "move", "label": "B", "x": 0.0, "y": 0.0}, {"action": "move", "label": "B", "x": -4.0, "y": 3.0}]},
+    {"id": "vectorforms-pointforms-002", "group": "vectorforms", "script": ["A = (0, 0)", "B = (2, 0)", "C = (0, 1)", "D = (2, 2)", "g = Line(A, B)", "h = Line(C, D)", "P = Intersect(g, h)", "d = Dimension(P)", "u = UnitOrthogonalVector(P)"], "steps": [{"action": "initial"}, {"action": "move", "label": "D", "x": 2.0, "y": 1.0}, {"action": "move", "label": "D", "x": 1.0, "y": -1.0}, {"action": "move", "label": "D", "x": 2.0, "y": 2.0}]}
   ]
 }

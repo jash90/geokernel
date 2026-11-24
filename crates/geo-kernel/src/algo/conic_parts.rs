@@ -151,6 +151,21 @@ impl ConicPartDef {
     }
 }
 
+impl ConicPartDef {
+    pub(crate) fn reader_name(name: &str) -> Option<&'static str> {
+        [
+            "FirstAxis",
+            "MajorAxis",
+            "SecondAxis",
+            "MinorAxis",
+            "Excentricity",
+            "LinearEccentricity",
+        ]
+        .into_iter()
+        .find(|command| command.eq_ignore_ascii_case(name))
+    }
+}
+
 impl Group for ConicPartDef {
     fn kind(&self) -> Kind {
         match self {
@@ -198,7 +213,9 @@ impl Group for ConicPartDef {
             _ => {}
         }
         let conics = match self {
-            Self::Asymptote { .. } | Self::Axis { .. } => CONIC_OBJECTS,
+            Self::Asymptote { .. } | Self::Axis { .. } | Self::LinearEccentricity(_) => {
+                CONIC_OBJECTS
+            }
             Self::Pole { .. } | Self::Diameter { .. } => CIRCLE_OR_CONIC,
             _ => CONIC,
         };
@@ -241,10 +258,9 @@ impl Group for ConicPartDef {
             return asymptote(&super::conic_object(c, conic)?, which);
         }
         let d = if reads_fields {
-            c.conic_fields(conic)
-                .or_else(|| c.arc(conic).map(|a| a.conic))?
+            conic_reader_fields(c, conic)?
         } else {
-            c.conic(conic)?
+            super::conic_object(c, conic)?
         };
         match *self {
             ConicPartDef::IntersectLine { .. } | ConicPartDef::Asymptote { .. } => None,
@@ -355,13 +371,20 @@ impl Group for ConicPartDef {
                 (_, k) => Err(format!("`{func}` does not take a {k} and a conic")),
             });
         }
+        if c.id(func).is_some() && Self::reader_name(func).is_some() {
+            return None;
+        }
+        let func = Self::reader_name(func).unwrap_or(func);
         let [arg] = args else { return None };
-        let kinds = if matches!(func, "MajorAxis" | "FirstAxis" | "MinorAxis" | "SecondAxis") {
-            CONIC_OBJECTS
-        } else {
-            CONIC
+        let conic = c.id(arg)?;
+        let kinds = match func {
+            "MajorAxis" | "FirstAxis" | "MinorAxis" | "SecondAxis" | "LinearEccentricity"
+            | "Excentricity" => CONIC_OBJECTS,
+            _ => CONIC,
         };
-        let conic = c.id(arg).filter(|&k| kinds.contains(&c.kind(k)))?;
+        if !kinds.contains(&c.kind(conic)) {
+            return None;
+        }
         let def = match func {
             "Center" | "Midpoint" => ConicPartDef::Center(conic),
             "MajorAxis" | "FirstAxis" => ConicPartDef::Axis { conic, which: 0 },
@@ -419,6 +442,14 @@ impl Group for ConicPartDef {
             _ => return None,
         };
         Some(Ok((0..n).map(|which| make(conic, which)).collect()))
+    }
+}
+
+/// Field-based readers of a part use its carrier, which survives undefined updates.
+pub(super) fn conic_reader_fields(c: &Construction, conic: Id) -> Option<ConicData> {
+    match c.kind(conic) {
+        Kind::Arc | Kind::Sector => super::conic_object(c, conic),
+        _ => c.conic_fields(conic),
     }
 }
 

@@ -1946,8 +1946,11 @@ fn deleting_a_slider_keeps_the_surviving_sliders_default_position() {
         "a = Slider(0, 1)\nb = Slider(0, 1)",
         "m = 10\na = Slider(0, m)\nb = Slider(0, m)",
         "n = -1\nm = sqrt(n)\na = Slider(0, m)\nb = Slider(0, m)",
+        "m = 2\na = Slider((?), (?))\nb = Slider(m, (?))",
     ] {
         let mut w = Workbench::from_script(script).unwrap();
+        let c = w.construction();
+        assert_eq!(c.value(c.id("b").unwrap()), Value::Number(0.0));
         let position = |w: &Workbench| {
             let c = w.construction();
             let b = c.id("b").unwrap();

@@ -1,0 +1,63 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "corners-definedimage-001",
+      "group": "corners",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 0)",
+        "C = (0, 1)",
+        "D = (1, 1)",
+        "g = Line(A, B)",
+        "h = Line(C, D)",
+        "P = Intersect(g, h)",
+        "$imageAsset(_73616d706c652e706e67, _89504e470d0a1a0a0000000d494844520000000c000000080802000000428689a60000001149444154789c63102c9f4910318c2a0200794a6c61e52114330000000049454e44ae426082)",
+        "pic = $image(_73616d706c652e706e67, 1, false, true, _, world(false, false, point(_50), _, _))",
+        "b = Defined(pic)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "D", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "P": { "type": "point", "defined": false },
+          "pic": { "type": "image", "defined": true },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -1.0 },
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "pic": { "type": "image", "defined": true },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "P": { "type": "point", "defined": false },
+          "pic": { "type": "image", "defined": true },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    }
+  ]
+}

@@ -180,10 +180,12 @@ pub(super) fn list_value<const M: bool>(
 
 /// The list that the list command `op` whose result is a list builds (see
 /// [`makes_list`]).
-pub(super) use geometry::{apply_matrix_coordinates, map_list};
+pub(super) use geometry::{apply_matrix_coordinates, dilate_slot, map_list};
+pub(super) use logical::defined_object;
 
 pub(super) fn list_fn<const M: bool>(
     ctx: &Ctx<'_, M>,
+    node: u32,
     op: ListOp,
     l: u32,
     n: u32,
@@ -191,7 +193,7 @@ pub(super) fn list_fn<const M: bool>(
     match op {
         ListOp::Normalize => function_analysis::normalize(ctx, l),
         ListOp::Svd => function_analysis::svd(ctx, l),
-        _ if geometry::makes_list(op) => geometry::list_fn(ctx, op, l, n),
+        _ if geometry::makes_list(op) => geometry::list_fn(ctx, node, op, l, n),
         _ => ctx.list_fn(op, l, n),
     }
 }

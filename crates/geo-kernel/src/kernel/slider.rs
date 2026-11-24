@@ -13,7 +13,7 @@ pub(super) enum Bound {
 impl Bound {
     fn read(self, c: &Construction) -> Option<f64> {
         match self {
-            Self::Literal(v) => Some(v),
+            Self::Literal(v) => v.is_finite().then_some(v),
             Self::Object(id) => match c.value(id) {
                 Value::Number(v) if v.is_finite() => Some(v),
                 _ => None,
@@ -144,6 +144,31 @@ impl Construction {
         id: Id,
         bounds: [Option<&str>; 2],
     ) -> Result<(), String> {
+        self.install_slider_bounds(id, bounds, false)
+    }
+
+    pub(crate) fn add_slider_with_sources(
+        &mut self,
+        label: &str,
+        bounds: [&str; 2],
+    ) -> Result<Id, String> {
+        let checkpoint = self.checkpoint();
+        let id = self
+            .add(label, Def::Number(0.0))
+            .map_err(|e| e.to_string())?;
+        if let Err(error) = self.install_slider_bounds(id, bounds.map(Some), true) {
+            self.discard_since(checkpoint);
+            return Err(error);
+        }
+        Ok(id)
+    }
+
+    fn install_slider_bounds(
+        &mut self,
+        id: Id,
+        bounds: [Option<&str>; 2],
+        creating: bool,
+    ) -> Result<(), String> {
         let Some(&Def::Number(value)) = self.defs.get(id.index()) else {
             return Err("slider bounds need a free number".into());
         };
@@ -230,16 +255,24 @@ impl Construction {
             Some(position) => self.set_animation_position(id, position),
             None => self.reset_animation_position(id),
         }
-        if min.zip(max).is_some_and(|(min, max)| min > max) {
+        // CmdSlider leaves the starting value alone until both bounds are
+        // active. A file reload can constrain its saved value by either end.
+        let interval = min.zip(max);
+        if interval.is_some_and(|(min, max)| min > max) {
             self.values[id.index()] = Value::Undefined;
             self.propagate(id);
-        } else if clamp(value, [min, max]).to_bits() != value.to_bits() {
+        } else if (!creating || interval.is_some())
+            && clamp(value, [min, max]).to_bits() != value.to_bits()
+        {
             self.set_number(id, value).map_err(|e| e.to_string())?;
         }
         Ok(())
     }
 
     fn slider_bound(&mut self, owner: Id, source: &str) -> Result<Bound, String> {
+        if matches!(crate::script::ungroup(source), "?" | "NaN") {
+            return Ok(Bound::Literal(f64::NAN));
+        }
         if let Some(v) = crate::expr::plain_number(source).filter(|v| v.is_finite()) {
             return Ok(Bound::Literal(v));
         }
@@ -287,6 +320,18 @@ impl Construction {
     /// [`Construction::set_number`] keeps its value in. A new number is 0,
     /// put in the interval (`GeoNumeric.setIntervalMin` and `Max`).
     pub fn add_slider(&mut self, label: &str, min: f64, max: f64) -> Result<Id, Error> {
+        if min.is_nan() || max.is_nan() {
+            if min.is_infinite() || max.is_infinite() {
+                return Err(Error::NotFinite);
+            }
+            // GeoNumeric.resolveMinMax leaves the initial value in place
+            // when either endpoint is undefined.
+            let id = self.add(label, Def::Number(0.0))?;
+            self.saved_slider_bounds
+                .insert(id, [Some(Bound::Literal(min)), Some(Bound::Literal(max))]);
+            self.remember_slider_slot(id);
+            return Ok(id);
+        }
         if !(min.is_finite() && max.is_finite()) {
             return Err(Error::NotFinite);
         }

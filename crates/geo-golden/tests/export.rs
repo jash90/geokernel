@@ -2054,3 +2054,36 @@ fn geogebra_reloads_session_control_positions_and_values() {
     assert_eq!(snap["styles"]["b"]["caption"], json!("Show"));
     assert_eq!(snap["objects"]["b"]["value"], json!(false));
 }
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_reloads_a_slider_with_an_undefined_endpoint() {
+    let wb = Workbench::from_script("limit = 2\ns = Slider((?), limit, 0.5)").unwrap();
+    let archive = wb.export_ggb(None).unwrap();
+    let xml = geo_import::archive::extract_xml(&archive).unwrap();
+    assert!(xml.contains(r#"min="NaN" max="limit""#));
+    let dir = Scratch::new("undefined-slider");
+    fs::write(dir.0.join("slider.ggb"), &archive).unwrap();
+    let output = java_snapshots(&dir.0);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let snap: Value =
+        serde_json::from_slice(&fs::read(dir.0.join("slider.ggb.snapshot")).unwrap()).unwrap();
+    let saved_slider = &snap["styles"]["s"]["slider"];
+    assert_eq!(saved_slider["min"], Value::Null);
+    assert_eq!(saved_slider["max"], json!(2.0));
+    assert_eq!(saved_slider["position"], json!([30.0, 50.0]));
+    assert_eq!(snap["styles"]["s"]["label_mode"], json!(1));
+    assert_eq!(snap["styles"]["s"]["animation"]["step"], json!(0.5));
+    assert_eq!(snap["objects"]["s"]["value"], json!(0.0));
+
+    let mut reloaded = Workbench::default();
+    reloaded.load_bytes(&archive, "slider.ggb").unwrap();
+    let limit = reloaded.construction().id("limit").unwrap();
+    let s = reloaded.construction().id("s").unwrap();
+    assert!(reloaded.set_number(limit, 4.0));
+    assert_eq!(reloaded.construction().slider_bounds(s), [None, Some(4.0)]);
+}

@@ -10,7 +10,7 @@ def case(topic, script, steps=(), *, view=None):
     cases.case(topic, script.splitlines(), list(steps))
     if view is not None:
         cases.cases[-1]["view"] = view
-    if any(command in script for command in ("Curve(", "Spline(", "ParametricDerivative(")):
+    if any(command in script for command in ("Curve(", "CurveCartesian(", "Spline(", "ParametricDerivative(")):
         cases.cases[-1]["sample_curves"] = True
 
 
@@ -200,5 +200,14 @@ case("reviewiteration", "n = 2\nR = Iteration(x+1,1,n)", [setn("n", 2000000)])
 case("reviewode", "s = SolveODE(y,10000000000000000,1,10000000000000002,0.25)")
 case("reviewode", "a = 1\nf(t,u,v) = a*v\ng(t,u,v) = -u\ns = NSolveODE({f,g},0,{1,0},0.1)",
      [setn("a", 2)])
+
+
+# CommandsTest.cmdCurveCartesian uses separate coordinate expressions.
+case("cartesiancoords", "g = CurveCartesian(t^2, t^2, t, 42, 50)")
+case("cartesiancoords", """a = -2
+b = 3
+r = 2
+g = CurveCartesian(r * t, t^2, t, a, b)""",
+     [setn("r", -3), setn("a", 4), setn("b", 5)])
 
 cases.write()
