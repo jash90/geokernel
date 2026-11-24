@@ -872,6 +872,7 @@ name = "geo-giac"
 version = "0.1.0"
 dependencies = [
  "libloading",
+ "serde_json",
  "sha2",
 ]
 

@@ -2,7 +2,7 @@
 //!
 //! The reference application evaluates its CAS commands with Giac, build
 //! 70507, through a JNI library. With the `giac` feature this crate loads that
-//! same library at run time (the path is read from `GEO_GIAC_LIBRARY`) and
+//! same library at run time and
 //! calls the same entry points without a Java virtual machine; see
 //! `docs/cas-giac.md`. Giac is GPL software: nothing of it is compiled into
 //! this crate, and without the feature the crate does nothing at all.
@@ -26,8 +26,10 @@ pub const LIBRARY_VARIABLE: &str = "GEO_GIAC_LIBRARY";
 pub enum Error {
     /// Built without the `giac` feature.
     Disabled,
-    /// `GEO_GIAC_LIBRARY` is not set.
+    /// No Giac library was found.
     NoLibrary,
+    /// The process already selected a CAS backend.
+    AlreadyInitialized,
     /// The library or one of its entry points could not be loaded.
     Load(String),
     /// A call into the library failed.
@@ -46,7 +48,8 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::Disabled => write!(f, "built without the giac feature"),
-            Error::NoLibrary => write!(f, "{LIBRARY_VARIABLE} is not set"),
+            Error::NoLibrary => write!(f, "no Giac library was found"),
+            Error::AlreadyInitialized => write!(f, "the CAS backend is already initialized"),
             Error::Load(why) => write!(f, "cannot load Giac: {why}"),
             Error::Call(why) => write!(f, "Giac call failed: {why}"),
             Error::Worker => write!(f, "the Giac worker stopped"),
@@ -65,8 +68,7 @@ pub enum Backend {
     /// The pinned Giac library is loaded: CAS commands go to Giac, and a
     /// failed Giac call makes its result undefined.
     Giac,
-    /// No library is configured (`GEO_GIAC_LIBRARY` unset or empty, or the
-    /// file absent), or the build has no `giac` feature: the kernel behaves
+    /// No library was found, or the build has no `giac` feature: the kernel behaves
     /// exactly like the default build.
     KernelOnly,
     /// A library is configured but cannot be used (wrong hash, unpinned
@@ -85,6 +87,22 @@ pub fn backend() -> Backend {
     {
         Backend::KernelOnly
     }
+}
+
+/// The SHA-256 of the Giac library accepted on this target.
+#[cfg(feature = "giac")]
+pub fn pinned_library_sha256() -> Option<&'static str> {
+    native::PINNED
+}
+
+/// On Android, initialize Giac from the application's native library
+/// directory (for example, `ApplicationInfo.nativeLibraryDir`).
+///
+/// Call before any CAS use or backend query. The OS selects the ABI at
+/// install time. Both shared libraries must exist in this directory.
+#[cfg(all(feature = "giac", target_os = "android"))]
+pub fn initialize_from_android_dir(directory: &std::path::Path) -> Result<(), Error> {
+    worker::initialize_from_android_dir(directory)
 }
 
 /// Why the backend is not [`Backend::Giac`], if it is not.

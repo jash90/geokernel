@@ -12,6 +12,9 @@
 //! returns (its late answer is dropped). A second copy of the library cannot
 //! be loaded beside it, since both would share Giac's global state.
 
+use std::ffi::OsString;
+#[cfg(any(test, target_os = "android"))]
+use std::path::Path;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
@@ -83,9 +86,12 @@ fn serve<J>(
     }
 }
 
-static WORKER: OnceLock<Result<Link<Job>, Error>> = OnceLock::new();
+struct State {
+    backend: (crate::Backend, Option<String>),
+    worker: Result<Link<Job>, Error>,
+}
 
-static BACKEND: OnceLock<(crate::Backend, Option<String>)> = OnceLock::new();
+static STATE: OnceLock<State> = OnceLock::new();
 
 static SIMULATED: Mutex<Option<Error>> = Mutex::new(None);
 
@@ -95,40 +101,93 @@ pub(crate) fn simulate_failure(error: Option<Error>) {
     }
 }
 
-/// The process's backend, decided at the first call: no configured library
-/// means the kernel alone; a configured library that does not load is a
-/// failure, reported once.
-pub(crate) fn backend() -> &'static (crate::Backend, Option<String>) {
-    BACKEND.get_or_init(|| {
-        let configured = std::env::var_os(LIBRARY_VARIABLE).filter(|path| !path.is_empty());
-        let Some(path) = configured else {
-            return (
-                crate::Backend::KernelOnly,
-                Some(format!("{LIBRARY_VARIABLE} is not set")),
-            );
-        };
-        if !std::path::Path::new(&path).exists() {
-            let reason = format!(
-                "{LIBRARY_VARIABLE} names {}, which does not exist",
-                PathBuf::from(&path).display()
-            );
-            return (crate::Backend::KernelOnly, Some(reason));
+/// An explicitly empty override preserves the kernel-only mode. When
+/// unset, use only the executable's own directory or its app bundle.
+fn library_path(configured: Option<OsString>) -> Result<PathBuf, String> {
+    if let Some(path) = configured {
+        if path.is_empty() {
+            return Err(format!("{LIBRARY_VARIABLE} is empty"));
         }
-        match WORKER.get_or_init(start) {
+        return Ok(path.into());
+    }
+    let name = crate::native::LIBRARY_NAME.ok_or("no bundled Giac library on this platform")?;
+    let executable = std::env::current_exe().map_err(|err| err.to_string())?;
+    let directory = executable
+        .parent()
+        .ok_or("executable has no parent directory")?;
+    let sibling = directory.join(name);
+    if cfg!(target_os = "macos") && !sibling.exists() && directory.ends_with("Contents/MacOS") {
+        return Ok(directory.join("../Frameworks").join(name));
+    }
+    Ok(sibling)
+}
+
+#[cfg(any(test, target_os = "android"))]
+fn android_library_path(directory: &Path) -> Result<PathBuf, Error> {
+    if !directory.is_absolute() || !directory.is_dir() {
+        return Err(Error::Load(
+            "expected an absolute Android native library directory".into(),
+        ));
+    }
+    for name in ["libjavagiac.so", "libc++_shared.so"] {
+        if !directory.join(name).is_file() {
+            return Err(Error::Load(format!(
+                "Android native library directory is missing {name}"
+            )));
+        }
+    }
+    Ok(directory.join("libjavagiac.so"))
+}
+
+#[cfg(target_os = "android")]
+pub(crate) fn initialize_from_android_dir(directory: &Path) -> Result<(), Error> {
+    let path = android_library_path(directory)?;
+    let mut initialized_here = false;
+    let state = STATE.get_or_init(|| {
+        initialized_here = true;
+        State::with_library(path)
+    });
+    if !initialized_here {
+        return Err(Error::AlreadyInitialized);
+    }
+    state.worker.as_ref().map(|_| ()).map_err(Clone::clone)
+}
+
+impl State {
+    fn kernel_only(reason: String) -> Self {
+        Self {
+            backend: (crate::Backend::KernelOnly, Some(reason)),
+            worker: Err(Error::NoLibrary),
+        }
+    }
+
+    fn with_library(path: PathBuf) -> Self {
+        let worker = start(path);
+        let backend = match &worker {
             Ok(_) => (crate::Backend::Giac, None),
             Err(error) => {
                 let reason = error.to_string();
                 eprintln!("geo-giac: {reason}; every Giac result is undefined in this process");
                 (crate::Backend::Failed, Some(reason))
             }
-        }
+        };
+        Self { backend, worker }
+    }
+}
+
+fn state() -> &'static State {
+    STATE.get_or_init(|| match library_path(std::env::var_os(LIBRARY_VARIABLE)) {
+        Ok(path) if path.exists() => State::with_library(path),
+        Ok(path) => State::kernel_only(format!("{} does not exist", path.display())),
+        Err(reason) => State::kernel_only(reason),
     })
 }
 
-fn start() -> Result<Link<Job>, Error> {
-    let path = std::env::var_os(LIBRARY_VARIABLE)
-        .map(PathBuf::from)
-        .ok_or(Error::NoLibrary)?;
+pub(crate) fn backend() -> &'static (crate::Backend, Option<String>) {
+    &state().backend
+}
+
+fn start(path: PathBuf) -> Result<Link<Job>, Error> {
     let (ready_tx, ready_rx) = channel::<Result<(), Error>>();
     let (tx, rx) = channel::<(Job, Reply)>();
     let in_flight = Arc::new(AtomicBool::new(false));
@@ -170,17 +229,10 @@ fn start() -> Result<Link<Job>, Error> {
 }
 
 fn run(job: Job) -> Result<String, Error> {
-    match backend() {
-        (crate::Backend::Giac, _) => {}
-        (crate::Backend::KernelOnly, _) => return Err(Error::NoLibrary),
-        (crate::Backend::Failed, reason) => {
-            return Err(Error::Load(reason.clone().unwrap_or_default()))
-        }
-    }
+    let link = state().worker.as_ref().map_err(Clone::clone)?;
     if let Some(error) = SIMULATED.lock().ok().and_then(|s| s.clone()) {
         return Err(error);
     }
-    let link = WORKER.get_or_init(start).as_ref().map_err(Clone::clone)?;
     let limit = match &job {
         Job::Raw { timeout_ms, .. } => *timeout_ms,
         Job::Plain(_) => session::DEFAULT_TIMEOUT_MS,
@@ -203,6 +255,23 @@ pub(crate) fn eval_plain(text: &str) -> Result<String, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn resolves_android_libraries_and_refuses_incomplete_directories() {
+        assert!(android_library_path(Path::new("relative")).is_err());
+        let directory =
+            std::env::temp_dir().join(format!("geo-giac-android-{}", std::process::id()));
+        assert!(android_library_path(&directory).is_err());
+        std::fs::create_dir(&directory).unwrap();
+        let giac = directory.join("libjavagiac.so");
+        std::fs::write(&giac, b"placeholder").unwrap();
+        assert!(
+            matches!(android_library_path(&directory), Err(Error::Load(reason)) if reason.ends_with("libc++_shared.so"))
+        );
+        std::fs::write(directory.join("libc++_shared.so"), b"placeholder").unwrap();
+        assert_eq!(android_library_path(&directory), Ok(giac));
+        std::fs::remove_dir_all(directory).unwrap();
+    }
 
     /// A worker that sleeps for the job's milliseconds and answers them.
     fn sleeper() -> Link<u64> {

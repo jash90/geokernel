@@ -124,10 +124,8 @@ fn slow_plot_draws_up_to_the_left_view_corner() {
     assert!(c.function_value(g, -2.0).is_none_or(f64::is_nan));
     // the repeat flag changes nothing without an animation
     let d = build(&["f(x) = cos(x)", "h(x) = SlowPlot(f, false)"]);
-    assert_eq!(
-        d.function_value(d.id("h").unwrap(), -5.0),
-        Some((-5.0f64).cos())
-    );
+    let sample = d.function_value(d.id("f").unwrap(), -5.0).unwrap();
+    assert_eq!(d.function_value(d.id("h").unwrap(), -5.0), Some(sample));
 }
 
 #[test]

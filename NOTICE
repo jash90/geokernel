@@ -14,3 +14,15 @@ No Giac source or binary is part of this repository, and builds without the
 distributed together with a Giac library is a combined work that must be
 distributed under the GNU General Public License, version 3 or later; the
 EUPL 1.2 lists that licence as compatible. See docs/cas-giac.md.
+
+Desktop archive notices
+-----------------------
+
+The geokernel archive is distributed under the EUPL 1.2. The
+geokernel-giac archive is a combined work distributed under the GNU General
+Public License, version 3 or later. See GPL-3.0.txt, REVISION and
+SOURCE-OFFER.txt in that archive for the licence text, the bundled Giac
+build and how to request its complete corresponding source. The
+application's source and build scripts are in geokernel-source.tar.gz.
+The packaged Giac source is in giac-70507-source.archive. The associated
+SHA-256 is recorded below in the Giac archive's copy of this notice.

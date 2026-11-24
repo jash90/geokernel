@@ -1,0 +1,18 @@
+geokernel with Giac
+===================
+
+This combined work is licensed under the GNU General Public License,
+version 3 or later. See GPL-3.0.txt for the licence text and NOTICE
+for the component notices. The original application source remains
+available under the EUPL 1.2 (see LICENSE).
+
+The archive geokernel-source.tar.gz contains the application's source
+and build scripts from the revision named in REVISION.
+
+The bundled Giac JNI library is GeoGebra's javagiac build 70507 for
+the platform named in REVISION. Request its complete corresponding
+source, including the wrapper, bundled dependencies and build scripts,
+at https://github.com/jash90/geokernel/issues/new. The project offers
+a copy at no charge to anyone with this archive for at least three
+years from distribution and for as long as the project supports this
+build. Include the contents of REVISION with the request.
