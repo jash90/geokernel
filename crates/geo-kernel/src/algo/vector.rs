@@ -61,7 +61,7 @@
 
 use super::lines::LineDef;
 use super::point::CoordMode;
-use super::{normalized_coefficients, Group, Parents, POINT};
+use super::{Group, Parents, POINT};
 use crate::expr::{Element, List};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
@@ -267,6 +267,14 @@ fn raw_through(p: (f64, f64), q: (f64, f64)) -> (f64, f64, f64) {
     (p.1 - q.1, q.0 - p.0, p.0 * q.1 - p.1 * q.0)
 }
 
+/// `GeoVec3D.lineThroughPoints` uses the raw direction of an infinite endpoint.
+fn ray_through(c: &Construction, start: (f64, f64), through: Id) -> Option<(f64, f64, f64)> {
+    if let Some((x, y, _)) = c.point_at_infinity(through) {
+        return Some(raw_along(start, (x, y)));
+    }
+    Some(raw_through(start, point(c, through)?))
+}
+
 /// `GeoVec3D.lineThroughPointVector`: through `p` with direction `v`.
 fn raw_along(p: (f64, f64), v: (f64, f64)) -> (f64, f64, f64) {
     (-v.1, v.0, p.0 * v.1 - p.1 * v.0)
@@ -304,9 +312,8 @@ pub(crate) fn raw_or_undefined(c: &Construction, id: Id) -> Option<(f64, f64, f6
 /// coefficients are then NaN) or the line is made otherwise.
 fn undefined_raw(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
     match c.def(id) {
-        Def::Line(p, q) | Def::Vector(VectorDef::RayPoints(p, q)) => {
-            Some(raw_through(point(c, p)?, point(c, q)?))
-        }
+        Def::Line(p, q) => Some(raw_through(point(c, p)?, point(c, q)?)),
+        Def::Vector(VectorDef::RayPoints(p, q)) => ray_through(c, point(c, p)?, q),
         Def::Vector(VectorDef::RayVector(p, v) | VectorDef::LineVector(p, v)) => {
             Some(raw_along(point(c, p)?, vector(c, v)?))
         }
@@ -320,21 +327,10 @@ fn undefined_raw(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
             Some((gx, gy, -((a.0 + b.0) * gx + (a.1 + b.1) * gy) / 2.0))
         }
         Def::Parallel { through, to } => {
-            // `AlgoLinePointLine`: `GeoVec3D.cross(P, l.y, -l.x, 0)`.
-            let (px, py) = point(c, through)?;
-            let (lx, ly, _) = raw_or_undefined(c, to)?;
-            Some((py * 0.0 - -lx, ly - px * 0.0, px * -lx - py * ly))
+            super::basic::raw_parallel(c, through, raw_or_undefined(c, to)?)
         }
         Def::Perpendicular { through, to } => {
-            // `AlgoOrthoLinePointLine`: `GeoVec3D.cross(P, l.x, l.y, 0)`,
-            // then `GeoLine.getNormalizedCoefficients`.
-            let (px, py) = point(c, through)?;
-            let (lx, ly, _) = raw_or_undefined(c, to)?;
-            Some(normalized_coefficients(
-                (py * 0.0 - ly, lx - px * 0.0, px * ly - py * lx),
-                10e6,
-                1e-2,
-            ))
+            super::basic::raw_perpendicular(c, through, raw_or_undefined(c, to)?)
         }
         Def::Vector(VectorDef::Translate { src, by, .. }) => {
             // `GeoLine.translate`.
@@ -666,8 +662,8 @@ impl Group for VectorDef {
                 _ => None,
             },
             VectorDef::RayPoints(p, q) => {
-                let (p, q) = (point(c, p)?, point(c, q)?);
-                ray_value(p, raw_through(p, q))
+                let start = point(c, p)?;
+                ray_value(start, ray_through(c, start, q)?)
             }
             VectorDef::RayVector(p, v) => {
                 let p = point(c, p)?;

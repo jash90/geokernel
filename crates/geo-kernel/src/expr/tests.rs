@@ -886,3 +886,203 @@ fn list_dilation_respects_the_remaining_carrier_budget() {
     assert_eq!(c.value(n), Value::Undefined);
     assert!(super::work_done() - before <= 33);
 }
+
+fn homogeneous_case_value(c: &Construction, label: &str) -> Value {
+    c.value(c.id(label).unwrap())
+}
+
+fn assert_homogeneous_pair(actual: Value, expected: (f64, f64)) {
+    let (x, y) = match actual {
+        Value::Point { x, y } | Value::Vector { x, y } => (x, y),
+        other => panic!("expected a point or vector, got {other:?}"),
+    };
+    assert!(
+        (x - expected.0).abs() < 1e-9 && (y - expected.1).abs() < 1e-9,
+        "expected {expected:?}, got ({x}, {y})"
+    );
+}
+
+#[test]
+fn homogeneous_vector_ray_008() {
+    let mut c = load(
+        r#"A = (0, 0)
+B = (4, 1)
+C = (1, 3)
+D = (2, -2)
+l = Line(A, B)
+m = Line(C, D)
+S = Intersect(l, m)
+g = Ray(S, C)
+h = Ray(C, S)
+"#,
+    )
+    .unwrap();
+    c.move_point(c.id("D").unwrap(), 5.0, 4.0).unwrap();
+    assert_eq!(homogeneous_case_value(&c, "g"), Value::Undefined);
+    assert_eq!(
+        homogeneous_case_value(&c, "h"),
+        Value::Ray {
+            x: 1.0,
+            y: 3.0,
+            a: 11.0,
+            b: -44.0,
+            c: 121.0
+        }
+    );
+    c.move_point(c.id("D").unwrap(), 3.0, -1.0).unwrap();
+    assert!(homogeneous_case_value(&c, "g").is_defined());
+    assert!(matches!(homogeneous_case_value(&c, "h"), Value::Ray { b, .. } if b > 0.0));
+}
+
+#[test]
+fn homogeneous_vector_rawscale_008() {
+    let mut c = load(
+        r#"A = (0, 0)
+B = (2, 0)
+C = (1, -1)
+D = (1, 3)
+l = Line(A, B)
+m = Line(C, D)
+S = Intersect(l, m)
+E = (0, 2)
+F = (3, 3)
+g = Line(E, F)
+p = Line(S, l)
+d = Direction(p)
+q = Line(S, g)
+e = Direction(q)
+k = Distance(q, g)
+w = Slope(q)
+"#,
+    )
+    .unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "d"), (16.0, -0.0));
+    assert_homogeneous_pair(homogeneous_case_value(&c, "e"), (24.0, 8.0));
+    c.move_point(c.id("D").unwrap(), 2.0, 3.0).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "d"), (16.0, -0.0));
+    assert_homogeneous_pair(homogeneous_case_value(&c, "e"), (24.0, 8.0));
+    c.move_point(c.id("B").unwrap(), 4.0, 1.0).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "d"), (60.0, 15.0));
+    assert_homogeneous_pair(homogeneous_case_value(&c, "e"), (45.0, 15.0));
+    c.move_point(c.id("E").unwrap(), -1.0, 1.0).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "d"), (60.0, 15.0));
+    assert_homogeneous_pair(homogeneous_case_value(&c, "e"), (60.0, 30.0));
+    c.move_point(c.id("D").unwrap(), 1.0, 3.0).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "d"), (64.0, 16.0));
+    assert_homogeneous_pair(homogeneous_case_value(&c, "e"), (64.0, 32.0));
+}
+
+#[test]
+fn homogeneous_vector_rawscale_009() {
+    let mut c = load(
+        r#"A = (0, 0)
+B = (2, 0)
+C = (1, -1)
+D = (1, 3)
+l = Line(A, B)
+m = Line(C, D)
+S = Intersect(l, m)
+E = (0, 2)
+F = (3, 3)
+g = Line(E, F)
+n = PerpendicularLine(S, g)
+o = OrthogonalVector(n)
+u = UnitVector(n)
+h = PerpendicularLine(E, g)
+k = Distance(n, h)
+w = Slope(n)
+"#,
+    )
+    .unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "o"), (-24.0, -8.0));
+    c.move_point(c.id("D").unwrap(), 2.0, 3.0).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "o"), (-24.0, -8.0));
+    c.move_point(c.id("B").unwrap(), 4.0, 1.0).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "o"), (-45.0, -15.0));
+    c.move_point(c.id("E").unwrap(), -1.0, 1.0).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "o"), (-60.0, -30.0));
+    c.move_point(c.id("D").unwrap(), 1.0, 3.0).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "o"), (-64.0, -32.0));
+}
+
+#[test]
+fn homogeneous_predicates_infinity_001() {
+    let mut c = load(
+        r#"A = (0, 0)
+B = (2, 1)
+C = (0, 3)
+D = (2, 4)
+F = (5, 5)
+l = Line(A, B)
+m = Line(C, D)
+S = Intersect(l, m)
+t = AreCollinear(A, B, S)
+n = AreCollinear(S, S, F)
+o = AreEqual(S, S)
+p = AreConcyclic(A, B, C, S)
+q = AreEqual(S, F)
+w = AreCongruent(S, F)
+"#,
+    )
+    .unwrap();
+    assert_eq!(homogeneous_case_value(&c, "o"), Value::Bool(true));
+    c.move_point(c.id("D").unwrap(), 2.0, 5.0).unwrap();
+    assert_eq!(homogeneous_case_value(&c, "o"), Value::Bool(true));
+    c.move_point(c.id("D").unwrap(), 2.0, 4.0).unwrap();
+    assert_eq!(homogeneous_case_value(&c, "o"), Value::Bool(true));
+    c.move_point(c.id("F").unwrap(), 0.0, 6.0).unwrap();
+    assert_eq!(homogeneous_case_value(&c, "o"), Value::Bool(true));
+}
+
+#[test]
+fn homogeneous_predicates_homogeneous_001() {
+    let c = load(
+        r#"A = (0, 0)
+B = (4, 0)
+C = (4, 4)
+D = (0, 4)
+E = (2, 6)
+F = (6, 2)
+l = Line(A, C)
+m = Line(B, D)
+n = Line(E, F)
+g = Line(A, B)
+S = Intersect(l, m)
+T = Intersect(m, n)
+U = Intersect(l, n)
+t = AreConcyclic(S, T, U, A)
+o = AreConcyclic(S, A, B, C)
+p = AreCollinear(S, T, U)
+q = AreCollinear(S, A, C)
+"#,
+    )
+    .unwrap();
+    assert_eq!(homogeneous_case_value(&c, "t"), Value::Bool(true));
+}
+
+#[test]
+fn homogeneous_points_infinity_001() {
+    let mut c = load(
+        r#"A = (0, 0)
+B = (2, 1)
+C = (0, 3)
+D = (2, 4)
+F = (5, 5)
+l = Line(A, B)
+m = Line(C, D)
+S = Intersect(l, m)
+P = ClosestPoint(l, S)
+Q = ClosestPoint(S, l)
+k = Circle(A, B)
+R = ClosestPoint(k, S)
+"#,
+    )
+    .unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "R"), (2.23606797749979, 0.0));
+    c.move_point(c.id("D").unwrap(), 2.0, 5.0).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "R"), (-2.0, -1.0000000000000004));
+    c.move_point(c.id("D").unwrap(), 2.0, 4.0).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "R"), (-2.0, -1.0000000000000004));
+    c.move_point(c.id("F").unwrap(), 0.0, 6.0).unwrap();
+    assert_homogeneous_pair(homogeneous_case_value(&c, "R"), (-2.0, -1.0000000000000004));
+}

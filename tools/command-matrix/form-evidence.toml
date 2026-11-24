@@ -4626,3 +4626,61 @@ cases = ["georestintersect-spline-001", "georestintersect-trig-001", "keptvalues
 command = "Distance"
 form = "point,point"
 cases = ["expr-cmd-001", "expr-fnundef-008", "keptvalues-cartesian-001", "keptvalues-cartesian-002", "keptvalues-cartesian-003", "keptvalues-cartesian-004", "keptvalues-cartesian-006"]
+
+[[form]]
+command = "AreConcyclic"
+form = "point,point,point,point"
+cases = ["predicates-homogeneous-001", "predicates-infinity-001"]
+
+[[form]]
+command = "AreCongruent"
+form = "any,any"
+cases = ["predicates-infinity-001", "predicates-congruent-001"]
+difference = "geometry-command-arguments: `AreCongruent(any, any)`"
+
+[[form]]
+command = "ClosestPoint"
+form = "path,point"
+cases = ["points-infinity-001", "geomclosure-projection-001"]
+difference = "geometry-command-arguments: `ClosestPoint(path, point)` and `ClosestPoint(point, path)`"
+
+[[form]]
+command = "ClosestPoint"
+form = "point,path"
+cases = ["points-infinity-001", "geomclosure-projection-001"]
+difference = "geometry-command-arguments: `ClosestPoint(path, point)` and `ClosestPoint(point, path)`"
+
+[[form]]
+command = "Direction"
+form = "line"
+cases = ["vector-rawscale-008", "vector-direction-001"]
+
+[[form]]
+command = "Distance"
+form = "line,line"
+cases = ["vector-rawscale-008", "vector-rawscale-009"]
+
+[[form]]
+command = "Line"
+form = "point,line"
+cases = ["vector-rawscale-008", "geometry-ixll-019"]
+
+[[form]]
+command = "OrthogonalVector"
+form = "line"
+cases = ["vector-rawscale-009"]
+
+[[form]]
+command = "Ray"
+form = "point,point"
+cases = ["vector-ray-008", "angle-lines-012"]
+
+[[form]]
+command = "Slope"
+form = "line"
+cases = ["vector-rawscale-008", "vector-rawscale-009"]
+
+[[form]]
+command = "UnitVector"
+form = "line"
+cases = ["vector-rawscale-009", "vector-rawscale-001"]

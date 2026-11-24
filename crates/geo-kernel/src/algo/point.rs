@@ -2,6 +2,7 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/CmdClosestPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoClosestPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/PathParameter.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPointVector.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPointsFromList.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoVertexSegment.java
@@ -426,25 +427,56 @@ fn project(line: (f64, f64, f64), start: (f64, f64), p: (f64, f64)) -> ((f64, f6
     ((px, py), param)
 }
 
-/// `GeoConicND.pointChangedUnlimited` for a circle: the point of the circle
-/// in the direction of `p` from the centre.
-fn closest_on_circle(cx: f64, cy: f64, r: f64, p: (f64, f64)) -> Value {
-    // GeoGebra makes a circle of radius below the tolerance a single point.
-    if r < STANDARD_PRECISION {
-        return Value::Point { x: cx, y: cy };
-    }
-    // Into eigenvector coordinates, whose axes are (1, 0) and (-0, 1).
+/// `GeoConicND.pointChangedUnlimited` in the circle's eigenvector coordinates.
+fn circle_parameter(cx: f64, cy: f64, r: f64, p: (f64, f64)) -> f64 {
     let px = p.0 - cx;
     let py = p.1 - cy;
     let ex = px * 1.0 + py * 0.0;
     let ey = px * -0.0 + py * 1.0;
-    let t = (r * ey).atan2(r * ex);
+    (r * ey).atan2(r * ex)
+}
+
+fn circle_point(cx: f64, cy: f64, r: f64, t: f64) -> Value {
     let qx = r * t.cos();
     let qy = r * t.sin();
     Value::Point {
         x: qx * 1.0 + qy * -0.0 + cx,
         y: qx * 0.0 + qy * 1.0 + cy,
     }
+}
+
+fn closest_on_circle(cx: f64, cy: f64, r: f64, p: (f64, f64)) -> Value {
+    if r < STANDARD_PRECISION {
+        return Value::Point { x: cx, y: cy };
+    }
+    circle_point(cx, cy, r, circle_parameter(cx, cy, r, p))
+}
+
+/// `GeoPoint.getCoordsInD2` divides by the weight before projection.
+/// If the resulting angle is NaN, `PathParameter.setT` keeps its old value.
+pub(crate) fn closest_circle(
+    c: &Construction,
+    path: Id,
+    point: Id,
+    previous: f64,
+) -> Option<(Value, Option<f64>)> {
+    let Value::Circle { cx, cy, r } = c.value(path) else {
+        return None;
+    };
+    let p = if let Some((x, y, z)) = c.point_at_infinity(point) {
+        (x / z, y / z)
+    } else {
+        c.point(point)?
+    };
+    if r < STANDARD_PRECISION {
+        return Some((Value::Point { x: cx, y: cy }, None));
+    }
+    let t = circle_parameter(cx, cy, r, p);
+    let parameter = (!t.is_nan()).then_some(t);
+    Some((
+        circle_point(cx, cy, r, parameter.unwrap_or(previous)),
+        parameter,
+    ))
 }
 
 pub(crate) fn closest_coords(c: &Construction, path: Id, p: (f64, f64)) -> Option<(f64, f64)> {

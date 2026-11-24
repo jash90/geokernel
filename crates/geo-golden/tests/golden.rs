@@ -8,6 +8,23 @@ use geo_kernel::{script, Construction, Def, Error, Kind, Value};
 const MIN_GOLDEN_CASES: usize = 7227;
 
 #[test]
+fn homogeneous_point_cases_agree() {
+    let ids = [
+        "vector-ray-008",
+        "vector-rawscale-008",
+        "vector-rawscale-009",
+        "predicates-infinity-001",
+        "predicates-homogeneous-001",
+        "points-infinity-001",
+    ];
+    let mut cases = model::load_all(&repo_root()).unwrap();
+    cases.retain(|case| ids.contains(&case.id.as_str()));
+    assert_eq!(cases.len(), ids.len());
+    let report = report::evaluate(&cases, &gaps::Gaps::new());
+    assert!(report.failures.is_empty(), "{}", report.failures.join("\n"));
+}
+
+#[test]
 fn kernel_agrees_with_golden_data() {
     let cases = model::load_all(&repo_root()).unwrap_or_else(|e| panic!("golden data:\n{e}"));
     let gaps = gaps::load().unwrap_or_else(|e| panic!("{e}"));

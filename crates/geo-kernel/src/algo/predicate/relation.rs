@@ -115,9 +115,7 @@ pub(crate) fn numerical(c: &Construction, ids: &[Id], stop: impl Fn(u64) -> bool
                     true,
                     "The points lie on one line.",
                 )
-            } else if ids.len() == 4
-                && concyclic(point(c, a), point(c, b), point(c, d), point(c, ids[3]))
-            {
+            } else if ids.len() == 4 && concyclic(c, [a, b, d, ids[3]]) {
                 finding(Some("AreConcyclic"), true, "The points lie on one circle.")
             } else {
                 equality(None, false)

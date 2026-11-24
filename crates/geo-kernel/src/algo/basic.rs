@@ -43,25 +43,46 @@ pub(crate) fn distance(c: &Construction, p: Id, q: Id) -> Option<Value> {
     Some(Value::Number(super::measure::my_length(x2 - x1, y2 - y1)))
 }
 
-/// `GeoVec3D.cross(P, vx, vy, vz)` for the point `(px, py, 1)`.
-fn cross_point(px: f64, py: f64, vx: f64, vy: f64, vz: f64) -> (f64, f64, f64) {
-    (py * vz - vy, vx - px * vz, px * vy - py * vx)
+/// Cross a point with the homogeneous direction of a line.
+fn cross_direction((px, py, weight): (f64, f64, f64), (vx, vy): (f64, f64)) -> (f64, f64, f64) {
+    (
+        py * 0.0 - weight * vy,
+        weight * vx - px * 0.0,
+        px * vy - py * vx,
+    )
+}
+
+pub(crate) fn raw_perpendicular(
+    c: &Construction,
+    through: Id,
+    (lx, ly, _): (f64, f64, f64),
+) -> Option<(f64, f64, f64)> {
+    let p = c.stored_value(through).point_coords()?;
+    Some(normalized_coefficients(
+        cross_direction(p, (lx, ly)),
+        10e6,
+        1e-2,
+    ))
+}
+
+pub(crate) fn raw_parallel(
+    c: &Construction,
+    through: Id,
+    (lx, ly, _): (f64, f64, f64),
+) -> Option<(f64, f64, f64)> {
+    let p = c.stored_value(through).point_coords()?;
+    Some(cross_direction(p, (ly, -lx)))
 }
 
 /// `AlgoOrthoLinePointLine`: the cross product of `P` with the normal of
-/// the line, rescaled by powers of two into `[1e-2, 1e7]` so that chains of
-/// perpendiculars neither overflow nor underflow.
+/// the line, rescaled by powers of two into `[1e-2, 1e7]`.
 pub(crate) fn perpendicular(c: &Construction, through: Id, to: Id) -> Option<Value> {
-    let (px, py) = c.point(through)?;
-    let (lx, ly, _) = c.raw_carrier(to)?;
-    let (x, y, z) = normalized_coefficients(cross_point(px, py, lx, ly, 0.0), 10e6, 1e-2);
+    let (x, y, z) = raw_perpendicular(c, through, c.raw_carrier(to)?)?;
     line_value(x, y, z)
 }
 
 /// `AlgoLinePointLine`: the cross product of `P` with the direction of the line.
 pub(crate) fn parallel(c: &Construction, through: Id, to: Id) -> Option<Value> {
-    let (px, py) = c.point(through)?;
-    let (lx, ly, _) = c.raw_carrier(to)?;
-    let (x, y, z) = cross_point(px, py, ly, -lx, 0.0);
+    let (x, y, z) = raw_parallel(c, through, c.raw_carrier(to)?)?;
     line_value(x, y, z)
 }
