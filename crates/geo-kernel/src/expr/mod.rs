@@ -714,22 +714,24 @@ impl Raw {
 /// What GeoGebra's number object of a constant node is: a `MySpecialDouble`
 /// (a literal or a named constant, with the decimal it was written as, see
 /// [`decimal`]) or, by default, a plain `MyDouble` that the parser made.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) enum Lit {
     #[default]
     Plain,
-    Special(Option<Dec>),
+    // XML definitions preserve the spelling of input literals, including
+    // trailing zeros that the exact decimal representation normalizes away.
+    Special(Option<Dec>, Option<std::sync::Arc<str>>),
     Text(std::sync::Arc<str>),
 }
 
 impl Lit {
     fn special(&self) -> bool {
-        matches!(self, Self::Special(_))
+        matches!(self, Self::Special(..))
     }
 
     fn decimal(&self) -> Option<&Dec> {
         match self {
-            Self::Special(decimal) => decimal.as_ref(),
+            Self::Special(decimal, _) => decimal.as_ref(),
             _ => None,
         }
     }
@@ -1240,6 +1242,33 @@ pub(crate) fn replace_free_decimal(c: &mut Construction, id: Id, decimal: Option
 /// (`GeoNumeric.setValue`); whether it had one.
 pub(crate) fn forget_decimal(c: &mut Construction, id: Id) -> bool {
     c.exprs.free.get_mut(id.0).and_then(Option::take).is_some()
+}
+
+pub(crate) fn independent_definition(c: &Construction, def: Def) -> bool {
+    match def {
+        Def::Expr(d) => entry(c, d).inputs.is_empty(),
+        _ => def.is_free(),
+    }
+}
+
+/// Equality of parsed definitions in different expression slots. Ignore
+/// source formatting, but retain the literal spelling used by XML definitions.
+pub(crate) fn same_definition(c: &Construction, a: Def, b: Def) -> bool {
+    match (a, b) {
+        (Def::Expr(a), Def::Expr(b)) if a.kind == b.kind && a.angle_style == b.angle_style => {
+            let a = entry(c, a);
+            let b = entry(c, b);
+            a.root == b.root
+                && a.nodes.len() == b.nodes.len()
+                && a.nodes.iter().zip(&b.nodes).all(|(a, b)| {
+                    // Both undefined literals print as '?' in the definition.
+                    a == b || matches!((a, b), (Node::Num(x), Node::Num(y)) if x.is_nan() && y.is_nan())
+                })
+                && a.lits == b.lits
+                && a.function_of_y == b.function_of_y
+        }
+        _ => a == b,
+    }
 }
 
 /// The tree of the expression object `id`, or the decimal of an exact free

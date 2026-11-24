@@ -1,0 +1,50 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "georestclip-occupied-001",
+      "group": "georestclip",
+      "script": [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "q_{1} = 1",
+        "q_{2} = 2",
+        "A = (-1, 0)",
+        "B = (1, 0)",
+        "s = Segment(A, B)",
+        "q = IntersectPath(s, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "q_{1}": { "type": "number", "defined": true, "value": 1.0 },
+          "q_{2}": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": -1.0, "y1": 0.0, "x2": 1.0, "y2": 0.0 },
+          "q_{3}": { "type": "segment", "defined": true, "x1": -1.0, "y1": 0.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "q_{1}": { "type": "number", "defined": true, "value": 1.0 },
+          "q_{2}": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": -1.0, "y1": 0.0, "x2": 1.0, "y2": 1.0 },
+          "q_{3}": { "type": "segment", "defined": true, "x1": -1.0, "y1": 0.0, "x2": 1.0, "y2": 1.0 }
+        }
+      ]
+    }
+  ]
+}

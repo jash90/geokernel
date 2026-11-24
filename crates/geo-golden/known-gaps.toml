@@ -20,20 +20,17 @@
 # corners
 
 [[gap]]
-id = "corners-review-004"
-reason = "AlgoVertexIneq keeps one intersection helper per border pair from the first update that needs it (`helpers[i][j]`, reset only when the number of borders changes), and the helper's class follows whether the function border was polynomial then (`intParamYLinear`, `intParamXLinear`, `intParamOneVar`, `intParamParam`, `intParamXParamY`). A polynomial helper later evaluates the live border on a vertical line (`AlgoRootsPolynomial.computePolyLineIntersection`) and finds no roots on other lines; a Newton helper starts from an undefined point and never yields a vertex, even when the border becomes polynomial. The kernel computes the vertices of an inequality without that per-command history, as a fresh helper would. Here the pair y > x^n and x > 1 got a polynomial helper at n = 2, so at n = 0.5 it still finds (1, 1), where a fresh Newton helper finds nothing (corners-review-016 shows the reverse order)."
-mismatches = ["1:P_{1}"]
-
-[[gap]]
-id = "corners-review-016"
-reason = "AlgoVertexIneq keeps one intersection helper per border pair from the first update that needs it (`helpers[i][j]`, reset only when the number of borders changes), and the helper's class follows whether the function border was polynomial then (`intParamYLinear`, `intParamXLinear`, `intParamOneVar`, `intParamParam`, `intParamXParamY`). A polynomial helper later evaluates the live border on a vertical line (`AlgoRootsPolynomial.computePolyLineIntersection`) and finds no roots on other lines; a Newton helper starts from an undefined point and never yields a vertex, even when the border becomes polynomial. The kernel computes the vertices of an inequality without that per-command history, as a fresh helper would. Here the pair y > x^n and x > 1 got a Newton helper at n = 0.5, so at n = 2 it still finds nothing, where a fresh polynomial helper finds (1, 1) (corners-review-004 shows the reverse order)."
-mismatches = ["1:P_{1}"]
-
-[[gap]]
-id = "corners-review-017"
-reason = "AlgoVertexIneq keeps one intersection helper per border pair from the first update that needs it (`helpers[i][j]`, reset only when the number of borders changes), and the helper's class follows whether the function border was polynomial then (`intParamYLinear`, `intParamXLinear`, `intParamOneVar`, `intParamParam`, `intParamXParamY`). A polynomial helper later evaluates the live border on a vertical line (`AlgoRootsPolynomial.computePolyLineIntersection`) and finds no roots on other lines; a Newton helper starts from an undefined point and never yields a vertex, even when the border becomes polynomial. The kernel computes the vertices of an inequality without that per-command history, as a fresh helper would. Here the pair y > x^n and x > 4 got a polynomial helper at n = 2, so at n = 0.5 it evaluates the live border on the vertical line and finds (4, 2), where a fresh Newton helper finds nothing; it reads the current exponent, not the one it was made with."
-mismatches = ["1:P_{1}"]
+id = "corners-textbounds-006"
+reason = "when the text anchor becomes undefined, GeoGebra keeps the drawable corner at its previous position; the kernel has no stale value for an undefined parent (W1)"
+mismatches = ["1:Q"]
 undefined = true
+
+# georestclip
+
+[[gap]]
+id = "georestclip-overlaylabels-001"
+reason = "For the same area-2 diamond, GeoGebra starts the contour at (1, 0) and the kernel starts at (0, 1). This rotates the labelled output vertices and edges by one position, as documented for IntersectPath(polygon, polygon) in DIFFERENCES.md."
+mismatches = ["0:A", "0:D", "0:E", "0:F", "0:f", "0:g", "0:h", "0:i", "0:r_{1}"]
 
 # conic
 
@@ -2625,23 +2622,6 @@ reason = "IntersectLineSpline leaves the previous point defined when adjacent sp
 mismatches = ["2:P_{1}"]
 
 [[gap]]
-id = "georestclip-largepath-001"
-reason = "Conic clipping caps polylines at 1,000 vertices."
-mismatches = [
-  "0:s_{1}",
-  "0:s_{2}",
-]
-
-[[gap]]
-id = "georestclip-largepath-002"
-reason = "Conic clipping caps polygons at 1,000 vertices."
-mismatches = [
-  "0:s_{1}",
-  "0:s_{2}",
-  "0:s_{3}",
-]
-
-[[gap]]
 id = "georestclip-overlay-001"
 reason = "The polygon overlay traces contours with the interior on the left and chooses its own start vertex. Labelled vertices and edges follow that order."
 mismatches = [
@@ -2688,16 +2668,6 @@ reason = "The kernel has no complex point mode, so the input point cannot be con
 mismatches = [
   "0:script line 1",
 ]
-
-[[gap]]
-id = "corners-text-001"
-reason = "Text corners require the drawable bounding box, including its headless font metrics. The kernel has no drawable bounds."
-mismatches = ["0:P", "1:P", "2:P", "4:P"]
-
-[[gap]]
-id = "corners-text-002"
-reason = "A text corner reads the drawable's font metrics and anchor bounds. The kernel has no drawable bounds."
-mismatches = ["0:P", "3:P"]
 
 [[gap]]
 id = "curvepairs-growth-001"
@@ -2755,57 +2725,11 @@ reason = "The symbolic solution orders irrational roots negative first and switc
 mismatches = ["1:P_{1}", "1:P_{2}"]
 
 [[gap]]
-id = "implicit-graph-003"
-reason = "The oscillating graph reaches 66 reference outputs. Above the 64-slot budget, the kernel keeps its existing first slot undefined and skips growth. The first slot recovers after the frequency drops."
-mismatches = [
-  "1:P_{10}", "1:P_{11}", "1:P_{12}", "1:P_{13}", "1:P_{14}", "1:P_{15}", "1:P_{16}",
-  "1:P_{17}", "1:P_{18}", "1:P_{19}", "1:P_{1}", "1:P_{20}", "1:P_{21}", "1:P_{22}", "1:P_{23}",
-  "1:P_{24}", "1:P_{25}", "1:P_{26}", "1:P_{27}", "1:P_{28}", "1:P_{29}", "1:P_{2}", "1:P_{30}",
-  "1:P_{31}", "1:P_{32}", "1:P_{33}", "1:P_{34}", "1:P_{35}", "1:P_{36}", "1:P_{37}",
-  "1:P_{38}", "1:P_{39}", "1:P_{3}", "1:P_{40}", "1:P_{41}", "1:P_{42}", "1:P_{43}", "1:P_{44}",
-  "1:P_{45}", "1:P_{46}", "1:P_{47}", "1:P_{48}", "1:P_{49}", "1:P_{4}", "1:P_{50}", "1:P_{51}",
-  "1:P_{52}", "1:P_{53}", "1:P_{54}", "1:P_{55}", "1:P_{56}", "1:P_{57}", "1:P_{58}",
-  "1:P_{59}", "1:P_{5}", "1:P_{60}", "1:P_{61}", "1:P_{62}", "1:P_{63}", "1:P_{64}", "1:P_{65}",
-  "1:P_{66}", "1:P_{6}", "1:P_{7}", "1:P_{8}", "1:P_{9}", "2:P_{10}", "2:P_{11}", "2:P_{12}",
-  "2:P_{13}", "2:P_{14}", "2:P_{15}", "2:P_{16}", "2:P_{17}", "2:P_{18}", "2:P_{19}",
-  "2:P_{20}", "2:P_{21}", "2:P_{22}", "2:P_{23}", "2:P_{24}", "2:P_{25}", "2:P_{26}",
-  "2:P_{27}", "2:P_{28}", "2:P_{29}", "2:P_{2}", "2:P_{30}", "2:P_{31}", "2:P_{32}", "2:P_{33}",
-  "2:P_{34}", "2:P_{35}", "2:P_{36}", "2:P_{37}", "2:P_{38}", "2:P_{39}", "2:P_{3}", "2:P_{40}",
-  "2:P_{41}", "2:P_{42}", "2:P_{43}", "2:P_{44}", "2:P_{45}", "2:P_{46}", "2:P_{47}",
-  "2:P_{48}", "2:P_{49}", "2:P_{4}", "2:P_{50}", "2:P_{51}", "2:P_{52}", "2:P_{53}", "2:P_{54}",
-  "2:P_{55}", "2:P_{56}", "2:P_{57}", "2:P_{58}", "2:P_{59}", "2:P_{5}", "2:P_{60}", "2:P_{61}",
-  "2:P_{62}", "2:P_{63}", "2:P_{64}", "2:P_{65}", "2:P_{66}", "2:P_{6}", "2:P_{7}", "2:P_{8}",
-  "2:P_{9}",
-]
-
-[[gap]]
 id = "implicit-pair-009"
-reason = "The nearly repeated irrational contacts yield different coordinate approximations under the same output count and order. The reference retains four approximate contacts even for the offset that makes the exact curves disjoint."
+reason = "The reduced Sylvester eliminant has nearly repeated roots near y = ±0.930605. The reference projects the real parts of its complex roots and polishes pairs to a 1e-8 residual. The kernel refines projected roots differently and uses up to 16 Newton iterations toward a 1e-13 residual before accepting contacts at 1e-8. It still produces four slots, including for the offset -1e-10 where the exact curves are disjoint, but the near-singular Jacobian makes their coordinates differ by more than 1e-9."
 mismatches = [
   "0:P_{2}", "0:P_{4}", "1:P_{1}", "1:P_{2}", "1:P_{3}", "1:P_{4}", "2:P_{1}", "2:P_{2}",
   "2:P_{3}", "2:P_{4}", "3:P_{2}", "3:P_{4}",
-]
-
-[[gap]]
-id = "implicit-pair-011"
-reason = "The bounded polynomial product rejects the degree 72 eliminant. The reference retains the origin."
-mismatches = [
-  "0:P_{1}",
-]
-
-[[gap]]
-id = "implicit-polyline-003"
-reason = "The reference returns 66 crossings along 33 edges. The kernel stops at its 64-slot budget and returns one undefined point."
-mismatches = [
-  "0:P_{10}", "0:P_{11}", "0:P_{12}", "0:P_{13}", "0:P_{14}", "0:P_{15}", "0:P_{16}",
-  "0:P_{17}", "0:P_{18}", "0:P_{19}", "0:P_{1}", "0:P_{20}", "0:P_{21}", "0:P_{22}", "0:P_{23}",
-  "0:P_{24}", "0:P_{25}", "0:P_{26}", "0:P_{27}", "0:P_{28}", "0:P_{29}", "0:P_{2}", "0:P_{30}",
-  "0:P_{31}", "0:P_{32}", "0:P_{33}", "0:P_{34}", "0:P_{35}", "0:P_{36}", "0:P_{37}",
-  "0:P_{38}", "0:P_{39}", "0:P_{3}", "0:P_{40}", "0:P_{41}", "0:P_{42}", "0:P_{43}", "0:P_{44}",
-  "0:P_{45}", "0:P_{46}", "0:P_{47}", "0:P_{48}", "0:P_{49}", "0:P_{4}", "0:P_{50}", "0:P_{51}",
-  "0:P_{52}", "0:P_{53}", "0:P_{54}", "0:P_{55}", "0:P_{56}", "0:P_{57}", "0:P_{58}",
-  "0:P_{59}", "0:P_{5}", "0:P_{60}", "0:P_{61}", "0:P_{62}", "0:P_{63}", "0:P_{64}", "0:P_{65}",
-  "0:P_{66}", "0:P_{6}", "0:P_{7}", "0:P_{8}", "0:P_{9}",
 ]
 
 # infinity

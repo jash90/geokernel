@@ -1,0 +1,99 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "georestclip-overlaylabels-001",
+      "group": "georestclip",
+      "script": [
+        "P0 = (1, 0)",
+        "P1 = (0, 1)",
+        "P2 = (-1, 0)",
+        "P3 = (0, -1)",
+        "p = Polygon(P0, P1, P2, P3)",
+        "S0 = (-2, -2)",
+        "S1 = (2, -2)",
+        "S2 = (2, 2)",
+        "S3 = (-2, 2)",
+        "s = Polygon(S0, S1, S2, S3)",
+        "B = 1",
+        "C = 1",
+        "b = 1",
+        "c = 1",
+        "r = IntersectPath(p, s)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P0": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "P1": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "P2": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "P3": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 0.0],
+              [0.0, 1.0],
+              [-1.0, 0.0],
+              [0.0, -1.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "p0": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
+          "p1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": -1.0, "y2": 0.0 },
+          "p2": { "type": "segment", "defined": true, "x1": -1.0, "y1": 0.0, "x2": 0.0, "y2": -1.0 },
+          "p3": { "type": "segment", "defined": true, "x1": 0.0, "y1": -1.0, "x2": 1.0, "y2": 0.0 },
+          "S0": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
+          "S1": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "S2": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "S3": { "type": "point", "defined": true, "x": -2.0, "y": 2.0 },
+          "s": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-2.0, -2.0],
+              [2.0, -2.0],
+              [2.0, 2.0],
+              [-2.0, 2.0]
+            ],
+            "area": 16.0,
+            "signed_area": 16.0
+          },
+          "s0": { "type": "segment", "defined": true, "x1": -2.0, "y1": -2.0, "x2": 2.0, "y2": -2.0 },
+          "s1": { "type": "segment", "defined": true, "x1": 2.0, "y1": -2.0, "x2": 2.0, "y2": 2.0 },
+          "s2": { "type": "segment", "defined": true, "x1": 2.0, "y1": 2.0, "x2": -2.0, "y2": 2.0 },
+          "s3": { "type": "segment", "defined": true, "x1": -2.0, "y1": 2.0, "x2": -2.0, "y2": -2.0 },
+          "B": { "type": "number", "defined": true, "value": 1.0 },
+          "C": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "r_{1}": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 0.0],
+              [0.0, 1.0],
+              [-1.0, 0.0],
+              [0.0, -1.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "E": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "f": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": -1.0, "y2": 0.0 },
+          "h": { "type": "segment", "defined": true, "x1": -1.0, "y1": 0.0, "x2": 0.0, "y2": -1.0 },
+          "i": { "type": "segment", "defined": true, "x1": 0.0, "y1": -1.0, "x2": 1.0, "y2": 0.0 }
+        }
+      ]
+    }
+  ]
+}

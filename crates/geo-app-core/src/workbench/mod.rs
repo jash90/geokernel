@@ -630,6 +630,7 @@ impl Workbench {
         };
         if snapshot {
             kept.reset_snapshot_records(&mut c);
+            kept.reset_inequality_helpers(&mut c);
         }
         self.install_replay(c, kept);
         Ok(())

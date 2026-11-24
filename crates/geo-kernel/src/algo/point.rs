@@ -90,6 +90,7 @@ pub enum PointDef {
     },
     InequalityVertex {
         source: Id,
+        owner: Id,
         slot: u16,
     },
     /// A segment whose endpoint objects are available even when it is undefined.
@@ -194,16 +195,20 @@ fn view_corner(c: &Construction, view: Option<Count>, index: Count) -> Option<Va
 /// returns before `updateLabel` for a hidden one, so the rectangle stays
 /// the empty one at the pixel origin that `Drawable` starts with. Every
 /// corner is then `(toRealWorldCoordX(0), toRealWorldCoordY(0))`, which is
-/// `(xmin, ymax)` of the view. A text needs its rendered bounds, which the
-/// kernel does not have.
+/// `(xmin, ymax)` of the view. Text uses its headless drawable bounds.
 fn drawable_corner(c: &Construction, source: Id, index: Count) -> Option<Value> {
     // Only a labeled object gets a drawable (`EuclidianView.drawableNeeded`).
-    if c.kind(source) != Kind::Boolean || c.label(source).starts_with('\0') {
+    if c.label(source).starts_with('\0') {
         return None;
     }
     // `AlgoTextCorner.compute` casts the index with `(int)`.
-    if !(1..=4).contains(&(index.value(c) as i32)) {
+    let index = index.value(c) as i32;
+    if !(1..=4).contains(&index) {
         return None;
+    }
+    if c.kind(source) == Kind::Text {
+        let (x, y) = c.text_corner(source, index)?;
+        return Some(Value::Point { x, y });
     }
     let [xmin, _, _, ymax, _, _] = c.view();
     Some(Value::Point { x: xmin, y: ymax })
@@ -283,11 +288,12 @@ impl PointDef {
         Some(id)
     }
 
-    pub(crate) fn inequality_slots(source: Id, count: usize) -> Vec<Def> {
+    pub(crate) fn inequality_slots(c: &Construction, source: Id, count: usize) -> Vec<Def> {
         (0..count)
             .map(|slot| {
                 Def::Point(Self::InequalityVertex {
                     source,
+                    owner: Id(c.len()),
                     slot: slot as u16,
                 })
             })
@@ -722,8 +728,12 @@ impl Group for PointDef {
             PointDef::ViewCorner { view, index } => view_corner(c, view, index),
             PointDef::ImageVertex { image, index } => c.image_vertex(image, index.value(c) as i32),
             PointDef::DrawableCorner { source, index } => drawable_corner(c, source, index),
-            PointDef::InequalityVertex { source, slot } => {
-                let points = crate::expr::inequality::vertices(c, source);
+            PointDef::InequalityVertex {
+                source,
+                owner,
+                slot,
+            } => {
+                let points = crate::expr::inequality::vertices(c, source, owner);
                 let (x, y) = *points.get(usize::from(slot))?;
                 Some(Value::Point { x, y })
             }

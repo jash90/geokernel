@@ -67,12 +67,12 @@ use super::polygon_clip::{ClipDef, ClipOutput};
 use super::transform::{parse_transform_for, source_of, Map};
 use super::vector::{matrix::Matrix, VectorDef};
 use super::{Group, Parents, NUMBER, POINT};
-use crate::expr::{Element, List};
+use crate::expr::{Element, IntersectionWork, List};
 use crate::kernel::{Construction, Def, Error, Id, IdList, Kind, Value};
 use crate::script::{object, split_call};
 use crate::tol::STANDARD_PRECISION;
 use std::borrow::Cow;
-use std::collections::BTreeSet;
+use std::collections::HashSet;
 use std::f64::consts::PI;
 
 const POLYGON: &[Kind] = &[Kind::Polygon];
@@ -557,11 +557,7 @@ pub(crate) fn inputs(c: &Construction, poly: Id) -> Vec<Id> {
             ids.extend(n.id());
             ids
         }
-        Def::Polygon(PolygonDef::Clip(d)) => {
-            let mut ids = d.parents().as_slice().to_vec();
-            ids.extend(d.hidden_parents(c));
-            ids
-        }
+        Def::Polygon(PolygonDef::Clip(d)) => d.parents().as_slice().to_vec(),
         // the image reads the vertices of the object it transforms, and so
         // the objects they come from
         Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
@@ -601,7 +597,6 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
             );
             parents
         }
-        Def::Polygon(PolygonDef::Clip(d)) => d.hidden_parents(c),
         Def::Polygon(PolygonDef::ImageVertex { poly, .. }) => {
             let transform = c.def(poly);
             let mut ids = transform.parents().as_slice().to_vec();
@@ -1121,7 +1116,7 @@ const RESERVED: &[&str] = &[
 ];
 
 /// Labels already given to objects of the line being planned.
-type Taken = BTreeSet<String>;
+type Taken = HashSet<String>;
 
 /// `Construction.isFreeLabel`: not taken (by the construction or by an
 /// earlier object of the same line) and not reserved.
@@ -1135,49 +1130,71 @@ pub(crate) fn default_point_label(c: &Construction) -> String {
     next_indexed_label(c, &Taken::new(), POINT_LABELS)
 }
 
-/// `LabelManager.getNextIndexedLabel`: the first free label of `c0, c1,
-/// ..., c0_1, c1_1, ...` (the short form `c_1` below index 10, which needs
-/// `c_{1}` to be free too, and `c_{10}` from 10 on).
 fn next_indexed_label(c: &Construction, taken: &Taken, chars: &[char]) -> String {
-    let base = |ch: char| {
-        // this Arabic letter is two Unicode chars
-        if ch == '\u{647}' {
-            "\u{647}\u{640}".to_string()
-        } else {
-            ch.to_string()
+    DefaultLabels::new(c, chars)
+        .next(c, taken, None)
+        .expect("unmetered label search")
+}
+
+/// `LabelManager.getNextIndexedLabel`: the first free label of `c0, c1,
+/// ..., c0_1, c1_1, ...`. A plan keeps its own cursor so a gap followed by
+/// occupied labels is scanned only once per family. The shared hint can
+/// advance only past labels already taken by the construction.
+struct DefaultLabels<'a> {
+    chars: &'a [char],
+    family: String,
+    next: usize,
+    needs_hint: bool,
+}
+
+impl<'a> DefaultLabels<'a> {
+    fn new(c: &Construction, chars: &'a [char]) -> Self {
+        let family = format!("L:{}", chars.iter().collect::<String>());
+        Self {
+            next: c.label_hint(&family),
+            family,
+            chars,
+            needs_hint: true,
         }
-    };
-    // Every counter below the hint is taken by the construction (see
-    // `Construction::label_hint`); `taken` holds only this line's labels, so
-    // it does not move the hint.
-    let family: String = format!("L:{}", chars.iter().collect::<String>());
-    let none = Taken::new();
-    let mut counter = c.label_hint(&family);
-    let mut first_open = None;
-    loop {
-        let (q, r) = (counter / chars.len(), counter % chars.len());
-        let b = base(chars[r]);
-        let at = counter;
-        counter += 1;
-        if q == 0 {
-            if is_free(c, &none, &b) {
-                first_open.get_or_insert(at);
-                if is_free(c, taken, &b) {
-                    c.set_label_hint(&family, first_open.unwrap_or(at));
-                    return b;
-                }
+    }
+
+    fn next(
+        &mut self,
+        c: &Construction,
+        taken: &Taken,
+        work: Option<&IntersectionWork>,
+    ) -> Result<String, String> {
+        let none = Taken::new();
+        while work.is_none_or(|work| work.charge(1)) {
+            let at = self.next;
+            self.next += 1;
+            let (q, r) = (at / self.chars.len(), at % self.chars.len());
+            // LabelManager appends tatweel to Arabic heh before the index.
+            let b = match self.chars[r] {
+                '\u{647}' => "\u{647}\u{640}".into(),
+                ch => ch.to_string(),
+            };
+            let (short, long) = if q == 0 {
+                (b, None)
+            } else {
+                (format!("{b}_{q}"), Some(format!("{b}_{{{q}}}")))
+            };
+            let free = |taken| {
+                is_free(c, taken, &short)
+                    && long.as_ref().is_none_or(|label| is_free(c, taken, label))
+            };
+            if !free(&none) {
+                continue;
             }
-            continue;
-        }
-        let short = format!("{b}_{q}");
-        let long = format!("{b}_{{{q}}}");
-        if is_free(c, &none, &short) && is_free(c, &none, &long) {
-            first_open.get_or_insert(at);
-            if is_free(c, taken, &short) && is_free(c, taken, &long) {
-                c.set_label_hint(&family, first_open.unwrap_or(at));
-                return if q < 10 { short } else { long };
+            if self.needs_hint {
+                c.set_label_hint(&self.family, at);
+                self.needs_hint = false;
+            }
+            if free(taken) {
+                return Ok(if q < 10 { short } else { long.unwrap() });
             }
         }
+        Err("default labels exceed the evaluation budget".into())
     }
 }
 
@@ -1200,25 +1217,52 @@ fn side_label(c: &Construction, taken: &Taken, vertex: &str) -> String {
     }
 }
 
-/// `Construction.buildIndexedLabel` (as `script::index_label`), also skipping
-/// labels given earlier in the same line.
-fn planned_index_label(c: &Construction, taken: &Taken, prefix: &str) -> String {
-    let free = |label: &str| c.id(label).is_none() && !taken.contains(label);
-    let in_construction = |label: &str| c.id(label).is_none();
-    let family = format!("I:{prefix}");
-    let mut n = c.label_hint(&family).max(1);
-    let mut first_open = None;
-    loop {
-        let long = format!("{prefix}_{{{n}}}");
-        let short = format!("{prefix}_{n}");
-        if in_construction(&long) && (n >= 10 || in_construction(&short)) {
-            first_open.get_or_insert(n);
-            if free(&long) && (n >= 10 || free(&short)) {
-                c.set_label_hint(&family, first_open.unwrap_or(n));
-                return long;
+/// Indexed labels of one plan, in the order of `Construction.buildIndexedLabel`.
+/// The local cursor includes positions already claimed by this plan. The
+/// construction's hint can only skip positions taken by committed objects.
+struct IndexedLabels<'a> {
+    prefix: &'a str,
+    family: String,
+    next: usize,
+    needs_hint: bool,
+}
+
+impl<'a> IndexedLabels<'a> {
+    fn new(c: &Construction, prefix: &'a str) -> Self {
+        let family = format!("I:{prefix}");
+        let next = c.label_hint(&family).max(1);
+        Self {
+            prefix,
+            family,
+            next,
+            needs_hint: true,
+        }
+    }
+
+    fn next(
+        &mut self,
+        c: &Construction,
+        taken: &Taken,
+        work: &IntersectionWork,
+    ) -> Result<String, String> {
+        while work.charge(1) {
+            let n = self.next;
+            self.next += 1;
+            let prefix = self.prefix;
+            let long = format!("{prefix}_{{{n}}}");
+            let short = (n < 10).then(|| format!("{prefix}_{n}"));
+            if c.id(&long).is_some() || short.as_ref().is_some_and(|s| c.id(s).is_some()) {
+                continue;
+            }
+            if self.needs_hint {
+                c.set_label_hint(&self.family, n);
+                self.needs_hint = false;
+            }
+            if !taken.contains(&long) && short.as_ref().is_none_or(|s| !taken.contains(s)) {
+                return Ok(long);
             }
         }
-        n += 1;
+        Err("indexed labels exceed the evaluation budget".into())
     }
 }
 
@@ -1486,6 +1530,7 @@ pub(super) fn add_transform(
     let result = (|| {
         let poly = c.add(name, def).map_err(|e| e.to_string())?;
         let mut image = Vec::with_capacity(source.len());
+        let label_work = IntersectionWork::new();
         for source in source {
             let label = c.label(source);
             let label = if label.contains('_') || label.ends_with("'''") {
@@ -1495,7 +1540,7 @@ pub(super) fn add_transform(
                 if is_free(c, &plan.taken, &prime) {
                     prime
                 } else {
-                    planned_index_label(c, &plan.taken, &prime)
+                    IndexedLabels::new(c, &prime).next(c, &plan.taken, &label_work)?
                 }
             };
             let vertex = Def::Polygon(PolygonDef::ImageVertex { poly, source });
@@ -1665,6 +1710,8 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
         .next()
         .filter(|s| !s.is_empty())
         .unwrap_or("a");
+    let mut labels = IndexedLabels::new(c, prefix);
+    let label_work = IntersectionWork::new();
     if def.kind() == Kind::Segment {
         let count = def.segments(c).len();
         if count == 0 {
@@ -1672,7 +1719,7 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
             return plan.commit(c);
         }
         for i in 0..count {
-            let label = planned_index_label(c, &plan.taken, prefix);
+            let label = labels.next(c, &plan.taken, &label_work)?;
             let index = if def.is_carrier() { count - 1 - i } else { i };
             plan.push(
                 label,
@@ -1685,7 +1732,7 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
         let rings = def.rings(c);
         let vertices: usize = rings.iter().map(Vec::len).sum();
         for i in 0..rings.len().max(1) {
-            let label = planned_index_label(c, &plan.taken, prefix);
+            let label = labels.next(c, &plan.taken, &label_work)?;
             plan.push(
                 label,
                 Planned::Def(Def::Polygon(PolygonDef::Clip(
@@ -1698,12 +1745,13 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
         // the point is ever labelled (`AlgoPolygonOperation` keeps the
         // sizes at one); a labelled segment would show in the algebra view,
         // so the kernel keeps the point alone.
-        for (labels, output, count) in [
+        for (chars, output, count) in [
             (POINT_LABELS, ClipOutput::Point, vertices.max(1)),
             (LINE_LABELS, ClipOutput::Edge, vertices),
         ] {
+            let mut labels = DefaultLabels::new(c, chars);
             for i in 0..count {
-                let label = next_indexed_label(c, &plan.taken, labels);
+                let label = labels.next(c, &plan.taken, Some(&label_work))?;
                 plan.push(
                     label,
                     Planned::Def(Def::Polygon(PolygonDef::Clip(def.slot(output, i)))),
@@ -2023,12 +2071,14 @@ fn outputs_line(c: &mut Construction, name: &str, arg: &str, what: Outputs) -> R
         Some(p) if !p.is_empty() => p.to_string(),
         _ => "a".to_string(),
     };
+    let mut labels = IndexedLabels::new(c, &prefix);
+    let label_work = IntersectionWork::new();
     for k in 0..count as u32 {
         let def = match what {
             Outputs::Vertices => PolygonDef::VertexAt { poly, k },
             Outputs::Angles(internal) => PolygonDef::Angle { poly, k, internal },
         };
-        let label = planned_index_label(c, &plan.taken, &prefix);
+        let label = labels.next(c, &plan.taken, &label_work)?;
         plan.push(label, Planned::Def(Def::Polygon(def)));
     }
     plan.commit(c)
@@ -2620,5 +2670,64 @@ mod tests {
             c.value(c.id("m").unwrap()),
             Value::PolyLine { length: 10.0 }
         );
+    }
+
+    #[test]
+    fn polygon_clip_probes_occupied_point_and_edge_labels_once() {
+        use crate::expr::work_done;
+
+        let mut c = load(concat!(
+            "X0 = (1, 0)\nX1 = (0, 1)\np = Polygon(X0, X1, 1000)\n",
+            "S0 = (-400, -400)\nS1 = (400, -400)\nS2 = (400, 400)\n",
+            "S3 = (-400, 400)\nsquare = Polygon(S0, S1, S2, S3)",
+        ))
+        .unwrap();
+
+        let clip = ClipDef::parse(&c, "IntersectPath", &["p", "square"]).unwrap();
+        assert_eq!(clip.rings(&c)[0].len(), 1000);
+        // With the geometry cached, this small probe isolates label work.
+        let checkpoint = c.checkpoint();
+        let before = work_done();
+        run(&mut c, "rOut = IntersectPath(p, square)").unwrap();
+        assert!(work_done() - before >= 2001);
+        c.rollback(checkpoint).unwrap();
+
+        let slot = |labels: &[char], i: usize| {
+            let base = labels[i % labels.len()];
+            let index = i / labels.len() + 100;
+            format!("{base}_{{{index}}}")
+        };
+        // Keep the first position open in each family and occupy the next 96,000.
+        for labels in [POINT_LABELS, LINE_LABELS] {
+            for &base in labels {
+                let base_label = base.to_string();
+                for label in
+                    std::iter::once(base_label).chain((1..100).map(|i| format!("{base}_{{{i}}}")))
+                {
+                    if c.resolve_label(&label).is_none() {
+                        c.add(&label, Def::Number(1.0)).unwrap();
+                    }
+                }
+            }
+            for i in 1..=96_000 {
+                c.add(&slot(labels, i), Def::Number(1.0)).unwrap();
+            }
+        }
+        assert_eq!(clip.rings(&c)[0].len(), 1000);
+        let before = work_done();
+        let len = c.len();
+        let ring = run(&mut c, "rOut = IntersectPath(p, square)")
+            .unwrap()
+            .unwrap();
+        let work = work_done() - before;
+        assert_eq!(c.label(ring), "rOut_{1}");
+        assert_eq!(c.len() - len, 2001);
+        for (labels, kind) in [(POINT_LABELS, Kind::Point), (LINE_LABELS, Kind::Segment)] {
+            for i in [0, 96_999] {
+                let label = slot(labels, i);
+                assert_eq!(c.kind(c.id(&label).unwrap()), kind, "{label}");
+            }
+        }
+        assert!((192_000..200_000).contains(&work), "{work}");
     }
 }
