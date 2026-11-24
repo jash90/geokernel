@@ -637,7 +637,20 @@ impl Log {
     }
 
     pub(crate) fn record_update(&mut self, c: &Construction, label: &str, to: Setting) {
-        self.push_set(label, to, c.last_update_changed_automatic_root());
+        self.push_set(label, to, c.last_update_requires_replay());
+    }
+
+    pub(crate) fn reset_snapshot_records(&mut self, c: &mut Construction) {
+        if c.reset_circle_records() {
+            self.ops
+                .push(Op::SavedProperty(Box::new(Property::ResetCircleRecords)));
+        }
+        if c.reset_arc_records()
+            && !matches!(self.ops.last(), Some(Op::SavedProperty(p)) if **p == Property::ResetArcRecords)
+        {
+            self.ops
+                .push(Op::SavedProperty(Box::new(Property::ResetArcRecords)));
+        }
     }
 
     fn push_set(&mut self, label: &str, to: Setting, ordered: bool) {
@@ -646,8 +659,8 @@ impl Log {
             to,
             ordered,
         };
-        // A hidden Newton start point follows each successful root. Keep
-        // any edit that moved it, since the next edit starts from there.
+        // A later edit can retain an intermediate geometric record or
+        // a hidden Newton start point, so replay the edit that changed it.
         if !ordered
             && matches!(
                 self.ops.last(),
@@ -1134,7 +1147,7 @@ impl Log {
                     // A set right after a set of the same object is merged
                     // into it by `record_set` (after a `remove` they can
                     // meet): the journal and `kept` part there.
-                    let keep_order = *ordered || c.last_update_changed_automatic_root();
+                    let keep_order = *ordered || c.last_update_requires_replay();
                     let merges = !keep_order
                         && i > 0
                         && matches!(
@@ -1361,11 +1374,7 @@ impl Log {
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
                     groups.release_after(&mut c, std::iter::once(id));
-                    kept.push_set(
-                        label,
-                        *to,
-                        *ordered || c.last_update_changed_automatic_root(),
-                    );
+                    kept.push_set(label, *to, *ordered || c.last_update_requires_replay());
                 }
                 Op::MovePoints(points) => {
                     let positions = replay_move_points(&mut c, points, Some(&gone))?;
@@ -1798,7 +1807,10 @@ impl Log {
         let result = expected
             .and_then(|labels| restore_boundary_labels(c, line, labels))
             .unwrap_or_else(|| exec_definition(c, line));
-        let first = result.map_err(|reason| undo(c, reason))?;
+        let first = match result {
+            Ok(first) => first,
+            Err(reason) => return Err(undo(c, reason)),
+        };
         if let Some(expected) = expected {
             if !definition_outputs(c, before, first, line)
                 .map(|id| c.label(id))

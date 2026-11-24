@@ -60,6 +60,9 @@ pub enum Step {
         line: String,
         error: Option<String>,
     },
+    Add {
+        line: String,
+    },
     Redefine {
         line: String,
     },
@@ -99,8 +102,10 @@ impl<'de> Deserialize<'de> for Step {
         use serde::de::Error;
         let raw = RawStep::deserialize(d)?;
         let need = |name: &str| D::Error::custom(format!("step `{}` needs `{name}`", raw.action));
-        if !matches!(raw.action.as_str(), "reject" | "redefine") && raw.line.is_some() {
-            return Err(D::Error::custom("only `reject` and `redefine` take `line`"));
+        if !matches!(raw.action.as_str(), "reject" | "add" | "redefine") && raw.line.is_some() {
+            return Err(D::Error::custom(
+                "only `add`, `reject` and `redefine` take `line`",
+            ));
         }
         if raw.action != "reject" && raw.error.is_some() {
             return Err(D::Error::custom("only step `reject` takes `error`"));
@@ -197,7 +202,7 @@ impl<'de> Deserialize<'de> for Step {
                     max: raw.max.ok_or_else(|| need("max"))?,
                 })
             }
-            "reject" | "redefine" => {
+            "reject" | "add" | "redefine" => {
                 if raw.label.is_some() || raw.x.is_some() || raw.y.is_some() || raw.value.is_some()
                 {
                     return Err(D::Error::custom(format!(
@@ -211,6 +216,8 @@ impl<'de> Deserialize<'de> for Step {
                         line,
                         error: raw.error,
                     })
+                } else if raw.action == "add" {
+                    Ok(Step::Add { line })
                 } else {
                     Ok(Step::Redefine { line })
                 }
@@ -1367,6 +1374,21 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     }
                 };
                 check_keys(&keys, &outputs, created).map_err(|e| format!("snapshot {i}: {e}"))?;
+                previous_keys = Some(keys);
+            }
+            Some(previous) if matches!(&case.steps[i], Step::Add { .. }) => {
+                let Step::Add { line } = &case.steps[i] else {
+                    unreachable!()
+                };
+                let labels = script_labels(std::slice::from_ref(line));
+                if labels.len() != 1 || !labels.is_disjoint(previous) || !previous.is_subset(&keys)
+                {
+                    return Err(format!(
+                        "snapshot {i} has invalid labels after adding a command"
+                    ));
+                }
+                let added = keys.difference(previous).cloned().collect();
+                check_keys(&added, &labels, |_| false).map_err(|e| format!("snapshot {i}: {e}"))?;
                 previous_keys = Some(keys);
             }
             Some(previous) if matches!(&case.steps[i], Step::Delete { .. }) => {

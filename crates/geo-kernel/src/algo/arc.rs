@@ -5,6 +5,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicPart.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicPartCircle.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicPartCircumcircleND.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCircleThreePoints.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoConicND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicPartConicPoints.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicPartConicPointsND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicPartConicParameters.java
@@ -39,7 +41,9 @@ use super::conic::{circumcircle, Circumcircle};
 use super::conic_nd::{my_length, ConicData, ConicType};
 use super::conic_path::{self, type_number};
 use super::general_conic::transform_conic;
-use super::path::{conic_parameter, line_path_changed, line_point_changed, PathState};
+use super::path::{
+    conic_parameter, conic_parameter_from, line_path_changed, line_point_changed, PathState,
+};
 use super::transform::{invert_point, parse_transform_for, shear_axis, TransformOf};
 use super::{join, Group, Parents, LINE_LIKE, NUMBER_OR_ANGLE, POINT};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
@@ -147,6 +151,8 @@ pub struct ArcData {
     pub value: f64,
     arc_length: f64,
     area: f64,
+    /// The temporary endpoint parameters of AlgoConicPartConicPoints.java.
+    endpoint_parameters: [f64; 2],
     /// `valueDefined`, which is `GeoConicPart.isDefined`.
     pub defined: bool,
     /// The start and end point of the first line of a degenerate part
@@ -175,6 +181,7 @@ impl ArcData {
             value: 0.0,
             arc_length: 0.0,
             area: 0.0,
+            endpoint_parameters: [0.0; 2],
             defined: false,
             line_points: None,
         }
@@ -198,6 +205,7 @@ impl ArcData {
             && b(self.value, o.value)
             && b(self.arc_length, o.arc_length)
             && b(self.area, o.area)
+            && self.endpoint_parameters.map(f64::to_bits) == o.endpoint_parameters.map(f64::to_bits)
             && self.defined == o.defined
             && pts
     }
@@ -209,20 +217,24 @@ impl ArcData {
         matches!(self.conic.ty, ConicType::Circle | ConicType::Ellipse)
     }
 
-    /// `GeoConicPart.getArcLength`: NaN when undefined. Only parts of
-    /// circles and ellipses have one here (see [`Self::is_curved`]).
+    /// A later projection can keep these parameters when an endpoint becomes undefined.
+    pub(crate) fn endpoint_parameters_changed(&self, previous: &Self) -> bool {
+        self.endpoint_parameters.map(f64::to_bits) != previous.endpoint_parameters.map(f64::to_bits)
+    }
+
+    /// AlgoArcLength.java reads GeoConicPartParameters.java, which keeps
+    /// the last arc length when the part degenerates.
     pub fn arc_length(&self) -> f64 {
-        if self.defined && self.is_curved() {
+        if self.defined {
             self.arc_length
         } else {
             f64::NAN
         }
     }
 
-    /// `GeoConicPart.getArea`: NaN when undefined; like
-    /// [`Self::arc_length`] only for parts of circles and ellipses.
+    /// AlgoAreaConic.java reads the area under the same definedness check.
     pub fn area(&self) -> f64 {
-        if self.defined && self.is_curved() {
+        if self.defined {
             self.area
         } else {
             f64::NAN
@@ -437,13 +449,6 @@ impl ArcData {
     }
 }
 
-/// Whether the conic `id` with record `d` is defined, as `conicPart.set`
-/// copies it: a conic whose value is undefined (the image under an
-/// undefined transformation) may still have a record.
-fn conic_defined(c: &Construction, id: Id, d: &ConicData) -> bool {
-    d.defined && c.value(id).is_defined()
-}
-
 /// `DoubleUtil.convertToAngleValue`: an angle in `[0, 2 pi]`.
 fn angle_value(val: f64) -> f64 {
     if val > STANDARD_PRECISION && val < PI_2 {
@@ -478,11 +483,10 @@ fn circle_through(m: (f64, f64), p: (f64, f64)) -> ConicData {
     ConicData::circle(m.0, m.1, my_length(p.0 - m.0, p.1 - m.1))
 }
 
-/// The value of an arc or a sector from its record: undefined when the
-/// part is, or when its value is not finite (two rays, a degenerate
-/// sector), which GeoGebra counts as defined.
+/// Keep the defined flag in the stored value even when the part has an
+/// infinite measure (two rays or a degenerate sector).
 pub(crate) fn value(sector: bool, a: &ArcData) -> Value {
-    if !a.defined || !a.value.is_finite() {
+    if !a.defined {
         return Value::Undefined;
     }
     if sector {
@@ -517,12 +521,30 @@ impl ArcDef {
         }
     }
 
-    /// The record of the part for the current positions. It depends only on
-    /// the parents (unlike GeoGebra's, which keeps the parameters and the
-    /// measures of a degenerate part from earlier updates; those are not
-    /// read here, see [`ArcData::is_curved`]).
-    pub(crate) fn record(self, c: &Construction) -> ArcData {
-        let mut a = ArcData::new(self.is_sector());
+    /// Updates a part from its inputs and its previous record. New parts
+    /// start with the defaults of GeoConicPartParameters.java.
+    pub(crate) fn record(self, c: &Construction, previous: Option<&ArcData>) -> ArcData {
+        let initial = ArcData::new(self.is_sector());
+        let kept = previous.copied().unwrap_or(initial);
+        // GeoConicPartParameters.java keeps the parameters and measures when
+        // the part degenerates and only computes its value and orientation.
+        let mut a = ArcData {
+            conic: initial.conic,
+            defined: initial.defined,
+            value: initial.value,
+            line_points: initial.line_points,
+            ..kept
+        };
+        let undefined_part = || {
+            let mut part = kept;
+            part.conic.defined = false;
+            if part.conic.ty == ConicType::NotClassified {
+                // A new part has no midpoint for AlgoAxis to read.
+                part.conic.midpoint = [f64::NAN; 2];
+            }
+            part.set_undefined();
+            part
+        };
         match self {
             ArcDef::Circle {
                 center, start, end, ..
@@ -530,8 +552,7 @@ impl ArcDef {
                 // `AlgoConicPartCircle`
                 let (Some(m), Some(p), Some(q)) = (c.point(center), c.point(start), c.point(end))
                 else {
-                    a.set_undefined();
-                    return a;
+                    return undefined_part();
                 };
                 a.conic = circle_through(m, p);
                 // the temporary points P and Q put on the circle
@@ -542,14 +563,12 @@ impl ArcDef {
             ArcDef::Semicircle { a: pa, b: pb } => {
                 // `AlgoSemicircle`: the circle around the midpoint through B
                 let (Some(pa), Some(pb)) = (c.point(pa), c.point(pb)) else {
-                    a.set_undefined();
-                    return a;
+                    return undefined_part();
                 };
                 let m = ((pa.0 + pb.0) / 2.0, (pa.1 + pb.1) / 2.0);
                 a.conic = circle_through(m, pb);
                 if !a.conic.defined {
-                    a.set_undefined();
-                    return a;
+                    return undefined_part();
                 }
                 let alpha = (pb.1 - pa.1).atan2(pb.0 - pa.0);
                 a.set_parameters(true, alpha, alpha + PI, true);
@@ -562,33 +581,41 @@ impl ArcDef {
             } => {
                 // `AlgoConicPartCircumcircleND` on `AlgoCircleThreePoints`
                 let (Some(pa), Some(pb), Some(pc)) = (c.point(ia), c.point(ib), c.point(ic)) else {
-                    a.set_undefined();
-                    return a;
+                    return undefined_part();
                 };
                 circum_record(&mut a, pa, pb, pc);
+                if a.conic.ty == ConicType::NotClassified {
+                    return undefined_part();
+                }
             }
             ArcDef::ConicPoints { conic, p, q, .. } => {
                 // `AlgoConicPartConicPoints`
-                let Some(d) = c.conic(conic) else {
+                let Some(d) = c.conic_fields(conic) else {
                     a.set_undefined();
                     return a;
                 };
                 a.conic = d;
-                let nan = (f64::NAN, f64::NAN);
-                let s = conic_parameter(&d, c.point(p).unwrap_or(nan), true);
-                let t = conic_parameter(&d, c.point(q).unwrap_or(nan), true);
-                a.set_parameters(conic_defined(c, conic, &d), s, t, true);
+                // PathParameter.java (setT) leaves an endpoint's parameter
+                // alone when the projection would write NaN.
+                for (parameter, point) in a.endpoint_parameters.iter_mut().zip([p, q]) {
+                    if let Some(point) = c.point(point) {
+                        *parameter = conic_parameter_from(&d, point, true, *parameter);
+                    }
+                }
+                let [s, t] = a.endpoint_parameters;
+                a.set_parameters(d.defined, s, t, true);
             }
             ArcDef::ConicParameters { conic, s, t, .. } => {
-                // `AlgoConicPartConicParameters` (`AlgoConicPart.compute`)
-                let Some(d) = c.conic(conic) else {
+                // AlgoConicPartConicParameters.java copies the conic record
+                // before GeoConicPartParameters.java checks definedness.
+                let Some(d) = c.conic_fields(conic) else {
                     a.set_undefined();
                     return a;
                 };
                 a.conic = d;
                 let s = c.number(s).unwrap_or(f64::NAN);
                 let t = c.number(t).unwrap_or(f64::NAN);
-                a.set_parameters(conic_defined(c, conic, &d), s, t, true);
+                a.set_parameters(d.defined, s, t, true);
             }
             ArcDef::Transform { src, def, .. } => {
                 // `Transform.transform` runs `createTransformedObject` again
@@ -597,7 +624,7 @@ impl ArcDef {
                 let mut steps = Vec::new();
                 if let Some(base) = part_source(c, src, &mut steps) {
                     steps.push(PartStep::Map(def));
-                    rebuilt_record(c, &mut a, base, &steps);
+                    rebuilt_record(c, &mut a, kept.conic, base, &steps);
                     return a;
                 }
                 // `AlgoTransformation.compute` with `transformLimitedPath`:
@@ -605,10 +632,23 @@ impl ArcDef {
                 // conic is transformed; a map that preserves angles keeps the
                 // parameters, the others read them from the images of the
                 // part's end points
-                let Some(s) = c.arc(src).filter(|s| s.defined && s.conic.defined) else {
+                let Some(s) = c.arc(src) else {
                     a.set_undefined();
                     return a;
                 };
+                if !s.defined || !s.conic.defined {
+                    // GeoConicPart.createTransformedObject rotates the helper
+                    // circle through the start point. When that point is
+                    // undefined, AlgoRotate copies the carrier and stops.
+                    if matches!(
+                        (def, c.def(src)),
+                        (TransformOf::Rotate { .. }, Def::Arc(ArcDef::Circle { .. }))
+                    ) {
+                        a.conic = s.conic;
+                    }
+                    a.set_undefined();
+                    return a;
+                }
                 a.conic = s.conic;
                 transform_conic(c, &def, &mut a.conic);
                 if !a.conic.defined {
@@ -633,7 +673,7 @@ impl ArcDef {
                 let mut steps = Vec::new();
                 if let Some(base) = part_source(c, src, &mut steps) {
                     steps.push(PartStep::Translate(by));
-                    rebuilt_record(c, &mut a, base, &steps);
+                    rebuilt_record(c, &mut a, kept.conic, base, &steps);
                     return a;
                 }
                 // `AlgoTranslate`: the parameters always stay
@@ -664,7 +704,7 @@ impl ArcDef {
                 let mut steps = Vec::new();
                 if let Some(base) = part_source(c, src, &mut steps) {
                     steps.push(PartStep::Invert(circle));
-                    rebuilt_record(c, &mut a, base, &steps);
+                    rebuilt_record(c, &mut a, kept.conic, base, &steps);
                     return a;
                 }
                 // `AlgoMirror` at a circle: `transformLimitedConic` with the
@@ -809,10 +849,8 @@ enum PartStep {
 }
 
 /// The part an image is rebuilt from: a circumcircular part from its three
-/// points, or `Arc`/`Sector` between two points from its conic and the two
-/// points (`GeoConicPart.createTransformedObject`). No other part is rebuilt
-/// (`AlgoConicPartCircle`, `AlgoSemicircle` and `AlgoConicPartConicParameters`
-/// label no points their image could run through).
+/// points, or a part between two points from its conic and endpoints
+/// (`GeoConicPart.createTransformedObject`).
 enum PartSource {
     Circum { a: Id, b: Id, c: Id },
     ConicPoints { conic: Id, p: Id, q: Id },
@@ -873,22 +911,18 @@ fn mapped_point(c: &Construction, steps: &[PartStep], p: (f64, f64)) -> Option<(
 /// [`mapped_point`] runs it (`getTransformedConic` of every step).
 fn mapped_conic(c: &Construction, steps: &[PartStep], d: &mut ConicData) {
     for step in steps {
-        if !d.defined {
-            return;
-        }
         match *step {
             PartStep::Map(def) => transform_conic(c, &def, d),
-            PartStep::Translate(by) => {
-                if let Value::Vector { x, y } = c.value(by) {
-                    d.translate(x, y);
-                } else {
-                    d.defined = false;
-                }
-            }
-            PartStep::Invert(k) => match c.conic(k) {
+            PartStep::Translate(by) => match c.value(by) {
+                Value::Vector { x, y } if d.defined => d.translate(x, y),
+                Value::Vector { .. } => {}
+                _ => d.set_undefined(),
+            },
+            PartStep::Invert(k) if d.defined => match c.conic(k) {
                 Some(m) => d.mirror_conic(&m, false),
                 None => d.defined = false,
             },
+            PartStep::Invert(_) => {}
         }
     }
 }
@@ -899,45 +933,41 @@ fn mapped_conic(c: &Construction, steps: &[PartStep], d: &mut ConicData) {
 /// conic and the projections of the images of `P` and `Q` onto it, which
 /// `AlgoConicPartConicPoints` gives the positive orientation whatever the
 /// source's is.
-fn rebuilt_record(c: &Construction, a: &mut ArcData, base: PartSource, steps: &[PartStep]) {
+fn rebuilt_record(
+    c: &Construction,
+    a: &mut ArcData,
+    previous_conic: ConicData,
+    base: PartSource,
+    steps: &[PartStep],
+) {
     match base {
         PartSource::Circum {
             a: ia,
             b: ib,
             c: ic,
         } => {
-            let (Some(pa), Some(pb), Some(pc)) = (c.point(ia), c.point(ib), c.point(ic)) else {
+            let map = |id| c.point(id).and_then(|p| mapped_point(c, steps, p));
+            if let (Some(pa), Some(pb), Some(pc)) = (map(ia), map(ib), map(ic)) {
+                circum_record(a, pa, pb, pc);
+            } else {
+                a.conic = previous_conic;
                 a.set_undefined();
-                return;
-            };
-            match (
-                mapped_point(c, steps, pa),
-                mapped_point(c, steps, pb),
-                mapped_point(c, steps, pc),
-            ) {
-                (Some(pa), Some(pb), Some(pc)) => circum_record(a, pa, pb, pc),
-                _ => a.set_undefined(),
             }
         }
         PartSource::ConicPoints { conic, p, q } => {
-            let Some(d) = c.conic(conic) else {
+            let Some(d) = c.conic_fields(conic) else {
                 a.set_undefined();
                 return;
             };
             a.conic = d;
-            a.conic.defined = conic_defined(c, conic, &d);
             mapped_conic(c, steps, &mut a.conic);
-            if !a.conic.defined {
-                a.set_undefined();
-                return;
+            for (parameter, point) in a.endpoint_parameters.iter_mut().zip([p, q]) {
+                if let Some(point) = c.point(point).and_then(|p| mapped_point(c, steps, p)) {
+                    *parameter = conic_parameter_from(&a.conic, point, false, *parameter);
+                }
             }
-            // the images of the points, projected onto the image conic
-            let nan = (f64::NAN, f64::NAN);
-            let pp = c.point(p).and_then(|p| mapped_point(c, steps, p));
-            let qq = c.point(q).and_then(|q| mapped_point(c, steps, q));
-            let s = conic_parameter(&a.conic, pp.unwrap_or(nan), false);
-            let t = conic_parameter(&a.conic, qq.unwrap_or(nan), false);
-            a.set_parameters(true, s, t, true);
+            let [s, t] = a.endpoint_parameters;
+            a.set_parameters(a.conic.defined, s, t, true);
         }
     }
 }
@@ -1059,6 +1089,18 @@ fn circum_circle(a: &mut ArcData, pa: (f64, f64), pb: (f64, f64), pc: (f64, f64)
 fn circum_degenerate(a: &mut ArcData, pa: (f64, f64), pb: (f64, f64), pc: (f64, f64)) {
     a.conic.ty = ConicType::ParallelLines;
     a.conic.defined = true;
+    // GeoConicND.setCircle with the circumcenter at infinity: the
+    // midpoint is A and the first eigenvector is perpendicular to the
+    // center's direction.
+    let end = if super::conic::is_equal(pa.0, pb.0) && super::conic::is_equal(pa.1, pb.1) {
+        pc
+    } else {
+        pb
+    };
+    let (dx, dy) = (pa.0 - end.0, pa.1 - end.1);
+    let length = my_length(dx, dy);
+    a.conic.midpoint = [pa.0, pa.1];
+    a.conic.eigenvec = [[dx / length, dy / length], [-dy / length, dx / length]];
     a.line_points = Some([pa, pc]);
     let (x, y, z) = join(pa, pc);
     let lambda = affine_ratio(pa, pc, pb);
@@ -1304,7 +1346,7 @@ impl Group for ArcDef {
             ArcDef::Length(a) => number(c.arc(a)?.arc_length()),
             ArcDef::Area(a) => number(c.arc(a)?.area()),
             ArcDef::Perimeter(a) => number(perimeter(&c.arc(a)?)),
-            d => Some(value(d.is_sector(), &d.record(c))),
+            d => Some(value(d.is_sector(), &d.record(c, None))),
         }
     }
 

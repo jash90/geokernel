@@ -360,8 +360,19 @@ fn is_zero(v: f64) -> bool {
 /// new point. With `on_path` the point lies on `d` first, as a point whose
 /// path is `d` does when `setCoords` projects it (`AlgoConicPartConicPoints`
 /// calls `setCoords` and then `pointChangedUnlimited`).
-pub(crate) fn conic_parameter(d: &ConicData, (x, y): (f64, f64), on_path: bool) -> f64 {
+pub(crate) fn conic_parameter(d: &ConicData, point: (f64, f64), on_path: bool) -> f64 {
+    conic_parameter_from(d, point, on_path, 0.0)
+}
+
+/// The same projection with the saved parameter of a reused temporary point.
+pub(super) fn conic_parameter_from(
+    d: &ConicData,
+    (x, y): (f64, f64),
+    on_path: bool,
+    parameter: f64,
+) -> f64 {
     let mut st = PathState::new();
+    st.set_t(parameter);
     if on_path {
         st.set_coords(&Geom::Conic(*d), x, y);
     } else {
@@ -936,10 +947,14 @@ fn defined_line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
         Def::ConicPart(d @ ConicPartDef::TangentLine { conic, .. }) => {
             hom(super::conic_parts::tangent_point_on(c, d, conic).flatten())
         }
-        // `AlgoAxes` and `AlgoAsymptote`: the midpoint of the conic
-        Def::ConicPart(
-            ConicPartDef::Axis { conic, .. } | ConicPartDef::Asymptote { conic, .. },
-        ) => hom(c.conic(conic).map(|d| (d.midpoint[0], d.midpoint[1]))),
+        // AlgoAxes.java and AlgoAxis.java set the start from the kept midpoint.
+        Def::ConicPart(ConicPartDef::Axis { conic, .. }) => {
+            hom(super::conic_parts::conic_reader_fields(c, conic)
+                .map(|d| (d.midpoint[0], d.midpoint[1])))
+        }
+        Def::ConicPart(ConicPartDef::Asymptote { conic, .. }) => {
+            hom(super::conic_object(c, conic).map(|d| (d.midpoint[0], d.midpoint[1])))
+        }
         _ => return None,
     })
 }
@@ -1210,7 +1225,16 @@ impl PathDef {
     ) -> Option<PathState> {
         let mut st = *old;
         match self {
-            PathDef::On { path } => st.set_coords(&geom(c, path), x, y),
+            PathDef::On { path } => {
+                // A direct coordinate edit calls pointChanged even if the
+                // circle is undefined. Construction updates still use geom.
+                let geometry = if c.kind(path) == Kind::Circle && !c.value(path).is_defined() {
+                    c.conic_fields(path).map_or(Geom::Undefined, Geom::Conic)
+                } else {
+                    geom(c, path)
+                };
+                st.set_coords(&geometry, x, y);
+            }
             PathDef::InRegion { region } => st.place_in_region(c, region, (x, y)),
             PathDef::RigidEndpoint { anchor, radius, .. } => {
                 st.set_coords(&fixed_circle(c, anchor, Count::Literal(radius)), x, y)
@@ -1686,4 +1710,19 @@ pub(crate) fn polygon_contains(vertices: &[(f64, f64)], p: (f64, f64)) -> bool {
         prev = next;
     }
     inside
+}
+
+#[cfg(test)]
+mod axis_tests {
+    use super::*;
+
+    #[test]
+    fn an_arc_axis_has_a_defined_start_point() {
+        let c = crate::script::load(
+            "O = (1, 2)\nA = (2, 2)\nB = (1, 3)\nr = CircleArc(O, A, B)\ng = FirstAxis(r)",
+        )
+        .unwrap();
+        let g = c.id("g").unwrap();
+        assert_eq!(defined_line_start(&c, g), Some((1.0, 2.0, 1.0)));
+    }
 }

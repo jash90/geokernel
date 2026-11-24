@@ -83,10 +83,9 @@ fn kinds_of(case: &Case) -> BTreeMap<String, Kind> {
         .collect()
 }
 
-/// Which lines of a case show a form: its script, its `redefine` steps and
-/// its `reject` steps; a refused form only its `reject` steps; a solving
-/// form only its script and redefinitions, as a refusal shows no solving
-/// variable.
+/// A form can occur in the script or in later assignments and rejections.
+/// Refusal evidence uses only rejections. Solving evidence needs an
+/// assignment because a refusal shows no solving variable.
 #[derive(Clone, Copy, PartialEq)]
 enum Lines {
     All,
@@ -113,7 +112,7 @@ fn case_lines(case: &Case, which: Lines) -> impl Iterator<Item = &String> {
         .filter(move |_| which != Lines::Rejected)
         .chain(case.steps.iter().filter_map(move |step| match step {
             Step::Reject { line, .. } if which != Lines::Script => Some(line),
-            Step::Redefine { line } if which != Lines::Rejected => Some(line),
+            Step::Add { line } | Step::Redefine { line } if which != Lines::Rejected => Some(line),
             _ => None,
         }))
 }
@@ -429,7 +428,8 @@ fn print_giac_form_status() {
     }
 }
 
-/// Prints evidence candidates; see the module documentation.
+/// Prints evidence candidates; set GEOKERNEL_ALL_FORM_CANDIDATES to list
+/// every matching case instead of the first three.
 #[test]
 #[ignore]
 fn print_form_candidates() {
@@ -438,6 +438,11 @@ fn print_form_candidates() {
     let names = names(&m);
     let cases = harness_cases();
     let gaps = gaps::load().unwrap_or_else(|e| panic!("{e}"));
+    let limit = if std::env::var_os("GEOKERNEL_ALL_FORM_CANDIDATES").is_some() {
+        usize::MAX
+    } else {
+        3
+    };
     for (command, cf) in &f {
         for form in cf.forms.iter().filter(|f| !forms::is_wildcard(f)) {
             let ids: Vec<&String> = cases
@@ -445,7 +450,7 @@ fn print_form_candidates() {
                 .filter(|c| !gaps.contains_key(&c.id))
                 .filter(|c| case_uses_form(c, Lines::All, &names, command, form))
                 .map(|c| &c.id)
-                .take(3)
+                .take(limit)
                 .collect();
             if !ids.is_empty() {
                 println!("\n[[form]]\ncommand = \"{command}\"\nform = \"{form}\"");

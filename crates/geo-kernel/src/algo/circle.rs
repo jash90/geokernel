@@ -10,7 +10,7 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-use super::length;
+use super::{conic::ConicDef, length};
 use crate::kernel::{Construction, Def, Id, Value};
 use crate::tol::STANDARD_PRECISION;
 
@@ -61,8 +61,28 @@ pub(crate) fn keeps_record(c: &Construction, def: Def) -> Option<bool> {
         Def::CircleThrough { center, through } => {
             Some(c.point(center).is_none() || c.point(through).is_none())
         }
+        Def::Conic(ConicDef::LiteralRadius { center, .. }) => Some(c.point(center).is_none()),
+        // GeoConicND.java (setCircle with a segment) checks both inputs
+        // before it writes the circle matrix.
+        Def::Conic(ConicDef::SegmentRadius { center, segment }) => {
+            Some(c.point(center).is_none() || !c.value(segment).is_defined())
+        }
         _ => None,
     }
+}
+
+/// The matrix setter runs for an undefined numeric radius with a defined
+/// centre. Only the radius-dependent matrix entry is NaN.
+pub(crate) fn undefined_radius_record(c: &Construction, def: Def) -> Option<(f64, f64, f64)> {
+    let Def::CircleRadius { center, radius } = def else {
+        return None;
+    };
+    let (cx, cy) = c.point(center)?;
+    (c.number(radius).is_none() && c.infinite_number(radius).is_none()).then_some((
+        cx,
+        cy,
+        f64::NAN,
+    ))
 }
 
 #[cfg(test)]

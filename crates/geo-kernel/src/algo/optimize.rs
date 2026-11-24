@@ -225,9 +225,17 @@ pub(crate) fn search(
         let geometry = path::geom(c, id);
         if geometry.is_defined() {
             Some(geometry.range())
-        } else {
-            record = c.circle_record(id);
+        } else if matches!(
+            c.def(id),
+            Def::CircleRadius { .. } | Def::CircleThrough { .. }
+        ) {
+            record = c.circle_record(id).filter(|d| d.half_axes[0].is_finite());
             record.map(|d| path::Geom::Conic(d).range())
+        } else {
+            // A circle from an undefined radius segment remains unavailable
+            // to the optimizer, even though its matrix readers can use it
+            // (misc-maximizepoint-014).
+            None
         }
     } else {
         c.slider_interval(independent)

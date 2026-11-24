@@ -178,19 +178,19 @@ impl Construction {
         bounds: [Option<Bound>; 2],
         old_max: Option<Bound>,
     ) -> bool {
-        let mut changed_root = false;
+        let mut requires_replay = false;
         // CmdSlider sets the lower endpoint first. That can make the
         // slider undefined before the upper endpoint brings it back.
         if old_max.is_some() {
             self.saved_slider_bounds.insert(id, [bounds[0], old_max]);
             if self.update_slider_bounds(id) {
                 self.propagate(id);
-                changed_root = self.last_update_changed_automatic_root;
+                requires_replay = self.last_update_requires_replay;
             }
         }
         self.saved_slider_bounds.insert(id, bounds);
         self.update_slider_bounds(id);
-        changed_root
+        requires_replay
     }
 
     /// Explicit step and speed expressions from the slider command.
@@ -319,6 +319,18 @@ impl Construction {
     /// [`Construction::set_number`] keeps its value in. A new number is 0,
     /// put in the interval (`GeoNumeric.setIntervalMin` and `Max`).
     pub fn add_slider(&mut self, label: &str, min: f64, max: f64) -> Result<Id, Error> {
+        if min.is_nan() || max.is_nan() {
+            if min.is_infinite() || max.is_infinite() {
+                return Err(Error::NotFinite);
+            }
+            // GeoNumeric.resolveMinMax leaves the initial value in place
+            // when either endpoint is undefined.
+            let id = self.add(label, Def::Number(0.0))?;
+            let bound = |v: f64| v.is_finite().then_some(Bound::Literal(v));
+            self.saved_slider_bounds
+                .insert(id, [bound(min), bound(max)]);
+            return Ok(id);
+        }
         if !(min.is_finite() && max.is_finite()) {
             return Err(Error::NotFinite);
         }

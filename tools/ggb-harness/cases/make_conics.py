@@ -345,4 +345,48 @@ case("tangent", HYP + [pt("U", 0, 0), pt("V", 1, 4), "s = Segment(U, V)", "t = T
                        "w = Tangent(r, k)"],
      [mv("V", 4, 1), mv("V", -1, 3)])
 
+
+case("internalnames", [
+    "O = (1, 2)", "k = Circle(O, 3)",
+    "a = FirstAxis(k)", "b = SecondAxis(k)", "e = Excentricity(k)",
+    "P = (4, 2)", "Q = (1, 5)", "r = CircularArc(O, P, Q)",
+    "g = FirstAxis(r)", "h = SecondAxis(r)", "d = Excentricity(r)",
+], [mv("O", 0, 0),
+    *[{"action": "reject", "line": f"j = {command}(O)"}
+      for command in ("FirstAxis", "SecondAxis", "Excentricity")]])
+
+
+case("arcreaders", [
+    "A = (0, 0)", "B = (3, 0)", "C = (1, 0)", "r = CircumcircleArc(A, B, C)",
+    "g = FirstAxis(r)", "h = SecondAxis(r)", "e = Excentricity(r)",
+    "b = Defined(If(true, r, r))",
+], [mv("C", 1, 1), mv("C", 1, 0)])
+case("arcreaders", [
+    "A = (1, 2)", "B = (4, 5)", "C = (2, 3)", "r = CircumcircleArc(A, B, C)",
+    "g = FirstAxis(r)", "h = SecondAxis(r)",
+], [mv("C", 0, 0), mv("C", 2, 3)])
+case("internalnames", ["k = Circle((1, 2), 3)", "g = firstaxis(k)"], [])
+case("internalnames", ["g = FirstAxis(Circle((1, 2), 3))"], [])
+case("internalnames", ["k = Circle((1, 2), 3)", "FirstAxis = (3, 4)"],
+     [{"action": "reject", "line": "g = FirstAxis(k)"}])
+
+case("axisreview", [
+    "O = (1, 2)", "A = (2, 2)", "B = (1, 3)", "r = CircleArc(O, A, B)",
+    "g = FirstAxis(r)", "P = Point(g, 0.5)",
+], [mv("O", 2, 3)])
+case("axisreview", [
+    "A = (0, 0)", "B = (0.00000001, 0)", "C = (0, 1)",
+    "r = CircumcircleArc(A, B, C)", "g = FirstAxis(r)",
+], [])
+case("axisreview", [
+    "O = (1, 2)", "A = (2, 2)", "B = (1, 3)", "r0 = CircleArc(O, A, B)",
+    *[f"r{i} = If(true, r{i-1}, r{i-1})" for i in range(1, 65)],
+    "g = FirstAxis(r64)", "P = Point(g, 0.5)",
+], [mv("O", 2, 3)])
+
+topic("keptcircle")
+case("keptcircle", [pt("O", 0, 0), pt("B", 4, 0), "g = Line(O, B)", num("n", 1),
+                    "r = If(n > 0, 2, If(n < 0, -2))", "k = Circle(O, r)", "d = Diameter(g, k)"],
+     [setn("n", -1), setn("n", 0), mv("O", 1, 0)])
+
 cases.write()

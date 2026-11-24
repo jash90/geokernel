@@ -589,18 +589,25 @@ impl Workbench {
     /// Replays `log` into a new construction, keeping the selection by label.
     /// If the replay fails the previous state stays and `notice` says why.
     fn restore(&mut self, log: Log) -> Result<(), String> {
+        self.restore_state(log, false)
+    }
+
+    fn restore_state(&mut self, log: Log, snapshot: bool) -> Result<(), String> {
         #[cfg(test)]
         if let Some(e) = self.fail_rebuilds.clone() {
             self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
             return Err(e);
         }
-        let (c, kept) = match self.replay(&log) {
+        let (mut c, mut kept) = match self.replay(&log) {
             Ok(r) => r,
             Err(e) => {
                 self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
                 return Err(e);
             }
         };
+        if snapshot {
+            kept.reset_snapshot_records(&mut c);
+        }
         self.install_replay(c, kept);
         Ok(())
     }
@@ -730,7 +737,7 @@ impl Workbench {
         if next.view_only {
             self.notice = None;
         } else {
-            self.restore(next.log)?;
+            self.restore_state(next.log, true)?;
         }
         self.restored_view = next.camera.filter(|c| Some(*c) != self.camera);
         Ok(())

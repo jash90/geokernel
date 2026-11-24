@@ -87,6 +87,7 @@ mod eval;
 pub(crate) mod fraction;
 pub(crate) mod inequality;
 mod inverse;
+pub(crate) use eval::{carrier_deadline, charge_carrier};
 #[doc(hidden)]
 pub(crate) use eval::{reserve_work, with_work_deadline, work_deadline};
 pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK, MAX_OVERRUN};
@@ -355,7 +356,7 @@ pub(crate) enum Node {
         elem: Elem,
         explicit: bool,
     },
-    Defined(u32),
+    Defined(u32, bool),
     ObjectDefined(Id),
 }
 
@@ -772,6 +773,7 @@ impl From<Option<eval::Exact>> for StoredExtra {
 struct TextResult {
     text: Option<String>,
     presentation: crate::kernel::text::TextPresentation,
+    invalid_transform_list: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -780,6 +782,8 @@ struct FunctionInterval {
     range: Option<[f64; 2]>,
     defined: bool,
 }
+
+type NestedTransforms = std::collections::BTreeMap<u32, (u32, Vec<Slot>)>;
 
 #[derive(Clone)]
 pub(crate) struct Entry {
@@ -812,6 +816,7 @@ pub(crate) struct Entry {
     lists: bool,
     /// The elements of a list result (see [`list`]).
     items: Vec<Slot>,
+    nested_transforms: NestedTransforms,
     coordinate_layout: Option<list::CoordinateLayout>,
     depth: u32,
     cost: u64,
@@ -902,6 +907,7 @@ impl Entry {
             inverts,
             lists,
             items: Vec::new(),
+            nested_transforms: NestedTransforms::new(),
             coordinate_layout: None,
             interval: None,
             nodes: p.nodes,
@@ -1055,7 +1061,7 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         Node::Filter {
             list, condition, ..
         } => fixed[..2].copy_from_slice(&[list, condition]),
-        Node::Defined(a)
+        Node::Defined(a, _)
         | Node::RootList(a)
         | Node::FunctionAsymptotes(a)
         | Node::VertexForm(a)
@@ -1121,7 +1127,7 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
             shift(list);
             shift(condition);
         }
-        Node::Defined(a)
+        Node::Defined(a, _)
         | Node::RootList(a)
         | Node::FunctionAsymptotes(a)
         | Node::VertexForm(a)
@@ -1566,6 +1572,19 @@ pub(crate) fn evaluate(c: &Construction, d: ExprDef) -> Outcome {
         Outcome { raw, dec: None }
     } else {
         let (raw, dec) = eval::root(c, e, None);
+        // An independent point has homogeneous weight 1 even when a
+        // coordinate is infinite. AlgoDependentPoint discards that result.
+        let raw = match raw {
+            Raw::Vec(x, y)
+                if d.kind == Kind::Point
+                    && e.parents.is_empty()
+                    && matches!(e.nodes[e.root as usize], Node::Tuple(..) | Node::Polar(..))
+                    && (x.is_infinite() || y.is_infinite()) =>
+            {
+                Raw::Homogeneous([x, y, 1.0])
+            }
+            _ => raw,
+        };
         Outcome { raw, dec }
     }
 }
@@ -1596,10 +1615,33 @@ fn evaluate_lists(
 
 /// The first evaluation can reject an invalid list transform argument.
 pub(crate) fn initialize(c: &mut Construction, id: Id, d: ExprDef) -> Result<Value, Error> {
-    if !entry(c, d).lists || matches!(d.kind, Kind::Text | Kind::Function | Kind::FunctionNVar) {
-        return Ok(update(c, id, d).0);
+    let e = entry(c, d);
+    if e.lists
+        && e.nodes.iter().any(|node| matches!(node, Node::If(..)))
+        && e.nodes.iter().any(|node| matches!(node, Node::Dilate(..)))
+    {
+        let meter = eval::Lists::new(Vec::new());
+        return eval::with_command_budget(Some(&meter), || {
+            let transforms = eval::validate_dilations(c, entry(c, d), &meter)?;
+            c.exprs.entries[d.index as usize].nested_transforms = transforms;
+            initialize_value(c, id, d)
+        });
     }
-    let ((value, _), invalid_transform_list) = update_lists(c, d);
+    initialize_value(c, id, d)
+}
+
+fn initialize_value(c: &mut Construction, id: Id, d: ExprDef) -> Result<Value, Error> {
+    let (value, invalid_transform_list) = if entry(c, d).lists
+        && !matches!(d.kind, Kind::Text | Kind::Function | Kind::FunctionNVar)
+    {
+        let ((value, _), invalid) = update_lists(c, d);
+        (value, invalid)
+    } else {
+        let (value, _) = update(c, id, d);
+        let invalid = matches!(&entry(c, d).extra, StoredExtra::Text(result)
+            if result.invalid_transform_list);
+        (value, invalid)
+    };
     if invalid_transform_list {
         return Err(Error::InvalidTransformList);
     }
@@ -1615,6 +1657,7 @@ pub(crate) struct SavedResult {
     items: Vec<Slot>,
     coordinate_layout: Option<list::CoordinateLayout>,
     stuck: Vec<u32>,
+    nested_transforms: NestedTransforms,
 }
 
 impl SavedResult {
@@ -1627,7 +1670,12 @@ impl SavedResult {
         };
         let stuck = e.stuck.nodes();
         // Pay for saving, and for dropping or restoring the saved slots.
-        let work = 2 * (1 + e.items.len() + extra_work + stuck.len()) as u64;
+        let transform_work = e
+            .nested_transforms
+            .values()
+            .map(|(_, slots)| 1 + slots.len())
+            .sum::<usize>();
+        let work = 2 * (1 + e.items.len() + extra_work + stuck.len() + transform_work) as u64;
         reserve_work(work).then(|| Self {
             raw: e.raw,
             extra: e.extra.clone(),
@@ -1635,6 +1683,7 @@ impl SavedResult {
             items: e.items.clone(),
             coordinate_layout: e.coordinate_layout,
             stuck: stuck.clone(),
+            nested_transforms: e.nested_transforms.clone(),
         })
     }
 
@@ -1644,6 +1693,7 @@ impl SavedResult {
         e.extra = self.extra;
         e.interval = self.interval;
         e.items = self.items;
+        e.nested_transforms = self.nested_transforms;
         e.coordinate_layout = self.coordinate_layout;
         *e.stuck.nodes() = self.stuck;
     }
@@ -1680,8 +1730,9 @@ pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) 
         return (current(c, d), true);
     }
     if d.kind == Kind::Text {
-        let result = eval::text_root(c, entry(c, d), c.text_latex_override(id));
+        let (result, transforms) = eval::text_root(c, entry(c, d), c.text_latex_override(id));
         let e = &mut c.exprs.entries[d.index as usize];
+        e.nested_transforms.extend(transforms);
         let old = match &e.extra {
             StoredExtra::Text(old) => Some(old.as_ref()),
             _ => None,
@@ -1731,8 +1782,10 @@ fn update_lists(c: &mut Construction, d: ExprDef) -> ((Value, bool), bool) {
     items.clear();
     let out = evaluate_lists(c, d, &lists, &mut items);
     let invalid_transform_list = lists.invalid_transform_list.get();
+    let transforms = lists.take_nested_transforms();
     c.exprs.arena = lists.into_arena();
     let e = &mut c.exprs.entries[d.index as usize];
+    e.nested_transforms.extend(transforms);
     let items_changed = !list::same_slots(&e.items, &items);
     if items_changed {
         e.items.clear();
@@ -1799,7 +1852,9 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
     match ctx.node(i) {
         Node::Obj(id) => object_defined(ctx.c, id),
         Node::Apply(f, a) => object_defined(ctx.c, f) && defined_below(ctx, a),
-        Node::Cmd(def, hint) => command_defined(ctx.c, def, hint),
+        Node::Cmd(def, hint) => {
+            eval::with_command_budget(ctx.meter, || command_defined(ctx.c, def, hint))
+        }
         Node::Inverse(a) => defined_below(ctx, a) && inverse::sample(ctx, a, 1.0).is_some(),
         Node::Cas(op, a, b) if op.is_function() => cas::function_at(ctx, op, a, b).is_some(),
         Node::PolynomialPart(remainder, a, b) => {
@@ -1842,7 +1897,7 @@ pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
         };
     }
     if d.kind == Kind::Text {
-        return if eval::text_root(c, entry(c, d), None).text.is_some() {
+        return if eval::text_root(c, entry(c, d), None).0.text.is_some() {
             Value::Text
         } else {
             Value::Undefined
@@ -2274,7 +2329,7 @@ pub(crate) fn arithmetic_number(c: &Construction, text: &str) -> Option<f64> {
                 | Node::Tuple(..)
                 | Node::Polar(..)
                 | Node::ObjectDefined(_)
-                | Node::Defined(_)
+                | Node::Defined(..)
         )
     });
     if !arithmetic

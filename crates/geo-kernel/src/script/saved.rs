@@ -12,6 +12,8 @@ use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Property {
+    ResetCircleRecords,
+    ResetArcRecords,
     ImageAsset {
         name: Arc<str>,
         asset: Arc<RasterAsset>,
@@ -19,6 +21,11 @@ pub enum Property {
     DrawingStyle {
         label: String,
         style: DrawingStyle,
+    },
+    RegularVertex {
+        label: String,
+        x: f64,
+        y: f64,
     },
     SliderBounds {
         label: String,
@@ -43,20 +50,32 @@ impl Property {
     pub fn label(&self) -> Option<&str> {
         match self {
             Self::DrawingStyle { label, .. }
+            | Self::RegularVertex { label, .. }
             | Self::SliderBounds { label, .. }
             | Self::ObjectScripts { label, .. }
             | Self::SliderAnimation { label, .. } => Some(label),
-            Self::ImageAsset { .. } => None,
+            Self::ImageAsset { .. } | Self::ResetCircleRecords | Self::ResetArcRecords => None,
         }
     }
 
     pub fn apply(&self, c: &mut Construction) -> Result<(), String> {
         match self {
+            Self::ResetCircleRecords => {
+                c.reset_circle_records();
+                Ok(())
+            }
+            Self::ResetArcRecords => {
+                c.reset_arc_records();
+                Ok(())
+            }
             Self::ImageAsset { name, asset } => c.register_image_asset(name.clone(), asset.clone()),
             Self::DrawingStyle { label, style } => {
                 c.set_drawing_style(object(c, label)?, *style);
                 Ok(())
             }
+            Self::RegularVertex { label, x, y } => c
+                .restore_regular_vertex(object(c, label)?, *x, *y)
+                .map_err(|e| e.to_string()),
             Self::SliderBounds { label, bounds } => {
                 let id = object(c, label)?;
                 let [min, max] = bounds;
@@ -122,6 +141,8 @@ impl Property {
 impl fmt::Display for Property {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ResetCircleRecords => f.write_str("$resetCircleRecords()"),
+            Self::ResetArcRecords => f.write_str("$resetArcRecords()"),
             Self::ImageAsset { name, asset } => {
                 write!(f, "$imageAsset({}, _", encode_text(name))?;
                 for byte in asset.bytes() {
@@ -137,6 +158,9 @@ impl fmt::Display for Property {
                 style.show_label,
                 style.line_thickness
             ),
+            Self::RegularVertex { label, x, y } => {
+                write!(f, "$regularVertex({}, {x:?}, {y:?})", encode_text(label))
+            }
             Self::SliderBounds {
                 label,
                 bounds: [min, max],
@@ -199,10 +223,17 @@ pub fn load_image_asset(
 }
 
 pub fn parse(line: &str) -> Option<Result<Property, String>> {
+    if line == "$resetCircleRecords()" {
+        return Some(Ok(Property::ResetCircleRecords));
+    }
+    if line == "$resetArcRecords()" {
+        return Some(Ok(Property::ResetArcRecords));
+    }
     if !line.starts_with("$sliderBounds(")
         && !line.starts_with("$sliderAnimation(")
         && !line.starts_with("$objectScripts(")
         && !line.starts_with("$drawingStyle(")
+        && !line.starts_with("$regularVertex(")
     {
         return None;
     }
@@ -220,6 +251,11 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
                     style,
                 })
             }
+            ("$regularVertex", [label, x, y]) => Ok(Property::RegularVertex {
+                label: decode_text(label)?,
+                x: x.parse().map_err(|_| "invalid vertex x coordinate")?,
+                y: y.parse().map_err(|_| "invalid vertex y coordinate")?,
+            }),
             ("$sliderBounds", [label, min, max]) => {
                 let bound = |field| (field != "_").then(|| decode_text(field)).transpose();
                 Ok(Property::SliderBounds {

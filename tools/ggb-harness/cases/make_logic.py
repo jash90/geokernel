@@ -176,4 +176,71 @@ case("iffn", nums(a=1) + ["f(x) = If(x < 0, -x, x)", "v = f(a)", "g(x) = f(x) + 
 case("iffn", nums(a=1) + ["f(x) = If(x < a, x^2, x)", "v = f(2)", "g(x) = If(x < 0, f(x), -f(x))"],
      [setn("a", 3), setn("a", -1), setn("a", 1)])
 
+
+# CommandsTest.cmdDefined uses a regular polygon.
+case("defined", [
+    "A = (1, 1)", "B = (2, 0.5)", "p = Polygon(A, B, 4)",
+    "b = Defined(p)", "c = Defined(Polygon(A, B, 4))", "d = Defined(Line(A, B))",
+], [mv("A", 0, 0)])
+case("defined", [
+    "a = 1", "n = 1 / a", "r = sqrt(a)", "A = (n, r)", "v = (n, r)",
+    "f(x) = x + r", "g(x) = sqrt(x)", "l = {r, A}",
+    "b = Defined(n)", "c = Defined(A)", "d = Defined(v)", "e = Defined(r)",
+    "h = Defined(f)", "i = Defined(g)", "j = Defined(l)",
+    "k = Defined(1 / a)", "m = Defined((n, r))",
+], [setn("a", 0), setn("a", -1), setn("a", 2)])
+case("defined", [
+    "A = (0, 0)", "B = (2, 0)", "C = (0, 1)", "D = (2, 2)",
+    "g = Line(A, B)", "h = Line(C, D)", "P = Intersect(g, h)",
+    "b = Defined(P)", "c = Defined(Intersect(g, h))",
+], [mv("D", 2, 1), mv("C", 0, 0), mv("D", 2, 2),
+    {"action": "reject", "line": "d = Defined(A, B)"}])
+
+case("defined", [
+    "A = (0, 0)", "B = (3, 0)", "C = (1, 1)",
+    "a = CircumcircularArc(A, B, C)", "b = Defined(a)",
+], [mv("C", 1, 0), mv("C", 4, 0), mv("C", 1, 1)])
+
+
+case("defined", ["f(x) = ?" + " + 0" * 27, "b = Defined(f)"], [])
+case("defined", ["a = 1", "f(x) = a * ?", "b = Defined(f)"],
+     [setn("a", 2), setn("a", 1)])
+case("defined", [
+    "f(x) = ? + 0 * (x + 1)", "g(x) = ? + 0 * x^x",
+    "b = Defined(f)", "c = Defined(g)",
+], [])
+case("defined", [
+    "f(x) = x", "b = Defined((f))", "c = Defined(x + 1)",
+    "A = (0, 0)", "B = (1, 0)", "C = (0, 1)",
+    "d = !Defined(Polygon(A, B, C))",
+], [])
+case("defined", [
+    "A = (inf, 1)", "b = Defined(A)", "c = Defined((inf, 1))",
+    "B = (0, 0)", "C = (1, 0)", "D = (0, 1)", "E = (1, 1)",
+    "g = Line(B, C)", "h = Line(D, E)", "P = Intersect(g, h)",
+    't = Text("abc", P)', "d = Defined(P)", "e = Defined(t)",
+], [])
+case("defined", [
+    "A = (0, 0)", "B = (1, 0)", "g0 = Line(A, B)",
+    *[f"g{i} = If(true, g{i-1}, g{i-1})" for i in range(1, 65)],
+    "b = Defined(g64)",
+], [mv("B", 0, 0), mv("B", 0, 1)])
+case("defined", ["s = Slider(?, 2)", "b = Defined(s)"], [])
+
+case("definedreview", ["f(x) = x + x", "b = Defined(f)"], [])
+case("definedreview", ["a = 1.001", "f(x) = a*?", "b = Defined(f)"],
+     [setn("a", 1.01), setn("a", -1.001), setn("a", 0.001)])
+case("definedreview", ["f(x) = ?+0*If(x > 0, x, -x)", "b = Defined(f)"], [])
+case("definedreview", [
+    "A = (0, 0)", "B = (1, 0)", "C = (0, 1)",
+    "b = !Defined((Polygon(A, B, C)))",
+    "c = Defined((inf, true))",
+], [])
+case("definedreview", ["s = Slider((?), 2)", "b = Defined(s)"], [])
+
+
+case("definedproducts", ["a = -1.001", "b = -1", "f(x) = a*(b*?)", "d = Defined(f)"], [])
+case("definedproducts", ["f(x) = ?+0*If(true, 2, 3)", "d = Defined(f)"], [])
+case("definedproducts", ["r(x) = x", "f(x) = ?+0*r(x)", "d = Defined(f)"], [])
+
 cases.write()

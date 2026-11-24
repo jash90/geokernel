@@ -173,6 +173,8 @@
     {"id": "funcanalysis-reviewroots-009", "group": "funcanalysis", "script": ["R = Root(x^64+x)"], "steps": [{"action": "initial"}]},
     {"id": "funcanalysis-reviewiteration-001", "group": "funcanalysis", "script": ["n = 2", "R = Iteration(x+1,1,n)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "n", "value": 2000000.0}]},
     {"id": "funcanalysis-reviewode-001", "group": "funcanalysis", "script": ["s = SolveODE(y,10000000000000000,1,10000000000000002,0.25)"], "steps": [{"action": "initial"}]},
-    {"id": "funcanalysis-reviewode-002", "group": "funcanalysis", "script": ["a = 1", "f(t,u,v) = a*v", "g(t,u,v) = -u", "s = NSolveODE({f,g},0,{1,0},0.1)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": 2.0}]}
+    {"id": "funcanalysis-reviewode-002", "group": "funcanalysis", "script": ["a = 1", "f(t,u,v) = a*v", "g(t,u,v) = -u", "s = NSolveODE({f,g},0,{1,0},0.1)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": 2.0}]},
+    {"id": "funcanalysis-cartesiancoords-001", "group": "funcanalysis", "script": ["g = CurveCartesian(t^2, t^2, t, 42, 50)"], "steps": [{"action": "initial"}], "sample_curves": true},
+    {"id": "funcanalysis-cartesiancoords-002", "group": "funcanalysis", "script": ["a = -2", "b = 3", "r = 2", "g = CurveCartesian(r * t, t^2, t, a, b)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "r", "value": -3.0}, {"action": "set_number", "label": "a", "value": 4.0}, {"action": "set_number", "label": "b", "value": 5.0}], "sample_curves": true}
   ]
 }

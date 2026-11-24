@@ -220,7 +220,7 @@ impl Construction {
                 dirty.insert(i);
             }
         }
-        self.propagate_dirty(dirty, 0, false);
+        self.propagate_dirty(dirty, 0);
     }
 
     /// The graphics window the view-dependent objects read.
@@ -260,7 +260,7 @@ impl Construction {
         for &i in &self.view_readers {
             dirty.insert(i);
         }
-        self.propagate_dirty(dirty, 0, false);
+        self.propagate_dirty(dirty, 0);
         true
     }
 
@@ -724,13 +724,13 @@ pub(crate) fn recompute(c: &mut Construction, i: usize) {
             c.update_slider_bounds(Id(i));
         }
         Def::GeneralConic(d) => {
-            c.update_conic(i, d);
+            c.update_conic(i, d, false);
         }
         Def::Path(d) if d.has_state() => {
             c.update_path(i, d);
         }
         Def::Arc(d) if d.has_record() => {
-            c.update_arc(i, d);
+            c.update_arc(i, d, false);
         }
         // a locus is never between a moving object and the point of a locus
         Def::Locus(_) => {}

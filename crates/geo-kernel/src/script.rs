@@ -431,6 +431,11 @@ fn convert_source(c: &mut Construction, arg: &str) -> Result<Id, String> {
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
 fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    if let Some((command, _)) = split_call(rhs) {
+        if ConicPartDef::reader_name(command).is_some() && c.id(command).is_some() {
+            return crate::expr::define(c, name, rhs, is_vector_label(name)).map(Some);
+        }
+    }
     let inline = inline_arguments(c, rhs);
     let rhs = inline.as_deref().unwrap_or(rhs);
     if let Some(result) = with_saved_arguments(c, rhs, |c, call| define_after_label(c, name, call))
@@ -596,7 +601,25 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         }
     };
     let resolved = call.as_deref().unwrap_or(rhs);
-    let result = define_resolved(c, name, resolved);
+    let result = match define_resolved(c, name, resolved) {
+        Err(error) => {
+            c.discard_since(start);
+            // The expression evaluator can use scalar and coordinate results
+            // directly. Other command outputs need a real hidden object.
+            let retry = c.checkpoint();
+            if let Some(call) = resolve_defined_arguments(c, rhs) {
+                if let Ok(output) = define_resolved(c, name, &call) {
+                    if let Some(id) = output {
+                        c.remember_construction_source(id, rhs);
+                    }
+                    return Ok(output);
+                }
+            }
+            c.discard_since(retry);
+            return Err(error);
+        }
+        result => result,
+    };
     if let Ok(Some(id)) = result.as_ref() {
         let numeric_expression = c.kind(*id).is_number()
             && crate::expr::plain_number(rhs).is_none()
@@ -615,7 +638,7 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             c.remember_construction_source(*id, rhs);
         }
     }
-    if result.is_err() || (matches!(result, Ok(None)) && implicit_multi_output(c, resolved)) {
+    if matches!(result, Ok(None)) && implicit_multi_output(c, resolved) {
         c.discard_since(start);
     }
     result
@@ -650,41 +673,104 @@ fn implicit_multi_output(c: &Construction, rhs: &str) -> bool {
     })
 }
 
+/// Give a command used as the input of Defined its own hidden object when
+/// the expression evaluator does not support its result type.
+fn resolve_defined_arguments(c: &mut Construction, rhs: &str) -> Option<String> {
+    use crate::expr::lex::{tokens, Tok};
+    let tokens = tokens(rhs).ok()?;
+    let mut closes = vec![0; tokens.len()];
+    let mut opens = Vec::new();
+    for (index, token) in tokens.iter().enumerate() {
+        match token.tok {
+            Tok::LParen => opens.push(index),
+            Tok::RParen => closes[opens.pop()?] = index,
+            _ => (),
+        }
+    }
+    let mut result = String::new();
+    let mut end = 0;
+    for (index, token) in tokens.iter().enumerate() {
+        let Tok::Name { text, call: true } = &token.tok else {
+            continue;
+        };
+        if token.start < end
+            || !matches!(text.as_str(), "Defined" | "IsDefined")
+            || c.id(text).is_some()
+        {
+            continue;
+        }
+        let close = *closes.get(index + 1)?;
+        if close <= index + 1 {
+            continue;
+        }
+        let start = tokens[index + 1].end;
+        let stop = tokens[close].start;
+        let arg = ungroup(rhs[start..stop].trim());
+        if split_call(arg).is_none() {
+            continue;
+        }
+        let hidden = saved_argument(c, arg, 0).ok()?;
+        result.push_str(&rhs[end..start]);
+        result.push_str(&hidden);
+        end = stop;
+    }
+    if end == 0 {
+        return None;
+    }
+    result.push_str(&rhs[end..]);
+    Some(result)
+}
+
 /// Marks inline geometry for the same lowering used by saved definitions.
 fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
     let (command, args) = split_call(rhs)?;
-    let equations = matches!(
-        command,
-        "Intersect"
-            | "IntersectPath"
-            | "IntersectionPaths"
-            | "AngularBisector"
-            | "AngleBisector"
-            | "Arc"
-            | "Sector"
-            | "Area"
-            | "AreConcurrent"
-            | "AreParallel"
-            | "ArePerpendicular"
-            | "Center"
-            | "Circumference"
-            | "ConjugateDiameter"
-            | "Diameter"
-            | "Direction"
-            | "IsTangent"
-            | "Point"
-            | "Radius"
-            | "Slope"
-            | "OrthogonalVector"
-            | "PerpendicularVector"
-            | "UnitOrthogonalVector"
-            | "UnitPerpendicularVector"
-            | "UnitVector"
-            | "Tangent"
-    );
+    let conic_reader = ConicPartDef::reader_name(command);
+    if conic_reader.is_some() && c.id(command).is_some() {
+        return None;
+    }
+    let equations = conic_reader.is_some()
+        || matches!(
+            command,
+            "Intersect"
+                | "IntersectPath"
+                | "IntersectionPaths"
+                | "AngularBisector"
+                | "AngleBisector"
+                | "Arc"
+                | "Sector"
+                | "Area"
+                | "AreConcurrent"
+                | "AreParallel"
+                | "ArePerpendicular"
+                | "Center"
+                | "Circumference"
+                | "ConjugateDiameter"
+                | "Diameter"
+                | "Direction"
+                | "Defined"
+                | "IsDefined"
+                | "IsTangent"
+                | "Point"
+                | "Radius"
+                | "Slope"
+                | "OrthogonalVector"
+                | "PerpendicularVector"
+                | "UnitOrthogonalVector"
+                | "UnitPerpendicularVector"
+                | "UnitVector"
+                | "Tangent"
+        );
     let point_arguments = matches!(
         command,
-        "Circle" | "Polygon" | "PolyLine" | "Arc" | "Sector"
+        "Circle"
+            | "Polygon"
+            | "PolyLine"
+            | "Arc"
+            | "Sector"
+            | "CircleArc"
+            | "CircularArc"
+            | "CircleSector"
+            | "CircularSector"
     ) || (command == "ClosestPoint"
         && args.len() == 2
         && args.iter().any(|arg| c.id(arg).is_some()));
@@ -695,6 +781,7 @@ fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
             let inline = c.id(arg).is_none()
                 && (equations && crate::expr::equation::split_equation(arg).is_ok()
                     || point_arguments && arg.starts_with('(')
+                    || conic_reader.is_some() && split_call(arg).is_some()
                     || matches!(
                         (command, split_call(arg).map(|(name, _)| name)),
                         ("PathParameter", Some("Point")) | ("Centroid", Some("Polygon"))
@@ -1191,6 +1278,9 @@ fn define(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
 /// Numeric `Slider` overloads with optional animation increment and speed.
 fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
     let number = |c: &Construction, arg| {
+        if ungroup(arg) == "?" {
+            return Some(f64::NAN);
+        }
         crate::expr::constant_number(c, arg)
             .filter(|&(_, angle)| !angle)
             .map(|(value, _)| value)
@@ -1345,6 +1435,40 @@ fn call_closes_at_end(rhs: &str, open: usize) -> bool {
         }
     }
     false
+}
+
+fn ungroup(source: &str) -> &str {
+    if !source.starts_with('(') {
+        return source;
+    }
+    let mut opens = Vec::new();
+    let mut groups = Vec::new();
+    for (i, ch) in unquoted(source) {
+        match ch {
+            '(' => opens.push(i),
+            ')' => {
+                let Some(open) = opens.pop() else {
+                    return source;
+                };
+                groups.push((open, i));
+            }
+            _ => (),
+        }
+    }
+    let mut start = 0;
+    let mut end = source.len();
+    for (open, close) in groups.into_iter().rev() {
+        if start != open || close + 1 != end {
+            break;
+        }
+        let inner = &source[open + 1..close];
+        start = open + 1 + inner.len() - inner.trim_start().len();
+        end = open + 1 + inner.trim_end().len();
+        if start >= end {
+            return "";
+        }
+    }
+    &source[start..end]
 }
 
 /// `Name(args)` split into the name and the trimmed arguments; `None` for
@@ -2055,7 +2179,18 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
         .strip_suffix(')')
         .ok_or("missing closing `)`")?;
     let func = rhs[..open].trim();
-    let args: Vec<&str> = inner.split(',').map(str::trim).collect();
+    let mut args: Vec<&str> = inner.split(',').map(str::trim).collect();
+    if matches!(
+        func,
+        "Perpendicular" | "PerpendicularLine" | "OrthogonalLine"
+    ) {
+        if let [_, _, orientation] = args.as_slice() {
+            let orientation = ungroup(orientation);
+            if matches!(orientation, "xOyPlane" | "space") && c.id(orientation).is_none() {
+                args.pop();
+            }
+        }
+    }
     let obj = |s: &str| object(c, s);
 
     if let Some(def) = intersect::parse_selected(c, func, &args) {
@@ -2529,6 +2664,32 @@ mod tests {
         assert_eq!(c.kind(id), Kind::Conic);
         assert!(c.conic(id).is_some());
         assert!(crate::expr::work_done() - before < crate::expr::MAX_EVALUATION_WORK);
+    }
+
+    #[test]
+    fn a_point_on_an_arc_axis_uses_the_carrier_midpoint() {
+        let c = load(
+            "O = (1, 2)\nA = (2, 2)\nB = (1, 3)\nr = CircleArc(O, A, B)\n\
+             g = FirstAxis(r)\nP = Point(g, 0.5)",
+        )
+        .unwrap();
+        assert_eq!(c.point(c.id("P").unwrap()), Some((1.0, 2.0)));
+    }
+
+    #[test]
+    fn defined_line_checks_do_not_walk_conditional_ancestors() {
+        let mut c = Construction::new();
+        exec(&mut c, "A = (0, 0)").unwrap();
+        exec(&mut c, "B = (1, 0)").unwrap();
+        exec(&mut c, "g0 = Line(A, B)").unwrap();
+        for i in 1..=64 {
+            let prior = i - 1;
+            exec(&mut c, &format!("g{i} = If(true, g{prior}, g{prior})")).unwrap();
+        }
+        let before = crate::expr::work_done();
+        let result = exec(&mut c, "b = Defined(g64)").unwrap().unwrap();
+        assert_eq!(c.value(result), Value::Bool(true));
+        assert!(crate::expr::work_done() - before < 8);
     }
 
     #[test]

@@ -133,4 +133,62 @@ for topic, command, prefix in (
     case(topic, ["A = (1, 3)", *prefix, "l = {1, A}"],
          [{"action": "reject", "line": f"t = {command}"}])
 
+
+case("dilateorigin", ["A = (2, 3)", "v = (-1, 2)", "n = 2",
+                      "l = {A, {v, A}, 1}", "p = Dilate(l, n)"],
+     [setn("n", -2), setn("n", 0), mv("A", -1, 2), setn("n", 0.5)])
+
+
+case("dilateslots", ["A = (1, 1)", "n = 1", "l = If(n > 0, {A}, {3})",
+                     "t = Dilate(l, 2)"], [setn("n", -1), setn("n", 1)])
+case("dilatereject", ["A = (1, 1)"], [
+    *[{"action": "reject", "line": f"n = Length(Dilate({src}, 2))"}
+      for src in ("{1, A}", "{1}", "{true, A}", '{"abc", A}', "{{1}, A}")],
+    {"action": "reject", "line": "txt = Text(Dilate({1, A}, 2))"},
+])
+case("dilatesegment", [
+    "A = (0, 0)", "B = (2, 0)", "s = Segment(A, B)", "l_{s} = {s}", "t = Dilate(l_{s}, 2)",
+], [mv("B", 0, 3)])
+
+case("dilatereview", [
+    "A = (1, 1)", "n = 1", "l = If(n > 0, {A}, {3})",
+    "w = Length(Dilate(l, 2))",
+], [setn("n", -1), setn("n", 1),
+    {"action": "reject", "line": "q = If(false, Length(Dilate({1, A}, 2)), 7)"}])
+case("dilatereview", [
+    "A = (1, 1)", "k = Circle(A, 2)", "l = {k}", "t = Dilate(l, 2)",
+], [mv("A", -2, 3)])
+
+case("dilatereview", [
+    "A = (1, 1)", "B = (2, 1)", "F = (0, 2)", "g: y = 0",
+    "h = Ray(A, B)", "p = Parabola(F, g)", "k = Circle(A, 2)",
+    "l = {{k, 3}, h, g}", "t = Dilate(l, 2, A)",
+    "n = 2", "q = Dilate(p, n, A)", "w = Length(Dilate({p}, n, A))",
+], [mv("A", 1, -1)])
+
+
+case("dilatevalidation", [
+    "A = (1, 1)",
+    "l = Sequence(Length(Dilate(If(i > 0, {A}, {1}), 2)), i, 1, 2)",
+], [])
+zeros = ", ".join(["0"] * 64)
+case("dilatevalidation", ["A = (1, 1)"], [
+    {"action": "reject", "line": f"q = If(false, Length({{{zeros}}}) + Length(Dilate({{1, A}}, 2)), 7)"},
+])
+case("dilatevalidation", [
+    "F = (0, 2)", "g: y = 0", "p = Parabola(F, g)", "t = Text(Dilate({p}, 2))",
+], [])
+case("dilateleaves", [
+    "A = (0, 0)", "B = (2, 0)", "C = (0, 2)", "p = Polygon(A, B, C)",
+    "n = Length(Dilate({p}, 2))",
+], [])
+case("dilateleaves", [
+    "c = CurveCartesian(t, t^2, t, 0, 1)", "n = Length(Dilate({c}, 2))",
+], [])
+case("dilatecarrier", [
+    "r0 = Circle((1, 2), 2)",
+    *[f"r{i} = If(true, r{i-1}, r{i-1})" for i in range(1, 65)],
+    "n = Length(Dilate({r64}, 2))",
+], [])
+
 cases.write()

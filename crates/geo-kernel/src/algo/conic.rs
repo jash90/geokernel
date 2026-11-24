@@ -65,7 +65,7 @@ pub(super) fn scaled_length(x: f64, y: f64) -> f64 {
     }
 }
 
-fn is_equal(a: f64, b: f64) -> bool {
+pub(super) fn is_equal(a: f64, b: f64) -> bool {
     a == b || ((a - STANDARD_PRECISION) <= b && b <= (a + STANDARD_PRECISION))
 }
 
@@ -314,13 +314,11 @@ impl Group for ConicDef {
                 _ => None,
             },
             ConicDef::Diameter { line, circle } => {
-                // `GeoLine.getDirection` of the raw coefficients, then
-                // `GeoConicND.diameterLine` with the circle matrix
-                // (1, 1, cx^2 + cy^2 - r^2, 0, -cx, -cy).
+                // GeoLine.java (getDirection), then GeoConicND.java
+                // (diameterLine) with the matrix it still holds.
                 let (a, b, _) = c.raw_carrier(line)?;
-                let (cx, cy, _) = c.circle(circle)?;
-                let (vx, vy) = (b, -a);
-                line_value(vx + 0.0 * vy, 0.0 * vx + vy, -cx * vx + -cy * vy)
+                let [x, y, z] = super::conic_parts::diameter(&c.conic_fields(circle)?, b, -a);
+                line_value(x, y, z)
             }
         }
     }
