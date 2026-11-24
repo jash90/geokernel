@@ -1,0 +1,43 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-numeric-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Numeric(745/1137)", "output": "0.66", "latex": "\\mathbf{0.66}" }
+    },
+    {
+      "id": "cas-numeric-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Numeric(2/3,10)", "output": "0.67", "latex": "\\mathbf{0.6666666667}" }
+    },
+    {
+      "id": "cas-numeric-003",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Numeric(1,2,3)", "output": "1", "latex": "\\mathbf{1}" }
+    }
+  ]
+}

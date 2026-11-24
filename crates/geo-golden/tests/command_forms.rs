@@ -134,6 +134,48 @@ fn case_uses_form(
     })
 }
 
+/// CAS-view forms are classified from the row source. An algebra-input
+/// form elsewhere in the matrix keeps using the construction script.
+fn cas_row_uses_form(case: &Case, command: &str, form: &str) -> bool {
+    let Some(row) = &case.cascell else {
+        return false;
+    };
+    let labels = kinds_of(case);
+    forms::calls(&row.input).iter().any(|(name, args)| {
+        if name != command {
+            return false;
+        }
+        let mut tokens: Vec<_> = form.split(',').collect();
+        if tokens.last() == Some(&"...") {
+            tokens.pop();
+            if args.len() < tokens.len() {
+                return false;
+            }
+            tokens.resize(args.len(), tokens.last().copied().unwrap_or(""));
+        }
+        tokens.len() == args.len()
+            && tokens.iter().zip(args).all(|(&token, argument)| {
+                let kind = || forms::arg_kind(argument, &labels);
+                let equation = || argument.contains('=') && !argument.starts_with('{');
+                match token {
+                    "condition" => argument.contains(['<', '>']),
+                    "equation" => equation(),
+                    "expression" => true,
+                    "list" => argument.starts_with('{') || kind() == Some(Kind::List),
+                    "matrix" => argument.starts_with("{{") || kind() == Some(Kind::List),
+                    "number" => kind() == Some(Kind::Number),
+                    "polynomial" => !equation() && kind() != Some(Kind::Number),
+                    "variable" => {
+                        argument.chars().next().is_some_and(char::is_alphabetic)
+                            && argument.chars().all(|ch| ch.is_alphanumeric() || ch == '_')
+                            && !labels.contains_key(argument)
+                    }
+                    _ => false,
+                }
+            })
+    })
+}
+
 #[test]
 fn forms_csv_lists_the_in_scope_commands_of_the_matrix() {
     let f = forms();
@@ -292,6 +334,12 @@ fn every_evidence_row_is_backed() {
             };
             if gaps.contains_key(id) {
                 errors.push(format!("{what}: `{id}` is a known gap"));
+            } else if cf.group == "cas" {
+                if !cas_row_uses_form(case, &e.command, &e.form) {
+                    errors.push(format!(
+                        "{what}: `{id}` does not call it in a CAS row in this form"
+                    ));
+                }
             } else if !case_lines(case, lines_of(&e))
                 .any(|line| forms::script_calls(std::slice::from_ref(line), &names, &e.command))
             {
@@ -492,6 +540,9 @@ fn no_done_form_is_called_by_a_known_gap() {
             .keys()
             .filter(|id| {
                 cases.get(*id).is_some_and(|case| {
+                    if cf.group == "cas" {
+                        return cas_row_uses_form(case, &e.command, &e.form);
+                    }
                     let kinds = kinds_of(case);
                     case_lines(case, which).any(|line| {
                         forms::script_may_use_form(

@@ -61,7 +61,8 @@ One JSON object per file, stored under `golden/<group>/`.
 
 ### CAS rows
 
-Cases of group `cascell` use the initial script and snapshot to set up any
+Cases of group `cascell` and CAS-view command cases of group `cas` use
+the initial script and snapshot to set up any
 construction objects that the row reads. They have exactly one step and a
 `cascell` object with three strings.
 
@@ -382,12 +383,12 @@ stays 1.
 
 ## Known gaps
 
-The `cas` group is recorded with the native Giac oracle. Symbolic function
-results are compared by their sampled values. Finite solution lists are
+The `cas` group is recorded with the native Giac oracle. Its construction
+snapshots compare symbolic function results by their sampled values. Finite solution lists are
 recorded in ascending numeric order and system solutions in lexicographic
 tuple order. Sorting retains duplicate entries and preserves the coordinate
 order inside each solution tuple. Assignment lines are compared by their
-coefficients up to scale. Printed forms are outside the golden comparison.
+coefficients up to scale. CAS rows compare printed forms as described above.
 
 A case that `geo-kernel` cannot reproduce yet is listed in
 `crates/geo-golden/known-gaps.toml` with a reason and the exact objects that

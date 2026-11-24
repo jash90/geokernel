@@ -1,0 +1,31 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-rationalize-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Rationalize(1/(2+sqrt(3)))", "output": "-sqrt(3) + 2", "latex": "\\mathbf{-\\sqrt{3} + 2}" }
+    },
+    {
+      "id": "cas-rationalize-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Rationalize(1,2)", "output": "Sorry, something went wrong. Please check your input", "latex": "" }
+    }
+  ]
+}

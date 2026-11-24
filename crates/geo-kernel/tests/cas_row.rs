@@ -19,3 +19,15 @@ fn refuses_a_row_above_the_input_limit_before_trimming() {
     input.push(' ');
     assert_eq!(c.evaluate_cas_row(&input).text, "?");
 }
+
+#[test]
+fn feature_commands_explain_the_refusal_when_giac_is_unavailable() {
+    if geo_kernel::giac_backend_active() {
+        return;
+    }
+    let c = Construction::new();
+    let result = c.evaluate_cas_row("1 + Numeric(2/3)");
+    assert_eq!(result.text, "Numeric requires a CAS build");
+    assert!(result.latex.is_empty());
+    assert_eq!(result.exact, None);
+}

@@ -507,41 +507,41 @@ TurtleUp,,scripting,,out_of_scope,,,
 TurtleDown,,scripting,,out_of_scope,,,
 Polyhedron,,english,,out_of_scope,,,
 Reflect,Mirror,transformation,P1,done,,,
-Assume,,cas,,out_of_scope,,,
-CFactor,,cas,,out_of_scope,,,
-CIFactor,,cas,,out_of_scope,,,
+Assume,,cas,P2,done,1,1,"Done only with the giac feature (docs/cas-giac.md): Assume(condition, expression)."
+CFactor,,cas,P2,done,2,2,"Done only with the giac feature (docs/cas-giac.md): CFactor(expression), CFactor(expression, variable)."
+CIFactor,,cas,P2,done,2,2,"Done only with the giac feature (docs/cas-giac.md): CIFactor(expression), CIFactor(expression, variable)."
 IFactor,,algebra,P2,done,6,6,"Polynomial and rational functions are in scope for the 1.0 CAS, with bounded radical forms. A list, a line and a conic are refused as in the reference. Done only with the giac feature (docs/cas-giac.md): IFactor(implicit), IFactor(curve)."
-IntegralSymbolic,,cas,,out_of_scope,,,
+IntegralSymbolic,,cas,P2,done,2,2,"Done only with the giac feature (docs/cas-giac.md): IntegralSymbolic(expression), IntegralSymbolic(expression, variable)."
 CommonDenominator,,algebra,P2,done,2,2,Number pairs and rational-function pairs.
 Cross,,algebra,P2,done,5,5,"point or vector pairs and list pairs of equal length 2 or 3, including row lists (vectorforms-listcross-001 and vectorforms-nestedcross-001)"
 CSolutions,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
 CSolve,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
 Dot,,algebra,P2,done,1,1,
-Eliminate,,cas,,out_of_scope,,,
-GroebnerLex,,cas,,out_of_scope,,,
-GroebnerDegRevLex,,cas,,out_of_scope,,,
-GroebnerLexDeg,,cas,,out_of_scope,,,
+Eliminate,,cas,P2,done,1,1,"Done only with the giac feature (docs/cas-giac.md): Eliminate(list, list)."
+GroebnerLex,,cas,P2,done,2,2,"Done only with the giac feature (docs/cas-giac.md): GroebnerLex(list), GroebnerLex(list, list)."
+GroebnerDegRevLex,,cas,P2,done,2,2,"Done only with the giac feature (docs/cas-giac.md): GroebnerDegRevLex(list), GroebnerDegRevLex(list, list)."
+GroebnerLexDeg,,cas,P2,done,2,2,"Done only with the giac feature (docs/cas-giac.md): GroebnerLexDeg(list), GroebnerLexDeg(list, list)."
 NIntegral,,function,P2,done,6,6,
 NInvert,,function,P2,done,1,1,
 NSolve,,algebra,P2,done,10,10,"Bounded real polynomial equations and systems with optional variable binding. Done only with the giac feature (docs/cas-giac.md): NSolve(list), NSolve(function), NSolve(line), NSolve(conic), NSolve(implicit), NSolve(function, any), NSolve(line, any), NSolve(conic, any), NSolve(implicit, any), NSolve(list, any)."
 NSolutions,,algebra,P2,done,10,10,"Bounded real polynomial equations and systems with optional variable binding. Done only with the giac feature (docs/cas-giac.md): NSolutions(list), NSolutions(function, any), NSolutions(line, any), NSolutions(conic, any), NSolutions(function), NSolutions(line), NSolutions(conic), NSolutions(implicit), NSolutions(implicit, any), NSolutions(list, any)."
-Numeric,,cas,,out_of_scope,,,
+Numeric,,cas,P2,done,2,2,"Done only with the giac feature (docs/cas-giac.md): Numeric(expression), Numeric(expression, number)."
 Evaluate,,english,,out_of_scope,,,
-MixedNumber,,cas,,out_of_scope,,,
-Rationalize,,cas,,out_of_scope,,,
+MixedNumber,,cas,P2,done,1,1,Done only with the giac feature (docs/cas-giac.md): MixedNumber(number).
+Rationalize,,cas,P2,done,1,1,Done only with the giac feature (docs/cas-giac.md): Rationalize(expression).
 Solutions,,algebra,P2,done,10,10,"Real polynomial equations and small systems are in scope for the 1.0 CAS. Done only with the giac feature (docs/cas-giac.md): Solutions(list), Solutions(function), Solutions(line), Solutions(conic), Solutions(implicit), Solutions(function, any), Solutions(line, any), Solutions(conic, any), Solutions(implicit, any), Solutions(list, any)."
 Solve,,algebra,P2,done,10,10,"Real polynomial equations and small systems are in scope for the 1.0 CAS. Done only with the giac feature (docs/cas-giac.md): Solve(list), Solve(function), Solve(line), Solve(conic), Solve(implicit), Solve(function, any), Solve(line, any), Solve(conic, any), Solve(implicit, any), Solve(list, any)."
 PlotSolve,,function,P2,done,5,5,"Done only with the giac feature (docs/cas-giac.md): PlotSolve(list), PlotSolve(function), PlotSolve(line), PlotSolve(conic), PlotSolve(implicit)."
-SolveCubic,,cas,,out_of_scope,,,
-SolveQuartic,,cas,,out_of_scope,,,
-JordanDiagonalization,,cas,,out_of_scope,,,
-Eigenvectors,,cas,,out_of_scope,,,
-Eigenvalues,,cas,,out_of_scope,,,
-Laplace,,cas,,out_of_scope,,,
-InverseLaplace,,cas,,out_of_scope,,,
-Substitute,,cas,,out_of_scope,,,
+SolveCubic,,cas,P2,done,2,2,"Done only with the giac feature (docs/cas-giac.md): SolveCubic(polynomial), SolveCubic(equation)."
+SolveQuartic,,cas,P2,todo,1,0,
+JordanDiagonalization,,cas,P2,done,1,1,Done only with the giac feature (docs/cas-giac.md): JordanDiagonalization(matrix).
+Eigenvectors,,cas,P2,done,1,1,Done only with the giac feature (docs/cas-giac.md): Eigenvectors(matrix).
+Eigenvalues,,cas,P2,done,1,1,Done only with the giac feature (docs/cas-giac.md): Eigenvalues(matrix).
+Laplace,,cas,P2,done,3,3,"Done only with the giac feature (docs/cas-giac.md): Laplace(expression), Laplace(expression, variable), Laplace(expression, variable, variable)."
+InverseLaplace,,cas,P2,done,3,3,"Done only with the giac feature (docs/cas-giac.md): InverseLaplace(expression), InverseLaplace(expression, variable), InverseLaplace(expression, variable, variable)."
+Substitute,,cas,P2,done,5,5,"Done only with the giac feature (docs/cas-giac.md): Substitute(expression, equation), Substitute(expression, list), Substitute(expression, variable, expression), Substitute(expression, equation, equation, equation, ...), Substitute(expression)."
 ToComplex,,geogebra,P2,done,4,4,
-ToExponential,,cas,,out_of_scope,,,
+ToExponential,,cas,P2,done,1,1,Done only with the giac feature (docs/cas-giac.md): ToExponential(expression).
 InputBox,Textfield,scripting,,out_of_scope,,,
 ToPolar,,geogebra,P2,done,4,4,
 ToPoint,,geogebra,P2,done,4,4,
@@ -553,10 +553,10 @@ nPr,,english,P2,done,1,1,
 CASLoaded,,geogebra,,out_of_scope,,,"Reports whether the CAS view is part of the app, which the kernel has no view of."
 IsVertexForm,,function,P2,done,10,10,
 TableToChart,,english,,out_of_scope,,,
-ExtendedGCD,,cas,,out_of_scope,,,
-ModularExponent,,cas,,out_of_scope,,,
-CharacteristicPolynomial,,cas,,out_of_scope,,,
-MinimalPolynomial,,cas,,out_of_scope,,,
-LUDecomposition,,cas,,out_of_scope,,,
-QRDecomposition,,cas,,out_of_scope,,,
+ExtendedGCD,,cas,P2,done,2,2,"Done only with the giac feature (docs/cas-giac.md): ExtendedGCD(number, number), ExtendedGCD(polynomial, polynomial)."
+ModularExponent,,cas,P2,done,1,1,"Done only with the giac feature (docs/cas-giac.md): ModularExponent(number, number, number)."
+CharacteristicPolynomial,,cas,P2,done,1,1,Done only with the giac feature (docs/cas-giac.md): CharacteristicPolynomial(matrix).
+MinimalPolynomial,,cas,P2,done,1,1,Done only with the giac feature (docs/cas-giac.md): MinimalPolynomial(matrix).
+LUDecomposition,,cas,P2,done,1,1,Done only with the giac feature (docs/cas-giac.md): LUDecomposition(matrix).
+QRDecomposition,,cas,P2,done,1,1,Done only with the giac feature (docs/cas-giac.md): QRDecomposition(matrix).
 Stadium,,english,,out_of_scope,,,

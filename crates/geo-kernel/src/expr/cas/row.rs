@@ -20,7 +20,7 @@ const BUILTINS: &[&str] = &[
 /// The value and display strings of one evaluated CAS row.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CasRow {
-    /// The cell's output text, with `?` for an undefined result.
+    /// The cell's output text or error message, with `?` for an undefined result.
     pub text: String,
     /// The cell's LaTeX output, including its bold wrapper.
     pub latex: String,
@@ -35,8 +35,7 @@ impl Construction {
     /// require a CAS session. Equations and references to construction objects
     /// can be evaluated directly.
     pub fn evaluate_cas_row(&self, source: &str) -> CasRow {
-        let result = evaluate(self, source).unwrap_or_else(undefined);
-        display::render(&result)
+        evaluate(self, source).unwrap_or_else(|| display::render(&undefined()))
     }
 }
 
@@ -44,7 +43,7 @@ fn undefined() -> Expr {
     Expr::Name("?".into())
 }
 
-fn evaluate(c: &Construction, source: &str) -> Option<Expr> {
+fn evaluate(c: &Construction, source: &str) -> Option<CasRow> {
     if source.len() > MAX_INPUT_BYTES {
         return None;
     }
@@ -53,9 +52,17 @@ fn evaluate(c: &Construction, source: &str) -> Option<Expr> {
     let tree = parse(source, true)?;
     #[cfg(feature = "giac")]
     match geo_giac::backend() {
-        geo_giac::Backend::Giac => return translation::evaluate(c, &tree).map(cell_equation),
+        geo_giac::Backend::Giac => return translation::evaluate(c, &tree),
         geo_giac::Backend::Failed => return None,
         geo_giac::Backend::KernelOnly => {}
+    }
+
+    if let Some(command) = feature_command(&tree) {
+        return Some(CasRow {
+            text: format!("{command} requires a CAS build"),
+            latex: String::new(),
+            exact: None,
+        });
     }
 
     let meter = crate::expr::eval::Lists::new(Vec::new());
@@ -67,7 +74,51 @@ fn evaluate(c: &Construction, source: &str) -> Option<Expr> {
     if syntax.encode_utf16().count() > MAX_EXACT_UNITS {
         return None;
     }
-    parse(&syntax, false).map(cell_equation)
+    Some(display::render(&cell_equation(parse(&syntax, false)?)))
+}
+
+fn feature_command(tree: &Expr) -> Option<&str> {
+    match tree {
+        Expr::Call(name, _) if is_feature_command(name) => Some(name),
+        Expr::Call(_, items) | Expr::List(items) | Expr::Tuple(items) => {
+            items.iter().find_map(feature_command)
+        }
+        Expr::Neg(a) => feature_command(a),
+        Expr::Bin(_, a, b) | Expr::Eq(a, b) => feature_command(a).or_else(|| feature_command(b)),
+        Expr::Name(_) | Expr::Num(..) => None,
+    }
+}
+
+fn is_feature_command(name: &str) -> bool {
+    matches!(
+        name,
+        "Assume"
+            | "CFactor"
+            | "CIFactor"
+            | "IntegralSymbolic"
+            | "Eliminate"
+            | "GroebnerLex"
+            | "GroebnerDegRevLex"
+            | "GroebnerLexDeg"
+            | "Numeric"
+            | "MixedNumber"
+            | "Rationalize"
+            | "SolveCubic"
+            | "JordanDiagonalization"
+            | "Eigenvectors"
+            | "Eigenvalues"
+            | "Laplace"
+            | "InverseLaplace"
+            | "Substitute"
+            | "ToExponential"
+            | "ExtendedGCD"
+            | "ModularExponent"
+            | "CharacteristicPolynomial"
+            | "MinimalPolynomial"
+            | "LUDecomposition"
+            | "QRDecomposition"
+            | "SolveQuartic"
+    )
 }
 
 // GeoCasCell reads an equation on the right as the two equations obtained by

@@ -85,6 +85,13 @@ A full run at the reference commit (November 2026) rewrote every file of
 The bounds of a text depend on the fonts of the system and are not
 recorded this way.
 
+### Selecting CAS topics
+
+To record one or more CAS topics without rewriting other golden files, set
+`GGB_HARNESS_TOPICS` to their comma-separated names before running the
+Linux x86_64 script. The `cascell` group records one exact CAS view row per
+case. The CAS-view command fixtures in `cas` use the same row field.
+
 ### Native CAS oracle
 
 On macOS arm64 and Linux x86_64, `build` also downloads the published

@@ -5,6 +5,8 @@ use std::fmt::{self, Write};
 enum Style {
     Syntax,
     Text,
+    #[cfg(feature = "giac")]
+    NumericText,
     Latex,
 }
 
@@ -21,11 +23,27 @@ pub(super) fn render(tree: &Expr) -> CasRow {
     }
 }
 
+#[cfg(feature = "giac")]
+pub(super) fn render_numeric(tree: &Expr) -> CasRow {
+    CasRow {
+        text: Display(tree, Style::NumericText, 0).to_string(),
+        latex: format!(r"\mathbf{{{}}}", Display(tree, Style::Latex, 0)),
+        exact: None,
+    }
+}
+
+#[cfg(feature = "giac")]
+pub(super) fn rounded(value: f64) -> String {
+    let text = format!("{value:.2}");
+    text.trim_end_matches('0').trim_end_matches('.').to_owned()
+}
+
 struct Display<'a>(&'a Expr, Style, u8);
 
 fn precedence(tree: &Expr) -> u8 {
     match tree {
         Expr::Eq(..) => 0,
+        Expr::Bin(op, ..) if super::super::syntax::relation(*op).is_some() => 0,
         Expr::Bin(b'+' | b'-', ..) => 1,
         Expr::Bin(b'*' | b'/', ..) => 2,
         Expr::Neg(_) => 3,
@@ -40,19 +58,28 @@ impl fmt::Display for Display<'_> {
         let child = |e, p| Display(e, style, p);
         let latex = style == Style::Latex;
         let own = precedence(tree);
-        let parentheses = own < outer;
+        let parentheses = own < outer && !(latex && matches!(tree, Expr::Bin(b'/', ..)));
         if parentheses {
             f.write_str(if latex { r"\left(" } else { "(" })?;
         }
         match tree {
+            #[cfg(feature = "giac")]
+            Expr::Num(n, _) if style == Style::NumericText && n.is_finite() => {
+                f.write_str(&rounded(*n))?;
+            }
             Expr::Num(n, text) => match text {
                 Some(text) => f.write_str(text)?,
                 None if n.is_finite() => write!(f, "{n}")?,
                 None => f.write_str("?")?,
             },
+            Expr::Name(n) if style != Style::Syntax && arbitrary_constant(n) => {
+                write!(f, "c_{{{}}}", &n[2..])?;
+            }
             Expr::Name(n) => f.write_str(match (n.as_str(), style) {
-                ("pi", Style::Latex) => r"\pi",
+                ("pi" | "π", Style::Latex) => r"\pi ",
                 ("pi", Style::Text) => "π",
+                ("ί", Style::Latex) => "i",
+                ("ℯ", Style::Latex) => r"\textit{e}",
                 ("e", Style::Text) => "ℯ",
                 ("inf", Style::Latex) => r"\infty",
                 ("inf", Style::Text) => "∞",
@@ -67,7 +94,7 @@ impl fmt::Display for Display<'_> {
                 match style {
                     Style::Syntax => write!(f, "^{}", child(b, own))?,
                     Style::Latex => write!(f, "^{{{}}}", child(b, 0))?,
-                    Style::Text => {
+                    _ => {
                         let exponent = syntax(b);
                         if let Some(power) = crate::expr::commands::text::superscript(&exponent) {
                             f.write_str(&power)?;
@@ -76,6 +103,10 @@ impl fmt::Display for Display<'_> {
                         }
                     }
                 }
+            }
+            Expr::Bin(op, a, b) if super::super::syntax::relation(*op).is_some() => {
+                let relation = super::super::syntax::relation(*op).expect("relation");
+                write!(f, "{} {relation} {}", child(a, 1), child(b, 1))?;
             }
             Expr::Bin(op, a, b) => {
                 let separator = match (*op, style) {
@@ -93,7 +124,7 @@ impl fmt::Display for Display<'_> {
                         r" \cdot "
                     }
                     (b'*', Style::Latex) => r" \; ",
-                    (b'*', Style::Text) if coefficient_product(a, b) => "",
+                    (b'*', _) if coefficient_product(a, b) => "",
                     (b'*', Style::Text)
                         if matches!((&**a, &**b), (Expr::Num(..), Expr::Num(..))) =>
                     {
@@ -102,17 +133,40 @@ impl fmt::Display for Display<'_> {
                     _ => " ",
                 };
                 let left = child(a, own + u8::from(*op == b'/'));
-                write!(f, "{left}{separator}{}", child(b, own + 1))?;
+                let right_precedence = if *op == b'*'
+                    && matches!(&**a, Expr::Name(n) if n == "ί")
+                    && matches!(&**b, Expr::Bin(b'/', ..))
+                {
+                    own
+                } else {
+                    own + 1
+                };
+                write!(f, "{left}{separator}{}", child(b, right_precedence))?;
             }
             Expr::Call(name, args) => {
                 if let ("sqrt", [arg], Style::Latex) = (name.as_str(), args.as_slice(), style) {
                     write!(f, r"\sqrt{{{}}}", child(arg, 0))?;
+                } else if latex && matches!(name.as_str(), "sin" | "cos" | "tan" | "ln" | "log") {
+                    write!(f, r"\operatorname{{{name}}} \left( ")?;
+                    for (i, arg) in args.iter().enumerate() {
+                        if i != 0 {
+                            f.write_str(r",\;")?;
+                        }
+                        write!(f, "{}", child(arg, 0))?;
+                    }
+                    f.write_str(r" \right)")?;
                 } else {
                     f.write_str(name)?;
                     sequence(f, args, style, false)?;
                 }
             }
-            Expr::List(items) => sequence(f, items, style, true)?,
+            Expr::List(items) => {
+                if let Some(width) = latex.then(|| matrix_width(items)).flatten() {
+                    matrix(f, items, width)?;
+                } else {
+                    sequence(f, items, style, true)?;
+                }
+            }
             Expr::Tuple(items) => sequence(f, items, style, false)?,
             Expr::Eq(a, b) => {
                 let equals = match style {
@@ -157,8 +211,8 @@ fn sequence(f: &mut fmt::Formatter<'_>, items: &[Expr], style: Style, list: bool
         (Style::Latex, false) => (r"\left(", r",\;", r" \right)"),
         (Style::Syntax, true) => ("{", ",", "}"),
         (Style::Syntax, false) => ("(", ",", ")"),
-        (Style::Text, true) => ("{", ", ", "}"),
-        (Style::Text, false) => ("(", ", ", ")"),
+        (_, true) => ("{", ", ", "}"),
+        (_, false) => ("(", ", ", ")"),
     };
     f.write_str(open)?;
     for (index, item) in items.iter().enumerate() {
@@ -168,4 +222,39 @@ fn sequence(f: &mut fmt::Formatter<'_>, items: &[Expr], style: Style, list: bool
         write!(f, "{}", Display(item, style, 0))?;
     }
     f.write_str(close)
+}
+
+fn arbitrary_constant(name: &str) -> bool {
+    name.strip_prefix("c_")
+        .is_some_and(|index| !index.is_empty() && index.bytes().all(|b| b.is_ascii_digit()))
+}
+
+fn matrix_width(items: &[Expr]) -> Option<usize> {
+    let Expr::List(first) = items.first()? else {
+        return None;
+    };
+    let width = first.len();
+    (width != 0
+        && items.iter().all(|row| {
+            matches!(row, Expr::List(cells)
+            if cells.len() == width && cells.iter().all(|c| !matches!(c, Expr::List(..))))
+        }))
+    .then_some(width)
+}
+
+fn matrix(f: &mut fmt::Formatter<'_>, items: &[Expr], width: usize) -> fmt::Result {
+    write!(f, r"\left(\begin{{array}}{{{}}}", "r".repeat(width))?;
+    for row in items {
+        let Expr::List(cells) = row else {
+            unreachable!("matrix has only list rows");
+        };
+        for (i, cell) in cells.iter().enumerate() {
+            if i != 0 {
+                f.write_str("&")?;
+            }
+            write!(f, "{}", Display(cell, Style::Latex, 0))?;
+        }
+        f.write_str(r"\\")?;
+    }
+    f.write_str(r"\end{array}\right)")
 }

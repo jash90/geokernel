@@ -20,6 +20,18 @@ const MAX_NESTING: u32 = 64;
 /// that every walk over it stays far from the end of the stack.
 const MAX_DEPTH: usize = 256;
 
+pub(super) fn relation(op: u8) -> Option<&'static str> {
+    Some(match op {
+        b'<' => "<",
+        b'>' => ">",
+        b'L' => "<=",
+        b'G' => ">=",
+        b'=' => "==",
+        b'!' => "!=",
+        _ => return None,
+    })
+}
+
 struct Reader<'a> {
     s: &'a [u8],
     i: usize,
@@ -46,11 +58,30 @@ impl Reader<'_> {
 
     fn equation(&mut self) -> Option<Expr> {
         let left = self.sum()?;
-        if self.eat(b'=') {
-            let right = self.sum()?;
-            return Some(Expr::Eq(Box::new(left), Box::new(right)));
+        match self.peek() {
+            Some(op @ (b'<' | b'>' | b'=' | b'!')) if self.input => {
+                self.i += 1;
+                let compare = self.eat(b'=');
+                let right = Box::new(self.sum()?);
+                let left = Box::new(left);
+                if !compare && op == b'=' {
+                    Some(Expr::Eq(left, right))
+                } else {
+                    let op = match (op, compare) {
+                        (b'<', true) => b'L',
+                        (b'>', true) => b'G',
+                        (b'!', false) => return None,
+                        (op, _) => op,
+                    };
+                    Some(Expr::Bin(op, left, right))
+                }
+            }
+            Some(b'=') => {
+                self.i += 1;
+                Some(Expr::Eq(Box::new(left), Box::new(self.sum()?)))
+            }
+            _ => Some(left),
         }
-        Some(left)
     }
 
     fn sum(&mut self) -> Option<Expr> {
@@ -78,8 +109,9 @@ impl Reader<'_> {
                     left = Expr::Bin(b'/', Box::new(left), Box::new(self.unary()?));
                     continue;
                 }
-                Some(b'(' | b'_' | b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' | 0xE2)
-                    if self.input => {}
+                Some(
+                    b'(' | b'_' | b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' | 0xCE | 0xCF | 0xE2,
+                ) if self.input => {}
                 _ => return Some(left),
             }
             left = Expr::Bin(b'*', Box::new(left), Box::new(self.quotient()?));
@@ -140,7 +172,9 @@ impl Reader<'_> {
             return Some(items);
         }
         loop {
-            items.push(self.equation()?);
+            let item = self.equation()?;
+            bounded_tree(&item)?;
+            items.push(item);
             if self.eat(close) {
                 return Some(items);
             }
@@ -152,6 +186,12 @@ impl Reader<'_> {
 
     fn atom(&mut self) -> Option<Expr> {
         let b = self.peek()?;
+        for symbol in ["ί", "π", "ℯ"] {
+            if self.s[self.i..].starts_with(symbol.as_bytes()) {
+                self.i += symbol.len();
+                return Some(Expr::Name(symbol.into()));
+            }
+        }
         if b == b'{' || b == b'[' {
             self.i += 1;
             let close = if b == b'{' { b'}' } else { b']' };

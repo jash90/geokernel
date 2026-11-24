@@ -309,8 +309,10 @@ public final class GoldenGenerator {
         golden.put("steps", outSteps);
         golden.put("snapshots", snapshots);
         String row = (String) input.get("cascell");
-        if ("cascell".equals(input.get("group")) != (row != null)
-                || row != null && (row.isBlank() || steps.size() != 1)) {
+        boolean cellGroup = "cascell".equals(input.get("group"));
+        boolean rowAllowed = cellGroup || "cas".equals(input.get("group"));
+        if (cellGroup && row == null
+                || row != null && (!rowAllowed || row.isBlank() || steps.size() != 1)) {
             throw new IllegalArgumentException("a cascell case needs one input and only the initial step");
         }
         if (row != null) {

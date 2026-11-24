@@ -1,0 +1,31 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-ludecomposition-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "LUDecomposition({{2,1},{4,3}})", "output": "{{{1, 0}, {0, 1}}, {{1, 0}, {2, 1}}, {{2, 1}, {0, 1}}}", "latex": "\\mathbf{ \\left\\{ \\left(\\begin{array}{rr}1&0\\\\0&1\\\\\\end{array}\\right), \\left(\\begin{array}{rr}1&0\\\\2&1\\\\\\end{array}\\right), \\left(\\begin{array}{rr}2&1\\\\0&1\\\\\\end{array}\\right) \\right\\} }" }
+    },
+    {
+      "id": "cas-ludecomposition-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "LUDecomposition(1,2)", "output": "Sorry, something went wrong. Please check your input", "latex": "" }
+    }
+  ]
+}

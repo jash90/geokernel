@@ -1,0 +1,31 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-toexponential-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "ToExponential(1+ί)", "output": "sqrt(2) ℯ^(ί π / 4)", "latex": "\\mathbf{\\sqrt{2} \\; \\textit{e}^{i \\; \\frac{\\pi }{4}}}" }
+    },
+    {
+      "id": "cas-toexponential-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "ToExponential(1,2)", "output": "Sorry, something went wrong. Please check your input", "latex": "" }
+    }
+  ]
+}

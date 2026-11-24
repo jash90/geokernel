@@ -175,7 +175,11 @@ case "$cmd" in
           esac
         fi
         if [ "${file##*/}" = prove.json ]; then java_opts+=("-DggbHarness.prover=1"); fi
-        run_golden
+        if [ -n "${GGB_HARNESS_TOPICS:-}" ]; then
+          run_golden "$GGB_HARNESS_TOPICS"
+        else
+          run_golden
+        fi
       )
     done
     ;;
@@ -187,7 +191,7 @@ case "$cmd" in
     sample="${1:-1}"
     zipstep="${2:-50}"
     for file in "$here"/cases/*.json; do
-      # CAS row output is recorded in golden/cascell, independently of XML.
+      # CAS-only cases have no construction output to export.
       if [ "${file##*/}" = cascell.json ]; then continue; fi
       (
         if [ "${GGB_HARNESS_CAS:-0}" != 1 ]; then

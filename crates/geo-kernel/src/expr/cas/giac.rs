@@ -45,6 +45,10 @@ const PLOTSOLVE_1: &str = "[[ggbplarg:=ggbsort(normal([op(solve(%0))]))],[when(s
 /// function (`GeoGebraCAS.getCASCommand`).
 const PLOTSOLVE_2: &str = "ggbtmpvarPlotSolve(%0,%1)";
 
+pub(super) fn row_fill(template: &str, args: &[&str]) -> String {
+    fill(template, args, args)
+}
+
 pub(super) fn row_solve(name: &str, input: &str, variable: &str) -> String {
     let template = match name {
         "Solve" => SOLVE_2,
