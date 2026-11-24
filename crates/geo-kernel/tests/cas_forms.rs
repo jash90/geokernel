@@ -23,10 +23,18 @@ fn rejected(c: &mut Construction, line: &str) -> String {
 }
 
 #[test]
-fn rewriting_an_implicit_curve_is_refused() {
-    // The reference answers an implicit curve with an equation text of its
-    // CAS; the forms stay open.
+fn rewriting_an_implicit_curve_requires_the_giac_backend() {
     let mut c = build(&["k: x^3+y^3=1"]);
+    if geo_kernel::giac_backend_active() {
+        for command in ["Expand", "Factor", "IFactor", "Simplify"] {
+            let result = script::exec(&mut c, &format!("r{command} = {command}(k)"))
+                .unwrap()
+                .unwrap();
+            assert_eq!(c.kind(result), geo_kernel::Kind::ImplicitCurve);
+            assert_eq!(c.value(result).is_defined(), command != "IFactor");
+        }
+        return;
+    }
     for command in ["Expand", "Factor", "IFactor", "Simplify"] {
         rejected(&mut c, &format!("r = {command}(k)"));
     }
@@ -52,6 +60,13 @@ fn a_text_with_an_equals_sign_is_a_text() {
 #[test]
 fn hints_that_are_no_variable_or_value_are_refused() {
     let mut c = build(&["f(x) = x^2-3", "g: x+y=1"]);
+    if geo_kernel::giac_backend_active() {
+        // cas-name-010.
+        assert_eq!(
+            rejected(&mut c, "r = Solutions(f, a)"),
+            "undefined variable `a`"
+        );
+    }
     for line in [
         "r = Solve(f, x>0)",
         "r = NSolve(f, {x=1})",
@@ -94,8 +109,11 @@ fn simplify_refuses_what_is_no_function_text_or_curve() {
         "l = {1, 2}",
         "t = \"\"",
     ]);
-    for argument in ["A", "p", "l", "{1, 2}", "t", "\"\"", "x^3+y^3=1"] {
+    for argument in ["A", "p", "l", "{1, 2}", "t", "\"\""] {
         rejected(&mut c, &format!("r = Simplify({argument})"));
+    }
+    if !geo_kernel::giac_backend_active() {
+        rejected(&mut c, "r = Simplify(x^3+y^3=1)");
     }
     rejected(&mut c, "r = Simplify(l, 2)");
 }

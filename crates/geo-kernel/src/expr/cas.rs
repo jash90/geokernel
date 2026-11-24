@@ -4,7 +4,11 @@ mod functional;
 #[cfg(feature = "giac")]
 mod giac;
 #[cfg(feature = "giac")]
-pub(super) use giac::{start_value_names, Function as GiacFunction};
+pub(super) use giac::rewrite::Scalar as GiacScalar;
+#[cfg(feature = "giac")]
+pub(crate) use giac::rewrite::{geometry as rewrite_geometry, implicit as rewrite_implicit};
+#[cfg(feature = "giac")]
+pub(super) use giac::{start_value_names, with_cartesian_variables, Function as GiacFunction};
 
 /// Whether the parser takes the forms only the Giac backend evaluates
 /// (`PlotSolve`, start values and other second arguments): not when the
@@ -162,6 +166,8 @@ impl Op {
             Self::NextPrime | Self::PreviousPrime if a == Ty::Num(0) => Ty::Num(0),
             Self::CommonDenominator if numeric(a) && b.is_some_and(numeric) => Ty::Num(0),
             Self::Numerator | Self::Denominator if matches!(a, Ty::Num(_)) => Ty::Num(0),
+            #[cfg(feature = "giac")]
+            Self::Simplify if a == Ty::Object && b.is_none() && giac_admits() => Ty::Num(0),
             op if op.is_function() && b.is_none() && numeric(a) => Ty::Num(0),
             _ => return Err(format!("invalid arguments to `{}`", self.name())),
         };
@@ -270,10 +276,7 @@ fn argument_tree<'a>(c: &'a Construction, e: &'a Entry, root: u32) -> Option<(&'
         _ => return None,
     };
     let entry = match &entry.extra {
-        super::StoredExtra::Cas(result) => match result.as_ref() {
-            FunctionResult::Tree(tree) => tree,
-            _ => entry,
-        },
+        super::StoredExtra::Cas(result) => result.tree().unwrap_or(entry),
         _ => entry,
     };
     Some((entry, entry.root))

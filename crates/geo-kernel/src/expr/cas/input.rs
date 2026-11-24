@@ -62,7 +62,7 @@ fn read_at(
     work.spend(1)?;
     if i == e.root {
         if let StoredExtra::Cas(form) = &e.extra {
-            if let super::FunctionResult::Tree(tree) = form.as_ref() {
+            if let Some(tree) = form.tree() {
                 return read_at(c, tree, tree.root, vars, work, depth + 1);
             }
         }

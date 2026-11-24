@@ -479,7 +479,19 @@ fn type_node(
         Node::Cas(op, a, b) => {
             let a = a as usize;
             let b = (b != NONE).then_some(b as usize);
-            let ty = op.result_type(state.tys[a], b.map(|i| state.tys[i]))?;
+            let argument = state.tys[a];
+            #[cfg(feature = "giac")]
+            let argument = if argument == Ty::Object
+                && op == super::cas::Op::Simplify
+                && matches!(nodes[a], Node::Obj(id) if matches!(c.kind(id),
+                    Kind::Line | Kind::Segment | Kind::Ray | Kind::Conic | Kind::Circle))
+                && super::cas::giac_admits()
+            {
+                Ty::Function
+            } else {
+                argument
+            };
+            let ty = op.result_type(argument, b.map(|i| state.tys[i]))?;
             let vars = if op.is_function() {
                 state.vars[a]
                     .saturating_add(b.map_or(0, |i| state.vars[i]))

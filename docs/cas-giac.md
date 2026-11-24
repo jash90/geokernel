@@ -1,7 +1,7 @@
 # Giac as an optional CAS backend
 
-Status: Linux prototype for the solving commands. The feature is off by
-default; the default build, its tests and every golden gate do not change.
+Status: optional Linux backend for solving and algebra rewrites. The feature
+is off by default and the default build uses the kernel's exact CAS.
 
 ## Why
 
@@ -89,7 +89,8 @@ The reference resets Giac before every evaluation (`CASgiacB.init`,
    reference seeds other inputs randomly; the kernel passes a fixed seed so
    runs are reproducible;
 5. `caseval(evalfa(input))`, printed; surrounding quotes removed; results
-   longer than 10,000 UTF-16 units become `?`.
+   longer than 10,000 UTF-16 units become `?`. The worker refuses input
+   larger than 64 KiB before sending it to the library.
 
 One worker thread with a 256 MiB stack owns the library and its context:
 Giac's context is not thread-safe (the reference serialises calls too) and it
@@ -169,17 +170,24 @@ feature; it takes one list, equation or function, as `CmdSolve` does):
 - Giac's printed list is read back as `evaluateToList` does for these
   results: lines from linear equations, numbers, points, functions of the one
   free variable (polynomials exactly, other expressions sampled from Giac's
-  printed form), an undefined implicit curve for an equation that is neither
-  linear, nor `y = f(x)`, nor a polynomial, nested lists, `AlgoSolve`'s extra
-  list around the solutions of a list of equations, and an undefined list for
-  an unevaluated `fsolve` or an unknown name.
+  printed form), conics and implicit curves from equations, parametric
+  curves from coordinate pairs, nested lists, and `AlgoSolve`'s extra list
+  around the solutions of a list of equations. An unevaluated `fsolve`
+  or an unknown name makes the list undefined. An affine coordinate pair
+  with a free variable reads as a line, and a single free variable can be
+  `x`, `y`, or `z`. Implicit curves that contain `z` keep their
+  two-dimensional coefficient matrix.
 
-Not translated yet: `Simplify`,
-`Expand`, `Factor` and `IFactor` of lines, conics, curves and implicit curves,
-conics made by commands (`Circle`, `Conic`, `Parabola`, `Ellipse` print as
-`GeoConic`'s value text, which is not ported), results that the reference
-reads as conics, defined implicit curves or parametric curves (and the points
-`(f(y), 0)` it reads as lines), and solutions in a third free variable.
+Circles made by commands use their center and radius equation. Other
+constructed conics use the selected form of their value text, with computed
+coefficients printed at 15 significant digits.
+
+`Simplify`, `Expand`, `Factor` and `IFactor` use the single-argument templates
+from `Ggb2giac`. `CmdSimplify` converts a line or conic to its function where
+it has one. Cartesian curves rewrite each coordinate and reuse the source
+bounds. Implicit curves rewrite the equation's left side minus its right
+side and read the result as a polynomial equal to zero. `Factor` and
+`IFactor` keep the returned equation as the display form.
 
 ## Results (Linux x86_64)
 

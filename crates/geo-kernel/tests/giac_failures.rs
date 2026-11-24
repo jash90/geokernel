@@ -20,6 +20,10 @@ fn failed_giac_calls_give_undefined_until_giac_answers() {
         let s = script::exec(&mut c, "s = NSolutions(f, x = b)")
             .unwrap()
             .unwrap();
+        let simplified = script::exec(&mut c, "k = Simplify((x^2-a^2)/(x-a))")
+            .unwrap()
+            .unwrap();
+        assert!(!c.value(simplified).is_defined(), "{error:?}: Simplify");
         assert!(!c.value(r).is_defined(), "{error:?}: Solve");
         assert!(!c.value(s).is_defined(), "{error:?}: start value");
         geo_giac::simulate_failure(None);
@@ -29,6 +33,11 @@ fn failed_giac_calls_give_undefined_until_giac_answers() {
             c.elements(r).unwrap().len(),
             2,
             "{error:?}: Solve after recovery"
+        );
+        assert_eq!(
+            c.function_value(simplified, 9.0),
+            Some(18.0),
+            "{error:?}: Simplify after recovery"
         );
         let roots = c.elements(s).unwrap();
         assert_eq!(roots.len(), 1, "{error:?}: start value after recovery");

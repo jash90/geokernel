@@ -1,4 +1,4 @@
-//! The solving commands evaluated by Giac (the `giac` feature).
+//! The algebra commands evaluated by Giac (the `giac` feature).
 //!
 //! The reference evaluates `Solve`, `Solutions`, `NSolve` and `NSolutions`
 //! from the algebra input with `AlgoSolve`: it prints each argument's
@@ -11,6 +11,8 @@
 //!
 //! A translation that meets a tree it cannot print gives up (`None`), and the
 //! caller keeps the kernel's own solver.
+
+pub(super) mod rewrite;
 
 use super::{Op, Slot};
 use crate::expr::eval::Ctx;
@@ -97,21 +99,21 @@ fn giac_only<const M: bool>(ctx: &Ctx<'_, M>, equations: u32, op: Op) -> bool {
 
 fn translate_and_evaluate<const M: bool>(ctx: &Ctx<'_, M>, equations: u32, op: Op) -> Evaluation {
     match translate(ctx, equations, op) {
-        Some((input, system)) => {
-            let seed = geo_giac::session::seed(&input, 1);
-            match geo_giac::eval_raw(&input, geo_giac::session::DEFAULT_TIMEOUT_MS, seed) {
-                Ok(raw) => {
-                    if std::env::var_os("GEO_GIAC_TRACE").is_some() {
-                        eprintln!("giac input: {input}\ngiac output: {raw}");
-                    }
-                    let result = post_process(&raw);
-                    Evaluation::Done(to_slots(ctx, &result, system))
-                }
-                Err(_) => Evaluation::Failed,
-            }
-        }
+        Some((input, system)) => match evaluate_raw(&input) {
+            Some(result) => Evaluation::Done(to_slots(ctx, &result, system)),
+            None => Evaluation::Failed,
+        },
         None => Evaluation::Untranslated,
     }
+}
+
+fn evaluate_raw(input: &str) -> Option<String> {
+    let seed = geo_giac::session::seed(input, 1);
+    let raw = geo_giac::eval_raw(input, geo_giac::session::DEFAULT_TIMEOUT_MS, seed).ok()?;
+    if std::env::var_os("GEO_GIAC_TRACE").is_some() {
+        eprintln!("giac input: {input}\ngiac output: {raw}");
+    }
+    Some(post_process(&raw))
 }
 
 /// The Giac input of a solving command, and whether its argument is a list.
@@ -131,20 +133,13 @@ fn translate<const M: bool>(ctx: &Ctx<'_, M>, equations: u32, op: Op) -> Option<
     };
     // The command's node keeps the text of its second argument.
     let hint = hint_of(ctx, equations)?;
-    let names = hint
-        .as_deref()
-        .and_then(|h| variable_names(h).or_else(|| start_value_names(h)))
-        .unwrap_or_else(|| vec!["x".into(), "y".into(), "z".into()]);
-    let printer = Printer {
-        c: ctx.c,
-        names: names.clone(),
-        numeric: false,
-    };
-    let numeric_printer = Printer {
-        c: ctx.c,
-        names,
-        numeric: true,
-    };
+    let names = with_cartesian_variables(
+        hint.as_deref()
+            .and_then(|h| variable_names(h).or_else(|| start_value_names(h)))
+            .unwrap_or_default(),
+    );
+    let printer = Printer::new(ctx.c, names.clone(), false);
+    let numeric_printer = Printer::new(ctx.c, names, true);
     let mut items = Vec::with_capacity(length as usize);
     let mut numeric_items = Vec::with_capacity(length as usize);
     let mut variables = std::collections::BTreeSet::new();
@@ -259,12 +254,16 @@ pub(crate) fn start_value_names(hint: &str) -> Option<Vec<String>> {
             names.push(name.to_string());
         }
     }
+    Some(with_cartesian_variables(names))
+}
+
+pub(in crate::expr) fn with_cartesian_variables(mut names: Vec<String>) -> Vec<String> {
     for name in ["x", "y", "z"] {
         if !names.iter().any(|n| n == name) {
             names.push(name.to_string());
         }
     }
-    Some(names)
+    names
 }
 
 /// Whether a printed equation names the variable.
@@ -317,6 +316,19 @@ fn print_hint(
             _ => match c.id(name).map(|id| c.value(id)) {
                 Some(Value::Number(v)) if numeric => numeric_number(v, out),
                 Some(Value::Number(v)) => number(v, out),
+                Some(Value::Point { x, y }) => {
+                    out.push_str("point(");
+                    if numeric {
+                        numeric_number(x, out);
+                        out.push(',');
+                        numeric_number(y, out);
+                    } else {
+                        number(x, out);
+                        out.push(',');
+                        number(y, out);
+                    }
+                    out.push(')');
+                }
                 Some(_) => return None,
                 None => {
                     out.push_str("ggbtmpvar");
@@ -342,6 +354,9 @@ fn print_hint(
             operand(b, out)?;
         }
         Expr::Eq(a, b) if top => {
+            if matches!(&**a, Expr::Name(name) if name == "z") {
+                return print_hint(c, b, numeric, false, out);
+            }
             print_hint(c, a, numeric, false, out)?;
             out.push('=');
             print_hint(c, b, numeric, false, out)?;
@@ -399,9 +414,36 @@ struct Printer<'a> {
     /// The numeric Giac template (`%%n` in a template): decimals as
     /// decimals, not fractions.
     numeric: bool,
+    parameter: Option<&'a str>,
+    remaining: std::cell::Cell<usize>,
+    depth: std::cell::Cell<usize>,
 }
 
-impl Printer<'_> {
+impl<'a> Printer<'a> {
+    fn new(c: &'a Construction, names: Vec<String>, numeric: bool) -> Self {
+        Self {
+            c,
+            names,
+            numeric,
+            parameter: None,
+            remaining: std::cell::Cell::new(8192),
+            depth: std::cell::Cell::new(0),
+        }
+    }
+
+    fn bounded(&self, print: impl FnOnce() -> Option<()>) -> Option<()> {
+        let remaining = self.remaining.get().checked_sub(1)?;
+        let depth = self.depth.get();
+        if depth >= 128 {
+            return None;
+        }
+        self.remaining.set(remaining);
+        self.depth.set(depth + 1);
+        let result = print();
+        self.depth.set(depth);
+        result
+    }
+
     /// An argument of a solving command: an equation `left=right` or an
     /// expression.
     fn top(&self, e: &Entry, i: u32, out: &mut String) -> Option<()> {
@@ -409,6 +451,11 @@ impl Printer<'_> {
             Node::Obj(id) | Node::FunctionObject(id) => self.object(id, out),
             Node::Bin(Bin::Sub, l, r) if matches!(&e.lits[i as usize], Lit::Text(t) if &**t == "=") =>
             {
+                if matches!(e.nodes[l as usize], Node::CasVariable(n) if self.names.get(usize::from(n)).is_some_and(|name| name == "z"))
+                    && matches!(e.nodes[r as usize], Node::Num(_) | Node::Obj(_))
+                {
+                    return self.expr(e, r, out);
+                }
                 self.expr(e, l, out)?;
                 out.push('=');
                 self.expr(e, r, out)
@@ -418,6 +465,10 @@ impl Printer<'_> {
     }
 
     fn object(&self, id: crate::Id, out: &mut String) -> Option<()> {
+        self.bounded(|| self.object_value(id, out))
+    }
+
+    fn object_value(&self, id: crate::Id, out: &mut String) -> Option<()> {
         match self.c.def(id) {
             Def::Equation(_) | Def::ImplicitCurve(_) => {
                 let left = crate::expr::equation::side_entry(self.c, id, true)?;
@@ -438,12 +489,21 @@ impl Printer<'_> {
                 out.push('}');
                 Some(())
             }
-            Def::Expr(def) if matches!(self.c.kind(id), Kind::Function) => {
+            Def::Expr(def)
+                if self.c.kind(id) == Kind::Function
+                    || self.parameter.is_some() && self.c.kind(id) == Kind::FunctionNVar =>
+            {
                 // `FunctionExpander`: a function prints as its expression.
                 let entry = crate::expr::entry(self.c, def);
-                if entry.function_of_y || entry.curve_parameter.is_some() {
+                if entry.function_of_y
+                    || entry.curve_parameter.is_some() && self.parameter.is_none()
+                {
                     return None;
                 }
+                let entry = match &entry.extra {
+                    crate::expr::StoredExtra::Cas(form) => form.tree().unwrap_or(entry),
+                    _ => entry,
+                };
                 self.expr(entry, entry.root, out)
             }
             _ => match self.c.value(id) {
@@ -456,6 +516,7 @@ impl Printer<'_> {
                     out.push('?');
                     Some(())
                 }
+                Value::Circle { .. } | Value::Conic { .. } => self.conic(id, out),
                 Value::Line { a, b, c }
                     if self.c.kind(id) == Kind::Line
                         && matches!(
@@ -468,6 +529,35 @@ impl Printer<'_> {
                 _ => None,
             },
         }
+    }
+
+    /// AlgoSolve prints a conic without a defining equation using the
+    /// current GeoConic value, before parsing it back for the Giac template.
+    fn conic(&self, id: crate::Id, out: &mut String) -> Option<()> {
+        use crate::kernel::EquationForm;
+        let conic = self.c.conic(id)?;
+        let default = if self.c.kind(id) == Kind::Circle {
+            EquationForm::Specific
+        } else {
+            EquationForm::Implicit
+        };
+        let style = self.c.equation_form(id).unwrap_or(&default);
+        let fmt = |v: f64| format!("{}", v + 0.0);
+        let value = crate::equation::styled_conic_equation(&conic, style, false, &fmt)
+            .unwrap_or_else(|| crate::equation::conic_equation(&conic, &fmt));
+        let (left, right) = value.split_once('=')?;
+        self.computed_expression(left, out)?;
+        out.push('=');
+        self.computed_expression(right, out)
+    }
+
+    fn computed_expression(&self, text: &str, out: &mut String) -> Option<()> {
+        let mut parsed = crate::expr::parse::parse_equation(self.c, text.trim()).ok()?;
+        // The value text contains computed coefficients, which the reference
+        // prints with 15 significant digits regardless of the display precision.
+        parsed.lits.fill(Lit::Plain);
+        let e = crate::expr::function_entry(self.c, parsed);
+        self.expr(&e, e.root, out)
     }
 
     fn number(&self, v: f64, out: &mut String) {
@@ -533,6 +623,10 @@ impl Printer<'_> {
     }
 
     fn expr(&self, e: &Entry, i: u32, out: &mut String) -> Option<()> {
+        self.bounded(|| self.expression(e, i, out))
+    }
+
+    fn expression(&self, e: &Entry, i: u32, out: &mut String) -> Option<()> {
         match e.nodes[i as usize] {
             Node::Num(v) => {
                 match &e.lits[i as usize] {
@@ -546,9 +640,22 @@ impl Printer<'_> {
                 Some(())
             }
             Node::Var => {
+                let parameter = self.parameter.unwrap_or("x");
+                if !matches!(parameter, "x" | "y" | "z") {
+                    out.push_str("ggbtmpvar");
+                }
+                out.push_str(parameter);
+                Some(())
+            }
+            Node::Local(0, _) if self.parameter.is_some() => {
                 out.push('x');
                 Some(())
             }
+            Node::Local(1, _) if self.parameter.is_some() => {
+                out.push('y');
+                Some(())
+            }
+            Node::SystemFunction(2, body) if self.parameter.is_some() => self.expr(e, body, out),
             Node::VarY => {
                 out.push('y');
                 Some(())
@@ -572,6 +679,9 @@ impl Printer<'_> {
             // function's expression.
             Node::FunctionObject(id) => self.object(id, out),
             Node::Apply(id, a) if e.nodes[a as usize] == Node::Var => {
+                if self.parameter.is_some() {
+                    return self.object(id, out);
+                }
                 out.push('(');
                 self.object(id, out)?;
                 out.push(')');
@@ -1140,6 +1250,7 @@ fn value_at(e: &Expr, args: [f64; 3]) -> Option<f64> {
             "z" => args[2],
             "pi" => std::f64::consts::PI,
             "e" => std::f64::consts::E,
+            "infinity" | "inf" => f64::INFINITY,
             _ => return None,
         },
         Expr::Neg(a) => -value_at(a, args)?,
@@ -1202,7 +1313,10 @@ fn real_and_imaginary(e: &Expr, args: [f64; 3]) -> Option<(f64, f64)> {
 fn known(e: &Expr) -> bool {
     match e {
         Expr::Num(_) => true,
-        Expr::Name(n) => matches!(n.as_str(), "x" | "y" | "z" | "pi" | "e"),
+        Expr::Name(n) => matches!(
+            n.as_str(),
+            "x" | "y" | "z" | "pi" | "e" | "inf" | "infinity"
+        ),
         Expr::Neg(a) => known(a),
         Expr::Bin(_, a, b) | Expr::Eq(a, b) => known(a) && known(b),
         Expr::Call(name, args) => {
@@ -1250,7 +1364,16 @@ fn has_name(e: &Expr, name: &str) -> bool {
 
 /// One element of the list `AlgebraProcessor.evaluateToList` builds.
 fn element<const M: bool>(ctx: &Ctx<'_, M>, e: &Expr) -> Option<Slot> {
-    if !known(e) {
+    if let Expr::Eq(left, right) = e {
+        // A scalar assigned to a name outside the two-dimensional equation
+        // variables has an equation definition but no defined line.
+        if matches!(&**left, Expr::Name(name) if name.starts_with("ggbtmpvar"))
+            && finite_number(right).is_some()
+        {
+            return Some(Slot::undefined(Kind::Line));
+        }
+    }
+    if !known(e) && !matches!(e, Expr::List(_)) {
         // `fsolve(...)` left unevaluated, an unknown variable: the reference
         // reads an undefined object, which makes the list undefined.
         return None;
@@ -1270,7 +1393,8 @@ fn element<const M: bool>(ctx: &Ctx<'_, M>, e: &Expr) -> Option<Slot> {
             if let Some(variable) = free_variable(e) {
                 return Some(function_slot(e, variable));
             }
-            Some(Slot::number(finite_number(e)?))
+            let n = value(e, 0.0, 0.0)?;
+            (!n.is_nan()).then(|| Slot::number(n))
         }
     }
 }
@@ -1390,19 +1514,40 @@ fn equation_coefficients(left: &Expr, right: &Expr) -> Option<Vec<Vec<f64>>> {
         used.get() <= POLYNOMIAL_BUDGET
     };
     let work = &mut super::Work::new(&charge);
-    let variables = &["x", "y"];
-    // An equation in z reads as an implicit curve in the algebra view.
-    // Its matrix contains the coefficients in x and y, with z set to zero.
+    let variables = &["x", "y", "z"];
     let q = quotient(left, variables, work)?.sub(quotient(right, variables, work)?, work)?;
     let scale = Rat::ONE.div(q.denominator.scalar()?)?;
-    let poly = q.numerator.scale(scale, work)?;
-    let (nx, ny) = poly.0.keys().try_fold((0, 0), |(nx, ny), &[x, y, _]| {
-        (u32::from(x) + u32::from(y) <= crate::expr::equation::implicit::MAX_DEGREE)
+    let mut poly = q.numerator.scale(scale, work)?.0;
+    let (nx, ny) = poly.keys().try_fold((0, 0), |(nx, ny), &[x, y, z]| {
+        (u32::from(x) + u32::from(y) + u32::from(z) <= crate::expr::equation::implicit::MAX_DEGREE)
             .then_some((nx.max(usize::from(x)), ny.max(usize::from(y))))
     })?;
     let mut matrix = vec![vec![0.0; ny + 1]; nx + 1];
-    for ([x, y, _], c) in poly.0 {
-        matrix[usize::from(x)][usize::from(y)] = c.to_f64();
+    if poly.keys().any(|powers| powers[2] != 0) {
+        // Polynomial.getCoeff("x", "y") assigns each term's coefficient
+        // to its x/y powers, in order. A later monomial that differs only
+        // in z overwrites the earlier entry instead of adding to it.
+        let mut pending = vec![right, left];
+        while let Some(term) = pending.pop() {
+            work.spend(1)?;
+            match term {
+                Expr::Bin(b'+' | b'-', a, b) => pending.extend([&**b, &**a]),
+                Expr::Neg(a) => pending.push(a),
+                _ => {
+                    for powers @ [x, y, _] in
+                        quotient(term, variables, work)?.numerator.0.into_keys()
+                    {
+                        if let Some(coefficient) = poly.remove(&powers) {
+                            matrix[usize::from(x)][usize::from(y)] = coefficient.to_f64();
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        for ([x, y, _], coefficient) in poly {
+            matrix[usize::from(x)][usize::from(y)] = coefficient.to_f64();
+        }
     }
     Some(matrix)
 }
@@ -1497,10 +1642,10 @@ fn quotient(
         Expr::Name(n) => {
             if let Some(i) = variables.iter().position(|name| n == name) {
                 Quotient::polynomial(Poly::variable(i))
-            } else if n == "z" && variables == ["x", "y"] {
-                Quotient::polynomial(Poly::constant(Rat::ZERO))
-            } else {
+            } else if matches!(n.as_str(), "pi" | "e") {
                 Quotient::polynomial(Poly::constant(Rat::from_value(finite_number(e)?)?))
+            } else {
+                return None;
             }
         }
         Expr::Neg(a) => {
@@ -1524,7 +1669,13 @@ fn quotient(
                 }
             }
         }
-        Expr::Call(..) => Quotient::polynomial(Poly::constant(Rat::from_value(finite_number(e)?)?)),
+        Expr::Call(..)
+            if ["x", "y", "z"]
+                .into_iter()
+                .all(|variable| !has_name(e, variable)) =>
+        {
+            Quotient::polynomial(Poly::constant(Rat::from_value(finite_number(e)?)?))
+        }
         _ => return None,
     })
 }
@@ -1600,6 +1751,15 @@ mod tests {
                 ))
             ));
         });
+        // cas-plot-023: a coordinate can contain the real or imaginary part of a root.
+        with_result("{(re(√(-y^2+4)),im(√(-y^2+4)))}", |list| {
+            let c = Construction::new();
+            assert_eq!(list.curve_sample_at(&c, 0, 0.0), Some((2.0, 0.0)));
+            assert_eq!(
+                list.curve_sample_at(&c, 0, 3.0),
+                Some((0.0, 5.0_f64.sqrt()))
+            );
+        });
         // cas-plot-025: the arbitrary integer is zero in the algebra view.
         with_result("{(n_0*pi,0)}", |list| {
             assert!(matches!(
@@ -1653,6 +1813,87 @@ mod tests {
                 Some(Element::Value(Kind::Line, Value::Undefined))
             ));
         });
+    }
+
+    #[test]
+    fn implicit_coefficient_projection_keeps_the_last_term() {
+        // cas-freevariable-010, the first two assignments printed by Giac.
+        with_result("{x=(-2*z+1),y=z}", |list| {
+            let c = Construction::new();
+            assert_eq!(list.implicit_at(&c, 0).unwrap().0, &[vec![-1.0], vec![1.0]]);
+            assert_eq!(list.implicit_at(&c, 1).unwrap().0, &[vec![-1.0, 1.0]]);
+        });
+    }
+
+    #[test]
+    fn translates_the_recorded_three_variable_system() {
+        // cas-freevariable-005.
+        let c = crate::script::load("r = Solutions({x+z=1}, {x,y,z})").unwrap();
+        let Def::Expr(def) = c.def(c.id("r").unwrap()) else {
+            panic!("expected a list expression");
+        };
+        let e = crate::expr::entry(&c, def);
+        let Node::Cas(op, equations, _) = e.nodes[e.root as usize] else {
+            panic!("expected a solving command");
+        };
+        let ctx = Ctx::<true>::new(&c, e, &crate::expr::eval::Env::None);
+        // Tests also run without a native library, where the parser does not
+        // retain Giac's hint text.
+        let mut parsed = crate::expr::parse::parse(&c, "Solutions({x+z=1}, {x,y,z})").unwrap();
+        let root = parsed.root as usize;
+        parsed.lits[root] = Lit::Text("{x,y,z}".into());
+        let e = crate::expr::function_entry(&c, parsed);
+        let ctx = Ctx::<true> { e: &e, ..ctx };
+        let (input, system) = translate(&ctx, equations, op).unwrap();
+        assert!(system);
+        assert_eq!(input, "ggbsort(normal(solve({(x)+(z)=1},{x, y, z},'!=')))");
+    }
+
+    #[test]
+    fn constructed_conics_print_as_in_recorded_solving_inputs() {
+        // cas-conic-057 and cas-order-097.
+        let c = crate::script::load(
+            "A = (1, 2)\nk = Circle(A, 3)\nF = (1, 1)\ng: x+y=-1\np = Parabola(F, g)",
+        )
+        .unwrap();
+        let printer = Printer::new(&c, vec!["x".into(), "y".into(), "z".into()], false);
+        let mut text = String::new();
+        printer.object(c.id("k").unwrap(), &mut text).unwrap();
+        assert_eq!(text, "(((x)-(1))^(2))+(((y)-(2))^(2))=9");
+        text.clear();
+        printer.object(c.id("p").unwrap(), &mut text).unwrap();
+        assert_eq!(
+            text,
+            "(((((x)^(2))-(((2)*(x))*(y)))+((y)^(2)))-((6)*(x)))-((6)*(y))=-3"
+        );
+    }
+
+    #[test]
+    fn radicals_in_a_free_variable_stay_variable() {
+        // cas-shape-024.
+        with_result("{{√(-x^2+4)},{-√(-x^2+4)}}", |list| {
+            let c = Construction::new();
+            let Some(crate::expr::Element::List(row)) = list.get(0) else {
+                panic!("expected one row per solution");
+            };
+            assert!(row.function_sample_at(&c, 0, -8.0).unwrap().is_nan());
+            assert_eq!(row.function_sample_at(&c, 0, 0.0), Some(2.0));
+        });
+    }
+
+    #[test]
+    fn repeated_subtrees_cannot_expand_into_an_oversized_request() {
+        let c = Construction::new();
+        let mut builder = crate::expr::equation::Builder::empty();
+        let mut root = builder.push(Node::Var);
+        for _ in 0..18 {
+            root = builder.push(Node::Bin(Bin::Add, root, root));
+        }
+        let e = crate::expr::function_entry(&c, builder.finish(&c, root).unwrap());
+        let printer = Printer::new(&c, Vec::new(), false);
+        let mut text = String::new();
+        assert!(printer.expr(&e, root, &mut text).is_none());
+        assert!(text.len() < 64 * 1024);
     }
 
     #[test]

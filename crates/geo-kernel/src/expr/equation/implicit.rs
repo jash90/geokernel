@@ -20,17 +20,27 @@ pub(crate) struct Record {
     fingerprint: u64,
     construction_parents: Option<Box<[Id]>>,
     locus_inputs: Option<Vec<[u64; 3]>>,
+    #[cfg(feature = "giac")]
+    giac_equation: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug)]
 enum Source {
     Equation([u32; 2]),
     Matrix,
+    #[cfg(feature = "giac")]
+    Giac {
+        source: Id,
+        op: crate::expr::cas::Op,
+    },
     Function(Id),
     Points(Id),
     Cubic([Id; 4]),
     LocusEquation(locus_equation::Definition),
-    Triangle { vertices: [Id; 3], sides: [u32; 2] },
+    Triangle {
+        vertices: [Id; 3],
+        sides: [u32; 2],
+    },
 }
 
 impl Record {
@@ -43,6 +53,8 @@ impl Record {
             fingerprint: 0,
             construction_parents: None,
             locus_inputs: None,
+            #[cfg(feature = "giac")]
+            giac_equation: None,
         }
     }
 
@@ -151,6 +163,33 @@ fn add(c: &mut Construction, label: &str, record: Record) -> Result<Id, Error> {
     result
 }
 
+#[cfg(feature = "giac")]
+pub(crate) fn add_giac_rewrite(
+    c: &mut Construction,
+    label: &str,
+    source: Id,
+    op: crate::expr::cas::Op,
+) -> Result<Id, Error> {
+    use crate::expr::cas::Op;
+    use crate::kernel::EquationForm;
+    let id = add(c, label, Record::new(Source::Giac { source, op }))?;
+    let form = if matches!(op, Op::Factor | Op::IFactor) {
+        EquationForm::User
+    } else {
+        EquationForm::Implicit
+    };
+    c.set_equation_form(id, form)?;
+    Ok(id)
+}
+
+#[cfg(feature = "giac")]
+pub(crate) fn giac_equation(c: &Construction, id: Id) -> Option<&str> {
+    let Def::ImplicitCurve(index) = c.def(id) else {
+        return None;
+    };
+    c.implicit_curves[index as usize].1.giac_equation.as_deref()
+}
+
 pub(crate) fn parents(c: &Construction, index: u32) -> Vec<Id> {
     let mut parents = Vec::new();
     let record = &c.implicit_curves[index as usize].1;
@@ -164,6 +203,8 @@ pub(crate) fn parents(c: &Construction, index: u32) -> Vec<Id> {
             }
         }
         Source::Function(id) | Source::Points(id) => parents.push(id),
+        #[cfg(feature = "giac")]
+        Source::Giac { source, .. } => parents.push(source),
         Source::Cubic(inputs) => parents.extend(inputs),
         Source::LocusEquation(_) => {
             return record
@@ -386,6 +427,18 @@ pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
             } else {
                 Value::ImplicitCurve
             };
+        }
+        #[cfg(feature = "giac")]
+        Source::Giac { source, op } => {
+            if !c.value(source).is_defined() {
+                return Value::Undefined;
+            }
+            let Some((coefficients, equation)) = crate::expr::cas::rewrite_implicit(c, source, op)
+            else {
+                return Value::Undefined;
+            };
+            c.implicit_curves[index as usize].1.giac_equation = Some(equation);
+            (Kind::ImplicitCurve, coefficients)
         }
         Source::Equation([left, right]) => {
             let Ok((degree, coefficients)) = normal(

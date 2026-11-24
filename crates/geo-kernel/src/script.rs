@@ -1014,6 +1014,10 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     if let Some(result) = crate::expr::define_geometry_if(c, name, rhs) {
         return result.map(Some);
     }
+    #[cfg(feature = "giac")]
+    if let Some(result) = crate::expr::rewrite_geometry(c, name, rhs) {
+        return result.map(Some);
+    }
     if let Some(result) = crate::expr::equation::implicit::asymptote_command(c, name, rhs) {
         return result.map(Some);
     }
