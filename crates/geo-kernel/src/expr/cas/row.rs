@@ -145,7 +145,8 @@ fn exact(c: &Construction, tree: Expr, work: &mut Work<'_>) -> Option<Expr> {
                     let left = format!("({a})*x + ({b})*y");
                     let left = parse(&left, false)?;
                     let left = reduce(left, work)?;
-                    Expr::Eq(Box::new(left), Box::new(numeric(-offset)))
+                    let right = reduce(numeric(-offset), work)?;
+                    Expr::Eq(Box::new(left), Box::new(right))
                 }
                 Value::Number(_) => rational(input::object(c, id)?),
                 _ => return None,

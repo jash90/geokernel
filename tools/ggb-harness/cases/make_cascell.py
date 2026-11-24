@@ -28,6 +28,11 @@ cases = [
     case("exact", 10, "?"),
     case("exact", 11, " 2/3 * 5/7 = "),
     case("exact", 12, "f(x) = 1 + Simplify(g)", "g: 2x + 3y = 6"),
+    case("display", 1, "Factor(x^3-x)"),
+    case("display", 2, "Factor(x^4-x^2)"),
+    case("display", 3, "Factor((x-2)*(x+1)*(x+3))"),
+    case("display", 4, "g", "g: x + y = 0"),
+    case("display", 5, "g", "g: x + y = 0.5"),
 ]
 Path(__file__).with_name("cascell.json").write_text(
     json.dumps({"cases": cases}, indent=2) + "\n", encoding="utf-8"

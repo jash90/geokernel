@@ -133,6 +133,65 @@
         }
       ],
       "cascell": "f(x) = 1 + Simplify(g)"
+    },
+    {
+      "id": "cascell-display-001",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Factor(x^3-x)"
+    },
+    {
+      "id": "cascell-display-002",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Factor(x^4-x^2)"
+    },
+    {
+      "id": "cascell-display-003",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Factor((x-2)*(x+1)*(x+3))"
+    },
+    {
+      "id": "cascell-display-004",
+      "group": "cascell",
+      "script": [
+        "g: x + y = 0"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "g"
+    },
+    {
+      "id": "cascell-display-005",
+      "group": "cascell",
+      "script": [
+        "g: x + y = 0.5"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "g"
     }
   ]
 }
