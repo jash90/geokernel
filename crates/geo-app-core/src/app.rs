@@ -109,6 +109,8 @@ impl OwnerRules {
 
 pub struct App {
     pub wb: Workbench,
+    pub show_cas: bool,
+    pub cas_editor: Option<crate::cas::Editor>,
     /// The owner's rules where the window differs from the reference app.
     pub rules: OwnerRules,
     /// `None` until the first frame, when the size of the area is known.
@@ -213,8 +215,11 @@ impl App {
 
     pub fn new(wb: Workbench, load_error: Option<String>) -> Self {
         let decor = Decor::for_document(&wb);
+        let show_cas = !wb.cas_rows().is_empty();
         App {
             wb,
+            show_cas,
+            cas_editor: None,
             rules: OwnerRules::OURS,
             camera: None,
             locus_sample_time: None,

@@ -21,6 +21,8 @@ pub fn open(app: &mut App, path: &Path) {
     match crate::cli::load_into(&mut app.wb, path) {
         Ok(()) => {
             app.load_error = None;
+            app.show_cas = !app.wb.cas_rows().is_empty();
+            app.cancel_cas_edit();
             app.source_path = Some(path.into());
             if app.wb.file_view().is_some() {
                 app.decor = geo_app_core::app::Decor::for_document(&app.wb);
@@ -51,6 +53,7 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
     }
     if typing {
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+            app.cancel_cas_edit();
             app.input.clear();
             app.input_error = None;
             app.keyboard.open = false;
@@ -156,7 +159,11 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
     }
     region(app, ui, regions.algebra.egui(), "algebra", |app, ui| {
-        algebra::show(app, ui)
+        if app.show_cas {
+            crate::cas::show(app, ui);
+        } else {
+            algebra::show(app, ui);
+        }
     });
     region(app, ui, regions.graphics.egui(), "graphics", |app, ui| {
         canvas::show(app, ui)

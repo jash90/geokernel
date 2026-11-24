@@ -170,7 +170,7 @@ case "$cmd" in
               run_golden '!nocas'
               exit
               ;;
-            cas.json|cascell.json|locusequation.json|envelope.json|curvepairs.json) enable_giac ;;
+            cas.json|cascell.json|casview.json|locusequation.json|envelope.json|curvepairs.json) enable_giac ;;
             prove.json) enable_giac ;;
           esac
         fi
@@ -186,13 +186,18 @@ case "$cmd" in
   ggb)
     sample="${1:-1}"
     zipstep="${2:-50}"
-    for file in "$here"/cases/*.json; do
-      # CAS row output is recorded in golden/cascell, independently of XML.
+    if [ "$#" -gt 2 ]; then
+      files=("$here/cases/$3.json")
+    else
+      files=("$here"/cases/*.json)
+    fi
+    for file in "${files[@]}"; do
+      # The one-row cases are independent of XML.
       if [ "${file##*/}" = cascell.json ]; then continue; fi
       (
         if [ "${GGB_HARNESS_CAS:-0}" != 1 ]; then
           case "${file##*/}" in
-            cas.json | odesymbolic.json) enable_giac ;;
+            cas.json | casview.json | odesymbolic.json) enable_giac ;;
           esac
         fi
         java "${java_opts[@]}" -cp "$build/classes:$(classpath)" \
@@ -211,7 +216,7 @@ case "$cmd" in
       "$repo/golden/t-pairs/verified.jsonl" "$commit" "$@"
     ;;
   export-snapshot)
-    exec java -Xmx512m -Djava.awt.headless=true -cp "$build/classes:$(classpath)" \
+    exec java "${java_opts[@]}" -Xms32m -Xmx512m -Djava.awt.headless=true -cp "$build/classes:$(classpath)" \
       geokernel.harness.ExportSnapshot "$@"
     ;;
   reload)

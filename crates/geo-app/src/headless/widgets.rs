@@ -235,6 +235,9 @@ fn clickable(ctx: &Context) -> Vec<WidgetRect> {
 /// outside it is placed from the row model and the list's geometry, as it
 /// would be laid out, and is not in view.
 fn rows(ctx: &Context, app: &App, out: &mut Vec<Widget>) {
+    if app.show_cas {
+        return;
+    }
     let Some(list) = algebra::geometry(ctx) else {
         return;
     };

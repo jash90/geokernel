@@ -1163,3 +1163,120 @@ fn the_observed_pointer_scenarios_replay() {
         "scenarios skipped, by group"
     );
 }
+
+#[test]
+fn replays_recorded_cas_view_interactions() {
+    use geo_app::headless::{self, egui, Headless, Profile};
+    use geo_app::Workbench;
+
+    let fixture: Value =
+        serde_json::from_str(include_str!("fixtures/cas_view_scenarios.json")).unwrap();
+    let recording: Value = serde_json::from_str(
+        &std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../golden/casview/rows.json"
+        ))
+        .unwrap(),
+    )
+    .unwrap();
+    let click = |window: &mut Headless, label: &str| {
+        let pos = window
+            .widgets()
+            .iter()
+            .find(|widget| widget.visible && widget.label == label)
+            .unwrap_or_else(|| panic!("missing {label}"))
+            .rect
+            .center();
+        window.frame(
+            headless::DT,
+            vec![
+                egui::Event::PointerMoved(pos),
+                headless::press(pos, egui::PointerButton::Primary, true),
+            ],
+        );
+        window.frame(
+            headless::DT,
+            vec![headless::press(pos, egui::PointerButton::Primary, false)],
+        );
+    };
+    let dt = headless::DT;
+    let mut count = 0;
+    for (scenario, id) in fixture.as_object().unwrap() {
+        let case = recording["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["id"] == *id)
+            .unwrap();
+        let script = case["script"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|line| line.as_str().unwrap())
+            .collect::<Vec<_>>()
+            .join("\n");
+        let mut window = Headless::new(
+            Workbench::from_script(&script).unwrap(),
+            None,
+            Profile::Desktop,
+            (1200.0, 850.0),
+            1.0,
+        );
+        window.frame(dt, Vec::new());
+        click(&mut window, "Menu");
+        window.frame(dt, Vec::new());
+        click(&mut window, "Widok CAS");
+        window.frame(dt, Vec::new());
+        for step in case["casview"].as_array().unwrap() {
+            let row = step["row"].as_u64().unwrap();
+            let action = step["action"].as_str().unwrap();
+            if action == "delete" {
+                click(&mut window, &format!("Usuń wiersz {row}"));
+            } else {
+                if row == 1 || action == "edit" {
+                    click(&mut window, &format!("Wiersz {row}"));
+                }
+                if action == "edit" {
+                    let select_all = egui::Modifiers {
+                        command: true,
+                        ..egui::Modifiers::NONE
+                    };
+                    window.frame(dt, vec![headless::key(egui::Key::A, true, select_all)]);
+                    window.frame(dt, vec![headless::key(egui::Key::A, false, select_all)]);
+                }
+                window.frame(
+                    dt,
+                    vec![egui::Event::Text(step["input"].as_str().unwrap().into())],
+                );
+                window.frame(
+                    dt,
+                    vec![headless::key(egui::Key::Enter, true, egui::Modifiers::NONE)],
+                );
+                window.frame(
+                    dt,
+                    vec![headless::key(
+                        egui::Key::Enter,
+                        false,
+                        egui::Modifiers::NONE,
+                    )],
+                );
+            }
+            let actual: Vec<_> = window
+                .app
+                .wb
+                .cas_rows()
+                .iter()
+                .map(|row| json!({"output": row.output.text, "latex": row.output.latex}))
+                .collect();
+            let expected: Vec<_> = step["rows"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|row| json!({"output": row["output"], "latex": row["latex"]}))
+                .collect();
+            assert_eq!(actual, expected, "{scenario} {action} row {row}");
+        }
+        count += 1;
+    }
+    assert_eq!(count, 6);
+}

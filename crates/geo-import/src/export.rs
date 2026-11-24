@@ -46,6 +46,7 @@ impl Default for View {
 pub struct Presentation<'a> {
     pub view: View,
     pub settings: Settings,
+    pub cas_rows: Vec<crate::SavedCasRow>,
     /// Colours of the objects that have no saved style.
     pub colors: BTreeMap<&'a str, [u8; 3]>,
     /// Fill opacity the application draws those objects with, from 0 to 1.
@@ -369,6 +370,15 @@ pub fn ggb<'a>(
             construction.label(id)
         )));
     }
+    if presentation.cas_rows.len() > crate::MAX_CAS_ROWS {
+        return Err(failure("too many CAS rows"));
+    }
+    for row in &presentation.cas_rows {
+        writer.xml.cas_row(row)?;
+        if writer.xml.buffer.len() as u64 > archive::MAX_XML_BYTES {
+            return Err(failure("construction XML exceeds the import size limit"));
+        }
+    }
     writer.xml.buffer.push_str("</construction>\n</geogebra>\n");
     if writer.xml.buffer.len() as u64 > archive::MAX_XML_BYTES
         || writer.images.len() + 1 > archive::MAX_ZIP_ENTRIES
@@ -690,7 +700,8 @@ struct Xml {
 impl Xml {
     fn attributes(&mut self, name: &str, attrs: &[(&str, &str)]) -> Result<(), ExportError> {
         self.items += match name {
-            "command" | "expression" | "element" => 1,
+            "command" | "element" | "cellPair" => 1,
+            "expression" if attrs.iter().any(|(key, _)| *key == "label") => 1,
             "output" => attrs.len(),
             _ => 0,
         };
@@ -746,6 +757,61 @@ impl Xml {
         self.attributes(name, attrs)?;
         self.buffer.push_str("/>\n");
         Ok(())
+    }
+
+    fn cas_row(&mut self, row: &crate::SavedCasRow) -> Result<(), ExportError> {
+        self.open("cascell", &[])?;
+        self.open("cellPair", &[])?;
+        if row.as_text {
+            self.tag("useAsText", &[])?;
+        }
+        if !row.input.is_empty() {
+            self.open("inputCell", &[])?;
+            let mut attrs = vec![("value", row.input.as_str())];
+            let input = &row.input_options;
+            attrs.extend(
+                [
+                    ("prefix", input.prefix.as_deref()),
+                    ("eval", input.eval.as_deref()),
+                    ("postfix", input.postfix.as_deref()),
+                    ("evalCmd", input.command.as_deref()),
+                    ("pointList", input.point_list.then_some("true")),
+                ]
+                .into_iter()
+                .filter_map(|(key, value)| Some((key, value?))),
+            );
+            self.cas_expression(&attrs)?;
+            self.buffer.push_str("</inputCell>\n");
+        }
+        if let Some(value) = &row.output {
+            self.open("outputCell", &[])?;
+            let output = &row.output_options;
+            let mut attrs = vec![("value", value.as_str())];
+            attrs.extend(
+                [
+                    ("evalCommand", output.command.as_deref()),
+                    ("evalComment", output.comment.as_deref()),
+                    ("error", output.error.then_some("true")),
+                    ("native", output.native.then_some("true")),
+                ]
+                .into_iter()
+                .filter_map(|(key, value)| Some((key, value?))),
+            );
+            self.cas_expression(&attrs)?;
+            self.buffer.push_str("</outputCell>\n");
+        }
+        self.buffer.push_str("</cellPair>\n</cascell>\n");
+        Ok(())
+    }
+
+    fn cas_expression(&mut self, attrs: &[(&str, &str)]) -> Result<(), ExportError> {
+        if attrs
+            .iter()
+            .any(|(_, value)| value.len() > crate::MAX_CAS_INPUT_BYTES)
+        {
+            return Err(failure("CAS cell attribute exceeds the import size limit"));
+        }
+        self.tag("expression", attrs)
     }
 
     fn val(&mut self, name: &str, value: &str) -> Result<(), ExportError> {

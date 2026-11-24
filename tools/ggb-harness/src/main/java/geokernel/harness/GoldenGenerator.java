@@ -65,7 +65,7 @@ public final class GoldenGenerator {
             Map<?, ?> input = (Map<?, ?>) c;
             String id = (String) input.get("id");
             String group = (String) input.get("group");
-            if (("cas".equals(group) || "cascell".equals(group) || "curvepairs".equals(group)) && !GiacOracle.enabled()) {
+            if (("cas".equals(group) || "cascell".equals(group) || "casview".equals(group) || "curvepairs".equals(group)) && !GiacOracle.enabled()) {
                 throw new IllegalStateException("CAS fixtures require the native Giac oracle");
             }
             if (!ids.add(id)) {
@@ -316,9 +316,18 @@ public final class GoldenGenerator {
         if (row != null) {
             golden.put("cascell", session.casCell(row));
         }
+        List<?> casView = (List<?>) input.get("casview");
+        if ("casview".equals(input.get("group")) != (casView != null)
+                || casView != null && (casView.isEmpty() || steps.size() != 1)) {
+            throw new IllegalArgumentException("a casview case needs actions and only the initial construction step");
+        }
+        if (casView != null) {
+            golden.put("casview", session.casView(casView));
+        }
         if (input.size() != (4 + (boundaryGrowth ? 1 : 0) + (pointListGrowth ? 1 : 0)
                 + (rootGrowth ? 1 : 0) + (sampleCurves ? 1 : 0) + (view != null ? 1 : 0)
-                + (fileLoading ? 1 : 0) + (observe != null ? 1 : 0) + (row != null ? 1 : 0))) {
+                + (fileLoading ? 1 : 0) + (observe != null ? 1 : 0) + (row != null ? 1 : 0)
+                + (casView != null ? 1 : 0))) {
             throw new IllegalArgumentException(
                     "unexpected fields in the case input");
         }

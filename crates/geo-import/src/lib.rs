@@ -45,11 +45,43 @@ pub mod xml;
 
 use std::fmt;
 
+pub const MAX_CAS_ROWS: usize = 1_000;
+pub const MAX_CAS_INPUT_BYTES: usize = 16 * 1024;
+
+/// A CAS cell pair stored by GeoCasCell. These rows are separate from the
+/// ordinary construction objects and their script.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SavedCasRow {
+    pub input: String,
+    pub output: Option<String>,
+    pub as_text: bool,
+    pub input_options: CasInputOptions,
+    pub output_options: CasOutputOptions,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CasInputOptions {
+    pub prefix: Option<String>,
+    pub eval: Option<String>,
+    pub postfix: Option<String>,
+    pub command: Option<String>,
+    pub point_list: bool,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CasOutputOptions {
+    pub command: Option<String>,
+    pub comment: Option<String>,
+    pub error: bool,
+    pub native: bool,
+}
+
 /// The result of importing a file.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Imported {
     /// Lines of the script language, in construction order.
     pub script: Vec<String>,
+    pub cas_rows: Vec<SavedCasRow>,
     /// Raster sources for replay without serializing or decoding them again.
     pub image_assets: Vec<geo_kernel::script::saved::Property>,
     /// Saved object presentation used when writing a construction.
@@ -132,6 +164,8 @@ pub enum ImportError {
     TooManyEntries(usize),
     /// The construction has more than [`xml::MAX_ITEMS`] items.
     TooManyItems,
+    /// The CAS table has more than the supported number of rows.
+    TooManyCasRows,
     /// Tags nest deeper than [`xml::MAX_DEPTH`].
     TooDeep,
     /// A command lists more than [`xml::MAX_ARGUMENTS`] inputs or outputs.
@@ -169,6 +203,7 @@ impl fmt::Display for ImportError {
             ImportError::TooDeep => {
                 write!(f, "the tags nest deeper than {} levels", xml::MAX_DEPTH)
             }
+            ImportError::TooManyCasRows => write!(f, "too many CAS rows"),
             ImportError::TooManyItems => {
                 write!(f, "the construction has more than {} items", xml::MAX_ITEMS)
             }

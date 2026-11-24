@@ -218,6 +218,17 @@ fn main_menu(app: &mut App, button: &Response) {
                 ui.close();
             }
         });
+        let view = if app.show_cas {
+            Label::AlgebraView
+        } else {
+            Label::CasView
+        };
+        if ui.button(text::label(view)).clicked() {
+            app.show_cas = !app.show_cas;
+            app.cancel_cas_edit();
+            app.keyboard.open = false;
+            ui.close();
+        }
         ui.checkbox(&mut app.decor.axes, text::label(Label::Axes));
         ui.checkbox(&mut app.decor.grid, text::label(Label::Grid));
         if ui.button("Widok standardowy").clicked() {

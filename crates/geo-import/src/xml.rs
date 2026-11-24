@@ -38,7 +38,7 @@ use crate::export::{
     DynamicColor, Fill, LineStyle, ObjectStyle, Rounding, SegmentEnd, SliderAnimation, SliderFlags,
     SliderLayout,
 };
-use crate::{ImportError, Settings};
+use crate::{ImportError, SavedCasRow, Settings, MAX_CAS_INPUT_BYTES, MAX_CAS_ROWS};
 use geo_kernel::kernel::control::ControlScript;
 use geo_kernel::kernel::image::{ImageCorner, ImageStyle};
 use geo_kernel::kernel::text::TextPosition;
@@ -157,6 +157,7 @@ pub enum Item {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Document {
     pub items: Vec<Item>,
+    pub cas_rows: Vec<SavedCasRow>,
     pub settings: Settings,
     pub view: Option<crate::export::View>,
     /// How many `<construction>` tags the file has. GeoGebra's reader appends
@@ -623,6 +624,40 @@ fn push(doc: &mut Document, item: Item) -> Result<(), ImportError> {
     Ok(())
 }
 
+fn cas_attr(e: &BytesStart, name: &str) -> Result<Option<String>, ImportError> {
+    let value = attr(e, name)?;
+    if value
+        .as_ref()
+        .is_some_and(|s| s.len() > MAX_CAS_INPUT_BYTES)
+    {
+        return Err(ImportError::AttributeTooLong);
+    }
+    Ok(value)
+}
+
+/// Parse the cell pair without letting its expressions enter the object list.
+fn read_cas_expression(
+    row: &mut SavedCasRow,
+    e: &BytesStart,
+    input: bool,
+) -> Result<(), ImportError> {
+    if input {
+        row.input = cas_attr(e, "value")?.unwrap_or_default();
+        row.input_options.prefix = cas_attr(e, "prefix")?;
+        row.input_options.eval = cas_attr(e, "eval")?;
+        row.input_options.postfix = cas_attr(e, "postfix")?;
+        row.input_options.command = cas_attr(e, "evalCmd")?;
+        row.input_options.point_list = attr(e, "pointList")?.as_deref() == Some("true");
+    } else {
+        row.output = cas_attr(e, "value")?;
+        row.output_options.command = cas_attr(e, "evalCommand")?;
+        row.output_options.comment = cas_attr(e, "evalComment")?;
+        row.output_options.error = attr(e, "error")?.as_deref() == Some("true");
+        row.output_options.native = attr(e, "native")?.as_deref() == Some("true");
+    }
+    Ok(())
+}
+
 /// Parses the text of a `geogebra.xml`.
 pub fn parse(text: &str) -> Result<Document, ImportError> {
     let mut reader = Reader::from_str(text);
@@ -635,6 +670,8 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
     let mut in_gui = false;
     let mut view = None;
     let mut depth = 0usize;
+    let mut cas_depth = None;
+    let mut cas_input = None;
     loop {
         let event = reader.read_event().map_err(bad)?;
         let (start, empty) = match &event {
@@ -654,7 +691,34 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
         }
         if let Some(e) = start {
             let name = e.name().as_ref().to_string();
+            if let Some(pair) = cas_depth {
+                let row = doc.cas_rows.last_mut().expect("open CAS cell");
+                match name.as_str() {
+                    "inputCell" | "outputCell" if !empty && depth == pair + 1 => {
+                        cas_input = Some(name == "inputCell");
+                    }
+                    "useAsText" if depth == pair + usize::from(!empty) => row.as_text = true,
+                    "expression" if depth == pair + 1 + usize::from(!empty) => {
+                        if let Some(input) = cas_input {
+                            read_cas_expression(row, e, input)?;
+                        }
+                    }
+                    _ => {}
+                }
+                continue;
+            }
             match name.as_str() {
+                "cellPair" if in_construction && command.is_none() && element.is_none() => {
+                    if doc.cas_rows.len() == MAX_CAS_ROWS {
+                        return Err(ImportError::TooManyCasRows);
+                    }
+                    if doc.weight == MAX_ITEMS {
+                        return Err(ImportError::TooManyItems);
+                    }
+                    doc.weight += 1;
+                    doc.cas_rows.push(SavedCasRow::default());
+                    cas_depth = (!empty).then_some(depth);
+                }
                 "geogebra" if depth <= 1 => {
                     // The reader of a format up to 3.19 ignores list opacity.
                     doc.legacy_list_alpha = attr(e, "format")?
@@ -1067,6 +1131,12 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
         }
         match event {
             Event::End(e) => match e.name().as_ref() {
+                "cellPair" if cas_depth == Some(depth + 1) => {
+                    cas_depth = None;
+                    cas_input = None;
+                }
+                "inputCell" | "outputCell" if cas_depth == Some(depth) => cas_input = None,
+                _ if cas_depth.is_some() => {}
                 "construction" => in_construction = false,
                 "kernel" => in_kernel = false,
                 "gui" => in_gui = false,

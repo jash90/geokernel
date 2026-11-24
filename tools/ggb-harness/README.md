@@ -85,6 +85,15 @@ A full run at the reference commit (November 2026) rewrote every file of
 The bounds of a text depend on the fonts of the system and are not
 recorded this way.
 
+To regenerate just the CAS interaction recordings and the corresponding
+construction files, run the case generator and select the group in the container:
+
+```sh
+python3 -I tools/ggb-harness/cases/make_casview.py
+GEOGEBRA_SRC=<checkout> tools/ggb-harness/linux-x86_64.sh golden casview
+GEOGEBRA_SRC=<checkout> tools/ggb-harness/linux-x86_64.sh ggb 1 50 casview
+```
+
 ### Native CAS oracle
 
 On macOS arm64 and Linux x86_64, `build` also downloads the published

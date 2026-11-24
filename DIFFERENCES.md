@@ -306,6 +306,14 @@ by exact sparse division. The small-system path uses [Buchberger's algorithm](ht
 for lexicographic Gröbner elimination and bounded real back-substitution. No arbitrary-precision crate
 is needed within the stated bounds.
 
+## CAS view
+
+| Setting | GeoGebra | This project |
+| --- | --- | --- |
+| CAS rows | A dedicated CAS session evaluates assignments and supports the view's evaluation modes. | The CAS panel uses the construction's one-row evaluator with preceding-row references. Unsupported expressions, including assignments with `:=`, display `?`. |
+| Work limits | The CAS backend sets its own evaluation limits. | The table admits up to 1,000 rows and 16 KiB per row input. It stops a single edit cascade at 256 KiB of source and expanded input, and displays `?` for results larger than 4 KiB per representation. |
+| File presentation | A saved CAS cell can carry editing modes and comment styling. | The reader retains cell input and output and their expression attributes. Comment typography and tool-specific editing modes are outside the panel's current support. |
+
 ## Numerical function analysis
 
 | Area | GeoGebra | geokernel | Reason |

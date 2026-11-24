@@ -75,6 +75,7 @@ struct UndoState {
 #[derive(Default)]
 pub struct Workbench {
     construction: Construction,
+    cas: crate::cas::Table,
     log: Log,
     boundary_outputs: BoundaryOutputs,
     file_settings: geo_import::Settings,
@@ -133,6 +134,20 @@ impl Workbench {
         let mut w = Workbench::default();
         w.load_script(src)?;
         Ok(w)
+    }
+
+    pub fn cas_rows(&self) -> &[crate::cas::Entry] {
+        self.cas.rows()
+    }
+
+    /// Submits a CAS row at a zero-based index, including the next empty row.
+    pub fn submit_cas(&mut self, index: usize, input: &str) -> bool {
+        self.cas.submit(&self.construction, index, input)
+    }
+
+    /// Deletes a CAS row and its dependents.
+    pub fn delete_cas(&mut self, index: usize) -> bool {
+        self.cas.delete(index)
     }
 
     pub fn construction(&self) -> &Construction {
@@ -276,6 +291,7 @@ impl Workbench {
     fn replace(&mut self, c: Construction, log: Log) {
         self.boundary_outputs = log.boundary_outputs(&c);
         self.construction = c;
+        self.cas = crate::cas::Table::default();
         self.objects_changed();
         self.log = log;
         self.label_offsets.clear();

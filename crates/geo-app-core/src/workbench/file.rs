@@ -62,6 +62,7 @@ impl Workbench {
                 notice,
             )
             .map_err(|e| format!("{name}: {e}"))?;
+            self.cas = crate::cas::Table::from_file(&self.construction, imported.cas_rows);
             self.file_settings = imported.settings;
             self.file_import_losses = (imported.skipped.len(), imported.mismatched.len());
             self.file_object_styles = imported.object_styles;
@@ -91,6 +92,24 @@ impl Workbench {
         let mut presentation = Presentation {
             view: view.or(self.file_view).unwrap_or_default(),
             settings: self.file_settings.clone(),
+            cas_rows: self
+                .cas_rows()
+                .iter()
+                .map(|entry| {
+                    entry
+                        .saved
+                        .clone()
+                        .unwrap_or_else(|| geo_import::SavedCasRow {
+                            input: entry.input.clone(),
+                            output: Some(entry.output.exact.as_deref().unwrap_or("?").into()),
+                            output_options: geo_import::CasOutputOptions {
+                                command: Some("Evaluate".into()),
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        })
+                })
+                .collect(),
             object_styles: self
                 .file_object_styles
                 .iter()
@@ -736,7 +755,7 @@ mod tests {
     }
 
     /// The saved files of the golden set, and those of them that do not load.
-    const GOLDEN_FILES: usize = 45;
+    const GOLDEN_FILES: usize = 46;
     const GOLDEN_FILES_NOT_LOADED: &[&str] = &[];
 
     #[test]
