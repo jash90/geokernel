@@ -123,4 +123,24 @@ cases.case("animationoptions", ["h = 0.2", "a = Slider(0, 6, h, 2)"], [
     redefine("a = Slider(0, 8)"), setn("h", 0.4),
     {"action": "slider_animation", "label": "a"},
 ])
+cases.case("boundredefinition", [
+    "u = -4", "lo = u + 0", "hi = u + 3", "a = Slider(lo, hi)",
+], [redefine("u = -0.5")])
+for command in ["Dilate(L, 2)", "ApplyMatrix({{2, 0}, {0, 2}}, L)"]:
+    cases.case("nestedreplacement", [
+        "t = 1", "A = (1, 2)", "B = (3, 5)",
+        "L = If(t > 0, {{A}, B}, {3, B})", f"M = {command}",
+    ], [setn("t", 0)])
+cases.case("stepcascade", ["h = 0.2", "a = Slider(0, 6, h, 2)"], [
+    setn("a", 5), redefine("h = (a + 1)/10"), redefine("a = Slider(0, 2)"),
+    {"action": "slider_animation", "label": "a"},
+])
+readers = [f"d_{{{i}}}" for i in range(1, 5)]
+cases.case("bulkrollback", [
+    "a = Slider(0, 6)", "k = 1",
+    "m = Minimize((a - 3)^2, a)", "n = Minimize(k*(a - 2)^2, a)",
+    "v = Sequence(j, j, 1, 1000000)",
+    *(f"{label} = If(a < 0.01, Sum(Sort(v)), a)" for label in readers),
+], [setn("k", 2)])
+cases.cases[-1]["observe"] = ["a", "k", "m", "n", *readers]
 cases.write()

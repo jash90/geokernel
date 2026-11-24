@@ -52,6 +52,10 @@ use crate::kernel::{Construction, Def, Id, Kind, Value};
 /// The largest number of objects a proof translates.
 const MAX_OBJECTS: usize = 64;
 
+/// Each cached output occupies one entry in each of two maps. A full
+/// construction rebuild therefore drops at most twice this many entries.
+const MAX_CACHED_INTERSECTIONS: usize = 4096;
+
 #[derive(Clone, Copy)]
 enum IntersectionConstraint {
     None,
@@ -85,10 +89,14 @@ impl IntersectionTranslations {
         }
     }
 
-    fn insert(&mut self, id: Id, constraint: IntersectionConstraint) {
+    fn insert(&mut self, id: Id, constraint: IntersectionConstraint) -> Option<()> {
+        if self.constraints.len() >= MAX_CACHED_INTERSECTIONS {
+            return None;
+        }
         let index = self.checkpoint();
         self.order.insert(index, id);
         self.constraints.insert(id, (index, constraint));
+        Some(())
     }
 }
 
@@ -261,7 +269,20 @@ impl System {
                 self.point(q)?;
                 self.free_vars[x] = true;
             }
-            Def::Expr(_) if matches!(c.kind(id), Kind::Number) => return Some(()),
+            Def::Expr(d) if c.kind(id) == Kind::Number => {
+                let entry = crate::expr::source_entry(c, d);
+                if matches!(
+                    crate::expr::nodes_of(entry)[crate::expr::root_of(entry) as usize],
+                    Node::If(
+                        crate::expr::IfMode::Algo | crate::expr::IfMode::AlgoNext,
+                        ..
+                    )
+                ) {
+                    self.unknown = true;
+                    return None;
+                }
+                return Some(());
+            }
             Def::FreePoint { .. } => {
                 let x = self.new_var(true)?;
                 let y = self.new_var(true)?;
@@ -310,7 +331,7 @@ impl System {
                 self.add_parabola_equations(c, d.conic, p, budget)?;
                 self.add(collinear(p, [a, b], [x, y], budget)?);
                 if !cached {
-                    intersections.insert(id, IntersectionConstraint::None);
+                    intersections.insert(id, IntersectionConstraint::None)?;
                 }
                 self.point_vars.insert(id, p);
             }
@@ -490,7 +511,7 @@ impl System {
                     budget,
                     intersections,
                 )?;
-                intersections.insert(id, constraint);
+                intersections.insert(id, constraint)?;
                 constraint
             }
         };
@@ -840,7 +861,7 @@ fn predecessors(c: &Construction, statement: Id) -> Option<Vec<Id>> {
         }
     }
     let mut ordered: Vec<_> = seen.into_iter().collect();
-    ordered.sort_unstable_by_key(|&id| c.evaluation_rank(id));
+    ordered.sort_unstable_by_key(|&id| c.proof_rank(id));
     Some(ordered)
 }
 
@@ -990,7 +1011,7 @@ fn intersection_constraint(
                 labelled |= !other_indexed
                     && intersections
                         .replay_rank
-                        .is_none_or(|rank| c.evaluation_rank(other) < rank);
+                        .is_none_or(|rank| c.proof_rank(other) < rank);
                 if intersections.constraints.contains_key(&other) {
                     earlier = Some(other);
                 }
@@ -1029,9 +1050,9 @@ fn shared_point(
         .chain(c.children(b))
         .chain(on_a)
         .chain(c.children(a));
-    let before = c.evaluation_rank(id);
+    let before = c.proof_rank(id);
     let mut shared = candidates.filter(|&p| {
-        c.evaluation_rank(p) < before
+        c.proof_rank(p) < before
             && c.kind(p) == Kind::Point
             && !symbolic_intersection(c, p)
                 .is_some_and(|(pair, _)| pair == [a, b] || pair == [b, a])
@@ -1197,4 +1218,21 @@ fn new_segment(
     }
     segments.push(FormulaSegment { object, ends });
     Some(Poly::var(segments.len() - 1))
+}
+
+#[cfg(test)]
+mod cache_tests {
+    use super::*;
+
+    #[test]
+    fn intersection_cache_bounds_construction_wide_invalidation() {
+        let mut cache = IntersectionTranslations::default();
+        for index in 0..=4096 {
+            let _ = cache.insert(Id(index), IntersectionConstraint::None);
+        }
+        assert_eq!(cache.checkpoint(), 4096);
+        assert_eq!(cache.constraints.len() + cache.order.len(), 8192);
+        assert!(cache.constraints.contains_key(&Id(0)));
+        assert!(!cache.constraints.contains_key(&Id(4096)));
+    }
 }

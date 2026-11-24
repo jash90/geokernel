@@ -141,6 +141,7 @@ thread_local! {
     /// The work done on this thread (see [`work_done`]).
     static WORK: Cell<u64> = const { Cell::new(0) };
     static WORK_DEADLINE: Cell<u64> = const { Cell::new(u64::MAX) };
+    static SHARED_WORK_REFUSALS: Cell<u64> = const { Cell::new(0) };
     // Kernel commands can read conditional shape records on behalf of an
     // expression. Those reads spend the same allowance as the expression.
     static COMMAND_END: Cell<u64> = const { Cell::new(u64::MAX) };
@@ -198,6 +199,11 @@ pub(crate) fn with_work_deadline<T>(end: u64, f: impl FnOnce() -> T) -> T {
 
 pub(crate) fn work_deadline() -> u64 {
     WORK_DEADLINE.get()
+}
+
+/// Changes whenever a bulk charge cannot fit under a shared deadline.
+pub(crate) fn shared_work_refusals() -> u64 {
+    SHARED_WORK_REFUSALS.get()
 }
 
 /// Reserves shared work for an operation that must finish even on rollback.
@@ -495,7 +501,16 @@ impl Lists {
     /// Charges a loop of the list code of `n` units before it runs; false,
     /// and the evaluation is over, when it would go past the bound.
     pub(super) fn charge(&self, n: u64) -> bool {
-        if self.over() || work_done().saturating_add(n) > self.end.get() {
+        if self.over() {
+            self.give_up();
+            return false;
+        }
+        let shared = work_deadline();
+        let end = self.end.get().min(shared);
+        if work_done().saturating_add(n) > end {
+            if end == shared {
+                SHARED_WORK_REFUSALS.set(SHARED_WORK_REFUSALS.get().wrapping_add(1));
+            }
             self.give_up();
             return false;
         }

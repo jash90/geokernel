@@ -383,11 +383,11 @@ impl Construction {
                 let add = new_anchor.filter(|new| !parents.contains(new));
                 if let Some(anchor) = add {
                     parents.push(anchor);
-                    if self.evaluation_rank(anchor) >= self.evaluation_rank(id) {
+                    if self.dependency_needs_reorder(anchor, id) {
                         let changed = std::collections::BTreeMap::from([(id, parents)]);
                         let loci = self.locus_order_inputs()?;
-                        self.evaluation_order =
-                            self.replacement_order(&changed, &loci, self.len())?;
+                        let order = self.replacement_order(&changed, &loci, self.len())?;
+                        self.install_replacement_order(order);
                     }
                     self.children[anchor.0].insert(id);
                 }

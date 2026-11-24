@@ -88,7 +88,7 @@ pub(crate) mod fraction;
 pub(crate) mod inequality;
 mod inverse;
 pub(crate) use eval::{carrier_deadline, charge_carrier};
-pub(crate) use eval::{reserve_work, with_work_deadline, work_deadline};
+pub(crate) use eval::{reserve_work, shared_work_refusals, with_work_deadline, work_deadline};
 #[doc(hidden)]
 pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK, MAX_OVERRUN};
 

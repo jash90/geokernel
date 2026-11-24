@@ -1,0 +1,48 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-stepcascade-001",
+      "group": "optimizerreview",
+      "script": [
+        "h = 0.2",
+        "a = Slider(0, 6, h, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        { "action": "redefine", "line": "h = (a + 1)/10" },
+        { "action": "redefine", "line": "a = Slider(0, 2)" },
+        {
+          "action": "slider_animation",
+          "label": "a",
+          "options": { "step": "0.3", "speed": "2" }
+        }
+      ],
+      "snapshots": [
+        {
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.6 },
+          "a": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.3 },
+          "a": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.3 },
+          "a": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    }
+  ]
+}

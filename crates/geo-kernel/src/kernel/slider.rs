@@ -157,13 +157,15 @@ impl Construction {
         let parents: Vec<_> = bound_parents(restored).collect();
         if parents
             .iter()
-            .any(|&parent| self.evaluation_rank(parent) >= self.evaluation_rank(id))
+            .any(|&parent| self.dependency_needs_reorder(parent, id))
         {
             let result = self.locus_order_inputs().and_then(|loci| {
                 self.replacement_order(&[(id, parents.clone())].into(), &loci, self.len())
             });
             match result {
-                Ok(order) => self.evaluation_order = order,
+                Ok(order) => {
+                    self.install_replacement_order(order);
+                }
                 Err(error) => {
                     self.discard_since(checkpoint);
                     return Err(error.into());
@@ -441,6 +443,24 @@ fn clamp(value: f64, [min, max]: [Option<f64>; 2]) -> f64 {
 #[cfg(test)]
 mod tests {
     use crate::{script, Value};
+
+    #[test]
+    fn redefining_a_bound_source_resolves_each_endpoint_in_order() {
+        let mut c =
+            crate::script::load("u = -4\nlo = u + 0\nhi = u + 3\na = Slider(lo, hi)").unwrap();
+        crate::script::exec(&mut c, "u = -0.5").unwrap();
+        assert_eq!(c.number(c.id("a").unwrap()), Some(1.0));
+    }
+
+    #[test]
+    fn an_omitted_step_is_frozen_after_both_bounds_cascade() {
+        let mut c = crate::script::load("h = 0.2\na = Slider(0, 6, h, 2)").unwrap();
+        let a = c.id("a").unwrap();
+        c.set_number(a, 5.0).unwrap();
+        crate::script::exec(&mut c, "h = (a + 1)/10").unwrap();
+        crate::script::exec(&mut c, "a = Slider(0, 2)").unwrap();
+        assert_eq!(c.slider_animation_options(a)[0], Some("0.3"));
+    }
 
     #[test]
     fn redefining_a_number_as_its_own_slider_ceiling_clamps_later_moves() {

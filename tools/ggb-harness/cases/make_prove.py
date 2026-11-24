@@ -402,4 +402,34 @@ for conic, point in (("Ellipse", "(0, 2)"), ("Hyperbola", "(1.5, 0)")):
                          "s = Line(A, B)", "P = Intersect(s, k, 1)"],
           "AreCollinear(A, B, P)")
 
+# Redefinitions exercised between construction steps.
+LEAF_REPLAY = INDEXED_DIAMETER + ["b = A == Q", "p = Prove(b)", "unused = 1"]
+LEAF_EDIT = [redefine("unused = x(A)"), add("S = Intersect(g, c)"),
+             add("p_2 = Prove(AreEqual(A, Q))")]
+cases.case("leafreplay", LEAF_REPLAY, LEAF_EDIT)
+# Separate helpers remain live across a childless replacement.
+diameters = [
+    line for i in range(1, 9) for line in [
+        f"O_{i} = (0, 0)", f"A_{i} = (4, 0)", f"c_{i} = Circle(O_{i}, A_{i})",
+        f"g_{i} = Line(O_{i}, A_{i})", f"Q_{i} = Intersect(g_{i}, c_{i}, 1)",
+        f"p_{i} = Prove(AreEqual(A_{i}, Q_{i}))",
+    ]
+]
+cases.case("cacheleaf", diameters + ["unused = 1"], [
+    redefine("unused = x(A_1)"), add("S = Intersect(g_8, c_8)"),
+    add("fresh = Prove(AreEqual(A_8, Q_8))"),
+])
+cases.case("dependencyreplay", INDEXED_DIAMETER + [
+    "M = Midpoint(A, Q)", "B = (3, 5)", "r = Prove(AreCollinear(O, M, B))",
+    "S = Intersect(g, c)", "U = (1, 2)", "V = (4, 3)", "h = Line(U, V)",
+], [redefine("B = Point(h, 0.25)"), add("p_2 = Prove(AreEqual(A, Q))")])
+cases.case("rebuiltcircle", [
+    "O = (0, 0)", "A = (-3, 0)", "B = (3, 0)", "n = 2", "c = Circle(O, n)",
+    "Q = Intersect(Line(A, B), c, 1)", "b = A == B", "p = Prove(b)",
+], [redefine("n = -1"), redefine("b = false"),
+    add("p_2 = Prove(AreCollinear(A, B, Q))")])
+proof("conditionalselector",
+      PARABOLA + ["s = Line(A, B)", "n = If(x(B) > 0, 1, 2)", "P = Intersect(s, k, n)"],
+      "AreCollinear(A, B, P)")
+
 cases.write()

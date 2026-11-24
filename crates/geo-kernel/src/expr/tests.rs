@@ -886,3 +886,31 @@ fn list_dilation_respects_the_remaining_carrier_budget() {
     assert_eq!(c.value(n), Value::Undefined);
     assert!(super::work_done() - before <= 33);
 }
+
+#[test]
+fn a_scalar_replacing_a_nested_list_leaves_its_points_at_the_previous_scale() {
+    use super::Element;
+
+    for command in ["Dilate(L, 2)", "ApplyMatrix({{2, 0}, {0, 2}}, L)"] {
+        let mut c = crate::script::load(&format!(
+            "t = 1\nA = (1, 2)\nB = (3, 5)\nL = If(t > 0, {{{{A}}, B}}, {{3, B}})\nM = {command}"
+        ))
+        .unwrap();
+        c.set_number(c.id("t").unwrap(), 0.0).unwrap();
+        let result = c.elements(c.id("M").unwrap()).unwrap();
+        let Some(Element::List(nested)) = result.get(0) else {
+            panic!("expected a retained nested list");
+        };
+        assert!(matches!(
+            nested.get(0),
+            Some(Element::Value(Kind::Point, Value::Point { x: 2.0, y: 4.0 }))
+        ));
+        assert!(matches!(
+            result.get(1),
+            Some(Element::Value(
+                Kind::Point,
+                Value::Point { x: 6.0, y: 10.0 }
+            ))
+        ));
+    }
+}

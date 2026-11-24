@@ -1082,6 +1082,8 @@ pub struct Construction {
     children: Vec<Children>,
     /// Empty while creation order is also evaluation order.
     evaluation_order: EvaluationOrder,
+    // The prover reads labels in the reference's XML construction order.
+    proof_order: EvaluationOrder,
     /// For each object, what its rule needs from the definitions of other
     /// objects, decided when it is created (see [`algo::intersect::Hint`]).
     hints: Vec<algo::intersect::Hint>,
@@ -1287,6 +1289,11 @@ impl Children {
 struct EvaluationOrder {
     ids: Vec<usize>,
     ranks: Vec<usize>,
+}
+
+struct ReplacementOrder {
+    evaluation: Option<EvaluationOrder>,
+    proof: EvaluationOrder,
 }
 
 const MAX_REDEFINITION_EDGES: usize = 1_000_000;
@@ -2074,6 +2081,7 @@ impl Construction {
             keep
         });
         self.evaluation_order.discard_since(at.len);
+        self.proof_order.discard_since(at.len);
         if self
             .self_circle_outputs
             .last()
@@ -2421,10 +2429,9 @@ impl Construction {
             let order = changed
                 .iter()
                 .any(|(&child, parents)| {
-                    parents.iter().any(|&parent| {
-                        axis::get(parent).is_none()
-                            && self.evaluation_rank(parent) >= self.evaluation_rank(child)
-                    })
+                    parents
+                        .iter()
+                        .any(|&parent| self.dependency_needs_reorder(parent, child))
                 })
                 .then(|| self.replacement_order(&changed, &locus_inputs, new.0))
                 .transpose()
@@ -2445,8 +2452,8 @@ impl Construction {
             }
         };
 
-        let rebuilds = !self.inequality_helpers.outputs().is_empty()
-            && self.replacement_rebuilds_construction(id, def);
+        let rebuilds_construction = self.replacement_rebuilds_construction(id, def);
+        let rebuilds = rebuilds_construction && !self.inequality_helpers.outputs().is_empty();
 
         let slider_options = self.slider_animation_options.remove(&new);
         let mut value = self.values[new.0];
@@ -2506,24 +2513,6 @@ impl Construction {
         } else {
             false
         };
-        if bounds.is_some() {
-            self.remember_slider_slot(id);
-            let [step, speed] = slider_options.unwrap_or_default();
-            // Copying the old visual style preserves the step as a number.
-            let previous_step = self.slider_animation_options(id)[0];
-            let step = step.or_else(|| {
-                let source = previous_step?;
-                let value = self.numeric_value(source).filter(|value| value.is_finite());
-                Some(value.map_or_else(|| source.to_owned(), |value| value.to_string()))
-            });
-            if step.is_some() || speed.is_some() {
-                let options = self.slider_animation_options.entry(id).or_default();
-                options[0] = step;
-                if speed.is_some() {
-                    options[1] = speed;
-                }
-            }
-        }
         for (child, new) in changed {
             let old = &old_reads[&child];
             for &parent in old {
@@ -2549,8 +2538,9 @@ impl Construction {
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.len());
         if let Some(order) = order {
-            self.evaluation_order = order;
-            self.refresh_circle_hints(&mut dirty);
+            if self.install_replacement_order(order) {
+                self.refresh_circle_hints(&mut dirty);
+            }
         }
         for child in self.children(id) {
             dirty.insert(self.evaluation_rank(child));
@@ -2582,9 +2572,10 @@ impl Construction {
                 dirty.insert(self.evaluation_rank(Id(i)));
             }
         }
-        // Redefinition rebuilds the reference's symbolic helpers, including
-        // those for intersections that do not read the edited definition.
-        self.proof_intersections = Default::default();
+        // Childless replacement keeps the reference's existing proof helpers.
+        if rebuilds_construction {
+            self.proof_intersections = Default::default();
+        }
         self.rebuild_self_circle_updates();
         let refresh = if rebuilds {
             // Restart independent vertex algorithms without refreshing the
@@ -2605,6 +2596,24 @@ impl Construction {
         );
         if rebuilds {
             self.inequality_helpers.pending.clear();
+        }
+        if bounds.is_some() {
+            self.remember_slider_slot(id);
+            let [step, speed] = slider_options.unwrap_or_default();
+            // Copying the old visual style freezes the step at its value
+            // after both endpoint updates and their cascades.
+            let step = step.or_else(|| {
+                let source = self.slider_animation_options(id)[0]?;
+                let value = self.numeric_value(source).filter(|value| value.is_finite());
+                Some(value.map_or_else(|| source.to_owned(), |value| value.to_string()))
+            });
+            if step.is_some() || speed.is_some() {
+                let options = self.slider_animation_options.entry(id).or_default();
+                options[0] = step;
+                if speed.is_some() {
+                    options[1] = speed;
+                }
+            }
         }
         self.last_update_requires_replay |= requires_replay;
         // A checkpoint cannot restore a changed definition.
@@ -2733,13 +2742,28 @@ impl Construction {
         Ok(seen)
     }
 
-    /// Prepares a replacement's order before any existing object is changed.
+    fn dependency_needs_reorder(&self, parent: Id, child: Id) -> bool {
+        axis::get(parent).is_none()
+            && (self.evaluation_rank(parent) >= self.evaluation_rank(child)
+                || self.proof_rank(parent) >= self.proof_rank(child))
+    }
+
+    fn install_replacement_order(&mut self, order: ReplacementOrder) -> bool {
+        self.proof_order = order.proof;
+        let Some(evaluation) = order.evaluation else {
+            return false;
+        };
+        self.evaluation_order = evaluation;
+        true
+    }
+
+    /// Prepares a replacement's orders before any existing object is changed.
     fn replacement_order(
         &self,
         changed: &BTreeMap<Id, Vec<Id>>,
         locus_inputs: &BTreeMap<Id, Vec<Id>>,
         len: usize,
-    ) -> Result<EvaluationOrder, &'static str> {
+    ) -> Result<ReplacementOrder, &'static str> {
         const MAX_OBJECTS: usize = 250_000;
         if len > MAX_OBJECTS {
             return Err("the dependency graph exceeds the redefinition budget");
@@ -2764,35 +2788,87 @@ impl Construction {
                 .chain(added[i].iter().copied())
         };
         let mut remaining = MAX_REDEFINITION_EDGES;
-        let mut indegree = vec![0; len];
-        for i in 0..len {
+        let proof_ids = (0..self.len())
+            .map(|rank| self.proof_order.ids.get(rank).copied().unwrap_or(rank))
+            .filter(|&i| i < len);
+        let mut predecessors = vec![Vec::new(); len];
+        for i in proof_ids.clone().rev() {
             for child in successors(i) {
                 remaining = remaining
                     .checked_sub(1)
                     .ok_or("the dependency graph exceeds the redefinition budget")?;
-                indegree[child.0] += 1;
+                predecessors[child.0].push(i);
             }
         }
-        let mut ready: BinaryHeap<_> = (0..len)
-            .filter(|&i| indegree[i] == 0)
-            .map(Reverse)
-            .collect();
+
+        // Keep the numeric update order used by stateful algorithms.
+        let needs_evaluation_order = changed.iter().any(|(&child, parents)| {
+            parents.iter().any(|&parent| {
+                axis::get(parent).is_none()
+                    && self.evaluation_rank(parent) >= self.evaluation_rank(child)
+            })
+        });
+        let evaluation = if needs_evaluation_order {
+            let mut indegree: Vec<_> = predecessors.iter().map(Vec::len).collect();
+            let mut ready: BinaryHeap<_> = (0..len)
+                .filter(|&i| indegree[i] == 0)
+                .map(Reverse)
+                .collect();
+            let mut ids = Vec::with_capacity(len);
+            let mut ranks = vec![0; len];
+            while let Some(Reverse(i)) = ready.pop() {
+                ranks[i] = ids.len();
+                ids.push(i);
+                for child in successors(i) {
+                    indegree[child.0] -= 1;
+                    if indegree[child.0] == 0 {
+                        ready.push(Reverse(child.0));
+                    }
+                }
+            }
+            if ids.len() != len {
+                return Err("a replacement cannot introduce a dependency cycle");
+            }
+            Some(EvaluationOrder { ids, ranks })
+        } else {
+            None
+        };
+
+        // Visit the previous construction order, moving a new prerequisite
+        // ahead of its first reader. An unrelated ready object keeps its
+        // position relative to that reader.
+        const UNSEEN: usize = usize::MAX;
+        const VISITING: usize = usize::MAX - 1;
         let mut ids = Vec::with_capacity(len);
-        let mut ranks = vec![0; len];
-        while let Some(Reverse(i)) = ready.pop() {
-            ranks[i] = ids.len();
-            ids.push(i);
-            for child in successors(i) {
-                indegree[child.0] -= 1;
-                if indegree[child.0] == 0 {
-                    ready.push(Reverse(child.0));
+        let mut ranks = vec![UNSEEN; len];
+        let mut pending = Vec::new();
+        for i in proof_ids {
+            pending.push((i, false));
+            while let Some((i, returning)) = pending.pop() {
+                if returning {
+                    ranks[i] = ids.len();
+                    ids.push(i);
+                    continue;
+                }
+                match ranks[i] {
+                    VISITING => return Err("a replacement cannot introduce a dependency cycle"),
+                    UNSEEN => {
+                        ranks[i] = VISITING;
+                        pending.push((i, true));
+                        pending.extend(predecessors[i].iter().map(|&parent| (parent, false)));
+                    }
+                    _ => {}
                 }
             }
         }
-        if ids.len() != len {
-            return Err("a replacement cannot introduce a dependency cycle");
-        }
-        Ok(EvaluationOrder { ids, ranks })
+        Ok(ReplacementOrder {
+            evaluation,
+            proof: EvaluationOrder { ids, ranks },
+        })
+    }
+
+    pub(crate) fn proof_rank(&self, id: Id) -> usize {
+        self.proof_order.ranks.get(id.0).copied().unwrap_or(id.0)
     }
 
     /// The position of an object in dependency order.
@@ -3103,9 +3179,11 @@ impl Construction {
         }
         self.labels.push(label.to_string());
         self.children.push(Children::default());
-        if !self.evaluation_order.ids.is_empty() {
-            self.evaluation_order.ids.push(id.0);
-            self.evaluation_order.ranks.push(id.0);
+        for order in [&mut self.evaluation_order, &mut self.proof_order] {
+            if !order.ids.is_empty() {
+                order.ids.push(id.0);
+                order.ranks.push(id.0);
+            }
         }
         self.by_label.insert(label.to_string(), id);
         let element = if let Some(owner) = owner {
@@ -3891,7 +3969,7 @@ impl Construction {
                 // A redefinition can change the structure the proof reads
                 // (a free point put on a path): the reference rebuilds it.
                 Def::Prove(d) if refresh_definitions => {
-                    self.proof_intersections.replay_rank = Some(rank);
+                    self.proof_intersections.replay_rank = Some(self.proof_rank(Id(i)));
                     // A redefined statement is rewritten again, and the
                     // reference's rebuild then reads the rewritten Boolean.
                     if self.rewrite_proof_statement(d.statement) {
@@ -4028,7 +4106,13 @@ impl Construction {
             if let (Propagation::RecordProtocol(before), Some(saved)) = (&mut mode, saved) {
                 before.insert(i, saved);
             }
-            if !refresh_definitions && self.enqueue_updated_children(Id(i), &mut dirty) {
+            // Structural refresh queues descendants even when the value
+            // is unchanged. A changed numeric endpoint must also notify
+            // its slider listeners before the next endpoint is evaluated.
+            if (!refresh_definitions
+                || def.kind() == Kind::Number && !self.saved_slider_bounds.is_empty())
+                && self.enqueue_updated_children(Id(i), &mut dirty)
+            {
                 self.last_update_requires_replay = true;
             }
         }

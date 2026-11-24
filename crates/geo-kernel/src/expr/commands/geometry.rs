@@ -7,6 +7,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoTranspose.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoDimension.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdOneListFunction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTransformation.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDilate.java
 //   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
@@ -499,8 +501,10 @@ pub(in crate::expr) fn map_list<const M: bool>(
                 (slots.as_slice(), (0, *len))
             }),
     };
+    let previous_len = prior.1;
     let mut current = (start, out, len, prior);
     let mut last = None;
+    let mut previous_last = None;
     loop {
         let (source, target, size, (prior, prior_len)) = current;
         if size == 0 {
@@ -560,14 +564,25 @@ pub(in crate::expr) fn map_list<const M: bool>(
             .and_then(Slot::run)
         {
             // GeoList.set(number) keeps the elements and changes the selection.
-            // The transform still acts on its most recent point or vector.
+            // The active output may still be a later sibling left over
+            // from the previous evaluation.
+            let work_per_slot = if retain { 2 } else { 1 };
+            if last.is_none() && previous_last.is_none() {
+                previous_last = Some(last_transformable_output(
+                    lists,
+                    previous_items,
+                    previous_len,
+                    work_per_slot,
+                    transformable,
+                )?);
+            }
             let (list, leaf) = copy_transform_template(
                 lists,
                 previous_items,
                 start,
                 len,
-                if retain { 2 } else { 1 },
-                transformable,
+                work_per_slot,
+                previous_last.flatten(),
             )?;
             if let Some(leaf) = last.or(leaf) {
                 lists.set(leaf, transformed(lists.read(ctx.c, leaf)));
@@ -604,15 +619,14 @@ pub(in crate::expr) fn map_list<const M: bool>(
     }
 }
 
-/// Copies a retained output list into the new arena and locates its last
-/// transformable leaf in the same order as the transform's traversal.
+/// Copies a retained output list and locates its active output, when present.
 fn copy_transform_template(
     lists: &Lists,
     items: &[Slot],
     start: u32,
     len: u32,
     work_per_slot: u64,
-    transformable: impl Fn(Kind) -> bool,
+    last_output: Option<u32>,
 ) -> Option<(Slot, Option<u32>)> {
     let out = lists.reserve(len)?;
     let mut pending = vec![(start, out, len)];
@@ -631,13 +645,43 @@ fn copy_transform_template(
             lists.set(target, Slot::list(out, len));
             pending.push((start, out, len));
         } else {
-            if transformable(slot.kind) {
+            if Some(source) == last_output {
                 last = Some(target);
             }
             lists.set(target, slot.clone());
         }
     }
     Some((Slot::list(out, len), last))
+}
+
+/// Finds the active output in the preceding evaluation's depth-first order.
+fn last_transformable_output(
+    lists: &Lists,
+    items: &[Slot],
+    len: u32,
+    work_per_slot: u64,
+    transformable: impl Fn(Kind) -> bool,
+) -> Option<Option<u32>> {
+    let mut pending = vec![(0, len)];
+    while let Some((start, len)) = pending.pop() {
+        if len == 0 {
+            continue;
+        }
+        if !lists.charge(work_per_slot) {
+            return None;
+        }
+        let last = start + len - 1;
+        let slot = &items[last as usize];
+        if let Some(run) = slot.run() {
+            pending.push((start, len - 1));
+            pending.push(run);
+        } else if transformable(slot.kind) {
+            return Some(Some(last));
+        } else {
+            pending.push((start, len - 1));
+        }
+    }
+    Some(None)
 }
 
 pub(in crate::expr) fn apply_matrix_coordinates<const M: bool>(

@@ -1,0 +1,74 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "prove-leafreplay-001",
+      "group": "prove",
+      "script": [
+        "O = (0, 0)",
+        "A = (4, 0)",
+        "c = Circle(O, A)",
+        "g = Line(O, A)",
+        "Q = Intersect(g, c, 1)",
+        "b = A == Q",
+        "p = Prove(b)",
+        "unused = 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "unused = x(A)" },
+        { "action": "add", "line": "S = Intersect(g, c)" },
+        { "action": "add", "line": "p_2 = Prove(AreEqual(A, Q))" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "unused": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "unused": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "unused": { "type": "number", "defined": true, "value": 4.0 },
+          "S_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "S_{2}": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "unused": { "type": "number", "defined": true, "value": 4.0 },
+          "S_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "S_{2}": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "p_2": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    }
+  ]
+}
