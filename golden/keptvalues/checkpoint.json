@@ -1,0 +1,54 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "keptvalues-checkpoint-001",
+      "group": "keptvalues",
+      "script": [
+        "s = ConstructionStep()",
+        "t = Take({1, 2, 3}, If(s == 4, 2, 4))",
+        "n = Length(t + 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "list", "defined": false },
+          "n": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-checkpoint-002",
+      "group": "keptvalues",
+      "script": [
+        "s = ConstructionStep()",
+        "t = Take({1, 2, 3}, If(s == 4, 2, 4))",
+        "n = Length(t + 1)",
+        "Z = (7, 7)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "number", "defined": true, "value": 4.0 },
+          "t": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "Z": { "type": "point", "defined": true, "x": 7.0, "y": 7.0 }
+        }
+      ]
+    }
+  ]
+}

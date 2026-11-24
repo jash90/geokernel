@@ -1199,6 +1199,17 @@ impl<const M: bool> Ctx<'_, M> {
                 ..*self
             }
             .element(e);
+            // AlgoSequence copies a dependent point after it updates.
+            let slot = match slot.value {
+                Value::Point { x, y }
+                    if (x.is_infinite() || y.is_infinite())
+                        && !matches!(self.node(e), Node::Obj(_))
+                        && self.dependent_list_item(e) =>
+                {
+                    Slot::undefined(Kind::Point)
+                }
+                _ => slot,
+            };
             lists.set(start + k, slot);
             k += 1;
             k < n
@@ -1679,7 +1690,7 @@ impl<const M: bool> Ctx<'_, M> {
                 let mut at = start;
                 for k in 0..len {
                     let slot = lists.read(self.c, s + k);
-                    if !matches!(slot.value, Value::Undefined) {
+                    if slot.is_defined() {
                         lists.set(at, slot);
                         at += 1;
                     }

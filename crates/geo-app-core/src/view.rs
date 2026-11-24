@@ -273,7 +273,7 @@ impl Camera {
                 // point's screen position (the reference truncates the
                 // position to an int) with the selection radius on every
                 // side.
-                Value::Point { x, y } => {
+                Value::Point { x, y } if x.is_finite() && y.is_finite() => {
                     let (sx, sy) = t.world_to_screen(x, y);
                     let (sx, sy) = (sx.trunc(), sy.trunc());
                     let r = POINT_BOUNDS_RADIUS;
@@ -288,7 +288,7 @@ impl Camera {
                     any = true;
                 }
                 // `DrawConic.getBounds`: the box the ellipse fills.
-                Value::Circle { cx, cy, r } => {
+                Value::Circle { cx, cy, r } if r.is_finite() => {
                     let (x0, y0) = t.world_to_screen(cx - r, cy - r);
                     let (x1, y1) = t.world_to_screen(cx + r, cy + r);
                     grow(&mut b, x0, y0, x1, y1);

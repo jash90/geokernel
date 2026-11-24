@@ -544,6 +544,10 @@ impl Workbench {
                             self.grow_boundary_outputs(std::iter::once(first));
                         }
                     }
+                    if self.construction.step() != step_before {
+                        self.log
+                            .grow_after_step(&mut self.construction, &mut self.boundary_outputs);
+                    }
                     if let Some(id) = slider.filter(|_| mutated) {
                         self.grow_boundary_outputs(std::iter::once(id));
                     }

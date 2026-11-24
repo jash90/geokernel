@@ -15,6 +15,7 @@ use std::sync::Arc;
 pub enum Property {
     ResetCircleRecords,
     ResetArcRecords,
+    ResetTransposeFlags,
     ImageAsset {
         name: Arc<str>,
         asset: Arc<RasterAsset>,
@@ -74,7 +75,8 @@ impl Property {
             Self::ImageAsset { .. }
             | Self::NumberRounding(_)
             | Self::ResetCircleRecords
-            | Self::ResetArcRecords => None,
+            | Self::ResetArcRecords
+            | Self::ResetTransposeFlags => None,
         }
     }
 
@@ -86,6 +88,10 @@ impl Property {
             }
             Self::ResetArcRecords => {
                 c.reset_arc_records();
+                Ok(())
+            }
+            Self::ResetTransposeFlags => {
+                c.reset_transpose_flags();
                 Ok(())
             }
             Self::ImageAsset { name, asset } => c.register_image_asset(name.clone(), asset.clone()),
@@ -190,6 +196,7 @@ impl fmt::Display for Property {
         match self {
             Self::ResetCircleRecords => f.write_str("$resetCircleRecords()"),
             Self::ResetArcRecords => f.write_str("$resetArcRecords()"),
+            Self::ResetTransposeFlags => f.write_str("$resetTransposeFlags()"),
             Self::ImageAsset { name, asset } => {
                 write!(f, "$imageAsset({}, _", encode_text(name))?;
                 for byte in asset.bytes() {
@@ -324,6 +331,9 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
     }
     if line == "$resetArcRecords()" {
         return Some(Ok(Property::ResetArcRecords));
+    }
+    if line == "$resetTransposeFlags()" {
+        return Some(Ok(Property::ResetTransposeFlags));
     }
     if !line.starts_with("$sliderBounds(")
         && !line.starts_with("$sliderAnimation(")

@@ -56,7 +56,10 @@ impl BoundaryDef {
     }
 
     pub(crate) fn retains_output(self, c: &Construction) -> bool {
-        matches!(self.0, Intersection::Implicit(d) if d.retains_output(c))
+        match self.0 {
+            Intersection::Implicit(d) => d.retains_output(c),
+            _ => false,
+        }
     }
 
     /// Cartesian and limited implicit intersections label slots even when out of domain.

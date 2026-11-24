@@ -41,6 +41,9 @@ impl View {
         let mut v = empty();
         let mut texts = empty();
         let mut grow = |x: f64, y: f64| {
+            if !(x.is_finite() && y.is_finite()) {
+                return;
+            }
             v.xmin = v.xmin.min(x);
             v.ymin = v.ymin.min(y);
             v.xmax = v.xmax.max(x);
@@ -320,7 +323,7 @@ fn render_geometry(
                     sy(y2),
                 );
             }
-            Value::Circle { cx, cy, r } => {
+            Value::Circle { cx, cy, r } if r.is_finite() => {
                 let _ = writeln!(
                     circles,
                     r##"<circle cx="{:.2}" cy="{:.2}" r="{:.2}"/>"##,
@@ -329,7 +332,7 @@ fn render_geometry(
                     r * scale,
                 );
             }
-            Value::Point { x, y } => {
+            Value::Point { x, y } if x.is_finite() && y.is_finite() => {
                 let free = c.def(id).is_free();
                 let (fill, radius) = if free {
                     ("#1a73e8", 5.0)
@@ -359,7 +362,7 @@ fn render_geometry(
                     sy(y - far * a),
                 );
             }
-            Value::Vector { x: vx, y: vy } => {
+            Value::Vector { x: vx, y: vy } if vx.is_finite() && vy.is_finite() => {
                 let Some((x0, y0)) = start(c, id) else {
                     continue;
                 };
@@ -644,7 +647,10 @@ fn render_geometry(
                     }
                 }
             }
-            Value::Number(_)
+            Value::Point { .. }
+            | Value::Vector { .. }
+            | Value::Circle { .. }
+            | Value::Number(_)
             | Value::FunctionNVar
             | Value::List { .. }
             | Value::HomogeneousPoint { .. }

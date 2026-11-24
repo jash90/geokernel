@@ -451,10 +451,6 @@ fn defined_as_tangent(line_def: Def, circle: Id) -> bool {
 /// if the line and the circles keep their values, for example when a vertex
 /// of a three-point circle slides along the circle.
 pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
-    hidden_parents_with_hint(c, def, None)
-}
-
-pub(crate) fn hidden_parents_with_hint(c: &Construction, def: &Def, hint: Option<Hint>) -> Vec<Id> {
     if let Def::Point(PointDef::Closest { path, .. }) = *def {
         if matches!(c.kind(path), Kind::Polygon | Kind::PolyLine) {
             return super::polygon::inputs(c, path);
@@ -505,10 +501,13 @@ pub(crate) fn hidden_parents_with_hint(c: &Construction, def: &Def, hint: Option
                 }
             }
         }
+        // AlgoIntersectConics registers only the two conics as inputs.
+        // For a self-intersection the incident point supplies a position
+        // when the conic updates, but moving the point alone has no effect.
         Def::IntersectCircles { c1, c2, .. } if c1 == c2 => {
-            push(hinted_point(hint.unwrap_or(Hint::Lookup), || {
-                first_point_on(c, c1)
-            }));
+            // A defining point still counts when its move leaves the
+            // circle's centre and radius numerically unchanged.
+            push(circle_points(c, c1)[0]);
         }
         Def::IntersectCircles { c1, c2, .. } => {
             for s in points_on_both(c, c1, c2) {

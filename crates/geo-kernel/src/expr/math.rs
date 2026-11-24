@@ -106,6 +106,16 @@ pub(crate) fn my_pow(a: f64, b: f64) -> f64 {
     java_pow(a, b)
 }
 
+/// `Operation.NROOT` and `MyDouble.powDoubleSgnChange`.
+pub(crate) fn nth_root(base: f64, degree: f64) -> f64 {
+    let exponent = 1.0 / degree;
+    if base < 0.0 && is_integer(degree) && java_round(degree) % 2 == 1 {
+        -my_pow(-base, exponent)
+    } else {
+        my_pow(base, exponent)
+    }
+}
+
 /// `MyDouble.handlePower` for a number base `Math.E`: `exp` instead of `pow`.
 pub(crate) fn is_euler(base: f64) -> bool {
     base == E

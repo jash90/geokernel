@@ -477,6 +477,9 @@ fn paint_layer<'c>(
 
     for &id in &ids {
         if let Value::Circle { cx, cy, r } = c.value(id) {
+            if !r.is_finite() {
+                continue;
+            }
             paint_circle(painter, rect, t, (cx, cy, r), curve(id), &mut |pos| {
                 labels.push(label(
                     id,
@@ -617,6 +620,9 @@ fn paint_layer<'c>(
         let (Value::Vector { x, y }, Some((x0, y0))) = (c.value(id), vector::start(c, id)) else {
             continue;
         };
+        if !(x.is_finite() && y.is_finite()) {
+            continue;
+        }
         let (from, to) = (p(x0, y0), p(x0 + x, y0 + y));
         painter.line_segment([from, to], curve(id));
         let d = to - from;

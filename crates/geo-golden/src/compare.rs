@@ -368,6 +368,16 @@ pub fn compare_sampled(
             expected.kind
         ));
     }
+    // Session.finite collapses non-finite geometry fields to the same
+    // recording as an undefined object. Numeric infinities have their own
+    // encoding and still compare by sign.
+    let actual = match *actual {
+        Value::Point { x, y } | Value::Vector { x, y } if x.is_infinite() || y.is_infinite() => {
+            &Value::Undefined
+        }
+        Value::Circle { r, .. } if r.is_infinite() => &Value::Undefined,
+        _ => actual,
+    };
     let data = match (&expected.data, actual) {
         (None, Value::Undefined) => return Ok(Sign::NotApplicable),
         (None, _) => return Err("expected undefined, kernel has a value".into()),

@@ -60,7 +60,9 @@
 pub(crate) mod implicit;
 
 use super::parse;
-use super::{children, eval, math, shift_children, types, Bin, Entry, Lit, Node, Raw, Ty, NONE};
+use super::{
+    children, eval, math, shift_children, types, Bin, Entry, Lit, Node, Raw, Ty, Un, NONE,
+};
 use crate::algo;
 use crate::algo::conic_nd::ConicData;
 use crate::kernel::{
@@ -506,7 +508,7 @@ impl Builder {
                 p.apply_coefficients(self, |b, coeff| b.divide(coeff, divisor))?;
                 Ok(p)
             }
-            Node::Bin(Bin::Pow, base, exponent) => self.power(c, base, exponent),
+            Node::Bin(Bin::Pow | Bin::RootPow, base, exponent) => self.power(c, base, exponent),
             Node::Apply(f, arg) => {
                 // `makePolyTreeFromFunction`: a call whose argument reads
                 // `x` or `y` is the body of the function, its variable
@@ -729,6 +731,10 @@ impl Builder {
                 Value::Number(v) => v,
                 _ => return None,
             },
+            // CmdLength resolves a point or vector to a dependent numeric
+            // object. Evaluate the original operand as geometry, including
+            // vector expressions and Cartesian coordinates of points.
+            Node::Un(Un::Length, _) => self.length_coefficient(c, i, limit - depth)?,
             Node::Un(op, a) => eval::scalar(op, value(a, memo)?, false),
             Node::Bin(op, a, b) => {
                 let (x, y) = (value(a, memo)?, value(b, memo)?);
@@ -737,7 +743,7 @@ impl Builder {
                     Bin::Sub => x - y,
                     Bin::Mul => x * y,
                     Bin::Div => x / y,
-                    Bin::Pow => math::my_pow(x, y),
+                    Bin::Pow | Bin::RootPow => math::my_pow(x, y),
                     _ => return None,
                 }
             }
@@ -745,6 +751,23 @@ impl Builder {
         });
         memo.insert(i, result);
         result
+    }
+
+    fn length_coefficient(&self, c: &Construction, i: u32, max_depth: u32) -> Option<f64> {
+        let meter = eval::Lists::new(Vec::new());
+        if !meter.charge(self.nodes.len() as u64) {
+            return None;
+        }
+        let parsed = self.finish(c, i).ok()?;
+        if parsed.vars != 0 || parsed.depth > max_depth {
+            return None;
+        }
+        let entry = Entry::new(c, parsed, false);
+        let (value, _) = eval::root(c, &entry, Some(&meter));
+        match value {
+            Raw::Num(v) if !meter.over() => Some(v),
+            _ => None,
+        }
     }
 
     fn constant_at(&self, i: u32, depth: u32) -> Option<f64> {
@@ -764,7 +787,7 @@ impl Builder {
                     Bin::Sub => x - y,
                     Bin::Mul => x * y,
                     Bin::Div => x / y,
-                    Bin::Pow => math::my_pow(x, y),
+                    Bin::Pow | Bin::RootPow => math::my_pow(x, y),
                     _ => return None,
                 }
             }

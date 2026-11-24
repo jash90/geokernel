@@ -48,7 +48,13 @@ pub enum AnalysisDef {
 
 type Point = (f64, f64);
 
-type SplineStates = HashMap<usize, (SplineInput, usize)>;
+pub(crate) struct SplineState {
+    input: SplineInput,
+    points: usize,
+    expression: Option<Arc<Spline>>,
+}
+
+type SplineStates = HashMap<usize, SplineState>;
 
 /// Separate output slots share a solve in the current propagation pass.
 /// The construction clears these entries before updates or rollback.
@@ -60,7 +66,7 @@ pub(crate) struct AnalysisCache {
     /// points of its last solve that passed the degree check. Unlike the
     /// solves it outlives the propagation pass; rollback drops the entries
     /// of removed objects.
-    spline_points: Mutex<HashMap<usize, (SplineInput, usize)>>,
+    spline_points: Mutex<SplineStates>,
     /// The spline states of the construction copy each locus samples, by
     /// the locus's index; a copy starts with fresh objects.
     copy_spline_points: Mutex<HashMap<usize, SplineStates>>,
@@ -118,9 +124,17 @@ impl AnalysisCache {
             .remove(&owner)
             .unwrap_or_else(|| {
                 live.iter()
-                    .map(|(&spline, &(input, _))| {
+                    .map(|(&spline, state)| {
+                        let input = state.input;
                         let points = c.elements(input.points).map_or(0, |l| l.len());
-                        (spline, (input, points))
+                        (
+                            spline,
+                            SplineState {
+                                input,
+                                points,
+                                expression: None,
+                            },
+                        )
                     })
                     .collect()
             });
@@ -171,19 +185,38 @@ impl AnalysisCache {
         let mut states = self.spline_points.lock().expect("spline states");
         // The first solve of an object (its creation, or a new definition)
         // sizes the array.
-        let state = states.entry(owner).or_insert((input, points));
-        if state.0 != input {
-            *state = (input, points);
+        let fresh = || SplineState {
+            input,
+            points,
+            expression: None,
+        };
+        let state = states.entry(owner).or_insert_with(fresh);
+        if state.input != input {
+            *state = fresh();
         }
-        if !spline_degree(c, input).is_some_and(|d| (3..=state.1).contains(&d)) {
+        if !spline_degree(c, input).is_some_and(|d| (3..=state.points).contains(&d)) {
             return None;
         }
-        state.1 = points;
+        state.points = points;
         drop(states);
-        self.spline(c, input).map(|_| Value::Curve {
+        let expression = self.spline(c, input)?;
+        self.spline_points
+            .lock()
+            .expect("spline states")
+            .get_mut(&owner)?
+            .expression = Some(expression);
+        Some(Value::Curve {
             start: 0.0,
             end: 1.0,
         })
+    }
+
+    pub(super) fn retained_spline(&self, id: Id, input: SplineInput) -> Option<Arc<Spline>> {
+        let states = self.spline_points.lock().expect("spline states");
+        let state = states.get(&id.index())?;
+        (state.input == input)
+            .then_some(state.expression.as_ref()?)
+            .cloned()
     }
 
     pub(super) fn spline(&self, c: &Construction, input: SplineInput) -> Option<Arc<Spline>> {

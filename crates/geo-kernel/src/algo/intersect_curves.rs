@@ -216,8 +216,34 @@ impl Group for CurveIntersection {
     }
 }
 
+fn retained_spline(c: &Construction, curve: Id) -> Option<Cartesian<'_>> {
+    use crate::algo::analysis::AnalysisDef;
+    let Def::Analysis(AnalysisDef::Spline(input)) = c.def(curve) else {
+        return None;
+    };
+    // AlgoSpline leaves its functions in place when the input list becomes
+    // undefined or coincident points make the solve fail.
+    let Some(points) = c.elements(input.points) else {
+        return Cartesian::retained_spline(c, curve, input);
+    };
+    let work = IntersectionWork::new();
+    let mut previous = None;
+    for i in 0..points.len() {
+        if !work.charge(1) {
+            break;
+        }
+        let current = points.raw_point(i).map(Value::cartesian);
+        if matches!(current, Some(Value::Point { .. })) && current == previous {
+            return Cartesian::retained_spline(c, curve, input);
+        }
+        previous = current;
+    }
+    None
+}
+
 fn line_roots(c: &Construction, curve: Id, line: Id) -> CurveRoots {
-    let Some((cartesian, carrier)) = Cartesian::new(c, curve).zip(Carrier::of(c, line)) else {
+    let cartesian = Cartesian::new(c, curve).or_else(|| retained_spline(c, curve));
+    let Some((cartesian, carrier)) = cartesian.zip(Carrier::of(c, line)) else {
         return Vec::new();
     };
     let (start, end) = cartesian.parameter_bounds();

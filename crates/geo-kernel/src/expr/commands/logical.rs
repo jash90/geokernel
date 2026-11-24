@@ -22,7 +22,8 @@ use crate::script::split_call;
 use crate::{Construction, Def, Id, Kind, Value};
 
 /// `AlgoDefined` uses an object's defined flag. For functions it also
-/// checks the value string, and for points and vectors it excludes infinity.
+/// checks the value string. Projective points at infinity and vectors with
+/// infinite coordinates return false.
 pub(in crate::expr) fn defined_object<const M: bool>(ctx: &Ctx<'_, M>, id: Id) -> Option<bool> {
     let c = ctx.c;
     Some(match c.kind(id) {
@@ -30,6 +31,8 @@ pub(in crate::expr) fn defined_object<const M: bool>(ctx: &Ctx<'_, M>, id: Id) -
             .stored_value(id)
             .point_coords()
             .is_some_and(|(x, y, z)| !crate::kernel::point_at_infinity(x, y, z)),
+        Kind::Vector => matches!(c.value(id), Value::Vector { x, y }
+            if x.is_finite() && y.is_finite()),
         Kind::Arc | Kind::Sector => c.stored_value(id).is_defined(),
         Kind::Function if crate::expr::object_defined(c, id) => {
             return super::text::function_has_value(ctx, id);
@@ -319,6 +322,29 @@ impl<const M: bool> Ctx<'_, M> {
         }
     }
 
+    /// GeoList.getGenericElement supplies the copy AlgoIf starts with.
+    /// For a list output it walks the alternatives while they are lists.
+    pub(crate) fn if_list_template(&self, mut i: u32) -> Option<u32> {
+        let mut last = None;
+        for _ in 0..MAX_IF_ALTERNATIVES {
+            let Node::If(_, _, branch, rest) = self.node(i) else {
+                break;
+            };
+            if !self.is_list(branch) {
+                break;
+            }
+            last = Some(branch);
+            if rest == NONE {
+                break;
+            }
+            if !matches!(self.node(rest), Node::If(IfMode::AlgoNext, ..)) {
+                return if self.is_list(rest) { Some(rest) } else { last };
+            }
+            i = rest;
+        }
+        last
+    }
+
     /// `AlgoIf` of lists: the first branch whose condition is true (an
     /// undefined condition reads false), the else branch, or undefined
     /// without one. What the condition built is dropped.
@@ -327,7 +353,43 @@ impl<const M: bool> Ctx<'_, M> {
         let mark = lists.len();
         let chosen = self.if_alternative(i);
         lists.truncate(mark);
+        let node = self.node(i);
+        if let Node::If(IfMode::Algo, test, branch, _) = node {
+            // A literal false can never select its branch. If the If needs
+            // that branch as its initial template, list() reads it there.
+            let inactive = matches!(self.node(test), Node::Bool(false)).then_some(branch);
+            lists.update_helpers(|| {
+                for child in children(&node).filter(|&child| Some(child) != inactive) {
+                    self.update_unchosen_helpers(child, chosen);
+                }
+            });
+        }
         self.list(chosen?)
+    }
+
+    // Inline list helpers are independently updated inputs of AlgoIf.
+    // Traverse the unchosen alternatives without evaluating ordinary operations.
+    fn update_unchosen_helpers(&self, node: u32, chosen: Option<u32>) {
+        if Some(node) == chosen || self.stop(1) {
+            return;
+        }
+        match self.node(node) {
+            Node::Call(crate::expr::CallOp::Take, ..) | Node::If(IfMode::Algo, ..)
+                if self.is_list(node) =>
+            {
+                let lists = self.lists.expect("list evaluation");
+                let mark = lists.len();
+                self.list(node);
+                lists.truncate(mark);
+            }
+            // These expressions are evaluated with locally bound arguments.
+            Node::Seq(..) | Node::Filter { .. } => {}
+            node => {
+                for child in children(&node) {
+                    self.update_unchosen_helpers(child, chosen);
+                }
+            }
+        }
     }
 }
 

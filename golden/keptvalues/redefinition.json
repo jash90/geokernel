@@ -1,0 +1,61 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "keptvalues-redefinition-001",
+      "group": "keptvalues",
+      "script": [
+        "m = 1",
+        "n = 1",
+        "t = Take({1, 2}, m)",
+        "a = Length(t + 1)",
+        "O = (0, 0)",
+        "k = Circle(O, If(m < 3, 2, -1))",
+        "r = Radius(k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": 3.0 },
+        { "action": "redefine", "line": "m = 4*n" }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "t": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "t": { "type": "list", "defined": false },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "t": { "type": "list", "defined": false },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": false },
+          "r": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}

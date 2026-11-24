@@ -60,7 +60,7 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
             };
             let one = p.push(Node::Num(1.0));
             let exponent = p.push(Node::Bin(crate::expr::Bin::Div, one, degree));
-            Node::Bin(crate::expr::Bin::Pow, number, exponent)
+            Node::Bin(crate::expr::Bin::RootPow, number, exponent)
         }
         "Asymptote" => {
             let uses_var = p.uses_var;
@@ -173,7 +173,7 @@ impl<const M: bool> Ctx<'_, M> {
         let add = [Bin::Add, Bin::Sub];
         let term = strip(strip(root, &add), &[Bin::Mul]);
         let result = match node(term) {
-            Node::Bin(Bin::Pow, base, exponent) => {
+            Node::Bin(Bin::Pow | Bin::RootPow, base, exponent) => {
                 matches!(node(exponent), Node::Num(2.0))
                     && matches!(node(strip(base, &add)), Node::Var)
             }
