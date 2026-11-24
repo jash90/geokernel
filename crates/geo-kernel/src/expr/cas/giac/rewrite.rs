@@ -551,6 +551,34 @@ mod tests {
     }
 
     #[test]
+    fn simplify_preserves_a_negative_typed_decimal_after_sign_normalization() {
+        let c = crate::script::load(
+            "a = -1.000030517578125\nf = Simplify(x + a*10^8 + 100003051.7578125)",
+        )
+        .unwrap();
+        let f = c.id("f").unwrap();
+        let Def::Expr(def) = c.def(f) else {
+            panic!("expected a function expression");
+        };
+        let e = crate::expr::entry(&c, def);
+        let Node::Cas(Op::Simplify, operand, _) = e.nodes[e.root as usize] else {
+            panic!("expected Simplify");
+        };
+        let mut printer = Printer::new(&c, vec![], false);
+        printer.parameter = Some("x");
+        let mut argument = String::new();
+        printer.top(e, operand, &mut argument).unwrap();
+        assert_eq!(
+            argument,
+            "((x)-(((1000030517578125/1000000000000000))*((10)^(8))))+((1000030517578125/10000000))"
+        );
+
+        if crate::expr::cas::giac_admits() {
+            assert_eq!(crate::expr::cas::displayed(&c, f).as_deref(), Some("x"));
+        }
+    }
+
+    #[test]
     fn curve_rewrites_sample_squares_like_the_reference() {
         // cas-curve-024: GeoGebra rounds the square before the other operations.
         let c = Construction::new();

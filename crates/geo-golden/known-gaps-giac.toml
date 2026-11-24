@@ -1372,7 +1372,7 @@ agrees = true
 
 [[gap]]
 id = "cas-plot-022"
-reason = "Agrees without the feature. golden/cas/plot.json records the five rejected lines (PlotSolve with two arguments, and of a number) with the message the kernel gave before it had the command, unknown command `PlotSolve`. The reference refuses them as well (CmdSolve.process: PlotSolve takes one argument; CmdSolve.solve: a number is no list, equation or function). With the feature the kernel has PlotSolve and refuses them with invalid arguments to `PlotSolve` (crates/geo-kernel/src/expr/parse/cas_input.rs:67 and :157)."
+reason = 'For PlotSolve(f, x), GeoGebra reports "Illegal number of arguments: 2" before AlgoSolve (CmdSolve.java:47–76). The reject handler in GoldenGenerator.java:263 copies the fixture error "unknown command `PlotSolve`" after checking rejection. The enabled kernel reports "invalid arguments to `PlotSolve`" (cas_input.rs:67).'
 mismatches = ["1:step"]
 
 # Typed decimals between -1 and 0 keep their sign in the Giac input.

@@ -49,7 +49,9 @@ enum SlotExtra {
     #[cfg(feature = "giac")]
     GiacCurve(Box<[super::cas::GiacFunction; 2]>),
     #[cfg(feature = "giac")]
-    GiacImplicit(Vec<Vec<f64>>),
+    GiacImplicit(Vec<Vec<f64>>, String),
+    #[cfg(feature = "giac")]
+    GiacConic(Box<SlotConic>, String),
 }
 
 impl Slot {
@@ -162,6 +164,8 @@ impl Slot {
     pub(super) fn conic(&self, c: &Construction) -> Option<ConicData> {
         match self.extra.as_deref() {
             Some(SlotExtra::Conic(record)) => Some(record.0),
+            #[cfg(feature = "giac")]
+            Some(SlotExtra::GiacConic(record, _)) => Some(record.0),
             _ => c.conic(self.object_id()?),
         }
     }
@@ -214,10 +218,21 @@ impl Slot {
     }
 
     #[cfg(feature = "giac")]
-    pub(super) fn giac_implicit(coefficients: Vec<Vec<f64>>) -> Slot {
+    pub(super) fn giac_conic(data: ConicData, value: Value, equation: String) -> Slot {
+        Slot {
+            extra: Some(Arc::new(SlotExtra::GiacConic(
+                Box::new(SlotConic(data)),
+                equation,
+            ))),
+            ..Self::with_value(Kind::Conic, value)
+        }
+    }
+
+    #[cfg(feature = "giac")]
+    pub(super) fn giac_implicit(coefficients: Vec<Vec<f64>>, equation: String) -> Slot {
         Slot {
             value: Value::ImplicitCurve,
-            extra: Some(Arc::new(SlotExtra::GiacImplicit(coefficients))),
+            extra: Some(Arc::new(SlotExtra::GiacImplicit(coefficients, equation))),
             ..Self::undefined(Kind::ImplicitCurve)
         }
     }
@@ -602,7 +617,7 @@ impl<'a> List<'a> {
     ) -> Option<(&'a [Vec<f64>], bool, String)> {
         let slot = (k < self.len()).then(|| &self.slots[self.start as usize + k])?;
         #[cfg(feature = "giac")]
-        if let Some(SlotExtra::GiacImplicit(coefficients)) = slot.extra.as_deref() {
+        if let Some(SlotExtra::GiacImplicit(coefficients, _)) = slot.extra.as_deref() {
             let equation = super::equation::implicit::raw_equation(coefficients, |n| n.to_string());
             return Some((coefficients, false, equation));
         }
@@ -615,16 +630,27 @@ impl<'a> List<'a> {
         ))
     }
 
-    /// Exact expression displayed for an inline polynomial or solution.
+    /// Algebra text displayed for an inline polynomial or CAS result.
     pub fn symbolic_at(&self, k: usize) -> Option<String> {
         if k >= self.len() {
             return None;
         }
-        match self.slots[self.start as usize + k].extra.as_deref()? {
+        let slot = &self.slots[self.start as usize + k];
+        match slot.extra.as_deref()? {
             SlotExtra::Polynomial(value) => Some(super::cas::print_poly(value)),
             SlotExtra::Symbolic(text) => Some(text.clone()),
             #[cfg(feature = "giac")]
             SlotExtra::Giac(f) => Some(f.text().to_string()),
+            #[cfg(feature = "giac")]
+            SlotExtra::GiacCurve(coords) => {
+                Some(format!("({}, {})", coords[0].text(), coords[1].text()))
+            }
+            #[cfg(feature = "giac")]
+            SlotExtra::GiacConic(_, text) | SlotExtra::GiacImplicit(_, text)
+                if slot.value.is_defined() =>
+            {
+                Some(text.clone())
+            }
             _ => None,
         }
     }

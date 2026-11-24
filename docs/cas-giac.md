@@ -176,7 +176,9 @@ feature; it takes one list, equation or function, as `CmdSolve` does):
   or an unknown name makes the list undefined. An affine coordinate pair
   with a free variable reads as a line, and a single free variable can be
   `x`, `y`, or `z`. Implicit curves that contain `z` keep their
-  two-dimensional coefficient matrix.
+  two-dimensional coefficient matrix. CAS lists display the coordinates of
+  a curve and the equation of a conic or implicit curve. Affine pairs retain
+  their user form, `X = (…, …)`, alongside the carrier coefficients.
 
 Circles made by commands use their center and radius equation. Other
 constructed conics use the selected form of their value text, with computed
@@ -186,7 +188,8 @@ coefficients printed at 15 significant digits.
 from `Ggb2giac`. `CmdSimplify` converts a line or conic to its function where
 it has one. Cartesian curves rewrite each coordinate and reuse the source
 bounds. The coordinates recompute when inputs change. Typed number objects
-keep their original decimal text in rewrite inputs. Implicit curves rewrite
+keep their original decimal text in rewrite inputs, including when a negative
+term is written as a subtraction. Implicit curves rewrite
 the equation's left side minus its right side and read the result as a
 polynomial equal to zero. `Factor` and `IFactor` keep the returned equation
 as the display form.
@@ -209,9 +212,15 @@ The replay includes 7,304 cases, 7,303 of them from the harness.
 
 The Giac profile closes 97 of the 171 effective gaps at the start of this
 work. The remaining gaps include 73 inherited cases outside these CAS
-commands and `cas-plot-022`. The latter records the old `unknown command`
-message for invalid `PlotSolve` calls. The enabled command rejects the same
-calls with `invalid arguments`.
+commands and `cas-plot-022`. For `PlotSolve(f, x)`, GeoGebra reports
+“Illegal number of arguments: 2”. The reject handler in
+`GoldenGenerator.java:263` copies the fixture's kernel-specific
+`unknown command` text. The enabled kernel reports `invalid arguments`.
+
+The list display has a few spelling differences for coordinate expressions
+outside the recorded CAS cases. For example, the kernel prints `exp(y)`,
+`sin(y)²`, and `(1 + y) * (1 - y)` where GeoGebra prints `ℯ^y`,
+`sin²(y)`, and `(1 + y) (1 - y)`.
 
 All 71 forms of `Solve`, `Solutions`, `NSolve`, `NSolutions`, `PlotSolve`,
 `Simplify`, `Expand`, `Factor`, and `IFactor` have command-matrix evidence.

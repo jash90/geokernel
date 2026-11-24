@@ -508,7 +508,7 @@ impl<'a> Printer<'a> {
             }
             _ => match self.c.value(id) {
                 Value::Number(v) => {
-                    self.object_number(id, v, out);
+                    self.object_number(id, v, false, out);
                     Some(())
                 }
                 // `GeoLine.toValueString` of an undefined line.
@@ -568,16 +568,20 @@ impl<'a> Printer<'a> {
         }
     }
 
-    fn object_number(&self, id: crate::Id, value: f64, out: &mut String) {
+    fn object_number(&self, id: crate::Id, value: f64, negated: bool, out: &mut String) {
         // The rewrite keeps the decimal of an unchanged typed GeoNumeric.
         // The solving templates print the computed numeric value.
         if let Some(decimal) = self
             .parameter
             .and_then(|_| crate::expr::free_decimal(self.c, id))
         {
-            self.literal(decimal, out);
+            if negated {
+                self.literal(&decimal.negated(), out);
+            } else {
+                self.literal(decimal, out);
+            }
         } else {
-            self.number(value, out);
+            self.number(if negated { -value } else { value }, out);
         }
     }
 
@@ -613,7 +617,7 @@ impl<'a> Printer<'a> {
             }
             Node::Obj(id) => match self.c.value(id) {
                 Value::Number(v) => {
-                    self.number(-v, out);
+                    self.object_number(id, v, true, out);
                     Some(())
                 }
                 _ => None,
@@ -683,7 +687,7 @@ impl<'a> Printer<'a> {
             }
             Node::Obj(id) => match self.c.value(id) {
                 Value::Number(v) => {
-                    self.object_number(id, v, out);
+                    self.object_number(id, v, false, out);
                     Some(())
                 }
                 _ => None,
@@ -1344,6 +1348,119 @@ fn known(e: &Expr) -> bool {
     }
 }
 
+/// Algebra text for the coordinate expressions and equations read back
+/// from Giac. The reader bounds the depth and the session bounds the size.
+struct Algebra<'a>(&'a Expr, u8);
+
+impl std::fmt::Display for Algebra<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use crate::expr::commands::text::{format_number, superscript};
+
+        let Self(expr, outer) = *self;
+        let precedence = match expr {
+            Expr::Bin(b'+' | b'-', ..) => 1,
+            Expr::Bin(b'*' | b'/', ..) => 2,
+            Expr::Neg(_) => 3,
+            Expr::Bin(b'^', ..) => 4,
+            _ => 5,
+        };
+        if precedence < outer {
+            f.write_str("(")?;
+        }
+        match expr {
+            Expr::Num(n) => f.write_str(&format_number(*n))?,
+            Expr::Name(name) => f.write_str(match name.as_str() {
+                "pi" => "π",
+                "e" => "ℯ",
+                "inf" | "infinity" => "∞",
+                name => name,
+            })?,
+            Expr::Neg(a) => write!(f, "-{}", Self(a, precedence))?,
+            Expr::Bin(b'^', a, b) => {
+                write!(f, "{}", Self(a, precedence + 1))?;
+                let exponent = match b.as_ref() {
+                    Expr::Num(n) => Some(*n),
+                    Expr::Neg(inner) => match inner.as_ref() {
+                        Expr::Num(n) => Some(-n),
+                        _ => None,
+                    },
+                    _ => None,
+                };
+                if let Some(digits) = exponent.and_then(|n| superscript(&n.to_string())) {
+                    f.write_str(&digits)?;
+                } else {
+                    write!(f, "^({})", Self(b, 0))?;
+                }
+            }
+            Expr::Bin(op, a, b) => {
+                let (op, right) = match (*op, b.as_ref()) {
+                    (b'+', Expr::Neg(right)) => (b'-', right.as_ref()),
+                    (b'-', Expr::Neg(right)) => (b'+', right.as_ref()),
+                    _ => (*op, b.as_ref()),
+                };
+                let separator = match op {
+                    b'+' => " + ",
+                    b'-' => " - ",
+                    b'/' => " / ",
+                    _ => {
+                        let base = match right {
+                            Expr::Bin(b'^', base, _) => base.as_ref(),
+                            _ => right,
+                        };
+                        match (a.as_ref(), base) {
+                            (Expr::Num(_), Expr::Name(_)) => "",
+                            (_, Expr::Name(_)) => " ",
+                            _ => " * ",
+                        }
+                    }
+                };
+                let left = Self(
+                    a,
+                    if op == b'/' {
+                        precedence + 1
+                    } else {
+                        precedence
+                    },
+                );
+                write!(f, "{left}{separator}{}", Self(right, precedence + 1))?;
+            }
+            Expr::Call(name, args) => {
+                let name = match name.as_str() {
+                    "re" => "real",
+                    "im" => "imaginary",
+                    "log" => "lg",
+                    name => name,
+                };
+                f.write_str(name)?;
+                algebra_sequence(f, args, "(", ")")?;
+            }
+            Expr::Tuple(items) => algebra_sequence(f, items, "(", ")")?,
+            Expr::List(items) => algebra_sequence(f, items, "{", "}")?,
+            Expr::Eq(a, b) => write!(f, "{} = {}", Self(a, 0), Self(b, 0))?,
+        }
+        if precedence < outer {
+            f.write_str(")")?;
+        }
+        Ok(())
+    }
+}
+
+fn algebra_sequence(
+    f: &mut std::fmt::Formatter<'_>,
+    items: &[Expr],
+    open: &str,
+    close: &str,
+) -> std::fmt::Result {
+    f.write_str(open)?;
+    for (i, item) in items.iter().enumerate() {
+        if i != 0 {
+            f.write_str(", ")?;
+        }
+        write!(f, "{}", Algebra(item, 0))?;
+    }
+    f.write_str(close)
+}
+
 /// `a^b`, with the real root of a negative base for an exponent with an
 /// odd denominator, as the reference's power does (`(-8)^(1/3)` is -2).
 fn power(a: f64, b: f64) -> f64 {
@@ -1429,16 +1546,19 @@ fn tuple_slot(x: &Expr, y: &Expr) -> Option<Slot> {
         }));
     };
     if let (Some([dx, x0]), Some([dy, y0])) = (affine(x, parameter), affine(y, parameter)) {
-        return Some(Slot::line(Value::Line {
-            a: -dy,
-            b: dx,
-            c: dy * x0 - dx * y0,
-        }));
+        return Some(
+            Slot::line(Value::Line {
+                a: -dy,
+                b: dx,
+                c: dy * x0 - dx * y0,
+            })
+            .with_symbolic(format!("X = ({}, {})", Algebra(x, 0), Algebra(y, 0))),
+        );
     }
     let coordinate = |expr: &Expr| Function {
         expr: expr.clone(),
         variable: parameter,
-        text: String::new(),
+        text: Algebra(expr, 0).to_string(),
     };
     Some(Slot::giac_curve([coordinate(x), coordinate(y)]))
 }
@@ -1506,10 +1626,12 @@ fn equation_slot(left: &Expr, right: &Expr) -> Option<Slot> {
                 coefficient(0, 1) / 2.0,
             ]);
             let value = crate::algo::general_conic::value(Kind::Conic, &conic);
-            return Some(Slot::with_conic(conic, Kind::Conic, value));
+            let equation = format!("{} = {}", Algebra(left, 0), Algebra(right, 0));
+            return Some(Slot::giac_conic(conic, value, equation));
         }
         if has_z || !matches!(left, Expr::Name(n) if n == "y" && !has_name(right, "y")) {
-            return Some(Slot::giac_implicit(coefficients));
+            let equation = format!("{} = {}", Algebra(left, 0), Algebra(right, 0));
+            return Some(Slot::giac_implicit(coefficients, equation));
         }
     }
     if !has_z && matches!(left, Expr::Name(n) if n == "y") && !has_name(right, "y") {
@@ -1779,6 +1901,49 @@ mod tests {
                 list.get(0),
                 Some(Element::Value(Kind::Point, Value::Point { x: 0.0, y: 0.0 }))
             ));
+        });
+    }
+
+    #[test]
+    fn cas_lists_display_cartesian_coordinates() {
+        // cas-plot-024, as GeoCurveCartesian.toValueString displays it.
+        with_result("{(1/y,0)}", |list| {
+            assert_eq!(super::super::display_list(list), "{(1 / y, 0)}");
+        });
+        // cas-plot-023 also reads re/im of a square root as coordinates.
+        with_result("{(re(√(-y^2+4)),im(√(-y^2+4)))}", |list| {
+            assert_eq!(
+                super::super::display_list(list),
+                "{(real(sqrt(-y² + 4)), imaginary(sqrt(-y² + 4)))}"
+            );
+        });
+    }
+
+    #[test]
+    fn cas_lists_display_the_conic_equation() {
+        // cas-conic-060, as GeoConicND displays the user equation.
+        with_result("{y=(x^2+x)}", |list| {
+            assert_eq!(super::super::display_list(list), "{y = x² + x}");
+        });
+    }
+
+    #[test]
+    fn cas_lists_display_the_implicit_equation() {
+        // cas-implicit-004, as GeoImplicitCurve displays the equation.
+        with_result("{x=(y^3)}", |list| {
+            assert_eq!(super::super::display_list(list), "{x = y³}");
+        });
+        // cas-freevariable-005 keeps a third variable in the display.
+        with_result("{{x=(-z+1)}}", |list| {
+            assert_eq!(super::super::display_list(list), "{{x = -z + 1}}");
+        });
+    }
+
+    #[test]
+    fn cas_lists_display_affine_tuples_as_parametric_lines() {
+        // cas-plot-007, as ParametricProcessor sets the line's user form.
+        with_result("{(-3/2*y+3,0)}", |list| {
+            assert_eq!(super::super::display_list(list), "{X = (-3 / 2 y + 3, 0)}");
         });
     }
 
