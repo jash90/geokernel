@@ -107,6 +107,49 @@ fn check_review_values(snap: &Snapshot, c: &Construction, skipped: &[&str]) {
 }
 
 #[test]
+fn saved_regular_polygon_keeps_undefined_generated_vertices() {
+    use geo_import::export::{ggb, Definition, Presentation};
+
+    let (snap, imported) = fixture("saved-keptvertices-001");
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    let replayed = script::load(&imported.script.join("\n")).unwrap();
+    check_review_values(&snap, &replayed, &[]);
+
+    let definitions = [
+        ("n = 0", "n"),
+        ("U = (0, 0)", "U"),
+        ("A = If(n > 0, U)", "A"),
+        ("B = (2, 0)", "B"),
+        ("nv = 5", "nv"),
+        ("p = $regularPolygon(A, B, nv)", "p C D E f g h i j"),
+    ]
+    .map(|(line, labels)| {
+        (
+            line,
+            labels
+                .split_whitespace()
+                .map(str::to_owned)
+                .collect::<Vec<_>>(),
+        )
+    });
+    let file = ggb(
+        &replayed,
+        definitions
+            .iter()
+            .map(|(line, outputs)| Definition { line, outputs }),
+        &Presentation::default(),
+    )
+    .unwrap();
+    let reimported = import(&file).unwrap();
+    assert!(reimported.skipped.is_empty(), "{:?}", reimported.skipped);
+    check_review_values(
+        &snap,
+        &script::load(&reimported.script.join("\n")).unwrap(),
+        &[],
+    );
+}
+
+#[test]
 fn saved_curve_intersections_keep_their_output_slots() {
     for name in [
         "saved-curve-intersections-001",
@@ -783,4 +826,50 @@ fn older_stroke_vertices_that_need_a_view_are_skipped() {
         geo_kernel::algo::stroke::MAX_SAVED_COORDS_BYTES,
         geo_import::xml::MAX_ATTRIBUTE_BYTES
     );
+}
+
+#[test]
+fn an_undefined_regular_polygon_reloads_its_saved_vertices() {
+    let file = br#"<geogebra><construction>
+      <element type="point" label="A"><coords x="-6" y="1" z="1"/></element>
+      <element type="point" label="B"><coords x="-2" y="2" z="1"/></element>
+      <element type="point" label="O"><coords x="3" y="0" z="1"/></element>
+      <element type="numeric" label="r"><value val="0.5"/></element>
+      <command name="Circle"><input a0="O" a1="r"/><output a0="k"/></command>
+      <command name="Line"><input a0="A" a1="B"/><output a0="l"/></command>
+      <command name="Intersect"><input a0="l" a1="k" a2="1"/><output a0="X"/></command>
+      <element type="point" label="C"><coords x="4" y="-4" z="1"/></element>
+      <command name="Polygon"><input a0="X" a1="C" a2="4"/>
+        <output a0="p" a1="D" a2="E"/></command>
+      <element type="point" label="D">
+        <coords x="9.543047208620575" y="3.827811165517703" z="1"/>
+      </element>
+      <element type="point" label="E">
+        <coords x="1.7152360431028701" y="9.37085837413828" z="1"/>
+      </element>
+      <expression label="dx" exp="x(D)" type="numeric"/>
+      <element type="numeric" label="dx"><value val="9.543047208620575"/></element>
+    </construction></geogebra>"#;
+    let imported = import(file).unwrap();
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+    let mut c = script::load(&imported.script.join("\n")).unwrap();
+    let (p, d, dx, r) = (
+        c.id("p").unwrap(),
+        c.id("D").unwrap(),
+        c.id("dx").unwrap(),
+        c.id("r").unwrap(),
+    );
+    assert_eq!(c.value(p), Value::Undefined);
+    assert_eq!(c.value(dx), Value::Number(9.543047208620575));
+    c.set_number(r, 6.0).unwrap();
+    assert!(c.value(p).is_defined());
+    let updated = c.value(d);
+    let Value::Point { x, .. } = updated else {
+        panic!("the generated vertex was not updated");
+    };
+    assert_ne!(x, 9.543047208620575);
+    c.set_number(r, 0.5).unwrap();
+    assert_eq!(c.value(p), Value::Undefined);
+    assert_eq!(c.value(d), updated);
 }

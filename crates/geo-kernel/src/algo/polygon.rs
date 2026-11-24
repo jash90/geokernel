@@ -161,9 +161,8 @@ pub enum PolygonDef {
     },
     /// Side `k` of `Polygon(A, B, n)`, from vertex `k` to the next one.
     RegularSide {
-        a: Id,
-        b: Id,
-        n: Count,
+        poly: Id,
+        allocated: u32,
         k: u32,
     },
     /// `PolyLine(A, B, ...)` (`AlgoPolyLine`).
@@ -588,6 +587,16 @@ pub(crate) fn inputs(c: &Construction, poly: Id) -> Vec<Id> {
 /// the vertices move. A shear with a vector axis also reads its start point.
 pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
     let mut parents = match *def {
+        Def::Polygon(PolygonDef::RegularSide { poly, allocated, k }) => {
+            let mut parents = inputs(c, poly);
+            // The side can close back onto A or join the next vertex.
+            parents.extend(
+                [k, k + 1]
+                    .into_iter()
+                    .filter_map(|index| regular_output_vertex(poly, allocated, index as usize)),
+            );
+            parents
+        }
         Def::Polygon(PolygonDef::ImageVertex { poly, .. }) => {
             let transform = c.def(poly);
             let mut ids = transform.parents().as_slice().to_vec();
@@ -663,13 +672,14 @@ impl Group for PolygonDef {
             PolygonDef::AreaPoints(_) | PolygonDef::Polygon(_) | PolygonDef::PolyLine(_) => {
                 Parents::none()
             }
-            PolygonDef::Regular { a, b, n }
-            | PolygonDef::RegularVertex { a, b, n, .. }
-            | PolygonDef::RegularSide { a, b, n, .. } => match n.id() {
-                Some(n) => Parents::of(&[a, b, n]),
-                None => Parents::of(&[a, b]),
-            },
-            PolygonDef::PolygonFromList(p)
+            PolygonDef::Regular { a, b, n } | PolygonDef::RegularVertex { a, b, n, .. } => {
+                match n.id() {
+                    Some(n) => Parents::of(&[a, b, n]),
+                    None => Parents::of(&[a, b]),
+                }
+            }
+            PolygonDef::RegularSide { poly: p, .. }
+            | PolygonDef::PolygonFromList(p)
             | PolygonDef::PolyLineFromList(p)
             | PolygonDef::Area(p)
             | PolygonDef::Perimeter(p)
@@ -743,13 +753,12 @@ impl Group for PolygonDef {
                     Ok(())
                 }
             }
-            PolygonDef::Regular { a, b, n }
-            | PolygonDef::RegularVertex { a, b, n, .. }
-            | PolygonDef::RegularSide { a, b, n, .. } => {
+            PolygonDef::Regular { a, b, n } | PolygonDef::RegularVertex { a, b, n, .. } => {
                 c.expect(a, POINT)?;
                 c.expect(b, POINT)?;
                 n.check(c)
             }
+            PolygonDef::RegularSide { poly, .. } => c.expect(poly, POLYGON),
             PolygonDef::Area(p) | PolygonDef::Perimeter(p) | PolygonDef::Centroid(p) => {
                 c.expect(p, POLYGON)
             }
@@ -832,12 +841,10 @@ impl Group for PolygonDef {
                     area: r.signed_area(),
                 })
             }
-            PolygonDef::RegularVertex { a, b, n, k } => {
-                let r = Regular::new(c, a, b, vertex_count(n.value(c)))?;
-                let k = k as usize;
-                (k < r.n).then(|| r.vertex(k)).and_then(point)
+            PolygonDef::RegularVertex { a, b, n, k } => regular_vertex(c, a, b, n, k, None),
+            PolygonDef::RegularSide { poly, allocated, k } => {
+                regular_side(c, poly, allocated, k as usize)
             }
-            PolygonDef::RegularSide { a, b, n, k } => regular_side(c, a, b, n, k as usize),
             PolygonDef::PolygonFromList(id) => Some(Value::Polygon {
                 area: area_of(point_list(c, id)?.iter().map(list_point))?,
             }),
@@ -905,24 +912,54 @@ impl Group for PolygonDef {
     }
 }
 
-/// Side `k` of a regular polygon. With fewer than 3 vertices GeoGebra keeps
-/// the first two sides as `A`-`B` and `B`-`A` (`updateOutput`).
-fn regular_side(c: &Construction, a: Id, b: Id, n: Count, k: usize) -> Option<Value> {
+/// AlgoPolygonRegularND.java leaves active output vertices alone when an
+/// endpoint is undefined. AlgoPolygonRegular.java creates them at (0, 0).
+/// A vertex is a separate point, so its last coordinates already live in
+/// its own value. The polygon itself is still undefined.
+pub(crate) fn regular_vertex(
+    c: &Construction,
+    a: Id,
+    b: Id,
+    n: Count,
+    k: u32,
+    previous: Option<Value>,
+) -> Option<Value> {
     let count = vertex_count(n.value(c));
-    let (s, e) = if count < 3 {
-        let (pa, pb) = (c.point(a)?, c.point(b)?);
-        match k {
-            0 => (pa, pb),
-            1 => (pb, pa),
-            _ => return None,
-        }
-    } else {
-        let r = Regular::new(c, a, b, count)?;
-        if k >= r.n {
-            return None;
-        }
-        (r.vertex(k), r.vertex((k + 1) % r.n))
+    let k = k as usize;
+    if k >= count || count > MAX_REGULAR_VERTICES {
+        return None;
+    }
+    match Regular::new(c, a, b, count) {
+        Some(r) => point(r.vertex(k)),
+        None => Some(previous.unwrap_or(Value::Point { x: 0.0, y: 0.0 })),
+    }
+}
+
+/// The generated vertices immediately follow the owning polygon.
+fn regular_output_vertex(poly: Id, allocated: u32, index: usize) -> Option<Id> {
+    (2..allocated as usize)
+        .contains(&index)
+        .then(|| Id(poly.0 + index - 1))
+}
+
+/// AlgoJoinPointsSegment reads the vertices even when the polygon is undefined.
+fn regular_side(c: &Construction, poly: Id, allocated: u32, k: usize) -> Option<Value> {
+    let Def::Polygon(PolygonDef::Regular { a, b, n }) = c.def(poly) else {
+        return None;
     };
+    let count = vertex_count(n.value(c)).max(2);
+    if k >= count || count > MAX_REGULAR_VERTICES {
+        return None;
+    }
+    let vertex = |index| match index {
+        0 => c.point(a),
+        1 => c.point(b),
+        _ => match regular_output_vertex(poly, allocated, index) {
+            Some(id) => c.point(id),
+            None => Some(Regular::new(c, a, b, count)?.vertex(index)),
+        },
+    };
+    let (s, e) = (vertex(k)?, vertex((k + 1) % count)?);
     Some(Value::Segment {
         x1: s.0,
         y1: s.1,
@@ -1234,6 +1271,10 @@ impl<'a> IndexedLabels<'a> {
 /// One object a line will create.
 enum Planned {
     Def(Def),
+    RegularSide {
+        allocated: u32,
+        k: u32,
+    },
     /// A definition over a list of points, stored when it is added.
     List(Vec<Id>, fn(IdList) -> PolygonDef),
 }
@@ -1280,6 +1321,7 @@ impl Plan {
                 Planned::Def(def) => {
                     c.evaluate(*def).map_err(|e| e.to_string())?;
                 }
+                Planned::RegularSide { .. } => {}
                 Planned::List(ids, _) => {
                     for &id in ids {
                         c.expect(id, POINT).map_err(|e| e.to_string())?;
@@ -1296,6 +1338,12 @@ impl Plan {
             let added = match (&first, item) {
                 (Some(owner), Planned::Def(def)) => c.add_output(&label, def, *owner),
                 (None, Planned::Def(def)) => c.add(&label, def),
+                (&Some(poly), Planned::RegularSide { allocated, k }) => c.add_output(
+                    &label,
+                    Def::Polygon(PolygonDef::RegularSide { poly, allocated, k }),
+                    poly,
+                ),
+                (None, Planned::RegularSide { .. }) => unreachable!("a side follows its polygon"),
                 (_, Planned::List(ids, make)) => {
                     c.add_with_list(&label, &ids, |list| Def::Polygon(make(list)))
                 }
@@ -1348,6 +1396,11 @@ pub(crate) fn exec(
     let kind_of = |c: &Construction, arg: &str| c.id(arg).map(|id| c.kind(id));
     let result = match func {
         "Polygon" => polygon_line(c, name, &args),
+        "$regularPolygon" if n == 3 => (|| {
+            let mut plan = Plan::new(c, name)?;
+            plan_regular(c, &mut plan, name, &args, true)?;
+            plan.commit(c)
+        })(),
         "RigidPolygon" => rigid_polygon_line(c, name, &args),
         // `IntersectRegion` and `IntersectionPaths` are GeoGebra's
         // deprecated aliases of `IntersectPath` (CommandDispatcher).
@@ -1871,7 +1924,7 @@ fn polygon_line(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, S
             None => decimal(arg).is_some(),
         };
         if is_point(args[0]) && is_point(args[1]) && is_number(args[2]) {
-            plan_regular(c, &mut plan, name, args)?;
+            plan_regular(c, &mut plan, name, args, false)?;
             return plan.commit(c);
         }
     }
@@ -1925,6 +1978,7 @@ fn plan_regular(
     plan: &mut Plan,
     name: &str,
     args: &[&str],
+    saved_sides: bool,
 ) -> Result<(), String> {
     let (a, b) = (object(c, args[0])?, object(c, args[1])?);
     let n = count_arg(c, args[2])?;
@@ -1946,13 +2000,18 @@ fn plan_regular(
         let def = PolygonDef::RegularVertex { a, b, n, k };
         plan.push(label, Planned::Def(Def::Polygon(def)));
     }
-    if !defined(c, Def::Segment(a, b))? {
+    if !saved_sides && !defined(c, Def::Segment(a, b))? {
         return Ok(());
     }
     for k in 0..count as u32 {
         let label = next_indexed_label(c, &plan.taken, LINE_LABELS);
-        let def = PolygonDef::RegularSide { a, b, n, k };
-        plan.push(label, Planned::Def(Def::Polygon(def)));
+        plan.push(
+            label,
+            Planned::RegularSide {
+                allocated: count as u32,
+                k,
+            },
+        );
     }
     Ok(())
 }
@@ -2217,7 +2276,7 @@ mod tests {
             ("Polygon(A, B, -3)", &["p"], 0),
             ("Polygon(A, B, 2.4)", &["p"], 0),
             ("Polygon(A, B, m)", &["p"], 5),
-            // an undefined point: the vertices, but no sides
+            // An undefined endpoint leaves the new vertices at the origin.
             ("Polygon(X, B, 4)", &["p", "C", "D"], 0),
             ("Polygon(A, X, 3)", &["p", "C"], 0),
         ] {
@@ -2228,7 +2287,7 @@ mod tests {
             let p = c.id("p").unwrap();
             assert_eq!(c.value(p), Value::Undefined, "{rhs}");
             for id in c.ids().skip(n + 1) {
-                assert_eq!(c.value(id), Value::Undefined, "{rhs}");
+                assert_eq!(c.value(id), Value::Point { x: 0.0, y: 0.0 }, "{rhs}");
             }
             // the polygon follows later changes, without new objects
             c.set_number(c.id("m").unwrap(), 5.0).unwrap();

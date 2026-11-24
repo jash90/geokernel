@@ -229,7 +229,7 @@ impl GeneralConicDef {
             }
             GeneralConicDef::Translate { src, by, .. } => {
                 let Some((vx, vy)) = vector(c, by) else {
-                    d.defined = false;
+                    d.set_undefined();
                     return d;
                 };
                 if !set_out(c, src, &mut d) {
@@ -400,17 +400,18 @@ pub(crate) fn coefficient_matrix(list: List<'_>) -> Option<[f64; 6]> {
 
 /// `AlgoTransformation.setOutGeo`: the image starts as a copy of the
 /// source's record. Returns whether the copy is defined; the transformation
-/// stops when it is not. A source whose record is defined but whose value
-/// is not (a part that is not finite) counts as undefined, so that the
-/// image of an undefined conic is undefined.
+/// stops when it is not. The source's summary value can be undefined
+/// while the record is defined, as with a circle of NaN radius.
 fn set_out(c: &Construction, src: Id, d: &mut ConicData) -> bool {
-    match c.conic(src) {
+    match c.conic_fields(src) {
         Some(s) => {
             *d = s;
-            d.defined = s.defined && c.value(src).is_defined();
-            d.defined
+            s.defined
         }
         None => {
+            if c.kind(src) == Kind::Circle {
+                *d = ConicData::new();
+            }
             d.defined = false;
             false
         }

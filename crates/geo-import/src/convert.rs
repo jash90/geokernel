@@ -13,6 +13,7 @@ use crate::xml::{Document, Element, Item};
 use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
+use geo_kernel::algo::polygon::PolygonDef;
 use geo_kernel::kernel::control::{encode_scripts, encode_text, visibility_boolean};
 use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
 use geo_kernel::kernel::text::{TextFont, TextOverrides, TextPosition};
@@ -542,6 +543,15 @@ impl Converter {
                         match self.run_auto(&step)? {
                             Ok(unmatched) => {
                                 self.out.script.push(step.line);
+                                if name == "Polygon" {
+                                    // GeoGebra lists the sides before the vertices.
+                                    // Restore their inputs before checking saved sides.
+                                    for label in &step.labels {
+                                        if let Some(el) = elements.get(label.as_str()) {
+                                            self.restore_regular_vertex(el)?;
+                                        }
+                                    }
+                                }
                                 let reason = format!(
                                     "the kernel does not make an object with this label for `{}`",
                                     step.labels[0]
@@ -769,7 +779,33 @@ impl Converter {
                 })
                 .collect());
         }
-        let call = format!("{name}({})", args.join(", "));
+        let command = match args.as_slice() {
+            [a, b, _]
+                if name == "Polygon"
+                    && outputs
+                        .get(1)
+                        .and_then(|label| elements.get(label.as_str()))
+                        .is_some_and(|el| el.kind == "segment")
+                    && [a, b]
+                        .into_iter()
+                        .filter_map(|label| self.kernel.id(label))
+                        .any(|id| {
+                            self.kernel.kind(id) == Kind::Point
+                                && !self.kernel.value(id).is_defined()
+                        })
+                    && outputs.iter().any(|label| {
+                        elements
+                            .get(label.as_str())
+                            .is_some_and(|el| el.kind == "point")
+                    }) =>
+            {
+                // A polygon saved with side labels already created them while
+                // its endpoints were defined. Allocate those slots on reload.
+                "$regularPolygon"
+            }
+            _ => name,
+        };
+        let call = format!("{command}({})", args.join(", "));
         let labelled: Vec<String> = outputs.iter().filter(|l| !l.is_empty()).cloned().collect();
         if labels_by_kernel(name, inputs) {
             return Ok(vec![Step {
@@ -871,6 +907,48 @@ impl Converter {
         }
         self.apply_text_style(el, font_size);
         self.record_element(el, expression.as_deref(), polygon);
+        Ok(())
+    }
+
+    fn restore_regular_vertex(&mut self, el: &Element) -> Result<(), ImportError> {
+        let Some(id) = self.kernel.id(&el.label).filter(|_| el.kind == "point") else {
+            return Ok(());
+        };
+        let Def::Polygon(PolygonDef::RegularVertex { a, b, .. }) = self.kernel.def(id) else {
+            return Ok(());
+        };
+        if self.kernel.value(a).is_defined() && self.kernel.value(b).is_defined() {
+            return Ok(());
+        }
+        let Some(coords) = &el.coords else {
+            return Ok(());
+        };
+        let finite = coords3(el)
+            .map(|[x, y, z]| (x / z, y / z))
+            .filter(|(x, y)| x.is_finite() && y.is_finite());
+        let (x, y) = if let Some(point) = finite {
+            point
+        } else if coords.iter().all(|coord| coord == "NaN") {
+            (f64::NAN, f64::NAN)
+        } else {
+            return Ok(());
+        };
+        let saved = if x.is_nan() && y.is_nan() {
+            Value::Undefined
+        } else {
+            Value::Point { x, y }
+        };
+        if self.kernel.value(id) != saved {
+            let property = Property::RegularVertex {
+                label: el.label.clone(),
+                x,
+                y,
+            };
+            property
+                .apply(&mut self.kernel)
+                .map_err(ImportError::Internal)?;
+            self.out.script.push(property.to_string());
+        }
         Ok(())
     }
 
@@ -1303,7 +1381,7 @@ impl Converter {
         expression: Option<(&Element, &str)>,
     ) -> Result<(), ImportError> {
         let before = self.kernel.len();
-        let checkpoint = self.kernel.checkpoint();
+        let mut checkpoint = Some(self.kernel.checkpoint());
         let result = line.and_then(|(line, kind)| {
             let rhs = line.split_once('=').map_or("", |(_, rhs)| rhs.trim_start());
             let rhs = rhs
@@ -1352,8 +1430,13 @@ impl Converter {
                 if let Some(literal) = exact_literal(el) {
                     let line = format!("{label} = $saved({literal}, {})", expression_line(exp)?);
                     self.kernel
-                        .rollback(checkpoint)
+                        .rollback(
+                            checkpoint
+                                .take()
+                                .expect("the original expression is still installed"),
+                        )
                         .map_err(|e| e.to_string())?;
+                    checkpoint = Some(self.kernel.checkpoint());
                     exec(&mut self.kernel, &line)?;
                     return Ok(line);
                 }
@@ -1365,7 +1448,11 @@ impl Converter {
             Err(reason) => {
                 if self.kernel.len() != before {
                     self.kernel
-                        .rollback(checkpoint)
+                        .rollback(
+                            checkpoint
+                                .take()
+                                .expect("the original expression is still installed"),
+                        )
                         .map_err(|e| ImportError::Internal(e.to_string()))?;
                 }
                 self.skip(label, saved_type, reason);

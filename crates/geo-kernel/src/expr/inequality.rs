@@ -111,6 +111,24 @@ impl VertexHelpers {
         records.preview = None;
     }
 
+    pub(crate) fn history(&self, owner: Id) -> Option<Helpers> {
+        self.records
+            .lock()
+            .expect("inequality helpers")
+            .attached
+            .get(&owner)
+            .cloned()
+    }
+
+    pub(crate) fn restore_history(&mut self, owner: Id, history: Option<Helpers>) {
+        let attached = &mut self.records.get_mut().expect("inequality helpers").attached;
+        if let Some(history) = history {
+            attached.insert(owner, history);
+        } else {
+            attached.remove(&owner);
+        }
+    }
+
     pub(crate) fn begin_update(&mut self) {
         self.records.get_mut().expect("inequality helpers").preview = None;
         *self.changed.get_mut() = false;
@@ -121,14 +139,14 @@ impl VertexHelpers {
     }
 }
 
-#[derive(Clone, Default)]
-struct Helpers {
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Helpers {
     count: usize,
     slots: Vec<Option<Helper>>,
     changed: bool,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Helper {
     Polynomial,
     Newton,

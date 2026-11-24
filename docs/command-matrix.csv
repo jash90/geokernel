@@ -26,33 +26,33 @@ Line,,geometry,P0,partial,5,3,"Line(point, point); Line(point, line, segment or 
 Ray,,geometry,P1,partial,2,1,"Ray(point, point); Ray(point, vector)"
 AngularBisector,,geometry,P1,done,2,2,"AngularBisector(point, point, point); AngularBisector(line, line)"
 OrthogonalLine,,geometry,P0,partial,5,4,"OrthogonalLine(point, line, segment or ray); OrthogonalLine(point, vector); OrthogonalLine(point, conic or conic part)"
-Tangent,,geometry,P1,partial,11,9,"Tangents to conics, functions, Cartesian curves and implicit polynomials."
+Tangent,,geometry,P1,done,11,11,"Tangents to conics, functions, Cartesian curves and implicit polynomials."
 Segment,,geometry,P0,partial,3,2,"Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output"
 Slope,,geometry,P1,partial,2,1,"Slope(line, segment, ray or function)"
 Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
 InteriorAngles,,geometry,P1,done,1,1,InteriorAngles(polygon)
 Direction,,geometry,P1,partial,2,1,"Direction(line, segment or ray)"
 Point,,geometry,P1,partial,4,1,"Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter"
-Midpoint,,geometry,P0,partial,4,2,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
+Midpoint,,geometry,P0,partial,4,3,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,partial,2,1,"LineBisector(point, point); LineBisector(segment)"
 Intersect,,geometry,P0,partial,79,72,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
 IntersectPath,,geometry,P1,partial,9,8,"Polygons with lines, segments, rays or other polygons. Conics with segments, polylines and polygon boundaries within the clipping work budget."
 IntersectRegion,,english,P2,partial,9,8,
 Distance,,geometry,P0,partial,4,1,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
-Length,,geometry,P1,partial,11,9,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
+Length,,geometry,P1,partial,11,10,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
 Radius,,geometry,P1,todo,1,0,Radius(conic or conic part); defined for circle and single-point types
 Type,,geometry,P1,todo,0,0,
 CircleArc,,geometry,P1,todo,1,0,"CircularArc(centre, point, point)"
-Arc,,geometry,P1,partial,2,1,Conic with point endpoints or numeric parameters
-Sector,,geometry,P1,partial,2,1,Conic with point endpoints or numeric parameters
+Arc,,geometry,P1,done,2,2,Conic with point endpoints or numeric parameters
+Sector,,geometry,P1,done,2,2,Conic with point endpoints or numeric parameters
 CircleSector,,geometry,P1,done,1,1,"CircularSector(centre, point, point)"
-CircumcircleSector,,geometry,P1,todo,1,0,"CircumcircularSector(point, point, point)"
-CircumcircleArc,,geometry,P1,todo,1,0,"CircumcircularArc(point, point, point)"
-Polygon,,geometry,P1,todo,3,0,"Live list of points, separate points, or two points and a regular polygon vertex count"
+CircumcircleSector,,geometry,P1,done,1,1,"CircumcircularSector(point, point, point)"
+CircumcircleArc,,geometry,P1,done,1,1,"CircumcircularArc(point, point, point)"
+Polygon,,geometry,P1,partial,3,1,"Live list of points, separate points, or two points and a regular polygon vertex count"
 RigidPolygon,,geometry,P1,done,3,3,Copy of a polygon with optional offsets or rigid polygon from three or more points
-Area,,geometry,P1,partial,3,1,"Area(conic, arc, sector or polygon); Area of three or more points"
+Area,,geometry,P1,done,3,3,"Area(conic, arc, sector or polygon); Area of three or more points"
 Circumference,,geometry,P1,done,3,3,"Conic, conic part, polygon or locus"
-Perimeter,,geometry,P1,partial,3,1,"Polygon, conic, conic part or locus"
+Perimeter,,geometry,P1,done,3,3,"Polygon, conic, conic part or locus"
 Locus,,geometry,P1,partial,4,2,"Tracing point with a movable path point or slider, slope function with initial point, or slope field with initial point"
 Centroid,,geometry,P1,done,1,1,Centroid(polygon)
 TriangleCenter,,geometry,P1,done,1,1,"TriangleCenter(point, point, point, index)"
@@ -60,7 +60,7 @@ Barycenter,,geometry,P1,done,1,1,
 Trilinear,,geometry,P1,done,1,1,"Trilinear(point, point, point, number, number, number)"
 Cubic,,geometry,P1,done,1,1,
 TriangleCurve,,geometry,P1,done,1,1,
-Vertex,,geometry,P1,partial,12,10,"Conic, polygon, polyline and graphics view corners. Indexed polygon, polyline, segment, raster image, headless text and hidden checkbox corners. Inequality border intersections."
+Vertex,,geometry,P1,done,12,12,"Conic, polygon, polyline and graphics view corners. Indexed polygon, polyline, segment, raster image, headless text and hidden checkbox corners. Inequality border intersections."
 PolyLine,,geometry,P1,partial,4,2,Live list with optional Boolean or separate points with an optional false flag
 PenStroke,,geometry,P1,partial,2,1,Literal points smoothed into cubic pieces in the view and frozen; saved strokes restore their points.
 PenStrokeBezier,,english,,out_of_scope,,,"A pen stroke reads the pointing device and the tablet state, not the construction."
@@ -78,7 +78,7 @@ ArePerpendicular,,geometry,P1,todo,1,0,"ArePerpendicular of two lines, segments 
 AreEqual,,geometry,P1,todo,1,0,"Numeric equality by object kind, including cyclic vertex equality and polynomial equality through degree four"
 AreConcurrent,,geometry,P1,done,1,1,"AreConcurrent of three lines, segments or rays"
 AreCongruent,,geometry,P1,todo,1,0,"Numeric congruence by object kind, including cyclic or reversed polygon congruence"
-IsTangent,,geometry,P1,todo,1,0,"IsTangent(line, segment or ray, conic or conic part)"
+IsTangent,,geometry,P1,done,1,1,"IsTangent(line, segment or ray, conic or conic part)"
 LocusEquation,,geometry,P1,partial,3,2,
 Envelope,,geometry,P1,todo,1,0,
 Volume,,3d,,out_of_scope,,,
@@ -138,7 +138,7 @@ ComplexRoot,,function,P2,done,1,1,"Numeric polynomial roots, returned as points 
 SolveODE,,function,P2,partial,7,5,"Numeric first-order, parametric and second-order systems. The local symbolic solver handles polynomial slopes in x, with or without an initial point."
 SlopeField,,function,P2,done,4,4,
 Iteration,,function,P2,done,3,3,
-PathParameter,,function,P2,todo,1,0,PathParameter(point on a path)
+PathParameter,,function,P2,done,1,1,PathParameter(point on a path)
 Asymptote,,function,P2,done,3,3,"Conics, functions and implicit polynomials."
 CurvatureVector,,function,P2,done,3,3,
 Curvature,,function,P2,done,3,3,
@@ -153,26 +153,26 @@ BezierCurve,,function,P2,done,1,1,
 ImplicitSurface,,english,,out_of_scope,,,Implicit surfaces are 3D-only objects.
 Normalize,,function,P2,done,3,3,
 SVD,,function,P2,done,1,1,
-Ellipse,,conic,P1,todo,2,0,"Ellipse(focus, focus, point); Ellipse(focus, focus, semi-major axis length)"
+Ellipse,,conic,P1,partial,2,1,"Ellipse(focus, focus, point); Ellipse(focus, focus, semi-major axis length)"
 Hyperbola,,conic,P1,partial,2,1,"Hyperbola(focus, focus, point); Hyperbola(focus, focus, semi-major axis length)"
-SecondAxisLength,,conic,P1,todo,1,0,"SecondAxisLength(conic), as a number"
-SecondAxis,,conic,P1,todo,1,0,SecondAxis(conic)
-Directrix,,conic,P1,todo,1,0,Directrix(conic)
-Diameter,,conic,P1,partial,2,1,"Diameter(line or segment, circle or conic)"
+SecondAxisLength,,conic,P1,done,1,1,"SecondAxisLength(conic), as a number"
+SecondAxis,,conic,P1,done,1,1,SecondAxis(conic)
+Directrix,,conic,P1,done,1,1,Directrix(conic)
+Diameter,,conic,P1,done,2,2,"Diameter(line or segment, circle or conic)"
 Conic,,conic,P1,partial,3,2,"Conic(point, point, point, point, point)"
-FirstAxis,,conic,P1,todo,1,0,FirstAxis(conic)
+FirstAxis,,conic,P1,done,1,1,FirstAxis(conic)
 Circle,,conic,P0,todo,3,0,"Circle(centre, point); Circle(centre, radius); Circle(centre, segment); Circle(point, point, point)"
 Incircle,,conic,P1,done,1,1,"Incircle(point, point, point)"
 Semicircle,,conic,P1,done,1,1,"Semicircle(point, point)"
-FirstAxisLength,,conic,P1,todo,1,0,"FirstAxisLength(conic), as a number"
+FirstAxisLength,,conic,P1,done,1,1,"FirstAxisLength(conic), as a number"
 Parabola,,conic,P1,todo,1,0,"Parabola(focus, directrix line)"
-Focus,,conic,P1,todo,1,0,Focus(conic)
-Parameter,,conic,P1,todo,1,0,Parameter(parabola)
-Center,,conic,P1,partial,4,3,Center(circle or conic); Center(segment)
-Polar,,conic,P1,partial,2,1,"Polar(point, circle or conic)"
-Excentricity,,conic,P1,todo,1,0,Excentricity(conic)
-Eccentricity,,conic,P1,todo,1,0,Eccentricity(conic)
-Axes,,conic,P1,todo,1,0,Axes(conic)
+Focus,,conic,P1,done,1,1,Focus(conic)
+Parameter,,conic,P1,done,1,1,Parameter(parabola)
+Center,,conic,P1,done,4,4,Center(circle or conic); Center(segment)
+Polar,,conic,P1,done,2,2,"Polar(point, circle or conic)"
+Excentricity,,conic,P1,done,1,1,Excentricity(conic)
+Eccentricity,,conic,P1,done,1,1,Eccentricity(conic)
+Axes,,conic,P1,done,1,1,Axes(conic)
 Sort,,list,P2,done,3,3,"Sort(list of numbers, booleans or points); Sort(value list, key list); Sort(point, point, ...)"
 First,,list,P2,partial,6,5,"Lists, text, loci and freehand functions (First(function, number))."
 Last,,list,P2,done,5,5,"Last(list); Last(list, number of elements)"
@@ -438,15 +438,15 @@ ExportImage,,scripting,,out_of_scope,,,
 Curve,CurveCartesian,function,P2,partial,,,
 FormulaText,LaTeX,text,P2,done,,,
 IsDefined,Defined,logical,P2,todo,,,
-ConjugateDiameter,Diameter,conic,P1,partial,,,
-LinearEccentricity,Excentricity,conic,P1,todo,,,
-MajorAxis,FirstAxis,conic,P1,todo,,,
-SemiMajorAxisLength,FirstAxisLength,conic,P1,todo,,,
+ConjugateDiameter,Diameter,conic,P1,done,,,
+LinearEccentricity,Excentricity,conic,P1,done,,,
+MajorAxis,FirstAxis,conic,P1,done,,,
+SemiMajorAxisLength,FirstAxisLength,conic,P1,done,,,
 PerpendicularBisector,LineBisector,geometry,P1,partial,,,
 PerpendicularLine,OrthogonalLine,geometry,P0,partial,,,
 PerpendicularVector,OrthogonalVector,vector,P2,partial,,,
-MinorAxis,SecondAxis,conic,P1,todo,,,
-SemiMinorAxisLength,SecondAxisLength,conic,P1,todo,,,
+MinorAxis,SecondAxis,conic,P1,done,,,
+SemiMinorAxisLength,SecondAxisLength,conic,P1,done,,,
 UnitPerpendicularVector,UnitOrthogonalVector,vector,P2,partial,,,
 CorrelationCoefficient,PMCC,statistics,,out_of_scope,,,
 FitLine,FitLineY,statistics,,out_of_scope,,,
@@ -454,8 +454,8 @@ BinomialCoefficient,nCr,english,P2,done,,,
 RandomBetween,Random,probability,,out_of_scope,,,
 TaylorPolynomial,TaylorSeries,function,,out_of_scope,,,
 AngleBisector,AngularBisector,geometry,P1,done,,,
-CircumcircularSector,CircumcircleSector,geometry,P1,todo,,,
-CircumcircularArc,CircumcircleArc,geometry,P1,todo,,,
+CircumcircularSector,CircumcircleSector,geometry,P1,done,,,
+CircumcircularArc,CircumcircleArc,geometry,P1,done,,,
 CircularSector,CircleSector,geometry,P1,done,,,
 CircularArc,CircleArc,geometry,P1,todo,,,
 Polyline,PolyLine,geometry,P1,partial,,,

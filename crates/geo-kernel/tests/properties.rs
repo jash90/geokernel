@@ -10,9 +10,14 @@ mod common;
 use common::*;
 use geo_kernel::algo::arc::ArcDef;
 use geo_kernel::algo::conic::ConicDef;
+use geo_kernel::algo::conic_parts::ConicPartDef;
+use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::algo::path::PathDef;
+use geo_kernel::algo::polygon::PolygonDef;
+use geo_kernel::algo::predicate::PredicateDef;
 use geo_kernel::script::exec;
 use geo_kernel::{Construction, Def, Error, Id, Kind, PathState, Value};
+use std::collections::HashMap;
 use std::f64::consts::PI;
 
 // ------------------------------------------------ random constructions
@@ -168,9 +173,58 @@ fn script_at_current_values(case: &Case) -> Vec<String> {
     lines
 }
 
-/// `Undefined` must spread: an object read from an undefined one is
-/// undefined too.
-fn check_contagion(case: &Case) -> Result<(), String> {
+/// Inputs whose readers use fields retained across an undefined update.
+fn reads_kept_input(c: &Construction, id: Id, parent: Id) -> bool {
+    match c.def(id) {
+        Def::ConicPart(
+            ConicPartDef::Vertex { conic, .. }
+            | ConicPartDef::Axis { conic, .. }
+            | ConicPartDef::AxisLength { conic, .. }
+            | ConicPartDef::Eccentricity(conic)
+            | ConicPartDef::LinearEccentricity(conic)
+            | ConicPartDef::Parameter(conic)
+            | ConicPartDef::Diameter { conic, .. },
+        )
+        | Def::Measure(MeasureDef::Radius(conic) | MeasureDef::Circumference(conic))
+        | Def::Conic(ConicDef::Diameter { circle: conic, .. })
+        | Def::Predicate(PredicateDef::Tangent { circle: conic, .. }) => conic == parent,
+        Def::Predicate(PredicateDef::Equal(a, b)) => {
+            (a == parent || b == parent)
+                && [a, b].iter().all(|&id| {
+                    matches!(
+                        c.kind(id),
+                        Kind::Circle | Kind::Conic | Kind::Arc | Kind::Sector
+                    )
+                })
+        }
+        Def::Polygon(PolygonDef::RegularVertex { a, b, .. })
+        | Def::Arc(ArcDef::ConicPoints { p: a, q: b, .. }) => a == parent || b == parent,
+        Def::Arc(ArcDef::Length(part) | ArcDef::Area(part)) => {
+            part == parent && c.arc(part).is_some_and(|a| a.defined)
+        }
+        _ => false,
+    }
+}
+
+/// Remember only states produced by placing a point directly on an
+/// undefined circle. A move can reach an ancestor without changing any
+/// circle input, so dependency reachability alone cannot expire the state.
+fn track_circle_placement(c: &Construction, moved: Id, placed: &mut HashMap<Id, PathState>) {
+    let on_undefined_circle = |id| {
+        matches!(c.def(id), Def::Path(PathDef::On { path })
+            if c.kind(path) == Kind::Circle && !c.value(path).is_defined())
+    };
+    placed.retain(|&id, state| on_undefined_circle(id) && c.path_state(id) == Some(*state));
+    if on_undefined_circle(moved) && c.value(moved).is_defined() {
+        if let Some(state) = c.path_state(moved) {
+            placed.insert(moved, state);
+        }
+    }
+}
+
+/// A reader of an undefined input must itself be undefined, except for the
+/// reference readers listed here and the existing expression and path rules.
+fn check_contagion(case: &Case, placed_on_circle: &HashMap<Id, PathState>) -> Result<(), String> {
     for id in case.c.ids() {
         if case.lenient[id.index()] {
             continue;
@@ -197,16 +251,14 @@ fn check_contagion(case: &Case) -> Result<(), String> {
             matches!(case.c.def(id), Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) if path == p)
                 && matches!(case.c.kind(p), Kind::Arc | Kind::Sector)
         };
-        // `Arc(k, P, Q)` and `Sector(k, P, Q)` put an undefined point at the
-        // parameter it had before, `PathParameter.setT` ignoring NaN (golden
-        // topic `arcs-undefined`); the kernel keeps no history and uses 0.
-        let end_point = |p: Id| matches!(case.c.def(id), Def::Arc(ArcDef::ConicPoints { p: a, q: b, .. }) if a == p || b == p);
         let undefined = |p: Id| {
             !case.c.value(p).is_defined()
                 && !read_as_value(p)
                 && !kept_parameter(p)
                 && !on_part(p)
-                && !end_point(p)
+                && !matches!(case.c.def(id), Def::Path(PathDef::On { path })
+                    if path == p && placed_on_circle.contains_key(&id))
+                && !reads_kept_input(&case.c, id, p)
         };
         let broken = parents.iter().find(|&&p| undefined(id_at(&case.c, p)));
         if let Some(&p) = broken {
@@ -221,6 +273,53 @@ fn check_contagion(case: &Case) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+/// Compares the parts of a rebuild or round trip determined by the current
+/// inputs. A fresh construction has no previous conic fields or endpoint
+/// parameters, and a trip through a valid position can change them.
+fn first_history_independent_difference(
+    c: &Construction,
+    reads: &[Vec<usize>],
+    a: &[Snap],
+    b: &[Snap],
+) -> Option<String> {
+    first_history_independent_difference_with(c, reads, a, b, vec![false; c.len()])
+}
+
+fn first_history_independent_difference_with(
+    c: &Construction,
+    reads: &[Vec<usize>],
+    a: &[Snap],
+    b: &[Snap],
+    mut history: Vec<bool>,
+) -> Option<String> {
+    if a.len() != b.len() {
+        return first_difference(c, a, b);
+    }
+    for id in c.ids() {
+        let i = id.index();
+        let (a, b) = (&a[i], &b[i]);
+        let kept_arc = matches!(
+            (&a.arc, &b.arc),
+            (Some(a), Some(b)) if (!a.defined || !a.is_curved()) && (!b.defined || !b.is_curved())
+        );
+        let kept_input = reads[i].iter().any(|&p| {
+            let p = id_at(c, p);
+            !c.value(p).is_defined() && reads_kept_input(c, id, p)
+        });
+        let inherited = history[i] || reads[i].iter().any(|&p| history[p]);
+        // A reader can hide its kept fields in its summary value, such as
+        // an axis whose start point changes without changing its equation.
+        history[i] = inherited || kept_input || (a != b && kept_arc);
+        // A degenerate or undefined arc computes its own current value
+        // independently of its retained geometry and measures.
+        if a != b && (!history[i] || (kept_arc && !inherited && !kept_input && a.value != b.value))
+        {
+            return Some(format!("`{}`: {a:?} against {b:?}", c.label(id)));
+        }
+    }
+    None
 }
 
 /// An expression that reads list or boolean objects has the value of the
@@ -321,7 +420,8 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
     if let Some(bad) = first_non_finite(&case.c) {
         fail!("non-finite value after creation: {bad}");
     }
-    if let Err(e) = check_contagion(&case) {
+    let mut placed_on_circle = HashMap::new();
+    if let Err(e) = check_contagion(&case, &placed_on_circle) {
         fail!("after creation: {e}");
     }
     if let Err(e) = check_twins(&case) {
@@ -385,11 +485,14 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                 Ok(f) => f,
                 Err(e) => fail!("{e}"),
             };
-            if let Some(d) = first_difference(&case.c, &after, &values(&fresh)) {
+            if let Some(d) =
+                first_history_independent_difference(&case.c, &reads, &after, &values(&fresh))
+            {
                 fail!("incremental update differs from recompute after move {step_no}: {d}");
             }
             // 4. undefined is contagious
-            if let Err(e) = check_contagion(&case) {
+            track_circle_placement(&case.c, moved, &mut placed_on_circle);
+            if let Err(e) = check_contagion(&case, &placed_on_circle) {
                 fail!("after move {step_no}: {e}");
             }
             if let Err(e) = check_twins(&case) {
@@ -426,6 +529,7 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                 Ok(Err(e)) => fail!("home move failed: {e}"),
                 Err(e) => fail!("after the home move: {e}"),
             }
+            track_circle_placement(&case.c, home.id(), &mut placed_on_circle);
             let snapshot = values(&case.c);
             // the points on paths at home, and whether each is where
             // following its path once more would put it
@@ -446,7 +550,9 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                 Ok(f) => f,
                 Err(e) => fail!("{e}"),
             };
-            if let Some(d) = first_difference(&case.c, &snapshot, &values(&rebuilt)) {
+            if let Some(d) =
+                first_history_independent_difference(&case.c, &reads, &snapshot, &values(&rebuilt))
+            {
                 fail!("the home move differs from a recompute: {d}");
             }
             let away = random_step(&mut rng, &case.c, &[target]);
@@ -457,17 +563,24 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                 Ok(Err(e)) => fail!("away move failed: {e}"),
                 Err(e) => fail!("after the away move: {e}"),
             }
+            track_circle_placement(&case.c, away.id(), &mut placed_on_circle);
             moves.push(format!("  back: {}", home.describe(&case.c)));
             match home.apply_watched(&mut case.c) {
                 Ok(Ok(_)) => {}
                 Ok(Err(e)) => fail!("back move failed: {e}"),
                 Err(e) => fail!("after the back move: {e}"),
             }
+            track_circle_placement(&case.c, home.id(), &mut placed_on_circle);
             let restored = match rebuild_from_defs(&case.c) {
                 Ok(f) => f,
                 Err(e) => fail!("{e}"),
             };
-            if let Some(d) = first_difference(&case.c, &values(&case.c), &values(&restored)) {
+            if let Some(d) = first_history_independent_difference(
+                &case.c,
+                &reads,
+                &values(&case.c),
+                &values(&restored),
+            ) {
                 fail!("the back move differs from a recompute: {d}");
             }
             // A point on a path need not come back: it follows the parameter
@@ -504,20 +617,13 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
             for i in 0..case.c.len() {
                 history[i] = !returns(i) || reads[i].iter().any(|&p| history[p]);
             }
-            let comparable = |v: Vec<Snap>| {
-                v.into_iter()
-                    .enumerate()
-                    .map(|(i, s)| if history[i] { None } else { Some(s) })
-                    .collect::<Vec<_>>()
-            };
-            let (expected, got) = (comparable(snapshot.clone()), comparable(values(&case.c)));
-            if let Some(i) = (0..expected.len()).find(|&i| expected[i] != got[i]) {
-                let d = format!(
-                    "`{}`: {:?} against {:?}",
-                    case.c.label(id_at(&case.c, i)),
-                    expected[i],
-                    got[i]
-                );
+            if let Some(d) = first_history_independent_difference_with(
+                &case.c,
+                &reads,
+                &snapshot,
+                &values(&case.c),
+                history,
+            ) {
                 fail!(
                     "moving `{}` away and back changed a value: {d}",
                     case.c.label(target)
@@ -559,7 +665,9 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
         });
     if same_layout {
         totals.script_rebuilds += 1;
-        if let Some(d) = first_difference(&case.c, &values(&case.c), &values(&fresh)) {
+        if let Some(d) =
+            first_history_independent_difference(&case.c, &reads, &values(&case.c), &values(&fresh))
+        {
             fail!(
                 "history differs from a fresh build at the final values: {d}\nfresh script:\n{}",
                 script_of(&script)
@@ -597,7 +705,12 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
         if let Err(e) = restore_states(&case.c, &mut carried) {
             fail!("{e}");
         }
-        if let Some(d) = first_difference(&case.c, &values(&case.c), &values(&carried)) {
+        if let Some(d) = first_history_independent_difference(
+            &case.c,
+            &reads,
+            &values(&case.c),
+            &values(&carried),
+        ) {
             fail!(
                 "history differs from a fresh build at the final values with the original \
                  creation state: {d}\nfresh script:\n{}",

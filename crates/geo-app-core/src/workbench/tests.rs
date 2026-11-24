@@ -2109,6 +2109,33 @@ fn unrelated_snapshot_edits_do_no_vertex_refresh_work() {
 }
 
 #[test]
+fn deleting_a_reader_keeps_the_circle_from_the_intermediate_edit() {
+    let mut w = Workbench::default();
+    for line in [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "j = Circle(O, 3)",
+        "ar = Area(k)",
+        "t = AreEqual(k, j)",
+    ] {
+        w.run_line(line).unwrap();
+    }
+    let r = w.construction.id("r").unwrap();
+    assert!(w.set_number(r, 3.0));
+    assert!(w.set_number(r, -1.0));
+    assert_eq!(
+        w.construction.value(w.construction.id("t").unwrap()),
+        Value::Bool(true)
+    );
+    assert!(w.delete(w.construction.id("ar").unwrap()));
+    assert_eq!(
+        w.construction.value(w.construction.id("t").unwrap()),
+        Value::Bool(true)
+    );
+}
+
+#[test]
 fn repeated_edit_and_undo_keeps_inequality_vertex_history() {
     let mut w = Workbench::from_script(concat!(
         "n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)\n",
@@ -2202,4 +2229,82 @@ fn a_construction_step_round_trip_keeps_the_selected_newton_vertex_helper() {
     w.run_line(&format!("SetConstructionStep({})", current + 1))
         .unwrap();
     assert_undefined(&w);
+}
+
+#[test]
+fn deleting_an_unrelated_object_keeps_regular_polygon_vertices_from_the_intermediate_edit() {
+    let mut w = Workbench::from_script(
+        "n = 0\nU = (0, 0)\nA = If(n > 0, U)\nB = (2, 0)\np = Polygon(A, B, 5)\nZ = (5, 5)",
+    )
+    .unwrap();
+    let vertices = |w: &Workbench| {
+        ["C", "D", "E"].map(|label| w.construction.value(w.construction.id(label).unwrap()))
+    };
+    let initial = vertices(&w);
+    let n = w.construction.id("n").unwrap();
+
+    assert!(w.set_number(n, 1.0));
+    let defined = vertices(&w);
+    for (before, after) in initial.into_iter().zip(defined) {
+        assert!(matches!(after, Value::Point { .. }));
+        assert_ne!(before, after);
+    }
+
+    assert!(w.set_number(n, 0.0));
+    assert_eq!(vertices(&w), defined);
+    let z = w.construction.id("Z").unwrap();
+    assert!(w.delete(z));
+    assert_eq!(vertices(&w), defined);
+}
+
+#[test]
+fn redoing_an_undefined_circle_restores_it_from_the_snapshot() {
+    let mut w = Workbench::default();
+    for line in [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "j = Circle(O, 2)",
+        "t = AreEqual(k, j)",
+        "ar = Area(k)",
+    ] {
+        w.run_line(line).unwrap();
+    }
+    assert!(w.set_number(w.construction.id("r").unwrap(), -1.0));
+    assert_eq!(
+        w.construction.value(w.construction.id("t").unwrap()),
+        Value::Bool(true)
+    );
+    assert!(w.undo());
+    assert!(w.redo());
+    assert_eq!(
+        w.construction.value(w.construction.id("t").unwrap()),
+        Value::Bool(false)
+    );
+    assert!(w.delete(w.construction.id("ar").unwrap()));
+    assert_eq!(
+        w.construction.value(w.construction.id("t").unwrap()),
+        Value::Bool(false)
+    );
+}
+
+#[test]
+fn undo_reloads_an_undefined_circumcircle_arc() {
+    let mut w = Workbench::default();
+    w.load_script(
+        "n = 1\nU = (0, 0)\nA = If(n > 0, U)\nB = (1, 2)\nC = (2, 0)\n\
+         a = CircumcircleArc(A, B, C)\ng = FirstAxis(a)\nh: y = 0.75\ne = AreEqual(g, h)",
+    )
+    .unwrap();
+    let actual = |w: &Workbench, label| w.construction.value(w.construction.id(label).unwrap());
+    assert_eq!(actual(&w, "e"), Value::Bool(true));
+    assert!(w.set_number(w.construction.id("n").unwrap(), 0.0));
+    assert_eq!(actual(&w, "e"), Value::Bool(true));
+    w.run_line("P = (3, 4)").unwrap();
+    assert!(w.undo());
+    assert_eq!(actual(&w, "g"), Value::Undefined);
+    assert_eq!(actual(&w, "e"), Value::Bool(false));
+    assert!(w.redo());
+    assert!(w.delete(w.construction.id("P").unwrap()));
+    assert_eq!(actual(&w, "e"), Value::Bool(false));
 }
