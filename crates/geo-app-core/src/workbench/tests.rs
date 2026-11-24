@@ -2482,3 +2482,52 @@ fn round2_undo_restarts_nested_transform_slots() {
         ));
     }
 }
+
+#[test]
+fn undo_snapshot_reopens_at_the_transform_reset_budget_boundary() {
+    use std::fmt::Write as _;
+
+    let mut script = String::from("A = (1, 2)\nL = {{A}}\nM = Dilate(L, 2)\n");
+    for i in 1..=1000 {
+        writeln!(script, "n_{{{i}}} = {i}").unwrap();
+    }
+    let slots = Workbench::from_script(&script)
+        .unwrap()
+        .construction()
+        .len();
+    assert_eq!(slots * 997, 999_991);
+    script.push_str(&"$resetTransformOutputs()\n".repeat(997));
+    script.push_str("B = (2, 3)\n");
+    let mut w = Workbench::from_script(&script).unwrap();
+    assert_eq!(999_991 + w.construction().len(), 1_000_995);
+    let over_budget = format!("{script}$resetTransformOutputs()\n");
+    assert_eq!(
+        Workbench::from_script(&over_budget).err().as_deref(),
+        Some("line 2002: transform output resets exceed the replay work budget")
+    );
+
+    w.run_line("C = (3, 4)").unwrap();
+    assert!(w.undo());
+    assert!(w.construction().id("C").is_none());
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    assert_eq!(labelled_values(&restored), labelled_values(&w));
+    for wb in [&w, &restored] {
+        use geo_kernel::expr::Element;
+
+        let c = wb.construction();
+        let list = c.elements(c.id("M").unwrap()).unwrap();
+        let Some(Element::List(inner)) = list.get(0) else {
+            panic!("expected nested list");
+        };
+        assert_eq!(list.len(), 1);
+        assert_eq!(inner.len(), 1);
+        assert!(matches!(
+            inner.get(0),
+            Some(Element::Value(Kind::Point, Value::Point { x: 2.0, y: 4.0 }))
+        ));
+    }
+}

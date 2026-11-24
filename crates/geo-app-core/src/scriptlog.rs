@@ -786,8 +786,10 @@ impl Log {
             self.ops
                 .push(Op::SavedProperty(Box::new(Property::ResetTransposeFlags)));
         }
-        if c.reset_transform_outputs()
-            && !matches!(self.ops.last(), Some(Op::SavedProperty(p)) if **p == Property::ResetTransformOutputs)
+        // An undo refresh is optional after replay. Only change the outputs
+        // if the resulting journal can replay the extra reset within its budget.
+        if !matches!(self.ops.last(), Some(Op::SavedProperty(p)) if **p == Property::ResetTransformOutputs)
+            && c.apply_saved_transform_reset() == Ok(true)
         {
             self.ops
                 .push(Op::SavedProperty(Box::new(Property::ResetTransformOutputs)));

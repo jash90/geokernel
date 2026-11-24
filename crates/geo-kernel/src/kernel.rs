@@ -4922,19 +4922,18 @@ impl Construction {
 
     /// A saved reset scans the whole construction. Bound the total number of
     /// slots it can scan during a replay, even if it finds no transform.
-    pub(crate) fn apply_saved_transform_reset(&mut self) -> Result<(), String> {
+    pub fn apply_saved_transform_reset(&mut self) -> Result<bool, String> {
         const MAX_REPLAY_SCAN_SLOTS: usize = 1_000_000;
         let slots = self.saved_transform_reset_slots.saturating_add(self.len());
         if slots > MAX_REPLAY_SCAN_SLOTS {
             return Err("transform output resets exceed the replay work budget".into());
         }
         self.saved_transform_reset_slots = slots;
-        self.reset_transform_outputs();
-        Ok(())
+        Ok(self.reset_transform_outputs())
     }
 
     /// Reloading an undo snapshot starts each list transformation with fresh outputs.
-    pub fn reset_transform_outputs(&mut self) -> bool {
+    fn reset_transform_outputs(&mut self) -> bool {
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.len());
         for i in 0..self.len() {
