@@ -42,18 +42,29 @@ case "$(uname -s):$(uname -m)" in
     ;;
 esac
 
+verify() {
+  if command -v shasum >/dev/null; then
+    printf '%s  %s\n' "$1" "$2" | shasum -a 256 -c --status
+  else
+    printf '%s  %s\n' "$1" "$2" | sha256sum -c --status
+  fi
+}
+
 dir="$here/build/$version/$classifier"
 name="javagiac-$version-natives-$classifier.jar"
 mkdir -p "$dir"
 # A cached library is used only while it still has the pinned hash.
 if [ ! -f "$dir/$member" ] \
-  || ! printf '%s  %s\n' "$member_sha" "$dir/$member" | shasum -a 256 -c --status; then
+  || ! verify "$member_sha" "$dir/$member"; then
   tmp="$(mktemp -d "$dir/.download.XXXXXX")"
   trap 'rm -rf "$tmp"' EXIT
   curl --fail --silent --show-error --location --retry 2 "$release/$version/$name" -o "$tmp/$name"
-  printf '%s  %s\n' "$sha" "$tmp/$name" | shasum -a 256 -c --status
+  verify "$sha" "$tmp/$name"
   unzip -p "$tmp/$name" "$member" > "$tmp/$member"
-  printf '%s  %s\n' "$member_sha" "$tmp/$member" | shasum -a 256 -c --status
+  verify "$member_sha" "$tmp/$member"
   mv -f "$tmp/$member" "$dir/$member"
 fi
-echo "$dir/$member"
+case "$(uname -s)" in
+  MINGW* | MSYS* | CYGWIN*) cygpath -am "$dir/$member" ;;
+  *) echo "$dir/$member" ;;
+esac

@@ -128,6 +128,73 @@ jobs:
           env -u GEO_GIAC_LIBRARY cargo test -p geo-golden --features giac \
             --test golden -- --nocapture
 
+  giac-desktop:
+    name: ${{ matrix.job }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - job: giac-macos
+            os: macos-latest
+          - job: giac-windows
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Fetch Giac
+        id: fetch
+        run: |
+          path="$(tools/giac/fetch.sh)"
+          echo "GEO_GIAC_LIBRARY=$path" >> "$GITHUB_ENV"
+      - name: Clippy with the feature
+        run: |
+          cargo clippy -p geo-giac -p geo-kernel -p geo-golden --all-targets \
+            --features geo-golden/giac -- -D warnings
+      - name: Binding tests
+        run: cargo test -p geo-giac --features giac
+      - name: Kernel tests with the feature
+        if: ${{ !cancelled() && steps.fetch.outcome == 'success' }}
+        run: |
+          cargo test -p geo-kernel --features giac \
+            -- --skip mutated_corpus_lines_never_panic
+      # The mutation fuzz runs with the library absent: a mutated CAS input
+      # can crash the native library (a segmentation fault ends the whole
+      # test binary) or take the library's whole time limit per line, and the
+      # test has a wall-clock budget. The recorded CAS inputs run with the
+      # library in the golden step below.
+      - name: Mutation fuzz with the feature and no library
+        if: ${{ !cancelled() && steps.fetch.outcome == 'success' }}
+        run: |
+          env -u GEO_GIAC_LIBRARY cargo test -p geo-kernel --features giac \
+            --test fuzz_script
+      - name: Golden data with the feature
+        if: ${{ !cancelled() && steps.fetch.outcome == 'success' }}
+        run: |
+          cargo test -p geo-golden --features giac --test golden -- --nocapture
+      - name: Command forms with the feature
+        if: ${{ !cancelled() && steps.fetch.outcome == 'success' }}
+        run: cargo test -p geo-golden --features giac --test command_forms
+      # Without a library the feature must change nothing.
+      - name: Golden data with the feature and no library
+        if: ${{ !cancelled() && steps.fetch.outcome == 'success' }}
+        run: |
+          env -u GEO_GIAC_LIBRARY cargo test -p geo-golden --features giac \
+            --test golden -- --nocapture
+
+      - name: Replay the recorded Giac exchanges
+        if: ${{ !cancelled() && steps.fetch.outcome == 'success' }}
+        env:
+          GEO_GIAC_REPLAY_TRACE: '1'
+        run: cargo run -p geo-giac --features giac --example replay -- tools/giac/cas-exchanges.jsonl
+
   # The desktop release targets macOS, Windows and Linux; this job builds and
   # tests the workspace on all three systems. A break that only one target's
   # compiler or dependency graph shows (the macOS one adds `objc2`) fails here.

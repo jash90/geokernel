@@ -1,7 +1,7 @@
 # Giac as an optional CAS backend
 
-Status: Linux prototype for the solving commands. The feature is off by
-default; the default build, its tests and every golden gate do not change.
+Status: optional backend for the solving commands. The feature is off by
+default. Linux x86_64 is the reference for cross-platform validation.
 
 ## Why
 
@@ -116,18 +116,29 @@ kept for the process's lifetime (`geo_giac::backend()`):
 
 | Situation | Backend | What CAS commands do |
 | --- | --- | --- |
-| `GEO_GIAC_LIBRARY` unset or empty, or the file does not exist | `KernelOnly` | Exactly the default build: the kernel's own solver answers, and the parser refuses what the default build refuses (start values, numbers and unknown names as the second argument, `PlotSolve`). The golden data give the default build's numbers and use `known-gaps.toml` alone. |
+| No bundled library found, or the explicit path is empty or missing | `KernelOnly` | Exactly the default build: the kernel's own solver answers, and the parser refuses what the default build refuses (start values, numbers and unknown names as the second argument, `PlotSolve`). The golden data give the default build's numbers and use `known-gaps.toml` alone. |
 | The library is configured, passes the hash check and loads | `Giac` | Translated forms go to Giac. A failed Giac call (time limit, busy worker, worker gone, null handle, Giac error) makes that result undefined, as a failed CAS call does in the reference; a later recompute can succeed once Giac answers again. A form without a translation keeps the kernel's solver, unless it is `PlotSolve` or has a second argument only Giac accepts: then it is undefined, never answered with that argument ignored. |
 | The library is configured but has another hash, the platform has no pinned build, or it does not load | `Failed` | Every CAS result that would go to Giac is undefined, with no fallback; the reason is printed once on standard error (`geo_giac::backend_reason()`). The parser takes the same forms as with `Giac`. |
 
 ### Fidelity check
 
-The harness records every Giac exchange when run with
-`GGB_HARNESS_JAVA_OPTS=-DggbHarness.giacLog=<file>` (see
-`tools/ggb-harness/README.md`). On Linux x86_64 all **1,962** exchanges of the
-662 recorded CAS cases (`cases/cas.json`, `cases/reference/cas.json`) are
-reproduced byte for byte by `geo_giac::eval_raw`
-(`cargo run -p geo-giac --features giac --example replay`).
+The fixture `tools/giac/cas-exchanges.jsonl` contains **1,966** complete
+input/output pairs from the 662 CAS cases in `cases/cas.json` and
+`cases/reference/cas.json`. It was recorded by the Java harness at reference
+revision `112919f2d450ec7430a5cd3b65dba226fdc43b74` on Linux x86_64 with
+Giac 70507. Four logged inputs had no corresponding printed result. To
+recreate the fixture, record the two case files with
+`GGB_HARNESS_JAVA_OPTS=-DggbHarness.giacLog=<file>` (see the
+[harness README](../tools/ggb-harness/README.md)), then pass the log to
+`python3 -I tools/giac/replay-fixture.py <file>`.
+
+```sh
+GEO_GIAC_LIBRARY="$(tools/giac/fetch.sh)" \
+  cargo run -p geo-giac --features giac --example replay -- tools/giac/cas-exchanges.jsonl
+```
+
+The example exits with an error for any differing result. Set
+`GEO_GIAC_REPLAY_TRACE=1` to log each case and input before evaluation.
 
 ## What the kernel ports
 
@@ -191,9 +202,9 @@ the reason for those that still differ.
 
 | | ggb-harness cases | agree | known gaps |
 | --- | --- | --- | --- |
-| default build | 7014 | 6482 | 533 |
-| `giac` feature, library present | 7014 | 6796 | 219 |
-| `giac` feature, no library | 7014 | 6482 | 533 |
+| default build | 7303 | 6819 | 485 |
+| `giac` feature, library present | 7303 | 7133 | 171 |
+| `giac` feature, no library | 7303 | 6819 | 485 |
 
 Only one case that agrees without the feature differs with it:
 `cas-plot-022` records the kernel's old refusal text for `PlotSolve`, a
@@ -220,17 +231,25 @@ gap with the feature may call them (`cas-implicit-013`, `cas-name-004`,
 open because the same cases also call `PlotSolve` of an implicit curve,
 whose curves the kernel does not read back yet.
 
-CI runs the binding, the kernel and the golden data with the feature on Linux
-(`giac-linux` in `.github/workflows/ci.yml`).
+Desktop feature checks run in `giac-linux`, `giac-macos` and `giac-windows`
+(.github/workflows/ci.yml).
 
 ## Crate layout and feature
 
 - `crates/geo-giac`: the loader, the JNI table and the protocol. Without its
   `giac` feature it compiles to an empty shell whose calls return
   `Error::Disabled`; it contains no Giac code either way.
-- The library path is read from `GEO_GIAC_LIBRARY` at run time.
-  `tools/giac/fetch.sh` downloads and checks the pinned artifact for the
-  current platform and prints that path.
+- Set `GEO_GIAC_LIBRARY` to override the library location. When it is unset,
+  desktop builds look for the platform's pinned library next to the
+  executable, then in `Contents/Frameworks` for a macOS bundle. An empty
+  override selects the kernel alone. `tools/giac/fetch.sh` verifies the
+  pinned desktop artifact and prints the library path.
+- On Android, call `geo_giac::initialize_from_android_dir` with
+  `ApplicationInfo.nativeLibraryDir` before any backend query or evaluation.
+  The app uses the ABI selected at install time. The worker checks both
+  library hashes, preloads the C++ runtime, and loads Giac by absolute
+  path. An incomplete or relative directory is rejected before backend
+  selection.
 - `geo-kernel` gets an optional `giac` feature that depends on
   `geo-giac/giac`. `cargo build --workspace` and every existing gate build
   without it.
@@ -257,43 +276,82 @@ See `NOTICE`.
 
 ## Platforms
 
-| Platform | State |
-| --- | --- |
-| Linux x86_64 | Prototype: loads and agrees on every recorded exchange. |
-| macOS arm64 / x86_64 | Same entry points; needs a run on a Mac. The harness already uses the arm64 library. |
-| Windows x86_64 | Same entry points exported (checked in the DLL's export table); needs a run on Windows. `extern "system"` is the JNI calling convention there. |
-| Android | Same entry points in all four ABIs; `libc++_shared.so` from the same AAR must be packaged beside it. Loading needs the app's native library directory instead of `GEO_GIAC_LIBRARY`. |
-| Web | Not covered: the reference uses a JavaScript build of Giac. |
+Evidence as of 2026-11-24:
 
-### Plan for the other platforms
+| Platform | Check | Result |
+| --- | --- | --- |
+| Linux x86_64 | `giac-linux` | Passed on main on 2026-11-24 (6m 15s). |
+| macOS arm64 | `giac-macos` on `macos-latest` | Local binding tests passed. The full native replay and golden replay reproduced the upstream fault described below. |
+| macOS x86_64 | Manual desktop packaging | Pinned Intel library available. Full CI fidelity has yet to be established. |
+| Windows x86_64 | `giac-windows` on `windows-latest` | Pinned DLL and JNI exports checked. Runtime CI evidence pending. |
+| Android | AAR extraction and host unit tests | Pinned AAR verified and both libraries extracted for all four ABIs. Directory resolution and refusal tests passed. Emulator replay pending. |
+| Web | Outside scope | The reference uses a JavaScript build of Giac. |
 
-The binding needs no change across platforms: it only loads a library and
-calls six C functions, and all four published builds export them. What
-differs is fetching, shipping and locating the library.
+### macOS arm64 crash
 
-1. **macOS.** Add the pinned `macosx-universal` artifact to
-   `tools/giac/fetch.sh` for x86_64 (`libjavagiac.jnilib`) beside arm64,
-   run the `giac-linux` steps on a `macos-14` runner, and repeat the replay
-   of the recorded exchanges there (the harness already records on macOS).
-   The app bundle carries the library in `Contents/Frameworks` and looks for
-   it next to the executable when `GEO_GIAC_LIBRARY` is unset; the bundle
-   must be signed with the library inside.
-2. **Windows.** Pin `javagiac64.dll` (SHA-256 recorded in
-   `tools/giac/fetch.sh`), run the same steps on `windows-latest`. The DLL
-   needs only the Universal C runtime of Windows 10 and later. It ships next
-   to the executable.
-3. **Android.** Take `libjavagiac.so` and `libc++_shared.so` for each ABI from
-   `giac-android-70507.aar`, package them under `jniLibs/<abi>`, and load
-   `libjavagiac.so` from the app's native library directory (the path comes
-   from the Android side instead of `GEO_GIAC_LIBRARY`). The fidelity check
-   runs in an emulator job (x86_64 image) with the replay example built for
-   `x86_64-linux-android`.
-4. **Distribution.** Every package that contains a Giac library is a GPL-3.0
-   combined work: its licence notice, the offer of Giac's source and the
-   complete corresponding source of the application go with it. A store that
-   forbids GPL terms cannot carry such a build; the default build without the
-   feature stays available for it.
+On macOS 27.2.1 (arm64), Giac 70507's `libjavagiac-arm64.jnilib` crashed
+during the native replay at `cas-order-018`. The call was
+`Java_javagiac_giacJNI_gen_1eval` for this input:
 
-Each platform counts as covered only after its runner reproduces every
-recorded Giac exchange and the golden data with the feature agree as on
-Linux.
+```text
+caseval(evalfa(ggbsort(normal(solve((((((x)^(2))+(((6)*(x))*(y)))-((3)*((y)^(2))))-((6)*(y)))-(3)=0,x,'!=')))))
+```
+
+The crash report records `EXC_BAD_ACCESS` / `SIGBUS` in `__gmpn_mul_1`
+under `mpfr_exp`. Other replay and golden runs recorded `SIGSEGV` inside
+`__gmpn_sqr_diag_addlsh1` or `__gmpn_sub_n`. The same isolated exchange
+passed three fresh processes. Disassembling the pinned binary shows that
+its GMP assembly uses `x18` as a loop counter, for example
+`lsr x18, x3, #2` and `sub x18, x18, #1` in `__gmpn_sub_n`.
+The Apple ARM64 ABI reserves `x18`. macOS can clear it on a context
+switch. A counter cleared
+mid-loop can underflow and run past the operand buffers, consistent with the
+register state and memory faults in the crash reports. See the [Apple ARM64 ABI](https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms)
+and the [GMP fault report](https://gnats.netbsd.org/60904).
+
+The fix belongs in
+the published arm64 library's GMP build. The CI replay keeps reporting
+crashes and output differences. The current macOS packaging workflow builds
+for Intel.
+
+### Android emulator replay
+
+`tools/giac/android.sh` verifies the SHA-256 of
+`giac-android-70507.aar` and prints the extracted `jniLibs` root in the
+ignored build directory. The four ABI folders each contain
+`libjavagiac.so` and `libc++_shared.so`.
+
+The next validation step is the following replay on a booted x86_64
+emulator. Set `ANDROID_NDK_HOME` and use the host prebuilt directory for
+your NDK installation (the example uses the Linux host).
+
+```sh
+rustup target add x86_64-linux-android
+export CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android24-clang"
+cargo build -p geo-giac --features giac --target x86_64-linux-android --example replay
+jni_libs="$(tools/giac/android.sh)"
+adb shell mkdir -p /data/local/tmp/geokernel-giac
+adb push target/x86_64-linux-android/debug/examples/replay tools/giac/cas-exchanges.jsonl \
+  "$jni_libs/x86_64/libjavagiac.so" "$jni_libs/x86_64/libc++_shared.so" /data/local/tmp/geokernel-giac/
+adb shell chmod 755 /data/local/tmp/geokernel-giac/replay
+adb shell /data/local/tmp/geokernel-giac/replay /data/local/tmp/geokernel-giac/cas-exchanges.jsonl /data/local/tmp/geokernel-giac
+```
+
+## Desktop distribution
+
+The manual **Package desktop builds** workflow builds two archives per
+desktop platform (Linux x86_64, Windows x86_64 and macOS x86_64):
+
+- `geokernel-<platform>.tar.gz` contains the CLI and desktop app under
+  EUPL-1.2.
+- `geokernel-giac-<platform>.tar.gz` contains the same programs with
+  the Giac feature and the verified native library under GPL-3.0-or-later.
+  The library is beside the executables. In the macOS app bundle, the
+  library is in `Contents/Frameworks` and linked from `Contents/MacOS`.
+
+Each includes `NOTICE`, `LICENSE` and `REVISION`. The Giac variant also
+includes the GPL licence, the application's source archive and the written
+offer for Giac's exact corresponding source. Before any release, the project
+owner must arrange delivery of that source for this binary build and, for
+online distribution, make it available alongside the downloads under GPLv3
+section 6(d). CI produces unsigned build artifacts.

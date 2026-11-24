@@ -35,8 +35,10 @@ pub(crate) struct Native {
     // gen.print(context)
     gen_print: GenPrint,
     delete_gen: DeleteHandle,
-    // Kept last so the entry points above are dropped before the library.
+    // Keep the library and, on Android, its runtime dependency alive.
     _library: Library,
+    #[cfg(target_os = "android")]
+    _cxx: Library,
 }
 
 fn symbol<T: Copy>(library: &Library, name: &str) -> Result<T, Error> {
@@ -46,6 +48,19 @@ fn symbol<T: Copy>(library: &Library, name: &str) -> Result<T, Error> {
         .map(|found| *found)
         .map_err(|error| Error::Load(format!("{PREFIX}{name}: {error}")))
 }
+
+pub(crate) const LIBRARY_NAME: Option<&str> =
+    if cfg!(all(target_os = "linux", target_arch = "x86_64")) {
+        Some("libjavagiac64.so")
+    } else if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
+        Some("libjavagiac-arm64.jnilib")
+    } else if cfg!(all(target_os = "macos", target_arch = "x86_64")) {
+        Some("libjavagiac.jnilib")
+    } else if cfg!(all(target_os = "windows", target_arch = "x86_64")) {
+        Some("javagiac64.dll")
+    } else {
+        None
+    };
 
 /// SHA-256 of the Giac 70507 library for this platform, as extracted from
 /// the reference's release (`tools/giac/fetch.sh` pins the same values).
@@ -92,15 +107,29 @@ const PINNED: Option<&str> =
 )))]
 const PINNED: Option<&str> = None;
 
+#[cfg(target_os = "android")]
+const CXX_PINNED: &str = match std::env::consts::ARCH.as_bytes() {
+    b"aarch64" => "ee66b768f37c9fc5e8b9a0f926e57400101307c8bdcbc59ff4c07b55f93590e7",
+    b"arm" => "835c589f8199a35f135c960fa36b05ee2682382a6b4218f1a7a354713665135c",
+    b"x86" => "9a8ce7e9b7339d782e807b7d203271791dd21d8be6028f3861122b412af7905b",
+    b"x86_64" => "69d9c9695dd3bc15440c1e348abb4be2ecb67497095940e5c0f1ce0cfe7b10c6",
+    // verify() rejects an unsupported ABI before this pin is used.
+    _ => "",
+};
+
 /// Refuses a library whose contents are not the pinned build: loading runs
 /// its code in this process.
 fn verify(path: &Path) -> Result<(), Error> {
-    use sha2::{Digest, Sha256};
     let Some(pinned) = PINNED else {
         return Err(Error::Integrity(
             "no Giac build is pinned for this platform".into(),
         ));
     };
+    verify_sha256(path, pinned)
+}
+
+fn verify_sha256(path: &Path, pinned: &str) -> Result<(), Error> {
+    use sha2::{Digest, Sha256};
     let bytes = std::fs::read(path).map_err(|e| Error::Load(format!("{}: {e}", path.display())))?;
     let digest = Sha256::digest(&bytes);
     let actual: String = digest.iter().map(|b| format!("{b:02x}")).collect();
@@ -116,6 +145,14 @@ fn verify(path: &Path) -> Result<(), Error> {
 impl Native {
     pub(crate) fn load(path: &Path) -> Result<Self, Error> {
         verify(path)?;
+        #[cfg(target_os = "android")]
+        let cxx = {
+            let cxx_path = path.with_file_name("libc++_shared.so");
+            verify_sha256(&cxx_path, CXX_PINNED)?;
+            // SAFETY: this is the C++ runtime from the same pinned AAR.
+            unsafe { Library::new(&cxx_path) }
+                .map_err(|error| Error::Load(format!("{}: {error}", cxx_path.display())))?
+        };
         // SAFETY: loading Giac runs its static initialisers, which only set up
         // Giac's own tables.
         let library = unsafe { Library::new(path) }
@@ -128,6 +165,8 @@ impl Native {
             gen_print: symbol(&library, "gen_1print_1_1SWIG_10")?,
             delete_gen: symbol(&library, "delete_1gen")?,
             _library: library,
+            #[cfg(target_os = "android")]
+            _cxx: cxx,
         })
     }
 

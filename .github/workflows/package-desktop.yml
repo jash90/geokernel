@@ -1,0 +1,55 @@
+name: Package desktop builds
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Giac 70507's macOS arm64 binary violates the Apple ARM64 ABI.
+        os: [ubuntu-latest, windows-latest, macos-15-intel]
+        variant: [geokernel, geokernel-giac]
+    name: ${{ matrix.variant }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install Linux system packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libxkbcommon-dev libxcb-render0-dev libxcb-shape0-dev \
+            libxcb-xfixes0-dev
+      - name: Build
+        env:
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          args=()
+          if [ "$VARIANT" = geokernel-giac ]; then
+            args+=(--features geo-kernel/giac)
+          fi
+          cargo build --locked --release -p geo-cli -p geo-app "${args[@]}"
+      - name: Archive
+        id: archive
+        env:
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          archive="$(tools/giac/package-desktop.sh "$VARIANT" target/release)"
+          echo "path=$archive" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$archive" .tar.gz)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.archive.outputs.name }}
+          path: ${{ steps.archive.outputs.path }}
+          if-no-files-found: error

@@ -22,6 +22,9 @@ libloading = { version = "0.8", optional = true }
 # Checks the library against its pinned SHA-256 before loading it.
 sha2 = { version = "0.10", optional = true }
 
+[dev-dependencies]
+serde_json = "1"
+
 [[example]]
 name = "replay"
 required-features = ["giac"]

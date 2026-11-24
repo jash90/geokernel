@@ -1,25 +1,46 @@
 //! Replays recorded Giac exchanges and reports the ones whose output differs.
 //!
-//! Input: a file of records `case \x1f input \x1f expected output \x1e`, where
-//! the input is the string the reference passed to `evalRaw` (before its
-//! `evalfa` wrapping). Usage: `replay <file>`; needs GEO_GIAC_LIBRARY.
+//! Usage: `replay <file>`. The input is a JSONL fixture from
+//! `tools/giac/replay-fixture.py` or the original delimited replay format.
+//! On Android, pass the native library directory as the second argument.
 
 fn main() {
-    let path = std::env::args().nth(1).expect("usage: replay <file>");
+    let mut args = std::env::args_os().skip(1);
+    let path = args
+        .next()
+        .expect("usage: replay <file> [android-library-dir]");
+    if let Some(directory) = args.next() {
+        #[cfg(target_os = "android")]
+        geo_giac::initialize_from_android_dir(std::path::Path::new(&directory))
+            .expect("load Giac from the native library directory");
+        #[cfg(not(target_os = "android"))]
+        panic!("a native library directory is only accepted on Android: {directory:?}");
+    }
+    let trace = std::env::var_os("GEO_GIAC_REPLAY_TRACE").is_some();
     let text = std::fs::read_to_string(path).expect("readable file");
+    let exchanges: Vec<[String; 3]> = if text.starts_with('[') {
+        text.lines()
+            .map(|line| serde_json::from_str(line).expect("case, input and expected output"))
+            .collect()
+    } else {
+        text.split('\x1e')
+            .filter(|record| !record.is_empty())
+            .map(|record| {
+                let mut parts = record.split('\x1f');
+                std::array::from_fn(|_| parts.next().expect("complete exchange").to_owned())
+            })
+            .collect()
+    };
     let (mut same, mut differ) = (0, 0);
-    for record in text.split('\x1e').filter(|r| !r.is_empty()) {
-        let mut parts = record.split('\x1f');
-        let (case, input, expected) = (
-            parts.next().unwrap(),
-            parts.next().unwrap(),
-            parts.next().unwrap(),
-        );
+    for [case, input, expected] in &exchanges {
         // The recording is taken before evalRaw removes surrounding quotes.
         let expected = match expected.strip_prefix('"').and_then(|e| e.strip_suffix('"')) {
             Some(inner) => inner,
-            None => expected,
+            None => expected.as_str(),
         };
+        if trace {
+            eprintln!("{case}: {input}");
+        }
         let seed = geo_giac::session::seed(input, 1);
         match geo_giac::eval_raw(input, geo_giac::session::DEFAULT_TIMEOUT_MS, seed) {
             Ok(got) if got == expected => same += 1,
@@ -32,4 +53,7 @@ fn main() {
         }
     }
     println!("{same} same, {differ} different");
+    if same == 0 || differ != 0 {
+        std::process::exit(1);
+    }
 }
