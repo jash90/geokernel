@@ -20,7 +20,10 @@ pub(crate) fn giac_admits() -> bool {
     geo_giac::backend() != geo_giac::Backend::KernelOnly
 }
 mod input;
+mod row;
 mod solutions;
+mod syntax;
+pub use row::CasRow;
 
 use super::equation::Builder;
 use super::eval::{Ctx, Ex, Val};

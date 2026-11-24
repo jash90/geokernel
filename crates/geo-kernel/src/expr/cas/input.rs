@@ -11,12 +11,12 @@ pub(super) fn number(value: Rat) -> Quotient {
     Quotient::polynomial(Poly::constant(value))
 }
 
-fn from_decimal(d: &crate::expr::Dec) -> Option<Rat> {
+pub(super) fn from_decimal(d: &crate::expr::Dec) -> Option<Rat> {
     let (coefficient, exp) = d.signed_coefficient()?;
     Rat::decimal(coefficient, exp)
 }
 
-fn object(c: &Construction, id: Id) -> Option<Rat> {
+pub(super) fn object(c: &Construction, id: Id) -> Option<Rat> {
     let Value::Number(value) = c.value(id) else {
         return None;
     };

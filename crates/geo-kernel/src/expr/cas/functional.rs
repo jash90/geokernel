@@ -37,6 +37,28 @@ impl Function {
         }
     }
 
+    pub(super) fn row_text(&self) -> String {
+        // The CAS row prints positive shifts first for linear factors.
+        if let Form::Product {
+            numerator,
+            denominator,
+            real_display: None,
+        } = &self.form
+        {
+            let mut numerator = numerator.clone();
+            let mut denominator = denominator.clone();
+            numerator.1.reverse();
+            denominator.1.reverse();
+            let top = print_product(&numerator);
+            return if self.expanded.denominator.scalar() == Some(Rat::ONE) {
+                top
+            } else {
+                format!("({top})/({})", print_product(&denominator))
+            };
+        }
+        self.to_string()
+    }
+
     pub(in crate::expr) fn value(&self, x: f64, y: f64) -> f64 {
         match &self.form {
             Form::Expanded => self.expanded.value(x, y),

@@ -14,7 +14,12 @@
 
 pub(super) mod rewrite;
 
-use super::{Op, Slot};
+use super::{syntax, Op, Slot};
+use syntax::Expr;
+
+fn parse(s: &str) -> Option<Expr> {
+    syntax::parse(s, false)
+}
 use crate::expr::eval::Ctx;
 use crate::expr::{Bin, Entry, Lit, Node, Un};
 use crate::{Construction, Def, Kind, Value};
@@ -39,6 +44,22 @@ const PLOTSOLVE_1: &str = "[[ggbplarg:=ggbsort(normal([op(solve(%0))]))],[when(s
 /// A command without a template of its arity is passed to Giac as an unknown
 /// function (`GeoGebraCAS.getCASCommand`).
 const PLOTSOLVE_2: &str = "ggbtmpvarPlotSolve(%0,%1)";
+
+pub(super) fn row_solve(name: &str, input: &str, variable: &str) -> String {
+    let template = match name {
+        "Solve" => SOLVE_2,
+        "Solutions" => SOLUTIONS_2,
+        "NSolve" => NSOLVE_2,
+        _ => NSOLUTIONS_2,
+    };
+    fill(template, &[input, variable], &[input, variable])
+}
+
+pub(super) fn row_object(c: &Construction, id: crate::Id) -> Option<String> {
+    let mut result = String::new();
+    Printer::new(c, Vec::new(), false).object(id, &mut result)?;
+    Some(result)
+}
 
 /// Evaluates a solving command through Giac. `None`: no translation, keep
 /// the kernel's solver. `Some(None)`: an undefined list.
@@ -107,7 +128,7 @@ fn translate_and_evaluate<const M: bool>(ctx: &Ctx<'_, M>, equations: u32, op: O
     }
 }
 
-fn evaluate_raw(input: &str) -> Option<String> {
+pub(super) fn evaluate_raw(input: &str) -> Option<String> {
     let seed = geo_giac::session::seed(input, 1);
     let raw = geo_giac::eval_raw(input, geo_giac::session::DEFAULT_TIMEOUT_MS, seed).ok()?;
     if std::env::var_os("GEO_GIAC_TRACE").is_some() {
@@ -303,7 +324,7 @@ fn print_hint(
         Some(())
     };
     match e {
-        Expr::Num(v) => {
+        Expr::Num(v, _) => {
             let text = format!("{v}");
             if numeric {
                 out.push_str(&canonical_number(&text));
@@ -338,7 +359,7 @@ fn print_hint(
         },
         Expr::Neg(a) => match &**a {
             // A typed literal is negated in place.
-            Expr::Num(_) => {
+            Expr::Num(..) => {
                 out.push('-');
                 print_hint(c, a, numeric, false, out)?;
             }
@@ -951,7 +972,7 @@ fn number(v: f64, out: &mut String) {
 
 /// `convertScientificNotationGiac(canonicalNumber(text))` for a plain
 /// decimal: `2.22` is `(222/100)`, `3.000` is `3`.
-fn decimal_fraction(text: &str) -> String {
+pub(super) fn decimal_fraction(text: &str) -> String {
     let Some(dot) = text.find('.') else {
         return text.to_string();
     };
@@ -1026,235 +1047,9 @@ impl Function {
     }
 }
 
-/// A value printed by Giac.
-#[derive(Clone, Debug, PartialEq)]
-enum Expr {
-    Num(f64),
-    Name(String),
-    Neg(Box<Expr>),
-    Bin(u8, Box<Expr>, Box<Expr>),
-    Call(String, Vec<Expr>),
-    List(Vec<Expr>),
-    Tuple(Vec<Expr>),
-    Eq(Box<Expr>, Box<Expr>),
-}
-
-/// How deeply the reader may recurse (nested brackets, signs, powers).
-const MAX_NESTING: u32 = 64;
-
-/// How deep a read expression may be, chains of `+` and `*` included, so
-/// that every walk over it stays far from the end of the stack.
-const MAX_DEPTH: usize = 256;
-
 /// Work units (term operations of the exact polynomial arithmetic) one
 /// conversion of a result into a polynomial may spend.
 const POLYNOMIAL_BUDGET: u64 = 1 << 20;
-
-struct Reader<'a> {
-    s: &'a [u8],
-    i: usize,
-    nesting: u32,
-}
-
-impl Reader<'_> {
-    fn peek(&mut self) -> Option<u8> {
-        while self.s.get(self.i).is_some_and(|b| *b == b' ') {
-            self.i += 1;
-        }
-        self.s.get(self.i).copied()
-    }
-
-    fn eat(&mut self, b: u8) -> bool {
-        if self.peek() == Some(b) {
-            self.i += 1;
-            true
-        } else {
-            false
-        }
-    }
-
-    fn equation(&mut self) -> Option<Expr> {
-        let left = self.sum()?;
-        if self.eat(b'=') {
-            let right = self.sum()?;
-            return Some(Expr::Eq(Box::new(left), Box::new(right)));
-        }
-        Some(left)
-    }
-
-    fn sum(&mut self) -> Option<Expr> {
-        let mut left = self.product()?;
-        loop {
-            let op = match self.peek() {
-                Some(b'+') => b'+',
-                Some(b'-') => b'-',
-                _ => return Some(left),
-            };
-            self.i += 1;
-            let right = self.product()?;
-            left = Expr::Bin(op, Box::new(left), Box::new(right));
-        }
-    }
-
-    fn product(&mut self) -> Option<Expr> {
-        let mut left = self.unary()?;
-        loop {
-            let op = match self.peek() {
-                Some(b'*') => b'*',
-                Some(b'/') => b'/',
-                _ => return Some(left),
-            };
-            self.i += 1;
-            let right = self.unary()?;
-            left = Expr::Bin(op, Box::new(left), Box::new(right));
-        }
-    }
-
-    fn unary(&mut self) -> Option<Expr> {
-        // Every nested bracket, sign or exponent passes through here.
-        if self.nesting >= MAX_NESTING {
-            return None;
-        }
-        self.nesting += 1;
-        let e = self.signed();
-        self.nesting -= 1;
-        e
-    }
-
-    fn signed(&mut self) -> Option<Expr> {
-        if self.eat(b'-') {
-            return Some(Expr::Neg(Box::new(self.unary()?)));
-        }
-        if self.eat(b'+') {
-            return self.unary();
-        }
-        self.power()
-    }
-
-    fn power(&mut self) -> Option<Expr> {
-        // `√a`, which the reference's parser reads as `sqrt(a)`.
-        let base = if self.peek() == Some(0xE2) && self.s[self.i..].starts_with("√".as_bytes()) {
-            self.i += "√".len();
-            Expr::Call("sqrt".into(), vec![self.atom()?])
-        } else {
-            self.atom()?
-        };
-        if self.eat(b'^') {
-            let exponent = self.unary()?;
-            return Some(Expr::Bin(b'^', Box::new(base), Box::new(exponent)));
-        }
-        Some(base)
-    }
-
-    fn items(&mut self, close: u8) -> Option<Vec<Expr>> {
-        let mut items = Vec::new();
-        if self.eat(close) {
-            return Some(items);
-        }
-        loop {
-            items.push(self.equation()?);
-            if self.eat(close) {
-                return Some(items);
-            }
-            if !self.eat(b',') {
-                return None;
-            }
-        }
-    }
-
-    fn atom(&mut self) -> Option<Expr> {
-        let b = self.peek()?;
-        if b == b'{' || b == b'[' {
-            self.i += 1;
-            let close = if b == b'{' { b'}' } else { b']' };
-            return Some(Expr::List(self.items(close)?));
-        }
-        if b == b'(' {
-            self.i += 1;
-            let mut items = self.items(b')')?;
-            return Some(if items.len() == 1 {
-                items.pop()?
-            } else {
-                Expr::Tuple(items)
-            });
-        }
-        if b.is_ascii_digit() || b == b'.' {
-            let start = self.i;
-            while self
-                .s
-                .get(self.i)
-                .is_some_and(|c| c.is_ascii_digit() || *c == b'.')
-            {
-                self.i += 1;
-            }
-            if self.s.get(self.i).is_some_and(|c| *c == b'e' || *c == b'E')
-                && self
-                    .s
-                    .get(self.i + 1)
-                    .is_some_and(|c| c.is_ascii_digit() || *c == b'-' || *c == b'+')
-            {
-                self.i += 2;
-                while self.s.get(self.i).is_some_and(u8::is_ascii_digit) {
-                    self.i += 1;
-                }
-            }
-            let text = std::str::from_utf8(&self.s[start..self.i]).ok()?;
-            return text.parse().ok().map(Expr::Num);
-        }
-        if b.is_ascii_alphabetic() || b == b'_' || b == b'?' {
-            let start = self.i;
-            self.i += 1;
-            while self
-                .s
-                .get(self.i)
-                .is_some_and(|c| c.is_ascii_alphanumeric() || *c == b'_')
-            {
-                self.i += 1;
-            }
-            let name = std::str::from_utf8(&self.s[start..self.i])
-                .ok()?
-                .to_string();
-            if self.eat(b'(') {
-                return Some(Expr::Call(name, self.items(b')')?));
-            }
-            return Some(Expr::Name(name));
-        }
-        None
-    }
-}
-
-fn parse(s: &str) -> Option<Expr> {
-    let mut reader = Reader {
-        s: s.as_bytes(),
-        i: 0,
-        nesting: 0,
-    };
-    let e = reader.equation()?;
-    (reader.peek().is_none() && shallow(&e)).then_some(e)
-}
-
-/// Whether the expression is at most [`MAX_DEPTH`] deep, measured without
-/// recursion.
-fn shallow(e: &Expr) -> bool {
-    let mut stack = vec![(e, 1usize)];
-    while let Some((e, depth)) = stack.pop() {
-        if depth > MAX_DEPTH {
-            return false;
-        }
-        match e {
-            Expr::Num(_) | Expr::Name(_) => {}
-            Expr::Neg(a) => stack.push((a, depth + 1)),
-            Expr::Bin(_, a, b) | Expr::Eq(a, b) => {
-                stack.push((a, depth + 1));
-                stack.push((b, depth + 1));
-            }
-            Expr::Call(_, items) | Expr::List(items) | Expr::Tuple(items) => {
-                stack.extend(items.iter().map(|item| (item, depth + 1)));
-            }
-        }
-    }
-    true
-}
 
 /// The value of a printed expression at `(x, y)`; `None` for anything the
 /// reference would not read as a number.
@@ -1264,7 +1059,7 @@ fn value(e: &Expr, x: f64, y: f64) -> Option<f64> {
 
 fn value_at(e: &Expr, args: [f64; 3]) -> Option<f64> {
     Some(match e {
-        Expr::Num(v) => *v,
+        Expr::Num(v, _) => *v,
         Expr::Name(n) => match n.as_str() {
             "x" => args[0],
             "y" => args[1],
@@ -1333,7 +1128,7 @@ fn real_and_imaginary(e: &Expr, args: [f64; 3]) -> Option<(f64, f64)> {
 /// reference's parser reads as a number or a variable.
 fn known(e: &Expr) -> bool {
     match e {
-        Expr::Num(_) => true,
+        Expr::Num(..) => true,
         Expr::Name(n) => matches!(
             n.as_str(),
             "x" | "y" | "z" | "pi" | "e" | "inf" | "infinity"
@@ -1372,7 +1167,7 @@ impl std::fmt::Display for Algebra<'_> {
             f.write_str("(")?;
         }
         match expr {
-            Expr::Num(n) => f.write_str(&format_number(*n))?,
+            Expr::Num(n, _) => f.write_str(&format_number(*n))?,
             Expr::Name(name) => f.write_str(match name.as_str() {
                 "pi" => "π",
                 "e" => "ℯ",
@@ -1383,9 +1178,9 @@ impl std::fmt::Display for Algebra<'_> {
             Expr::Bin(b'^', a, b) => {
                 write!(f, "{}", Self(a, precedence + 1))?;
                 let exponent = match b.as_ref() {
-                    Expr::Num(n) => Some(*n),
+                    Expr::Num(n, _) => Some(*n),
                     Expr::Neg(inner) => match inner.as_ref() {
-                        Expr::Num(n) => Some(-n),
+                        Expr::Num(n, _) => Some(-n),
                         _ => None,
                     },
                     _ => None,
@@ -1412,7 +1207,7 @@ impl std::fmt::Display for Algebra<'_> {
                             _ => right,
                         };
                         match (a.as_ref(), base) {
-                            (Expr::Num(_), Expr::Name(_)) => "",
+                            (Expr::Num(..), Expr::Name(_)) => "",
                             (_, Expr::Name(_)) => " ",
                             _ => " * ",
                         }
@@ -1487,7 +1282,7 @@ fn power(a: f64, b: f64) -> f64 {
 fn has_name(e: &Expr, name: &str) -> bool {
     match e {
         Expr::Name(n) => n == name,
-        Expr::Num(_) => false,
+        Expr::Num(..) => false,
         Expr::Neg(a) => has_name(a, name),
         Expr::Bin(_, a, b) | Expr::Eq(a, b) => has_name(a, name) || has_name(b, name),
         Expr::Call(_, args) | Expr::List(args) | Expr::Tuple(args) => {
@@ -1777,7 +1572,7 @@ fn quotient(
 ) -> Option<crate::cas::Quotient> {
     use crate::cas::{Poly, Quotient, Rat};
     Some(match e {
-        Expr::Num(v) => Quotient::polynomial(Poly::constant(Rat::from_value(*v)?)),
+        Expr::Num(v, _) => Quotient::polynomial(Poly::constant(Rat::from_value(*v)?)),
         Expr::Name(n) => {
             if let Some(i) = variables.iter().position(|name| n == name) {
                 Quotient::polynomial(Poly::variable(i))

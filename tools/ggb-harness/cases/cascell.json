@@ -1,0 +1,138 @@
+{
+  "cases": [
+    {
+      "id": "cascell-exact-001",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "sqrt(2) + sqrt(3)"
+    },
+    {
+      "id": "cascell-exact-002",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "2/3 * 5/7"
+    },
+    {
+      "id": "cascell-exact-003",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "9007199254740992 + 1"
+    },
+    {
+      "id": "cascell-exact-004",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Expand((x + 1) * (x - 1))"
+    },
+    {
+      "id": "cascell-exact-005",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Factor(x^2 - 1)"
+    },
+    {
+      "id": "cascell-exact-006",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "(x + 1) * (x - 1)"
+    },
+    {
+      "id": "cascell-exact-007",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Solve(x^2 = 1)"
+    },
+    {
+      "id": "cascell-exact-008",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "NextPrime(100)"
+    },
+    {
+      "id": "cascell-exact-009",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "1 / 0"
+    },
+    {
+      "id": "cascell-exact-010",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "?"
+    },
+    {
+      "id": "cascell-exact-011",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": " 2/3 * 5/7 = "
+    },
+    {
+      "id": "cascell-exact-012",
+      "group": "cascell",
+      "script": [
+        "g: 2x + 3y = 6"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "f(x) = 1 + Simplify(g)"
+    }
+  ]
+}

@@ -72,6 +72,7 @@
 mod cas;
 #[cfg(feature = "giac")]
 pub(crate) use cas::rewrite_geometry;
+pub use cas::CasRow;
 mod commands;
 
 /// The order of `GeoText.getComparator`: texts compared without accents,
