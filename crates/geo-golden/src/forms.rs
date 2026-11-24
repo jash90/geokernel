@@ -299,8 +299,8 @@ pub fn calls(expr: &str) -> Vec<(String, Vec<String>)> {
 /// The kind of an argument, where it can be told without the kernel: a
 /// label of the case, a number written with digits, operators and number
 /// labels, a comparison (a boolean), a list in braces, a pair of numbers (a
-/// point). Anything else, such as a nested call or a name that is no label
-/// (the `x` of a function, the variable of `Sequence`), is unknown.
+/// point). Recognised nested calls with a known output can also supply a
+/// kind. Other calls and names outside the case labels are unknown.
 pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
     let a = arg.trim();
     if let Some(&k) = labels.get(a) {
@@ -325,6 +325,13 @@ pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
         })
     {
         return Some(Kind::List);
+    }
+    // Line has one output kind across its two-argument forms.
+    if a.starts_with("Line(") {
+        let (_, args) = geo_kernel::script::split_call(a)?;
+        if args.len() == 2 {
+            return Some(Kind::Line);
+        }
     }
     // Dilating a list preserves its kind. This identifies the Length(list)
     // probe in dilation cases without attributing its gap to other overloads.
@@ -1017,6 +1024,7 @@ mod tests {
         assert_eq!(arg_kind("A + (1, 0)", &l), None);
         assert_eq!(arg_kind("sqrt(a)", &l), None);
         assert_eq!(arg_kind("Segment(A, A)", &l), None);
+        assert_eq!(arg_kind("Line(A, A)", &l), Some(Kind::Line));
         assert_eq!(arg_kind("s + 1", &l), None);
         assert_eq!(arg_kind("(A, 1)", &l), None);
         assert_eq!(arg_kind("x < 0", &l), None);

@@ -3541,7 +3541,7 @@ cases = [
 # Dilate(list,number) is open because polygon and Cartesian curve leaves
 # have gaps in matrixdilate-dilateleaves. The agreeing cases include
 # matrixdilate-dilatelist-001, -002, -004, -005, -006 and
-# optimizerreview-transform-001, -003, -005, -006.
+# optimizerreview-transform-001, -003, -005, -006, and optimizerreview-nestedreplacement-001.
 
 [[form]]
 command = "ApplyMatrix"
@@ -3557,6 +3557,7 @@ cases = [
   "optimizerreview-transform-004",
   "optimizerreview-transform-007",
   "optimizerreview-transform-008",
+  "optimizerreview-nestedreplacement-002",
   "vectorforms-inlineimages-001",
 ]
 

@@ -327,7 +327,9 @@ pub(crate) fn search(
         let result = set_parameter(c, optimum.unwrap_or(f64::NAN));
         cascade.set_result(c, result);
         set_parameter(c, old);
-        cascade.update(c, true);
+        if !cascade.update(c, true) && optimum.is_none() {
+            return Value::Undefined;
+        }
         return result;
     }
     let result = match (exhausted, on_path) {
@@ -678,6 +680,42 @@ mod cascade_tests {
         for (id, previous) in readers.into_iter().zip(previous_readers) {
             assert_eq!(c.value(id), previous, "{}", c.label(id));
         }
+    }
+
+    #[test]
+    fn refused_bulk_work_restores_every_reader_within_the_shared_budget() {
+        let mut c = script::load(
+            "a = Slider(0, 6)\nk = 1\nm = Minimize((a - 3)^2, a)\n\
+             n = Minimize(k*(a - 2)^2, a)\nv = Sequence(j, j, 1, 1000000)",
+        )
+        .unwrap();
+        let readers: Vec<_> = (1..=4)
+            .map(|i| {
+                script::exec(
+                    &mut c,
+                    &format!("d_{{{i}}} = If(a < 0.01, Sum(Sort(v)), a)"),
+                )
+                .unwrap()
+                .unwrap()
+            })
+            .collect();
+        let expected = Value::Number(500_000_500_000.0);
+        assert!(readers.iter().all(|&id| c.value(id) == expected));
+
+        let before = crate::expr::work_done();
+        let refusals = crate::expr::shared_work_refusals();
+        c.set_number(c.id("k").unwrap(), 2.0).unwrap();
+        let work = crate::expr::work_done() - before;
+        assert_ne!(crate::expr::shared_work_refusals(), refusals);
+
+        assert_eq!(c.value(c.id("n").unwrap()), Value::Number(2.0));
+        for id in readers {
+            assert_eq!(c.value(id), expected, "{}", c.label(id));
+        }
+        assert!(
+            work <= crate::expr::MAX_EVALUATION_WORK + crate::expr::MAX_OVERRUN + 4096,
+            "refused search and rollback visited {work} work units",
+        );
     }
 
     #[test]

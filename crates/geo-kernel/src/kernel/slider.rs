@@ -157,13 +157,15 @@ impl Construction {
         let parents: Vec<_> = bound_parents(restored).collect();
         if parents
             .iter()
-            .any(|&parent| self.evaluation_rank(parent) >= self.evaluation_rank(id))
+            .any(|&parent| self.dependency_needs_reorder(parent, id))
         {
             let result = self.locus_order_inputs().and_then(|loci| {
                 self.replacement_order(&[(id, parents.clone())].into(), &loci, self.len())
             });
             match result {
-                Ok(order) => self.evaluation_order = order,
+                Ok(order) => {
+                    self.install_replacement_order(order);
+                }
                 Err(error) => {
                     self.discard_since(checkpoint);
                     return Err(error.into());
@@ -231,6 +233,31 @@ impl Construction {
         self.saved_slider_bounds.insert(id, bounds);
         self.update_slider_bounds(id);
         requires_replay
+    }
+
+    pub(super) fn copy_redefined_slider_animation(
+        &mut self,
+        id: Id,
+        step: Option<String>,
+        speed: Option<String>,
+    ) {
+        // Copying the old style freezes its step after both endpoint cascades.
+        let step = step.or_else(|| {
+            let source = self.slider_animation_options(id)[0]?;
+            Some(match self.numeric_value(source) {
+                Some(f64::INFINITY) => "Infinity".to_owned(),
+                Some(f64::NEG_INFINITY) => "-Infinity".to_owned(),
+                Some(value) => value.to_string(),
+                _ => source.to_owned(),
+            })
+        });
+        if step.is_some() || speed.is_some() {
+            let options = self.slider_animation_options.entry(id).or_default();
+            options[0] = step;
+            if speed.is_some() {
+                options[1] = speed;
+            }
+        }
     }
 
     /// Explicit step and speed expressions from the slider command.
@@ -441,6 +468,24 @@ fn clamp(value: f64, [min, max]: [Option<f64>; 2]) -> f64 {
 #[cfg(test)]
 mod tests {
     use crate::{script, Value};
+
+    #[test]
+    fn redefining_a_bound_source_resolves_each_endpoint_in_order() {
+        let mut c =
+            crate::script::load("u = -4\nlo = u + 0\nhi = u + 3\na = Slider(lo, hi)").unwrap();
+        crate::script::exec(&mut c, "u = -0.5").unwrap();
+        assert_eq!(c.number(c.id("a").unwrap()), Some(1.0));
+    }
+
+    #[test]
+    fn an_omitted_step_is_frozen_after_both_bounds_cascade() {
+        let mut c = crate::script::load("h = 0.2\na = Slider(0, 6, h, 2)").unwrap();
+        let a = c.id("a").unwrap();
+        c.set_number(a, 5.0).unwrap();
+        crate::script::exec(&mut c, "h = (a + 1)/10").unwrap();
+        crate::script::exec(&mut c, "a = Slider(0, 2)").unwrap();
+        assert_eq!(c.slider_animation_options(a)[0], Some("0.3"));
+    }
 
     #[test]
     fn redefining_a_number_as_its_own_slider_ceiling_clamps_later_moves() {

@@ -2852,3 +2852,23 @@ id = "locus-samplingbudget-002"
 reason = "GeoGebra completes the finite diagonal locus with 149 samples. The kernel returns L undefined after repeated evaluation of the 200,000-element Sequence exhausts the shared 80,000,000-unit sampling meter (crates/geo-kernel/src/algo/locus.rs:1578)."
 mismatches = ["0:L"]
 undefined = true
+
+# Snapshot proof replay and undefined list transformations
+
+[[gap]]
+id = "prove-recoveryundo-001"
+reason = "Undoing the move restores a radius-1 circle. GeoGebra rebuilds p_2 as true. The kernel replays its creation while the circle is undefined and leaves p_2 undefined after the snapshot restore (workbench/mod.rs:636, kernel.rs:4043). Fresh proof replay needs ordered helper history and an aggregate solver budget."
+mismatches = ["7:p_2"]
+undefined = true
+
+[[gap]]
+id = "prove-recoveryundo-002"
+reason = "Undoing the move restores a radius-1 circle. GeoGebra rebuilds the proof of the inline-line intersection as true. The kernel replays its creation while the circle is undefined and leaves p_2 undefined after the snapshot restore (workbench/mod.rs:636, kernel.rs:4043). Fresh proof replay needs ordered helper history and an aggregate solver budget."
+mismatches = ["7:p_2"]
+undefined = true
+
+[[gap]]
+id = "optimizerreview-undefinedtransform-001"
+reason = "At t = 1, GeoGebra dilates the retained undefined point slots and keeps M as the defined list {{?}, {?}}. The kernel returns a wholly undefined M because expr/eval.rs:1912 drops the undefined source's shape before dilation reads it (expr/eval.rs:1728)."
+mismatches = ["1:M"]
+undefined = true

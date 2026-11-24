@@ -2449,6 +2449,89 @@ fn undo_reloads_an_undefined_circumcircle_arc() {
     assert_eq!(actual(&w, "e"), Value::Bool(false));
 }
 
+#[test]
+fn round2_undo_restarts_nested_transform_slots() {
+    for command in ["Dilate(L, 2)", "ApplyMatrix({{2, 0}, {0, 2}}, L)"] {
+        let mut w = Workbench::from_script(&format!(
+            "t = 2\nA = (1, 2)\nB = (3, 5)\n\
+             L = If(t > 1, {{{{A}}, {{B}}}}, If(t > 0, {{{{A}}, 4}}, {{3, 4}}))\nM = {command}"
+        ))
+        .unwrap();
+        let t = w.construction().id("t").unwrap();
+        assert!(w.set_number(t, 1.0));
+        assert!(w.set_number(t, 0.0));
+        assert!(w.undo());
+        let c = w.construction();
+        let list = c.elements(c.id("M").unwrap()).unwrap();
+        let Some(geo_kernel::expr::Element::List(first)) = list.get(0) else {
+            panic!("expected nested list");
+        };
+        assert!(matches!(
+            first.get(0),
+            Some(geo_kernel::expr::Element::Value(
+                Kind::Point,
+                Value::Point { x: 4.0, y: 8.0 }
+            ))
+        ));
+        assert!(matches!(
+            list.get(1),
+            Some(geo_kernel::expr::Element::Value(
+                Kind::Number,
+                Value::Number(4.0)
+            ))
+        ));
+    }
+}
+
+#[test]
+fn undo_snapshot_reopens_at_the_transform_reset_budget_boundary() {
+    use std::fmt::Write as _;
+
+    let mut script = String::from("A = (1, 2)\nL = {{A}}\nM = Dilate(L, 2)\n");
+    for i in 1..=1000 {
+        writeln!(script, "n_{{{i}}} = {i}").unwrap();
+    }
+    let slots = Workbench::from_script(&script)
+        .unwrap()
+        .construction()
+        .len();
+    assert_eq!(slots * 997, 999_991);
+    script.push_str(&"$resetTransformOutputs()\n".repeat(997));
+    script.push_str("B = (2, 3)\n");
+    let mut w = Workbench::from_script(&script).unwrap();
+    assert_eq!(999_991 + w.construction().len(), 1_000_995);
+    let over_budget = format!("{script}$resetTransformOutputs()\n");
+    assert_eq!(
+        Workbench::from_script(&over_budget).err().as_deref(),
+        Some("line 2002: transform output resets exceed the replay work budget")
+    );
+
+    w.run_line("C = (3, 4)").unwrap();
+    assert!(w.undo());
+    assert!(w.construction().id("C").is_none());
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    assert_eq!(labelled_values(&restored), labelled_values(&w));
+    for wb in [&w, &restored] {
+        use geo_kernel::expr::Element;
+
+        let c = wb.construction();
+        let list = c.elements(c.id("M").unwrap()).unwrap();
+        let Some(Element::List(inner)) = list.get(0) else {
+            panic!("expected nested list");
+        };
+        assert_eq!(list.len(), 1);
+        assert_eq!(inner.len(), 1);
+        assert!(matches!(
+            inner.get(0),
+            Some(Element::Value(Kind::Point, Value::Point { x: 2.0, y: 4.0 }))
+        ));
+    }
+}
+
 const PROJECTIVE_PROJECTION: &str = "A = (0, 0)\nB = (2, 1)\nC = (0, 3)\n\
     l = Line(A, B)\nm = Line(C, D)\nS = Intersect(l, m)\n";
 

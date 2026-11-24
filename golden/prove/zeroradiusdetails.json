@@ -1,0 +1,38 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "prove-zeroradiusdetails-001",
+      "group": "prove",
+      "script": [
+        "O = (0, 0)",
+        "H = (0, 0)",
+        "A = (-3, 0)",
+        "B = (3, 0)",
+        "c = Circle(O, H)",
+        "Q = Intersect(Line(A, B), c, 1)",
+        "q = ProveDetails(AreCollinear(A, B, Q))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    }
+  ]
+}

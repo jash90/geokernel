@@ -88,7 +88,7 @@ pub(crate) mod fraction;
 pub(crate) mod inequality;
 mod inverse;
 pub(crate) use eval::{carrier_deadline, charge_carrier};
-pub(crate) use eval::{reserve_work, with_work_deadline, work_deadline};
+pub(crate) use eval::{reserve_work, shared_work_refusals, with_work_deadline, work_deadline};
 #[doc(hidden)]
 pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK, MAX_OVERRUN};
 
@@ -788,7 +788,21 @@ struct FunctionInterval {
     defined: bool,
 }
 
-type NestedTransforms = std::collections::BTreeMap<u32, (u32, Vec<Slot>)>;
+#[derive(Clone)]
+struct TransformActive {
+    index: Option<u32>,
+    // Removing a list slot leaves the algorithm's active object alive.
+    detached: Option<Box<Slot>>,
+}
+
+#[derive(Clone)]
+struct TransformOutput {
+    len: u32,
+    items: Vec<Slot>,
+    active: TransformActive,
+}
+
+type NestedTransforms = std::collections::BTreeMap<u32, TransformOutput>;
 
 #[derive(Clone)]
 pub(crate) struct Entry {
@@ -808,6 +822,8 @@ pub(crate) struct Entry {
     /// Whether a function's tree requires checking its branches or transforms
     /// to decide whether it is defined (see [`inputs_defined`]).
     checks_branches: bool,
+    /// Whether the expression contains a separate AlgoIf predecessor.
+    pub(crate) has_if_algorithm: bool,
     /// Whether this tree or an applied function needs an expression work meter.
     inverts: bool,
     /// The objects named in the tree (a function's inputs).
@@ -821,6 +837,7 @@ pub(crate) struct Entry {
     lists: bool,
     /// The elements of a list result (see [`list`]).
     items: Vec<Slot>,
+    root_transform: Option<TransformActive>,
     nested_transforms: NestedTransforms,
     coordinate_layout: Option<list::CoordinateLayout>,
     depth: u32,
@@ -918,6 +935,18 @@ pub(crate) fn reset_list_records(c: &Construction, d: ExprDef) -> bool {
     true
 }
 
+pub(crate) fn has_transform_outputs(c: &Construction, d: ExprDef) -> bool {
+    let e = entry(c, d);
+    e.root_transform.is_some() || !e.nested_transforms.is_empty()
+}
+
+pub(crate) fn reset_transform_outputs(c: &mut Construction, d: ExprDef) -> bool {
+    let e = &mut c.exprs.entries[d.index as usize];
+    let had_outputs = e.root_transform.take().is_some() || !e.nested_transforms.is_empty();
+    e.nested_transforms.clear();
+    had_outputs
+}
+
 pub(crate) fn reset_transpose_flags(c: &Construction, d: ExprDef) -> bool {
     let e = entry(c, d);
     if !e.lists {
@@ -980,13 +1009,19 @@ impl Entry {
             _ => false,
         });
         let lists = reads_list(&p.nodes, &p.tys);
+        let has_if_algorithm = !function
+            && p.nodes
+                .iter()
+                .any(|node| matches!(node, Node::If(IfMode::Algo | IfMode::AlgoNext, ..)));
         Entry {
             stuck: Stuck::default(),
             list_history: ListHistory::default(),
             checks_branches,
+            has_if_algorithm,
             inverts,
             lists,
             items: Vec::new(),
+            root_transform: None,
             nested_transforms: NestedTransforms::new(),
             coordinate_layout: None,
             interval: None,
@@ -1752,6 +1787,7 @@ pub(crate) struct SavedResult {
     coordinate_layout: Option<list::CoordinateLayout>,
     stuck: Vec<u32>,
     list_records: Option<ListRecords>,
+    root_transform: Option<TransformActive>,
     nested_transforms: NestedTransforms,
 }
 
@@ -1772,7 +1808,7 @@ impl SavedResult {
         let transform_work = e
             .nested_transforms
             .values()
-            .map(|(_, slots)| 1 + slots.len())
+            .map(|output| 1 + output.items.len())
             .sum::<usize>();
         let work = 2
             * (1 + e.items.len() + extra_work + stuck.len() + transform_work + record_work) as u64;
@@ -1784,6 +1820,7 @@ impl SavedResult {
             coordinate_layout: e.coordinate_layout,
             stuck: stuck.clone(),
             list_records: list_records.as_deref().cloned(),
+            root_transform: e.root_transform.clone(),
             nested_transforms: e.nested_transforms.clone(),
         })
     }
@@ -1794,6 +1831,7 @@ impl SavedResult {
         e.extra = self.extra;
         e.interval = self.interval;
         e.items = self.items;
+        e.root_transform = self.root_transform;
         e.nested_transforms = self.nested_transforms;
         e.coordinate_layout = self.coordinate_layout;
         *e.stuck.nodes() = self.stuck;
@@ -1887,8 +1925,10 @@ fn update_lists(c: &mut Construction, d: ExprDef) -> ((Value, bool), bool) {
     let out = evaluate_lists(c, d, &lists, &mut items);
     let invalid_transform_list = lists.invalid_transform_list.get();
     let transforms = lists.take_nested_transforms();
+    let root_transform = lists.root_transform.take();
     c.exprs.arena = lists.into_arena();
     let e = &mut c.exprs.entries[d.index as usize];
+    e.root_transform = root_transform;
     e.nested_transforms.extend(transforms);
     let items_changed = !list::same_slots(&e.items, &items);
     if items_changed {
@@ -1904,7 +1944,15 @@ fn update_lists(c: &mut Construction, d: ExprDef) -> ((Value, bool), bool) {
     c.exprs.out = items;
     let v = value(d, out.raw);
     let changed = store(c, d, out);
-    ((v, changed || items_changed), invalid_transform_list)
+    // Selectors and dependent list aliases forward their input update even
+    // when the elements stay equal. Transforms can act on retained outputs.
+    let e = entry(c, d);
+    let list_updated = d.kind == Kind::List
+        && (e.has_if_algorithm || matches!(e.nodes[e.root as usize], Node::Obj(_)));
+    (
+        (v, changed || items_changed || list_updated),
+        invalid_transform_list,
+    )
 }
 
 /// `AlgoDependentFunction.inputDefined`: a function is defined when every

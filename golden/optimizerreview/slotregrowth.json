@@ -1,0 +1,189 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-slotregrowth-001",
+      "group": "optimizerreview",
+      "script": [
+        "t = 2",
+        "A = (1, 2)",
+        "C = (7, 11)",
+        "L = If(t > 1, {A}, If(t > 0, {}, If(t == 0, {3}, {C})))",
+        "M = Dilate(L, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 1.0 },
+        { "action": "set_number", "label": "t", "value": 0.0 },
+        { "action": "set_number", "label": "t", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 7.0, "y": 11.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+            ]
+          }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 7.0, "y": 11.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 7.0, "y": 11.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 7.0, "y": 11.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 7.0, "y": 11.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "optimizerreview-slotregrowth-002",
+      "group": "optimizerreview",
+      "script": [
+        "t = 2",
+        "A = (1, 2)",
+        "C = (7, 11)",
+        "L = If(t > 1, {A}, If(t > 0, {}, If(t == 0, {3}, {C})))",
+        "M = ApplyMatrix({{2, 0}, {0, 2}}, L)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 1.0 },
+        { "action": "set_number", "label": "t", "value": 0.0 },
+        { "action": "set_number", "label": "t", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 7.0, "y": 11.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+            ]
+          }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 7.0, "y": 11.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 7.0, "y": 11.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 7.0, "y": 11.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 7.0, "y": 11.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

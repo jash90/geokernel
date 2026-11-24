@@ -7,6 +7,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoTranspose.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoDimension.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdOneListFunction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTransformation.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDilate.java
 //   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
@@ -490,25 +492,53 @@ pub(in crate::expr) fn map_list<const M: bool>(
     let out = lists.reserve(len)?;
     let mut pending = Vec::new();
     // AlgoTransformation keeps the output slot at each existing index.
-    let retain = node != ctx.e.root && ctx.locals.is_none();
-    let (previous_items, prior) = match ctx.e.raw {
-        crate::expr::Raw::List(len) if node == ctx.e.root => (&ctx.e.items[..], (0, len)),
-        _ => ctx
-            .e
-            .nested_transforms
-            .get(&node)
-            .map_or((&[][..], (0, 0)), |(len, slots)| {
-                (slots.as_slice(), (0, *len))
-            }),
+    let root = node == ctx.e.root;
+    let retain = !root && ctx.locals.is_none();
+    let previous_output = ctx.e.nested_transforms.get(&node);
+    let (previous_items, previous_len, previous_active) = if root {
+        match (ctx.e.raw, ctx.e.root_transform.as_ref()) {
+            (crate::expr::Raw::List(len), Some(active)) => (&ctx.e.items[..], len, Some(active)),
+            _ => (&[][..], 0, None),
+        }
+    } else {
+        previous_output.map_or((&[][..], 0, None), |out| {
+            (out.items.as_slice(), out.len, Some(&out.active))
+        })
     };
-    let mut current = (start, out, len, prior);
-    let mut last = None;
+    let previous_index = previous_active.and_then(|active| active.index);
+    let previous_leaf = previous_active.and_then(|active| {
+        active
+            .index
+            .map(|index| &previous_items[index as usize])
+            .or(active.detached.as_deref())
+    });
+    let mut current = (start, out, len, (0, previous_len));
+    let mut active = None;
+    // When a scalar precedes the retained active slot, the transformation
+    // changes that point before the traversal reaches the slot.
+    let mut pending_value: Option<Slot> = None;
     loop {
         let (source, target, size, (prior, prior_len)) = current;
         if size == 0 {
             let Some(next) = pending.pop() else {
-                if retain {
-                    lists.remember_transform(node, out, len);
+                if root || retain {
+                    let detached = if active.is_none() {
+                        pending_value
+                            .or_else(|| previous_leaf.cloned())
+                            .map(Box::new)
+                    } else {
+                        None
+                    };
+                    lists.remember_transform(
+                        node,
+                        out,
+                        len,
+                        crate::expr::TransformActive {
+                            index: active,
+                            detached,
+                        },
+                        root,
+                    );
                 }
                 return Some((out, len));
             };
@@ -526,6 +556,8 @@ pub(in crate::expr) fn map_list<const M: bool>(
             (prior + 1, prior_len.saturating_sub(1)),
         );
         let slot = lists.read(ctx.c, source);
+        let retains_number =
+            slot.kind == Kind::Point && previous.is_some_and(|out| out.kind == Kind::Number);
         let result = if let Some((list, len)) = slot.run() {
             let dest = lists.reserve(len)?;
             if len != 0 {
@@ -538,8 +570,8 @@ pub(in crate::expr) fn map_list<const M: bool>(
                 );
             }
             Slot::list(dest, len)
-        } else if transformable(slot.kind) {
-            last = Some(target);
+        } else if transformable(slot.kind) && !retains_number {
+            active = Some(target);
             let slot = match previous.map(|p| p.kind) {
                 Some(kind @ (Kind::Point | Kind::Vector))
                     if matches!(slot.kind, Kind::Point | Kind::Vector) && kind != slot.kind =>
@@ -564,23 +596,26 @@ pub(in crate::expr) fn map_list<const M: bool>(
             .and_then(Slot::run)
         {
             // GeoList.set(number) keeps the elements and changes the selection.
-            // The transform still acts on its most recent point or vector.
-            let (list, leaf) = copy_transform_template(
+            let (list, retained_active) = copy_transform_template(
                 lists,
                 previous_items,
                 start,
                 len,
                 if retain { 2 } else { 1 },
-                transformable,
+                previous_index,
+                pending_value.as_ref(),
             )?;
-            if let Some(leaf) = last.or(leaf) {
+            if let Some(leaf) = active.or(retained_active) {
                 lists.set(leaf, transformed(lists.read(ctx.c, leaf)));
-                last = Some(leaf);
+                active = Some(leaf);
+            } else if let Some(previous) = previous_leaf {
+                let point = pending_value.take().unwrap_or_else(|| previous.clone());
+                pending_value = Some(transformed(point));
             }
             list
         } else if slot.kind.is_number() && previous.is_some_and(|p| p.kind == Kind::Point) {
             // GeoPoint.set copies a number as (value, 0) into the old point.
-            last = Some(target);
+            active = Some(target);
             let point = match slot.value {
                 Value::Number(x) => Slot::coords(Kind::Point, x, 0.0),
                 _ => Slot::undefined(Kind::Point),
@@ -588,7 +623,12 @@ pub(in crate::expr) fn map_list<const M: bool>(
             transformed(point)
         } else {
             if slot.kind != Kind::List {
-                let Some(previous) = last else {
+                if let Some(leaf) = active {
+                    lists.set(leaf, transformed(lists.read(ctx.c, leaf)));
+                } else if let Some(previous) = previous_leaf {
+                    let point = pending_value.take().unwrap_or_else(|| previous.clone());
+                    pending_value = Some(transformed(point));
+                } else if !retains_number {
                     // AlgoApplyMatrix and AlgoDilate reuse the most recent
                     // transformable template across nested lists. Before
                     // any such template exists, a numeric item raises an
@@ -599,28 +639,32 @@ pub(in crate::expr) fn map_list<const M: bool>(
                         lists.invalid_transform_list.set(true);
                     }
                     return None;
-                };
-                lists.set(previous, transformed(lists.read(ctx.c, previous)));
+                }
             }
-            slot
+            if retains_number {
+                // GeoNumeric.set evaluates the incoming point as a number.
+                Slot::undefined(Kind::Number)
+            } else {
+                slot
+            }
         };
         lists.set(target, result);
     }
 }
 
-/// Copies a retained output list into the new arena and locates its last
-/// transformable leaf in the same order as the transform's traversal.
+/// Copies a retained output list and locates its active output, when present.
 fn copy_transform_template(
     lists: &Lists,
     items: &[Slot],
     start: u32,
     len: u32,
     work_per_slot: u64,
-    transformable: impl Fn(Kind) -> bool,
+    active: Option<u32>,
+    pending_value: Option<&Slot>,
 ) -> Option<(Slot, Option<u32>)> {
     let out = lists.reserve(len)?;
     let mut pending = vec![(start, out, len)];
-    let mut last = None;
+    let mut retained_active = None;
     while let Some((source, target, len)) = pending.pop() {
         if len == 0 {
             continue;
@@ -635,13 +679,15 @@ fn copy_transform_template(
             lists.set(target, Slot::list(out, len));
             pending.push((start, out, len));
         } else {
-            if transformable(slot.kind) {
-                last = Some(target);
+            if Some(source) == active {
+                retained_active = Some(target);
+                lists.set(target, pending_value.unwrap_or(slot).clone());
+            } else {
+                lists.set(target, slot.clone());
             }
-            lists.set(target, slot.clone());
         }
     }
-    Some((Slot::list(out, len), last))
+    Some((Slot::list(out, len), retained_active))
 }
 
 pub(in crate::expr) fn apply_matrix_coordinates<const M: bool>(

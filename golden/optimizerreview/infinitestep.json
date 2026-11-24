@@ -1,0 +1,58 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-infinitestep-001",
+      "group": "optimizerreview",
+      "script": [
+        "h = 0.2",
+        "a = Slider(0, 6, h, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        { "action": "redefine", "line": "h = 1/(a - 2)" },
+        { "action": "redefine", "line": "a = Slider(0, 2)" },
+        { "action": "redefine", "line": "a = Slider(0, 6)" },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        {
+          "action": "slider_animation",
+          "label": "a",
+          "options": { "step": "Infinity", "speed": "2" }
+        }
+      ],
+      "snapshots": [
+        {
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "a": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "infinity": 1 },
+          "a": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "infinity": 1 },
+          "a": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "a": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "a": { "type": "number", "defined": true, "value": 5.0 }
+        }
+      ]
+    }
+  ]
+}

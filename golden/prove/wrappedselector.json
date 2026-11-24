@@ -1,0 +1,61 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "prove-wrappedselector-001",
+      "group": "prove",
+      "script": [
+        "D = (-3, -1)",
+        "E = (3, -1)",
+        "d = Line(D, E)",
+        "F = (0, 1)",
+        "k = Parabola(F, d)",
+        "A = (-4, 1)",
+        "B = (4, 1)",
+        "s = Line(A, B)",
+        "n = If(x(B) > 0, 1, 2) + 0",
+        "P = Intersect(s, k, n)",
+        "b = AreCollinear(A, B, P)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "D": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "d": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": 6.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [36.0, 0.0, 0.0, -0.0, -0.0, -72.0],
+            "vertex": [0.0, -0.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "s": { "type": "line", "defined": true, "a": 0.0, "b": 8.0, "c": -8.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-boundredefinition-001",
+      "group": "optimizerreview",
+      "script": [
+        "u = -4",
+        "lo = u + 0",
+        "hi = u + 3",
+        "a = Slider(lo, hi)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "u = -0.5" }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "number", "defined": true, "value": -4.0 },
+          "lo": { "type": "number", "defined": true, "value": -4.0 },
+          "hi": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "u": { "type": "number", "defined": true, "value": -0.5 },
+          "lo": { "type": "number", "defined": true, "value": -0.5 },
+          "hi": { "type": "number", "defined": true, "value": 2.5 },
+          "a": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    }
+  ]
+}

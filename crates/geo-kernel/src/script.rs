@@ -788,7 +788,9 @@ fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
                     || conic_reader.is_some() && split_call(arg).is_some()
                     || matches!(
                         (command, split_call(arg).map(|(name, _)| name)),
-                        ("PathParameter", Some("Point")) | ("Centroid", Some("Polygon"))
+                        ("PathParameter", Some("Point"))
+                            | ("Centroid", Some("Polygon"))
+                            | ("Intersect", Some("Line"))
                     ));
             if inline {
                 rewritten = true;

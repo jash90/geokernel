@@ -1,0 +1,90 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "prove-identicalthrough-001",
+      "group": "prove",
+      "script": [
+        "O = (0, 0)",
+        "A = (-3, 0)",
+        "B = (3, 0)",
+        "C = (1, 0)",
+        "D = (1, 2)",
+        "g = Line(A, B)",
+        "h = Line(C, D)",
+        "H = Intersect(g, h)",
+        "c = Circle(O, H)",
+        "Q = Intersect(Line(A, B), c, 1)",
+        "b = A == B",
+        "p = Prove(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "D = (2, 0)" },
+        { "action": "redefine", "line": "h = Line(C, D)" },
+        { "action": "add", "line": "p_2 = Prove(AreCollinear(A, B, Q))" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -0.0 },
+          "h": { "type": "line", "defined": true, "a": -2.0, "b": 0.0, "c": 2.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -0.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "H": { "type": "point", "defined": false },
+          "c": { "type": "circle", "defined": false },
+          "Q": { "type": "point", "defined": false },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -0.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "H": { "type": "point", "defined": false },
+          "c": { "type": "circle", "defined": false },
+          "Q": { "type": "point", "defined": false },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -0.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "H": { "type": "point", "defined": false },
+          "c": { "type": "circle", "defined": false },
+          "Q": { "type": "point", "defined": false },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "p_2": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    }
+  ]
+}

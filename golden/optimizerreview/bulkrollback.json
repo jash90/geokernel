@@ -1,0 +1,58 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-bulkrollback-001",
+      "group": "optimizerreview",
+      "script": [
+        "a = Slider(0, 6)",
+        "k = 1",
+        "m = Minimize((a - 3)^2, a)",
+        "n = Minimize(k*(a - 2)^2, a)",
+        "v = Sequence(j, j, 1, 1000000)",
+        "d_{1} = If(a < 0.01, Sum(Sort(v)), a)",
+        "d_{2} = If(a < 0.01, Sum(Sort(v)), a)",
+        "d_{3} = If(a < 0.01, Sum(Sort(v)), a)",
+        "d_{4} = If(a < 0.01, Sum(Sort(v)), a)"
+      ],
+      "observe": [
+        "a",
+        "k",
+        "m",
+        "n",
+        "d_{1}",
+        "d_{2}",
+        "d_{3}",
+        "d_{4}"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "k", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "m": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "d_{1}": { "type": "number", "defined": true, "value": 5.000005E11 },
+          "d_{2}": { "type": "number", "defined": true, "value": 5.000005E11 },
+          "d_{3}": { "type": "number", "defined": true, "value": 5.000005E11 },
+          "d_{4}": { "type": "number", "defined": true, "value": 5.000005E11 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "d_{1}": { "type": "number", "defined": true, "value": 5.000005E11 },
+          "d_{2}": { "type": "number", "defined": true, "value": 5.000005E11 },
+          "d_{3}": { "type": "number", "defined": true, "value": 5.000005E11 },
+          "d_{4}": { "type": "number", "defined": true, "value": 5.000005E11 }
+        }
+      ]
+    }
+  ]
+}

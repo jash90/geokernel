@@ -371,22 +371,33 @@ pub(crate) fn same_slots(a: &[Slot], b: &[Slot]) -> bool {
     a.len() == b.len() && a.iter().zip(b).all(|(x, y)| x.same(y))
 }
 
-/// Copies the list of `len` elements at `start` in `from`, with the lists
-/// nested in it, to the end of `to`, where it starts; nothing allocates once
-/// `to` has the capacity. The runs are copied breadth first.
-pub(crate) fn copy_tree(from: &[Slot], start: u32, len: u32, to: &mut Vec<Slot>) -> u32 {
-    let base = to.len();
-    let range = start as usize..(start + len) as usize;
-    to.extend_from_slice(&from[range]);
-    let mut i = base;
+/// Copies the list and its nested runs breadth first, returning the new
+/// address of the tracked slot if the tree contains it.
+pub(crate) fn copy_tree(
+    from: &[Slot],
+    start: u32,
+    len: u32,
+    to: &mut Vec<Slot>,
+    track: Option<u32>,
+) -> Option<u32> {
+    let mut tracked = None;
+    let mut copy_run = |start, len, to: &mut Vec<Slot>| {
+        let end = start + len;
+        if let Some(track) = track.filter(|&k| (start..end).contains(&k)) {
+            tracked = Some(to.len() as u32 + (track - start));
+        }
+        to.extend_from_slice(&from[start as usize..end as usize]);
+    };
+    let mut i = to.len();
+    copy_run(start, len, to);
     while i < to.len() {
         if let Some((s, n)) = to[i].run() {
             to[i].start = to.len() as u32;
-            to.extend_from_slice(&from[s as usize..(s + n) as usize]);
+            copy_run(s, n, to);
         }
         i += 1;
     }
-    base as u32
+    tracked
 }
 
 /// The elements of a list object, read with

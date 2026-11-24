@@ -792,6 +792,14 @@ impl Log {
             self.ops
                 .push(Op::SavedProperty(Box::new(Property::ResetTransposeFlags)));
         }
+        // An undo refresh is optional after replay. Only change the outputs
+        // if the resulting journal can replay the extra reset within its budget.
+        if !matches!(self.ops.last(), Some(Op::SavedProperty(p)) if **p == Property::ResetTransformOutputs)
+            && c.apply_saved_transform_reset() == Ok(true)
+        {
+            self.ops
+                .push(Op::SavedProperty(Box::new(Property::ResetTransformOutputs)));
+        }
     }
 
     fn push_set(&mut self, label: &str, to: Setting, ordered: bool) {
@@ -1434,6 +1442,13 @@ impl Log {
                         kept.ops.push(Op::TextProperties(line.into()));
                     }
                 }
+                Op::SavedProperty(property) if **property == Property::ResetTransformOutputs => {
+                    property.apply(&mut c)?;
+                    match &mut same {
+                        Some(n) => *n = i + 1,
+                        None => kept.ops.push((*op).clone()),
+                    }
+                }
                 Op::SavedProperty(property) => {
                     if property.label().is_none_or(|label| !gone.contains(label))
                         && property.apply(&mut c).is_ok()
@@ -1644,6 +1659,10 @@ impl Log {
                     {
                         kept.ops.push(Op::TextProperties(line.into()));
                     }
+                }
+                Op::SavedProperty(property) if **property == Property::ResetTransformOutputs => {
+                    property.apply(&mut c)?;
+                    kept.ops.push(op.clone());
                 }
                 Op::SavedProperty(property) => {
                     if property.label().is_none_or(|label| !gone.contains(label)) {
@@ -1942,8 +1961,8 @@ impl Log {
     ///   later definition nor a directive can take it over;
     /// - a directive for a missing object.
     ///
-    /// An exhausted helper reset budget aborts the restore. Later lines can
-    /// use the helpers' values, so leaving out just the reset is unsafe.
+    /// An exhausted reset budget aborts the restore. Later lines can use
+    /// the reset outputs, so leaving out just the reset is unsafe.
     pub fn load_tolerant(
         src: &str,
         checked: bool,
@@ -2001,6 +2020,11 @@ impl Log {
                 match parsed {
                     Some(Ok(Directive::ResetInequalityHelpers(reset))) => {
                         log.replay_inequality_reset(&mut c, reset, &mut reset_budget)
+                            .map_err(|e| format!("line {}: {e}", i + 1))?;
+                        Ok(())
+                    }
+                    Some(Ok(d @ Directive::SavedProperty(Property::ResetTransformOutputs))) => {
+                        log.apply(&mut c, d, &mut reset_budget)
                             .map_err(|e| format!("line {}: {e}", i + 1))?;
                         Ok(())
                     }
@@ -2267,6 +2291,31 @@ mod tests {
         assert_eq!(log.rhs_of("f"), Some("Line(A, B)"));
         assert_eq!(log.rhs_of("A"), Some("(0, 0)"));
         assert_eq!(log.rhs_of("nope"), None);
+    }
+
+    #[test]
+    fn saved_transform_resets_share_a_replay_budget() {
+        use std::fmt::Write as _;
+
+        let mut script = String::from("A = (1, 2)\nL = {{A}}\nM = Dilate(L, 2)\n");
+        for i in 1..=1000 {
+            writeln!(script, "n_{{{i}}} = {i}").unwrap();
+        }
+        script.push_str("$resetTransformOutputs()\n");
+        assert!(Log::load(&script).is_ok());
+        assert!(geo_kernel::script::load(&script).is_ok());
+
+        script.push_str(&"$resetTransformOutputs()\n".repeat(1000));
+        let expected = "line 2001: transform output resets exceed the replay work budget";
+        assert_eq!(Log::load(&script).err().as_deref(), Some(expected));
+        assert_eq!(
+            Log::load_tolerant(&script, false).err().as_deref(),
+            Some(expected)
+        );
+        assert_eq!(
+            geo_kernel::script::load(&script).err().unwrap().to_string(),
+            expected
+        );
     }
 
     #[test]

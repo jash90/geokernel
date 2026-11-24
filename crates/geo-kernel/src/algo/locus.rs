@@ -601,6 +601,7 @@ pub(crate) struct OptimizerCascade {
     remaining: [usize; Self::MAX_DEPTH],
     end: u64,
     exhausted: bool,
+    refused_work: bool,
 }
 
 impl OptimizerCascade {
@@ -671,6 +672,7 @@ impl OptimizerCascade {
                 .saturating_add(crate::expr::MAX_EVALUATION_WORK)
                 .min(crate::expr::work_deadline()),
             exhausted,
+            refused_work: false,
         })
     }
 
@@ -699,7 +701,11 @@ impl OptimizerCascade {
             self.running.pop();
             if self.exhausted {
                 saved.restore(c, &[]);
-                return Value::Undefined;
+                // The optimum may already have been found when the final
+                // update of the restored mover refused a bulk charge.
+                if !self.refused_work {
+                    return Value::Undefined;
+                }
             }
             result
         })
@@ -717,6 +723,7 @@ impl OptimizerCascade {
             self.exhausted = true;
             return false;
         }
+        let refusals = crate::expr::shared_work_refusals();
         let depth = self.running.len() - 1;
         let (_, mover) = self.running[depth];
         if restore {
@@ -755,6 +762,11 @@ impl OptimizerCascade {
                 }
             } else if !matches!(def, Def::Prove(_) | Def::ImplicitCurve(_)) {
                 recompute(c, i);
+            }
+            if crate::expr::shared_work_refusals() != refusals {
+                self.refused_work = true;
+                self.exhausted = true;
+                break;
             }
         }
         self.exhausted |= crate::expr::work_done() >= self.end;

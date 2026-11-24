@@ -995,9 +995,11 @@ enum ProtocolFields {
 
 enum Propagation<'a> {
     Live,
+    SliderTransient,
     Redefinition {
         refresh: DefinitionRefresh,
         rebuild_records: bool,
+        refresh_proofs: bool,
     },
     Reload,
     RecordProtocol(&'a mut BTreeMap<usize, ProtocolRecord>),
@@ -1097,6 +1099,8 @@ pub struct Construction {
     children: Vec<Children>,
     /// Empty while creation order is also evaluation order.
     evaluation_order: EvaluationOrder,
+    // The prover reads labels in the reference's XML construction order.
+    proof_order: EvaluationOrder,
     /// For each object, what its rule needs from the definitions of other
     /// objects, decided when it is created (see [`algo::intersect::Hint`]).
     hints: Vec<algo::intersect::Hint>,
@@ -1178,6 +1182,7 @@ pub struct Construction {
     pub(crate) clips: algo::polygon_clip::ClipCache,
     pub(crate) analysis: AnalysisCache,
     last_update_requires_replay: bool,
+    saved_transform_reset_slots: usize,
     replaced_closest_angles: Vec<Id>,
     changed_closest_angle: bool,
     used_retained_closest_angle: bool,
@@ -1311,6 +1316,11 @@ impl Children {
 struct EvaluationOrder {
     ids: Vec<usize>,
     ranks: Vec<usize>,
+}
+
+struct ReplacementOrder {
+    evaluation: Option<EvaluationOrder>,
+    proof: EvaluationOrder,
 }
 
 const MAX_REDEFINITION_EDGES: usize = 1_000_000;
@@ -2139,6 +2149,7 @@ impl Construction {
             keep
         });
         self.evaluation_order.discard_since(at.len);
+        self.proof_order.discard_since(at.len);
         if self
             .self_circle_outputs
             .last()
@@ -2435,7 +2446,9 @@ impl Construction {
                 })
             });
             let old_bounds = self.saved_slider_bounds.get(&id).copied();
-            if !supported(old)
+            let def = self.defs[new.0];
+            let same_line = matches!(old, Def::Line(..)) && old == def;
+            if (!supported(old) && !same_line)
                 || ((self.slider_interval(id).is_some() || old_bounds.is_some())
                     && new_bounds.is_none())
             {
@@ -2450,8 +2463,7 @@ impl Construction {
             {
                 return Err(refuse("a replacement must have one visible output"));
             }
-            let def = self.defs[new.0];
-            if !supported(def) {
+            if !supported(def) && !same_line {
                 return Err(refuse("this replacement cannot be installed in place"));
             }
             if def.kind() != old.kind() && !self.children[id.0].is_empty() {
@@ -2497,10 +2509,9 @@ impl Construction {
             let order = changed
                 .iter()
                 .any(|(&child, parents)| {
-                    parents.iter().any(|&parent| {
-                        axis::get(parent).is_none()
-                            && self.evaluation_rank(parent) >= self.evaluation_rank(child)
-                    })
+                    parents
+                        .iter()
+                        .any(|&parent| self.dependency_needs_reorder(parent, child))
                 })
                 .then(|| self.replacement_order(&changed, &locus_inputs, new.0))
                 .transpose()
@@ -2521,11 +2532,25 @@ impl Construction {
             }
         };
 
-        let rebuilds = !self.inequality_helpers.outputs().is_empty()
-            && self.replacement_rebuilds_construction(id, def);
+        let same_definition = expr::same_definition(self, old, def);
+        let rebuilds_construction =
+            !same_definition && self.replacement_rebuilds_construction(id, def);
+        let rebuilds = rebuilds_construction && !self.inequality_helpers.outputs().is_empty();
+        // Typing new coordinates still moves an independent point. Its
+        // symbolic definition stays free, as it does during a drag.
+        let refresh_proofs = !same_definition
+            && !matches!((old, def), (Def::FreePoint { .. }, Def::FreePoint { .. }));
 
         let slider_options = self.slider_animation_options.remove(&new);
         let mut value = self.stored_value(new);
+        let retained_transform = match old {
+            Def::Expr(d) if same_definition && expr::has_transform_outputs(self, d) => {
+                def = old;
+                value = self.stored_value(id);
+                Some(d)
+            }
+            _ => None,
+        };
         if bounds.is_some() && matches!(old, Def::Number(_)) {
             def = old;
             value = self.values[id.0];
@@ -2587,24 +2612,6 @@ impl Construction {
         } else {
             false
         };
-        if bounds.is_some() {
-            self.remember_slider_slot(id);
-            let [step, speed] = slider_options.unwrap_or_default();
-            // Copying the old visual style preserves the step as a number.
-            let previous_step = self.slider_animation_options(id)[0];
-            let step = step.or_else(|| {
-                let source = previous_step?;
-                let value = self.numeric_value(source).filter(|value| value.is_finite());
-                Some(value.map_or_else(|| source.to_owned(), |value| value.to_string()))
-            });
-            if step.is_some() || speed.is_some() {
-                let options = self.slider_animation_options.entry(id).or_default();
-                options[0] = step;
-                if speed.is_some() {
-                    options[1] = speed;
-                }
-            }
-        }
         for (child, new) in changed {
             let old = &old_reads[&child];
             for &parent in old {
@@ -2630,11 +2637,18 @@ impl Construction {
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.len());
         if let Some(order) = order {
-            self.evaluation_order = order;
-            self.refresh_circle_hints(&mut dirty);
+            if self.install_replacement_order(order) {
+                self.refresh_circle_hints(&mut dirty);
+            }
         }
-        for child in self.children(id) {
-            dirty.insert(self.evaluation_rank(child));
+        if let Some(d) = retained_transform {
+            self.update_expr(id.0, d);
+        }
+        let mut transient = DirtySet::default();
+        let clamped_slider =
+            self.enqueue_updated_children(id, &mut dirty, true, Some(&mut transient));
+        if transient.len != 0 {
+            self.propagate_dirty_with(transient, 0, Propagation::SliderTransient);
         }
         for child in old_reads.keys().copied() {
             if matches!(
@@ -2644,13 +2658,17 @@ impl Construction {
                 dirty.insert(self.evaluation_rank(child));
             }
         }
-        // Same-kind replacements of independent values are assignments
-        // in AlgebraProcessor. A change of definition rebuilds from XML.
-        let rebuild_records = !(old.is_free() && def.is_free() && old.kind() == def.kind());
+        // Assignments and childless replacements keep the existing
+        // construction, including retained geometry outside the edit.
+        let rebuild_records = rebuilds_construction;
         if rebuild_records {
-            for (i, &def) in self.defs.iter().enumerate() {
-                if matches!(def, Def::Expr(d) if expr::reset_list_records(self, d)) {
-                    dirty.insert(self.evaluation_rank(Id(i)));
+            for i in 0..self.len() {
+                if let Def::Expr(d) = self.defs[i] {
+                    let lists = expr::reset_list_records(self, d);
+                    let transforms = expr::reset_transform_outputs(self, d);
+                    if lists || transforms {
+                        dirty.insert(self.evaluation_rank(Id(i)));
+                    }
                 }
             }
             for &i in self
@@ -2663,9 +2681,10 @@ impl Construction {
                 dirty.insert(self.evaluation_rank(Id(i)));
             }
         }
-        // Redefinition rebuilds the reference's symbolic helpers, including
-        // those for intersections that do not read the edited definition.
-        self.proof_intersections = Default::default();
+        // Childless replacement keeps the reference's existing proof helpers.
+        if rebuilds_construction {
+            self.proof_intersections = Default::default();
+        }
         self.rebuild_self_circle_updates();
         let refresh = if rebuilds {
             // Restart independent vertex algorithms without refreshing the
@@ -2682,29 +2701,33 @@ impl Construction {
             Propagation::Redefinition {
                 refresh,
                 rebuild_records,
+                refresh_proofs,
             },
         );
         if rebuilds {
             self.inequality_helpers.pending.clear();
         }
-        self.last_update_requires_replay |= requires_replay;
+        if bounds.is_some() {
+            self.remember_slider_slot(id);
+            let [step, speed] = slider_options.unwrap_or_default();
+            self.copy_redefined_slider_animation(id, step, speed);
+        }
+        self.last_update_requires_replay |= requires_replay || clamped_slider;
         // A checkpoint cannot restore a changed definition.
         self.invalidate_checkpoints();
         Ok(Some(id))
     }
 
-    /// AlgebraProcessor updates independent values in place. Construction.replace
-    /// also skips the XML rebuild for identical definitions, compatible command
-    /// edits on constant inputs, and objects without dependents.
+    /// For a changed definition, Construction.replace skips the XML rebuild
+    /// for compatible edits on constant inputs and objects without dependents.
+    /// AlgebraProcessor updates independent values in place.
     fn replacement_rebuilds_construction(&self, id: Id, replacement: Def) -> bool {
         if self.children[id.0].is_empty() {
             return false;
         }
         let old = self.def(id);
         let independent = |def| expr::independent_definition(self, def);
-        if (old.kind() == replacement.kind() && independent(old) && independent(replacement))
-            || expr::same_definition(self, old, replacement)
-        {
+        if old.kind() == replacement.kind() && independent(old) && independent(replacement) {
             return false;
         }
         if let (
@@ -2814,13 +2837,28 @@ impl Construction {
         Ok(seen)
     }
 
-    /// Prepares a replacement's order before any existing object is changed.
+    fn dependency_needs_reorder(&self, parent: Id, child: Id) -> bool {
+        axis::get(parent).is_none()
+            && (self.evaluation_rank(parent) >= self.evaluation_rank(child)
+                || self.proof_rank(parent) >= self.proof_rank(child))
+    }
+
+    fn install_replacement_order(&mut self, order: ReplacementOrder) -> bool {
+        self.proof_order = order.proof;
+        let Some(evaluation) = order.evaluation else {
+            return false;
+        };
+        self.evaluation_order = evaluation;
+        true
+    }
+
+    /// Prepares a replacement's orders before any existing object is changed.
     fn replacement_order(
         &self,
         changed: &BTreeMap<Id, Vec<Id>>,
         locus_inputs: &BTreeMap<Id, Vec<Id>>,
         len: usize,
-    ) -> Result<EvaluationOrder, &'static str> {
+    ) -> Result<ReplacementOrder, &'static str> {
         const MAX_OBJECTS: usize = 250_000;
         if len > MAX_OBJECTS {
             return Err("the dependency graph exceeds the redefinition budget");
@@ -2845,35 +2883,87 @@ impl Construction {
                 .chain(added[i].iter().copied())
         };
         let mut remaining = MAX_REDEFINITION_EDGES;
-        let mut indegree = vec![0; len];
-        for i in 0..len {
+        let proof_ids = (0..self.len())
+            .map(|rank| self.proof_order.ids.get(rank).copied().unwrap_or(rank))
+            .filter(|&i| i < len);
+        let mut predecessors = vec![Vec::new(); len];
+        for i in proof_ids.clone().rev() {
             for child in successors(i) {
                 remaining = remaining
                     .checked_sub(1)
                     .ok_or("the dependency graph exceeds the redefinition budget")?;
-                indegree[child.0] += 1;
+                predecessors[child.0].push(i);
             }
         }
-        let mut ready: BinaryHeap<_> = (0..len)
-            .filter(|&i| indegree[i] == 0)
-            .map(Reverse)
-            .collect();
+
+        // Keep the numeric update order used by stateful algorithms.
+        let needs_evaluation_order = changed.iter().any(|(&child, parents)| {
+            parents.iter().any(|&parent| {
+                axis::get(parent).is_none()
+                    && self.evaluation_rank(parent) >= self.evaluation_rank(child)
+            })
+        });
+        let evaluation = if needs_evaluation_order {
+            let mut indegree: Vec<_> = predecessors.iter().map(Vec::len).collect();
+            let mut ready: BinaryHeap<_> = (0..len)
+                .filter(|&i| indegree[i] == 0)
+                .map(Reverse)
+                .collect();
+            let mut ids = Vec::with_capacity(len);
+            let mut ranks = vec![0; len];
+            while let Some(Reverse(i)) = ready.pop() {
+                ranks[i] = ids.len();
+                ids.push(i);
+                for child in successors(i) {
+                    indegree[child.0] -= 1;
+                    if indegree[child.0] == 0 {
+                        ready.push(Reverse(child.0));
+                    }
+                }
+            }
+            if ids.len() != len {
+                return Err("a replacement cannot introduce a dependency cycle");
+            }
+            Some(EvaluationOrder { ids, ranks })
+        } else {
+            None
+        };
+
+        // Visit the previous construction order, moving a new prerequisite
+        // ahead of its first reader. An unrelated ready object keeps its
+        // position relative to that reader.
+        const UNSEEN: usize = usize::MAX;
+        const VISITING: usize = usize::MAX - 1;
         let mut ids = Vec::with_capacity(len);
-        let mut ranks = vec![0; len];
-        while let Some(Reverse(i)) = ready.pop() {
-            ranks[i] = ids.len();
-            ids.push(i);
-            for child in successors(i) {
-                indegree[child.0] -= 1;
-                if indegree[child.0] == 0 {
-                    ready.push(Reverse(child.0));
+        let mut ranks = vec![UNSEEN; len];
+        let mut pending = Vec::new();
+        for i in proof_ids {
+            pending.push((i, false));
+            while let Some((i, returning)) = pending.pop() {
+                if returning {
+                    ranks[i] = ids.len();
+                    ids.push(i);
+                    continue;
+                }
+                match ranks[i] {
+                    VISITING => return Err("a replacement cannot introduce a dependency cycle"),
+                    UNSEEN => {
+                        ranks[i] = VISITING;
+                        pending.push((i, true));
+                        pending.extend(predecessors[i].iter().map(|&parent| (parent, false)));
+                    }
+                    _ => {}
                 }
             }
         }
-        if ids.len() != len {
-            return Err("a replacement cannot introduce a dependency cycle");
-        }
-        Ok(EvaluationOrder { ids, ranks })
+        Ok(ReplacementOrder {
+            evaluation,
+            proof: EvaluationOrder { ids, ranks },
+        })
+    }
+
+    pub(crate) fn proof_rank(&self, id: Id) -> usize {
+        self.proof_order.ranks.get(id.0).copied().unwrap_or(id.0)
     }
 
     /// The position of an object in dependency order.
@@ -3188,9 +3278,11 @@ impl Construction {
         }
         self.labels.push(label.to_string());
         self.children.push(Children::default());
-        if !self.evaluation_order.ids.is_empty() {
-            self.evaluation_order.ids.push(id.0);
-            self.evaluation_order.ranks.push(id.0);
+        for order in [&mut self.evaluation_order, &mut self.proof_order] {
+            if !order.ids.is_empty() {
+                order.ids.push(id.0);
+                order.ranks.push(id.0);
+            }
         }
         self.by_label.insert(label.to_string(), id);
         let element = if let Some(owner) = owner {
@@ -3721,15 +3813,28 @@ impl Construction {
         // the set is lost, and `fit` gives a clean one on the next update.
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.defs.len());
-        let clamped_slider = self.enqueue_updated_children(start, &mut dirty);
+        let mut transient = DirtySet::default();
+        let clamped_slider =
+            self.enqueue_updated_children(start, &mut dirty, false, Some(&mut transient));
+        let transient_count = if transient.len != 0 {
+            self.propagate_dirty_with(transient, 0, Propagation::SliderTransient)
+        } else {
+            0
+        };
         let recomputed = self.propagate_dirty(dirty, self.evaluation_rank(start));
         // The sweep starts a fresh replay flag. Keep clamps by the initial
         // endpoint listeners alongside changes made during the sweep.
         self.last_update_requires_replay |= clamped_slider;
-        recomputed
+        recomputed + transient_count
     }
 
-    fn enqueue_updated_children(&mut self, parent: Id, dirty: &mut DirtySet) -> bool {
+    fn enqueue_updated_children(
+        &mut self,
+        parent: Id,
+        dirty: &mut DirtySet,
+        refresh_definitions: bool,
+        mut transient: Option<&mut DirtySet>,
+    ) -> bool {
         if self.saved_slider_bounds.is_empty() {
             for child in self.children[parent.0].iter() {
                 dirty.insert(self.evaluation_rank(child));
@@ -3751,9 +3856,28 @@ impl Construction {
         }
         let mut clamped_slider = false;
         for child in sliders.drain(..) {
-            if self.update_slider_bounds(child) {
+            let changed = self.update_slider_bounds(child);
+            if changed {
                 clamped_slider = true;
                 self.construction_sources.remove(&child);
+                if let Some(transient) = transient
+                    .as_deref_mut()
+                    .filter(|_| !self.values[child.0].is_defined())
+                {
+                    // Notify readers while the slider is undefined, before
+                    // a pending update of its other endpoint can recover it.
+                    for dependent in self.children[child.0].iter() {
+                        if transient.len == 0 {
+                            transient.fit(self.len());
+                        }
+                        transient.insert(self.evaluation_rank(dependent));
+                    }
+                    if !refresh_definitions {
+                        continue;
+                    }
+                }
+            }
+            if changed || refresh_definitions {
                 dirty.insert(self.evaluation_rank(child));
             }
         }
@@ -3806,6 +3930,7 @@ impl Construction {
         let mode = match mode {
             Propagation::RecordProtocol(before) => Propagation::RecordProtocol(before),
             Propagation::RestoreProtocol(restored) => Propagation::RestoreProtocol(restored),
+            Propagation::SliderTransient => Propagation::SliderTransient,
             _ => Propagation::Live,
         };
         expr::with_work_deadline(end, || {
@@ -3845,12 +3970,24 @@ impl Construction {
             } | Propagation::Reload
         );
         let redefining = matches!(mode, Propagation::Redefinition { .. });
+        // The nested pass completes its own dirty set in dependency order.
+        // It cannot recursively start another endpoint pass.
+        let observe_transient =
+            matches!(mode, Propagation::Live | Propagation::Redefinition { .. });
+        let refresh_proofs = matches!(
+            mode,
+            Propagation::Redefinition {
+                refresh_proofs: true,
+                ..
+            }
+        );
         self.reset_replay_flags();
         self.inequality_helpers.begin_update();
         self.function_roots.clear();
         self.clips.clear();
         self.analysis.clear();
         let mut recomputed = 0;
+        let mut transient = DirtySet::default();
         let mut restored_pairs = BTreeSet::new();
         let final_update_end = self.optimizer_final_update.map(|(_, end)| end);
         while let Some(rank) = dirty.pop_first(from) {
@@ -3996,8 +4133,8 @@ impl Construction {
                 }
                 // A redefinition can change the structure the proof reads
                 // (a free point put on a path): the reference rebuilds it.
-                Def::Prove(d) if refresh_definitions => {
-                    self.proof_intersections.replay_rank = Some(rank);
+                Def::Prove(d) if refresh_definitions && refresh_proofs => {
+                    self.proof_intersections.replay_rank = Some(self.proof_rank(Id(i)));
                     // A redefined statement is rewritten again, and the
                     // reference's rebuild then reads the rewritten Boolean.
                     if self.rewrite_proof_statement(d.statement) {
@@ -4076,10 +4213,14 @@ impl Construction {
                         }
                         _ => self.compute(def, i),
                     };
-                    // Redefinition retains the circle through a point when
-                    // either input is undefined, including its type for proofs.
+                    // A through-point circle can become undefined during
+                    // redefinition and retain the type it had at the start
+                    // of that update. An already undefined circle starts the
+                    // rebuild without its old type.
                     let reset_circle_record = rebuild_records
-                        && !(redefining && matches!(def, Def::CircleThrough { .. }));
+                        && !(redefining
+                            && matches!(def, Def::CircleThrough { .. })
+                            && self.values[i].is_defined());
                     let record_changed = self.keep_circle_record(i, def, new, reset_circle_record);
                     if let Def::IntersectBoundary(intersection) = def {
                         if let Some(saved) = intersection.with_root(new) {
@@ -4148,7 +4289,27 @@ impl Construction {
             if let (Propagation::RecordProtocol(before), Some(saved)) = (&mut mode, saved) {
                 before.insert(i, saved);
             }
-            if !refresh_definitions && self.enqueue_updated_children(Id(i), &mut dirty) {
+            // Structural refresh queues descendants even when the value
+            // is unchanged. A changed numeric endpoint must also notify
+            // its slider listeners before the next endpoint is evaluated.
+            if (!refresh_definitions
+                || def.kind() == Kind::Number && !self.saved_slider_bounds.is_empty())
+                && self.enqueue_updated_children(
+                    Id(i),
+                    &mut dirty,
+                    false,
+                    observe_transient.then_some(&mut transient),
+                )
+            {
+                if transient.len != 0 {
+                    recomputed += self.propagate_dirty_while(
+                        std::mem::take(&mut transient),
+                        0,
+                        Propagation::SliderTransient,
+                        within_budget,
+                    )?;
+                    transient = std::mem::take(&mut self.dirty);
+                }
                 self.last_update_requires_replay = true;
             }
         }
@@ -4881,6 +5042,36 @@ impl Construction {
             self.dirty = dirty;
         }
         changed
+    }
+
+    /// A saved reset scans the whole construction. Bound the total number of
+    /// slots it can scan during a replay, even if it finds no transform.
+    pub fn apply_saved_transform_reset(&mut self) -> Result<bool, String> {
+        const MAX_REPLAY_SCAN_SLOTS: usize = 1_000_000;
+        let slots = self.saved_transform_reset_slots.saturating_add(self.len());
+        if slots > MAX_REPLAY_SCAN_SLOTS {
+            return Err("transform output resets exceed the replay work budget".into());
+        }
+        self.saved_transform_reset_slots = slots;
+        Ok(self.reset_transform_outputs())
+    }
+
+    /// Reloading an undo snapshot starts each list transformation with fresh outputs.
+    fn reset_transform_outputs(&mut self) -> bool {
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.len());
+        for i in 0..self.len() {
+            let def = self.defs[i];
+            if matches!(def, Def::Expr(d) if expr::reset_transform_outputs(self, d)) {
+                dirty.insert(self.evaluation_rank(Id(i)));
+            }
+        }
+        if dirty.len == 0 {
+            self.dirty = dirty;
+            return false;
+        }
+        self.propagate_dirty(dirty, 0);
+        true
     }
 
     fn forget_circle_record(&mut self, i: usize) -> bool {

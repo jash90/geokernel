@@ -1,0 +1,218 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "optimizerreview-endpointedit-001",
+      "group": "optimizerreview",
+      "script": [
+        "u = -4",
+        "hi = u + 3",
+        "a = Slider(u, hi)",
+        "b = IsDefined(a)",
+        "P = (1, 2)",
+        "Q = (3, 5)",
+        "L = If(b, If(a < 0, {{P}, {Q}}, {3, 4}), {{P}, 4})",
+        "M = Dilate(L, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "u", "value": -0.5 }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "number", "defined": true, "value": -4.0 },
+          "hi": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 3.0, "y": 5.0 }
+                ]
+              }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 6.0, "y": 10.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "u": { "type": "number", "defined": true, "value": -0.5 },
+          "hi": { "type": "number", "defined": true, "value": 2.5 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 16.0, "y": 32.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 6.0, "y": 10.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "optimizerreview-endpointedit-002",
+      "group": "optimizerreview",
+      "script": [
+        "u = -4",
+        "lo = u + 0",
+        "hi = u + 3",
+        "a = Slider(lo, hi)",
+        "b = IsDefined(a)",
+        "P = (1, 2)",
+        "Q = (3, 5)",
+        "L = If(b, If(a < 0, {{P}, {Q}}, {3, 4}), {{P}, 4})",
+        "M = Dilate(L, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "u = -0.5" }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "number", "defined": true, "value": -4.0 },
+          "lo": { "type": "number", "defined": true, "value": -4.0 },
+          "hi": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 3.0, "y": 5.0 }
+                ]
+              }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 2.0, "y": 4.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 6.0, "y": 10.0 }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "u": { "type": "number", "defined": true, "value": -0.5 },
+          "lo": { "type": "number", "defined": true, "value": -0.5 },
+          "hi": { "type": "number", "defined": true, "value": 2.5 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 5.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "M": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 16.0, "y": 32.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 6.0, "y": 10.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

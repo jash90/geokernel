@@ -402,4 +402,94 @@ for conic, point in (("Ellipse", "(0, 2)"), ("Hyperbola", "(1.5, 0)")):
                          "s = Line(A, B)", "P = Intersect(s, k, 1)"],
           "AreCollinear(A, B, P)")
 
+# Redefinitions exercised between construction steps.
+LEAF_REPLAY = INDEXED_DIAMETER + ["b = A == Q", "p = Prove(b)", "unused = 1"]
+LEAF_EDIT = [redefine("unused = x(A)"), add("S = Intersect(g, c)"),
+             add("p_2 = Prove(AreEqual(A, Q))")]
+cases.case("leafreplay", LEAF_REPLAY, LEAF_EDIT)
+# Separate helpers remain live across a childless replacement.
+diameters = [
+    line for i in range(1, 9) for line in [
+        f"O_{i} = (0, 0)", f"A_{i} = (4, 0)", f"c_{i} = Circle(O_{i}, A_{i})",
+        f"g_{i} = Line(O_{i}, A_{i})", f"Q_{i} = Intersect(g_{i}, c_{i}, 1)",
+        f"p_{i} = Prove(AreEqual(A_{i}, Q_{i}))",
+    ]
+]
+cases.case("cacheleaf", diameters + ["unused = 1"], [
+    redefine("unused = x(A_1)"), add("S = Intersect(g_8, c_8)"),
+    add("fresh = Prove(AreEqual(A_8, Q_8))"),
+])
+cases.case("dependencyreplay", INDEXED_DIAMETER + [
+    "M = Midpoint(A, Q)", "B = (3, 5)", "r = Prove(AreCollinear(O, M, B))",
+    "S = Intersect(g, c)", "U = (1, 2)", "V = (4, 3)", "h = Line(U, V)",
+], [redefine("B = Point(h, 0.25)"), add("p_2 = Prove(AreEqual(A, Q))")])
+RADIUS_CIRCLE = [
+    "O = (0, 0)", "A = (-3, 0)", "B = (3, 0)", "n = 2", "c = Circle(O, n)",
+    "Q = Intersect(Line(A, B), c, 1)", "b = A == B", "p = Prove(b)",
+]
+REBUILD_RADIUS = [
+    redefine("n = -1"), redefine("b = false"),
+    add("p_2 = Prove(AreCollinear(A, B, Q))"),
+]
+cases.case("rebuiltcircle", RADIUS_CIRCLE, REBUILD_RADIUS)
+proof("conditionalselector",
+      PARABOLA + ["s = Line(A, B)", "n = If(x(B) > 0, 1, 2)", "P = Intersect(s, k, n)"],
+      "AreCollinear(A, B, P)")
+
+THROUGH_CIRCLE = [
+    "O = (0, 0)", "A = (-3, 0)", "B = (3, 0)", "C = (1, 0)", "D = (1, 2)",
+    "g = Line(A, B)", "h = Line(C, D)", "H = Intersect(g, h)", "c = Circle(O, H)",
+    "Q = Intersect(Line(A, B), c, 1)", "b = A == B", "p = Prove(b)",
+]
+cases.case("rebuiltthrough", THROUGH_CIRCLE, [
+    redefine("D = (2, 0)"), redefine("b = false"),
+    add("p_2 = Prove(AreCollinear(A, B, Q))"),
+])
+cases.case("rebuiltthrough", THROUGH_CIRCLE + ["R = Intersect(Line(A, Q), c, 1)"], [
+    redefine("D = (2, 0)"), redefine("b = false"),
+    add("p_2 = Prove(AreCollinear(A, Q, R))"),
+])
+
+cases.case("retainedradius", RADIUS_CIRCLE, [
+    redefine("n = -1"), add("unused = 1"), redefine("unused = x(A)"),
+    add("p_2 = Prove(AreCollinear(A, B, Q))"),
+])
+proof("wrappedselector",
+      PARABOLA + ["s = Line(A, B)", "n = If(x(B) > 0, 1, 2) + 0", "P = Intersect(s, k, n)"],
+      "AreCollinear(A, B, P)")
+cases.case("rebuiltdetails", RADIUS_CIRCLE, REBUILD_RADIUS + [
+    add("q_2 = ProveDetails(AreCollinear(A, B, Q))"),
+])
+
+
+cases.case("identicalthrough", THROUGH_CIRCLE, [
+    redefine("D = (2, 0)"), redefine("h = Line(C, D)"),
+    add("p_2 = Prove(AreCollinear(A, B, Q))"),
+])
+for line in ("g", "Line(A, B)"):
+    cases.case("typedrecovery", [
+        entry.replace("Intersect(Line(A, B), c", f"Intersect({line}, c") for entry in THROUGH_CIRCLE
+    ], [
+        redefine("D = (2, 0)"), redefine("b = false"),
+        add("p_2 = Prove(AreCollinear(A, B, Q))"),
+        redefine("D = (1, 2)"), add("p_3 = Prove(AreCollinear(A, B, Q))"),
+    ])
+cases.case("zeroradiusdetails", [
+    "O = (0, 0)", "H = (0, 0)", "A = (-3, 0)", "B = (3, 0)", "c = Circle(O, H)",
+    "Q = Intersect(Line(A, B), c, 1)", "q = ProveDetails(AreCollinear(A, B, Q))",
+], [])
+proof("namedpointselector", PARABOLA + [
+    "s = Line(A, B)", "U = If(x(B) > 0, (1, 0), (2, 0))", "n = x(U)", "P = Intersect(s, k, n)",
+], "AreCollinear(A, B, P)")
+
+for line in ("g", "Line(A, B)"):
+    cases.case("recoveryundo", [
+        entry.replace("Intersect(Line(A, B), c", f"Intersect({line}, c") for entry in THROUGH_CIRCLE
+    ], [
+        redefine("D = (2, 0)"), redefine("b = false"),
+        add("p_2 = Prove(AreCollinear(A, B, Q))"),
+        redefine("D = (1, 2)"), add("p_3 = Prove(AreCollinear(A, B, Q))"),
+        mv("D", 1, 3), {"action": "undo"},
+    ])
+
 cases.write()
