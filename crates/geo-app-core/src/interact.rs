@@ -205,9 +205,25 @@ pub enum Hold {
     /// The object's label: its offset in pixels is the one it had (`old`)
     /// plus the pointer's motion from the press (`start`, in pixels)
     /// (`MoveMode.LABEL`, `moveLabel`). No undo step, no selection.
-    Label { old: (f64, f64), start: (f64, f64) },
+    Label {
+        old: (f64, f64),
+        start: (f64, f64),
+    },
     /// The placement of a text before dragging, and the world or screen press.
-    Text { old: TextMove, start: (f64, f64) },
+    Text {
+        old: TextMove,
+        start: (f64, f64),
+    },
+    Checkbox {
+        old: (f64, f64),
+        start: (f64, f64),
+    },
+    Slider,
+    SliderTrack {
+        old: (f64, f64),
+        start: (f64, f64),
+        absolute: bool,
+    },
 }
 
 /// A drag in progress: which object is held, and how.
@@ -221,13 +237,34 @@ pub struct Drag {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Step {
     /// Put the held free point at `(x, y)`.
-    Point { x: f64, y: f64 },
+    Point {
+        x: f64,
+        y: f64,
+    },
     /// Translate the free input points of the held object by `(dx, dy)`.
-    Translate { dx: f64, dy: f64 },
+    Translate {
+        dx: f64,
+        dy: f64,
+    },
     /// Set the held object's label offset to `(x, y)` pixels.
-    Label { x: f64, y: f64 },
+    Label {
+        x: f64,
+        y: f64,
+    },
     /// Move a text or update its offset from a named anchor.
     Text(TextMove),
+    Slider {
+        x: f64,
+        y: f64,
+    },
+    CheckboxPosition {
+        x: i32,
+        y: i32,
+    },
+    SliderPosition {
+        x: f64,
+        y: f64,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -294,6 +331,45 @@ impl Drag {
         }
     }
 
+    /// A knob or a locked track changes value; an unlocked track moves.
+    pub fn slider(
+        c: &Construction,
+        id: Id,
+        t: &ViewTransform,
+        press: (f64, f64),
+        reach: &crate::hit::Reach,
+    ) -> Option<Drag> {
+        let slider = c.slider_geometry(id, (t.xscale(), t.yscale()), |(x, y)| {
+            t.world_to_screen(x, y)
+        })?;
+        let style = c.slider_style(id);
+        let hold = if style.fixed
+            || !crate::hit::slider_track_grab(c, id, slider, press, reach.threshold)
+        {
+            Hold::Slider
+        } else {
+            Hold::SliderTrack {
+                old: c.slider_position(id, style),
+                start: if style.absolute {
+                    press
+                } else {
+                    t.screen_to_world(press.0, press.1)
+                },
+                absolute: style.absolute,
+            }
+        };
+        Some(Drag { id, hold })
+    }
+
+    /// Keeps the pointer's offset from an unlocked checkbox's screen position.
+    pub fn checkbox(c: &Construction, id: Id, start: (f64, f64)) -> Option<Drag> {
+        let old = c.checkbox_position(id)?;
+        (!c.checkbox_style(id).fixed).then_some(Drag {
+            id,
+            hold: Hold::Checkbox { old, start },
+        })
+    }
+
     /// Starts dragging a text using its placement's coordinate system.
     pub fn text(
         c: &Construction,
@@ -328,6 +404,25 @@ impl Drag {
     /// `transformCoords`, then moves what is held).
     pub fn step(&mut self, t: &ViewTransform, snap: &Snap, sx: f64, sy: f64) -> Step {
         match &mut self.hold {
+            Hold::Checkbox { old, start } => Step::CheckboxPosition {
+                x: (old.0 + sx - start.0).round() as i32,
+                y: (old.1 + sy - start.1).round() as i32,
+            },
+            Hold::Slider => Step::Slider { x: sx, y: sy },
+            Hold::SliderTrack {
+                old,
+                start,
+                absolute,
+            } => {
+                let (x, y) = if *absolute {
+                    (sx, sy)
+                } else {
+                    t.screen_to_world(sx, sy)
+                };
+                let (x, y) = (old.0 + (x - start.0), old.1 + (y - start.1));
+                Step::SliderPosition { x, y }
+            }
+
             Hold::Point => {
                 let (x, y) = snap.apply(t.screen_to_world(sx, sy));
                 Step::Point { x, y }

@@ -441,6 +441,72 @@ mod tests {
     }
 
     #[test]
+    fn svg_applies_the_imported_slider_label_offset() {
+        let mut wb = Workbench::default();
+        wb.load_for_export(
+            br#"<geogebra format="5.0"><construction>
+              <element type="numeric" label="a">
+                <value val="2"/><show object="true" label="true"/>
+                <slider min="0" max="8" x="100" y="100" width="40" horizontal="true"
+                        absoluteScreenLocation="true"/>
+                <labelOffset x="17" y="-8"/>
+              </element>
+            </construction></geogebra>"#,
+            "slider-offset.xml",
+        )
+        .unwrap();
+        let c = wb.construction();
+        let svg = geo_kernel::svg::render_visible_with_label_offsets(
+            c,
+            geo_kernel::svg::View::fit(c),
+            800,
+            600,
+            |_| true,
+            |id| wb.label_offset(id),
+        );
+        assert!(svg.contains(r#"cx="110.00" cy="100.00""#), "{svg}");
+        assert!(
+            svg.contains(r#"<text x="118.00" y="81.50">a = 2</text>"#),
+            "{svg}"
+        );
+    }
+
+    #[test]
+    fn a_later_imported_bound_clamps_the_slider_and_updates_its_dependents() {
+        let mut wb = Workbench::default();
+        wb.load_for_export(
+            br#"<geogebra format="5.0"><construction>
+              <element type="numeric" label="a">
+                <value val="8"/><show object="true" label="true"/>
+                <slider min="0" max="m" x="30" y="50" width="200"
+                        horizontal="true" absoluteScreenLocation="true"/>
+              </element>
+              <element type="numeric" label="m"><value val="10"/></element>
+              <expression label="b" exp="a + m"/>
+              <element type="numeric" label="b"><value val="18"/></element>
+            </construction></geogebra>"#,
+            "live-slider.xml",
+        )
+        .unwrap();
+        let m = wb.construction().id("m").unwrap();
+        assert!(wb.set_number(m, 5.0));
+        let value = |wb: &Workbench, label| {
+            let c = wb.construction();
+            c.value(c.id(label).unwrap())
+        };
+        assert_eq!(value(&wb, "a"), Value::Number(5.0));
+        assert_eq!(value(&wb, "b"), Value::Number(10.0));
+        assert!(wb.undo());
+        assert_eq!(value(&wb, "a"), Value::Number(8.0));
+        assert!(wb.redo());
+        assert_eq!(value(&wb, "b"), Value::Number(10.0));
+        assert!(wb.set_number(wb.construction().id("m").unwrap(), 10.0));
+        let restored = Workbench::from_script(&wb.snapshot_text()).unwrap();
+        assert_eq!(value(&restored, "a"), Value::Number(5.0));
+        assert_eq!(value(&restored, "b"), Value::Number(15.0));
+    }
+
+    #[test]
     fn review_saved_slider_bounds_use_later_objects_and_survive_replay() {
         let mut wb = Workbench::default();
         wb.load_bytes(

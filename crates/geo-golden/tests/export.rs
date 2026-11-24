@@ -420,6 +420,19 @@ fn exported_constructions_import_with_all_labelled_kinds_and_properties() {
 }
 
 #[test]
+fn a_session_slider_keeps_its_expression_bound_in_the_archive() {
+    let wb = Workbench::from_script("m = 10\na = Slider(0, m - 1)\na = 8").unwrap();
+    let mut restored = Workbench::default();
+    restored
+        .load_for_export(&wb.export_ggb(None).unwrap(), "live-slider")
+        .unwrap();
+    let m = restored.construction().id("m").unwrap();
+    assert!(restored.set_number(m, 5.0));
+    let c = restored.construction();
+    assert_eq!(c.value(c.id("a").unwrap()), geo_kernel::Value::Number(4.0));
+}
+
+#[test]
 fn archive_preserves_view_kernel_settings_and_application_edits() {
     let mut wb = Workbench::default();
     wb.load_for_export(STYLED_FILE, "settings").unwrap();
@@ -482,7 +495,18 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
                     write(&exports, &name, &bytes);
                     write(&sources, &name, &zipped(source));
                     let mut stripped = Workbench::default();
-                    let rejected = stripped.restore_text(&wb.snapshot_text()).unwrap();
+                    // Strip the saved canvas placements and increments along with
+                    // the style data kept outside the journal.
+                    let plain_snapshot = wb
+                        .snapshot_text()
+                        .lines()
+                        .filter(|line| {
+                            !line.starts_with("$sliderStyle(")
+                                && !line.starts_with("$checkboxStyle(")
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    let rejected = stripped.restore_text(&plain_snapshot).unwrap();
                     assert!(rejected.is_empty(), "{name}: {rejected:?}");
                     let bytes = stripped
                         .export_ggb(view.or(wb.file_view()))
@@ -669,20 +693,46 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
             }
         }
     }
-    let proof = serde_json::to_string_pretty(&proof).unwrap() + "\n";
+    let serialized = serde_json::to_string_pretty(&proof).unwrap() + "\n";
     let path = proof_path();
     if std::env::var_os("GEOKERNEL_EXPORT_BLESS").is_some() {
-        fs::write(&path, &proof).unwrap();
+        fs::write(&path, &serialized).unwrap();
     }
-    assert!(
-        fs::read_to_string(&path).unwrap_or_default() == proof,
-        "tests/fixtures/export-proof.json is stale; rerun with GEOKERNEL_EXPORT_BLESS=1"
-    );
-    let pairs = serde_json::from_str::<BTreeMap<String, BTreeMap<String, Value>>>(&proof)
-        .unwrap()
-        .values()
-        .map(BTreeMap::len)
-        .sum::<usize>();
+    let recorded = fs::read_to_string(&path).unwrap();
+    if recorded != serialized {
+        let recorded: BTreeMap<&str, BTreeMap<&str, Value>> =
+            serde_json::from_str(&recorded).expect("invalid export-proof.json");
+        let mut differences = Vec::new();
+        for kind in recorded.keys().chain(proof.keys()).collect::<BTreeSet<_>>() {
+            let empty = BTreeMap::new();
+            let expected = recorded.get(kind).unwrap_or(&empty);
+            let actual = proof.get(kind).unwrap_or(&empty);
+            for property in expected
+                .keys()
+                .chain(actual.keys())
+                .collect::<BTreeSet<_>>()
+            {
+                let expected = expected.get(property).map(Value::to_string);
+                let actual = actual.get(property).map(Value::to_string);
+                if expected != actual {
+                    let expected = expected.as_deref().unwrap_or("<missing>");
+                    let actual = actual.as_deref().unwrap_or("<missing>");
+                    differences.push(format!(
+                        "{kind}.{property}: recorded {expected}, computed {actual}"
+                    ));
+                }
+            }
+        }
+        let details = if differences.is_empty() {
+            "The JSON entries agree, but the file serialization differs.".into()
+        } else {
+            differences.join("\n")
+        };
+        panic!(
+            "tests/fixtures/export-proof.json is stale; rerun with GEOKERNEL_EXPORT_BLESS=1\n{details}"
+        );
+    }
+    let pairs = proof.values().map(BTreeMap::len).sum::<usize>();
     println!(
         "{} exported files, {count} objects, {} kinds, {pairs} proven kind and property pairs, \
          {} files the reference gives up",
@@ -851,6 +901,8 @@ const WITNESSES: &[(&str, &[(&str, &str)])] = &[
         &[
             ("saved-styles-003", "a"),
             ("saved-styles-003", "a2"),
+            // The journal retains slider thickness. The free number's
+            // thickness still differs from its stripped export.
             ("saved-styles-003", "n"),
         ],
     ),
@@ -947,8 +999,8 @@ fn new_object(kind: &str, property: &str) -> Option<Value> {
         // The kernel keeps the caption of a control and the opacity of an image.
         ("Boolean" | "Button" | "InputBox", "caption") => json!(""),
         ("Image", "alpha") => json!(1.0),
-        // A chart draws with its saved label visibility and thickness.
-        ("PieChart", "label_shown") => json!(true),
+        // Drawable controls and charts keep label visibility in the journal.
+        ("Number" | "Boolean" | "PieChart", "label_shown") => json!(true),
         ("PieChart", "line.thickness") => json!(3),
         ("Angle", "angle_style") => json!(0),
         ("Text", "latex") => json!(false),
@@ -1150,7 +1202,6 @@ const NOT_KEPT: &[(&str, &str)] = &[
     ("Arc", "the outlying-intersection and keep-type flags are not kept"),
     ("Sector", "the outlying-intersection and keep-type flags are not kept"),
     ("Number", "the symbolic mode and the slope triangle size are not kept"),
-    ("Boolean", "the position of the check box is not kept"),
     ("Function", "the show-on-axis and simplify flags and the table column are not kept"),
     ("Polygon", "the mask flag is not kept"),
     ("List", "the drop-down display with its selected index and the font and rounding of a list are not kept"),
@@ -1369,14 +1420,18 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
                 };
                 let from_file = presentation.object_styles.contains_key(label);
                 let step = match animation {
-                    Some(animation) => number_or_reference(c, animation.step.as_deref()),
+                    Some(animation) => {
+                        number_or_reference(c, option(2).or(animation.step.as_deref()))
+                    }
                     // A file slider without the tag steps automatically.
-                    None if from_file => Value::Null,
-                    None => number_or_reference(c, option(2).or(Some("0.1"))),
+                    None if from_file && option(2).is_none() => Value::Null,
+                    None => match c.slider_style(id).step.filter(|_| option(2).is_none()) {
+                        Some(step) => json!(step),
+                        None => number_or_reference(c, option(2).or(Some("0.1"))),
+                    },
                 };
-                let speed = animation
-                    .and_then(|a| a.speed.as_deref())
-                    .or_else(|| option(3))
+                let speed = option(3)
+                    .or_else(|| animation.and_then(|a| a.speed.as_deref()))
                     .or(Some("1"));
                 assert_json(&step, &moving["step"], &format!("{where_}.step"));
                 // The reference reports the speed of an undefined
@@ -1414,7 +1469,13 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
                 presentation
                     .label_offsets
                     .get(label)
-                    .map_or([0, 0], |&(x, y)| [x, y])
+                    .map(|&(x, y)| [x, y])
+                    .or_else(|| {
+                        (!presentation.hidden.contains(label))
+                            .then(|| c.checkbox_position(id).map(|(x, y)| [x as i32, y as i32]))
+                            .flatten()
+                    })
+                    .unwrap_or([0, 0])
             },
             |text| match text.position {
                 TextPosition::Screen { x, y } => [x as i32, y as i32],
@@ -1429,7 +1490,7 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
             "shown": !presentation.hidden.contains(label) && !plain_number,
             "label_shown": drawing.show_label,
             "layer": drawing.layer,
-            "label_mode": 0,
+            "label_mode": i32::from(c.kind(id) == Kind::Number && c.slider_bounds(id) != [None, None]),
             "label_offset": offset,
             "caption": caption,
             "color": presentation.colors[label],
@@ -2009,4 +2070,81 @@ fn export_refuses_a_curve_intersection_with_noncontiguous_replay_slots() {
         .unwrap_err()
         .to_string()
         .contains("$boundarySlot"));
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_reloads_session_control_positions_and_values() {
+    use geo_app_core::app::App;
+    use geo_app_core::tools::Tool;
+
+    let mut app = App::new(Workbench::default(), None);
+    app.select_tool(Tool::Slider);
+    app.tool.begin_control((124.0, 88.0));
+    let slider = app.tool.finish_slider(-5.0, 5.0, 0.25, |_| false);
+    app.apply_outcome(slider);
+    let a = app.wb.construction().id("a").unwrap();
+    app.wb.set_label_offset(a, (17.0, -8.0));
+    app.select_tool(Tool::Checkbox);
+    app.tool.begin_control((51.0, 73.0));
+    let checkbox = app.tool.finish_checkbox("Show", |label| label == "a");
+    app.apply_outcome(checkbox);
+    let b = app.wb.construction().id("b").unwrap();
+    assert!(app.wb.set_boolean(b, false));
+
+    let dir = Scratch::new("session-controls");
+    fs::write(dir.0.join("controls.ggb"), app.wb.export_ggb(None).unwrap()).unwrap();
+    let output = java_snapshots(&dir.0);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let snap: Value =
+        serde_json::from_slice(&fs::read(dir.0.join("controls.ggb.snapshot")).unwrap()).unwrap();
+    assert_eq!(
+        snap["styles"]["a"]["slider"]["position"],
+        json!([124.0, 88.0])
+    );
+    assert_eq!(snap["styles"]["a"]["slider"]["width"], json!(200.0));
+    assert_eq!(snap["styles"]["a"]["label_mode"], json!(1));
+    assert_eq!(snap["styles"]["a"]["label_offset"], json!([17, -8]));
+    assert_eq!(snap["styles"]["a"]["animation"]["step"], json!(0.25));
+    assert_eq!(snap["objects"]["a"]["value"], json!(1.0));
+    assert_eq!(snap["styles"]["b"]["label_offset"], json!([51, 73]));
+    assert_eq!(snap["styles"]["b"]["caption"], json!("Show"));
+    assert_eq!(snap["objects"]["b"]["value"], json!(false));
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_reloads_a_slider_with_an_undefined_endpoint() {
+    let wb = Workbench::from_script("limit = 2\ns = Slider((?), limit, 0.5)").unwrap();
+    let archive = wb.export_ggb(None).unwrap();
+    let xml = geo_import::archive::extract_xml(&archive).unwrap();
+    assert!(xml.contains(r#"min="NaN" max="limit""#));
+    let dir = Scratch::new("undefined-slider");
+    fs::write(dir.0.join("slider.ggb"), &archive).unwrap();
+    let output = java_snapshots(&dir.0);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let snap: Value =
+        serde_json::from_slice(&fs::read(dir.0.join("slider.ggb.snapshot")).unwrap()).unwrap();
+    let saved_slider = &snap["styles"]["s"]["slider"];
+    assert_eq!(saved_slider["min"], Value::Null);
+    assert_eq!(saved_slider["max"], json!(2.0));
+    assert_eq!(saved_slider["position"], json!([30.0, 50.0]));
+    assert_eq!(snap["styles"]["s"]["label_mode"], json!(1));
+    assert_eq!(snap["styles"]["s"]["animation"]["step"], json!(0.5));
+    assert_eq!(snap["objects"]["s"]["value"], json!(0.0));
+
+    let mut reloaded = Workbench::default();
+    reloaded.load_bytes(&archive, "slider.ggb").unwrap();
+    let limit = reloaded.construction().id("limit").unwrap();
+    let s = reloaded.construction().id("s").unwrap();
+    assert!(reloaded.set_number(limit, 4.0));
+    assert_eq!(reloaded.construction().slider_bounds(s), [None, Some(4.0)]);
 }

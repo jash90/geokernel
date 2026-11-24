@@ -148,6 +148,7 @@ pub struct App {
     pub style_bar: bool,
     /// The text of the number dialog.
     pub number_text: String,
+    pub control_fields: [String; 3],
     /// Where the regions were in the last frame.
     pub regions: Regions,
     /// The widgets over the graphics view in the last frame.
@@ -159,6 +160,8 @@ pub struct App {
     /// what the user saw, even if the area changes in that frame.
     pub view: Option<(Rect, ViewTransform)>,
     pub press_view: Option<(Rect, ViewTransform)>,
+    /// The slider grip the pointer hit, held even if its knob subsequently moves.
+    pub press_slider: Option<Drag>,
     /// What the construction tool's press did, until its release.
     pub tool_press: Option<crate::toolpress::ToolPress>,
     /// The delete tool's drag is erasing (spec E11).
@@ -236,11 +239,13 @@ impl App {
             keyboard: Keyboard::default(),
             style_bar: false,
             number_text: String::new(),
+            control_fields: Default::default(),
             regions: Regions::new(Rect::ZERO, false, &Metrics::desktop()),
             overlays: Overlays::new(),
             seen_rebuilds: 0,
             view: None,
             press_view: None,
+            press_slider: None,
             tool_press: None,
             erasing: false,
             view_gesture: crate::camera::ViewGesture::default(),
@@ -370,7 +375,9 @@ impl App {
 
     /// The active tool holds picks or waits for its number.
     fn tool_in_use(&self) -> bool {
-        !self.tool.picks().is_empty() || self.tool.asking().is_some()
+        !self.tool.picks().is_empty()
+            || self.tool.asking().is_some()
+            || self.tool.control_request().is_some()
     }
 
     /// Leaves the active tool for the move tool, clears the selection and

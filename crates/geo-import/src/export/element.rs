@@ -91,7 +91,7 @@ impl Writer<'_> {
         let label_shown = saved.and_then(|style| style.show_label);
         // A free number is a slider when it has a bound, or when its file
         // placed one for it.
-        let numeric = c.slider_bounds(id).map(|n| n.map(|n| n.to_string()));
+        let numeric = c.slider_bound_sources(id);
         let slider_command = script::split_comment(line)
             .0
             .split_once([':', '='])
@@ -103,7 +103,14 @@ impl Writer<'_> {
                 .slider_bounds
                 .get(label)
                 .copied()
-                .or_else(|| slider_command.map(|(_, args)| [Some(args[0]), Some(args[1])]))
+                .or_else(|| {
+                    slider_command.map(|(_, args)| {
+                        [0, 1].map(|i| match numeric[i].as_deref() {
+                            Some("NaN") => Some("NaN"),
+                            _ => Some(args[i]),
+                        })
+                    })
+                })
                 .unwrap_or_else(|| numeric.each_ref().map(|n| n.as_deref())),
             _ => [None; 2],
         };
@@ -120,7 +127,7 @@ impl Writer<'_> {
             self.angle(id, saved)?;
             self.value(id)?;
             if bounded || layout.is_some() {
-                self.slider(bounds, layout)?;
+                self.slider(id, bounds, layout)?;
             }
         }
         let reader_decides = match saved {
@@ -162,7 +169,8 @@ impl Writer<'_> {
         if saved.is_none_or(|saved| saved.layer.is_some()) {
             self.xml.val("layer", &style.layer.to_string())?;
         }
-        if let Some(mode) = saved.map_or(Some(0), |style| style.label_mode) {
+        let default_mode = i32::from(object_kind == Kind::Number && bounded);
+        if let Some(mode) = saved.map_or(Some(default_mode), |style| style.label_mode) {
             self.xml.val("labelMode", &mode.to_string())?;
         }
         if let Some(mode) = saved.and_then(|style| style.tooltip_mode) {
@@ -251,12 +259,29 @@ impl Writer<'_> {
             }
             None => {}
         }
-        if let Some(&(x, y)) = self
+        let offset = self
             .presentation
             .label_offsets
             .get(label)
             .filter(|_| object_kind != Kind::Text)
-        {
+            .copied()
+            .or_else(|| {
+                if object_kind == Kind::Boolean {
+                    c.checkbox_style(id)
+                        .position
+                        .map(|[x, y]| (x, y))
+                        .or_else(|| {
+                            if saved.is_none() && shown {
+                                c.checkbox_position(id).map(|(x, y)| (x as i32, y as i32))
+                            } else {
+                                None
+                            }
+                        })
+                } else {
+                    None
+                }
+            });
+        if let Some((x, y)) = offset {
             self.xml.pixels("labelOffset", x, y)?;
         }
         if !is_number {
@@ -312,10 +337,10 @@ impl Writer<'_> {
             self.xml.val("caption", caption)?;
         }
         if object_kind == Kind::Boolean {
-            // A check box made in the application can be dragged.
+            // Keep the fixed setting of a canvas checkbox.
             let fixed = match saved {
                 Some(saved) => saved.checkbox_fixed,
-                None => c.control(id).map(|_| false),
+                None => c.checkbox_position(id).map(|_| c.checkbox_style(id).fixed),
             };
             if let Some(fixed) = fixed {
                 self.xml.tag("checkbox", &[("fixed", flag(fixed))])?;
@@ -367,6 +392,7 @@ impl Writer<'_> {
             .or(saved.and_then(|style| style.animation.as_deref()));
         if bounded {
             let [step, speed] = c.slider_animation_options(id);
+            let style_step = c.slider_style(id).step.map(number);
             match animation {
                 Some(animation) => self.animation(&SliderAnimation {
                     step: step.map(str::to_owned).or_else(|| animation.step.clone()),
@@ -401,7 +427,7 @@ impl Writer<'_> {
                         ("speed", speed.unwrap_or("1")),
                         ("type", "0"),
                         ("playing", "false"),
-                        ("step", step.unwrap_or("0.1")),
+                        ("step", step.or(style_step.as_deref()).unwrap_or("0.1")),
                     ],
                 )?,
             }
@@ -504,6 +530,7 @@ impl Writer<'_> {
 
     fn slider(
         &mut self,
+        id: Id,
         bounds: [Option<&str>; 2],
         layout: Option<&SliderLayout>,
     ) -> Result<(), ExportError> {
@@ -512,7 +539,8 @@ impl Writer<'_> {
             // A tag the reader left early is written as far as it got.
             Some(layout) => {
                 attrs.push(("absoluteScreenLocation", flag(layout.absolute).into()));
-                if let Some([x, y]) = layout.position {
+                let placed = self.c.slider_style(id).position.map(|(x, y)| [x, y]);
+                if let Some([x, y]) = placed.or(layout.position) {
                     attrs.extend([("x", number(x)), ("y", number(y))]);
                 }
                 if let Some(width) = layout.width {
@@ -527,22 +555,16 @@ impl Writer<'_> {
                 }
             }
             None => {
-                // Stack sliders in rows, with another column as the view fills.
-                let rows = usize::try_from(self.presentation.view.size[1] / 40)
-                    .unwrap_or(usize::MAX)
-                    .saturating_sub(1)
-                    .max(1);
-                let x = 30 + 130 * (self.sliders / rows);
-                let y = 30 + 40 * (self.sliders % rows);
-                self.sliders += 1;
+                let style = self.c.slider_style(id);
+                let (x, y) = self.c.slider_position(id, style);
                 attrs.extend([
-                    ("absoluteScreenLocation", "true".into()),
-                    ("x", x.to_string()),
-                    ("y", y.to_string()),
-                    ("width", "100".into()),
-                    ("fixed", "false".into()),
+                    ("absoluteScreenLocation", flag(style.absolute).into()),
+                    ("x", number(x)),
+                    ("y", number(y)),
+                    ("width", number(style.width)),
+                    ("fixed", flag(style.fixed).into()),
                     ("showAlgebra", "true".into()),
-                    ("horizontal", "true".into()),
+                    ("horizontal", flag(style.horizontal).into()),
                 ]);
             }
         }

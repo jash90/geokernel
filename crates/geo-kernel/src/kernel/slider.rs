@@ -15,11 +15,18 @@ pub(super) enum Bound {
 impl Bound {
     fn read(self, c: &Construction) -> Option<f64> {
         match self {
-            Self::Literal(v) => Some(v),
+            Self::Literal(v) => v.is_finite().then_some(v),
             Self::Object(id) | Self::Passive(id) => match c.value(id) {
                 Value::Number(v) if v.is_finite() => Some(v),
                 _ => None,
             },
+        }
+    }
+
+    pub(super) fn dependency(self) -> Option<Id> {
+        match self {
+            Self::Object(id) if super::axis::get(id).is_none() => Some(id),
+            _ => None,
         }
     }
 
@@ -48,6 +55,31 @@ impl Construction {
             })
     }
 
+    /// The saved endpoint values or expressions used when writing a slider.
+    pub fn slider_bound_sources(&self, id: Id) -> [Option<String>; 2] {
+        self.saved_slider_bounds.get(&id).map_or_else(
+            || {
+                self.slider_bounds(id)
+                    .map(|bound| bound.map(|v| v.to_string()))
+            },
+            |bounds| {
+                bounds.map(|bound| {
+                    bound.map(|bound| match bound {
+                        Bound::Literal(v) => v.to_string(),
+                        Bound::Object(id) | Bound::Passive(id) => {
+                            let label = self.label(id);
+                            if label.starts_with('\0') {
+                                self.construction_source(id).unwrap_or(label).to_owned()
+                            } else {
+                                label.to_owned()
+                            }
+                        }
+                    })
+                })
+            },
+        )
+    }
+
     pub(super) fn slider_upper_bound(&self, id: Id) -> Option<Bound> {
         match self.saved_slider_bounds.get(&id) {
             Some(bounds) => bounds[1],
@@ -57,13 +89,18 @@ impl Construction {
 
     /// Whether both endpoints of the slider `id` exist, whatever their values
     /// (`OptimizerNumeric.hasBounds` checks the endpoint objects).
-    pub(crate) fn has_slider_bounds(&self, id: Id) -> bool {
+    pub fn has_slider_bounds(&self, id: Id) -> bool {
         if let Some(bounds) = self.saved_slider_bounds.get(&id) {
             return bounds.iter().all(Option::is_some);
         }
         self.sliders
             .binary_search_by_key(&id.index(), |&(owner, _, _)| owner)
             .is_ok()
+    }
+
+    pub(super) fn remember_slider_slot(&mut self, id: Id) {
+        let next = self.slider_default_slots.len();
+        self.slider_default_slots.entry(id).or_insert(next);
     }
 
     /// The finite interval used when sampling a locus on a slider.
@@ -140,6 +177,9 @@ impl Construction {
             self.children[parent.0].insert(id);
         }
         self.saved_slider_bounds.insert(id, restored);
+        if restored.iter().all(Option::is_some) {
+            self.remember_slider_slot(id);
+        }
         let [min, max] = self.slider_bounds(id);
         // An animation goes on from the value the bounds set last: the
         // reference sets the lower end, then the upper one, and each sets
@@ -212,6 +252,9 @@ impl Construction {
     }
 
     fn slider_bound(&mut self, owner: Option<Id>, source: &str) -> Result<Bound, String> {
+        if matches!(crate::script::ungroup(source), "?" | "NaN") {
+            return Ok(Bound::Literal(f64::NAN));
+        }
         if let Some(v) = crate::expr::plain_number(source).filter(|v| v.is_finite()) {
             return Ok(Bound::Literal(v));
         }
@@ -225,7 +268,9 @@ impl Construction {
             if !crate::expr::argument_object(self, source, &label, Kind::Number) {
                 return Err("endpoint is not a supported number expression".into());
             }
-            self.id(&label).expect("the bound was just added")
+            let id = self.id(&label).expect("the bound was just added");
+            self.remember_construction_source(id, source);
+            id
         };
         if self.kind(id) != Kind::Number {
             return Err("endpoint is not a number".into());
@@ -248,10 +293,17 @@ impl Construction {
             }
             if seen.insert(parent) {
                 let reads = self.reads(parent);
+                let endpoint_parents = self.slider_bound_parents(parent);
                 remaining = remaining
-                    .checked_sub(reads.len())
+                    .checked_sub(1 + reads.len())
                     .ok_or("slider endpoint exceeds the dependency budget")?;
                 parents.extend(reads);
+                for endpoint in endpoint_parents {
+                    remaining = remaining
+                        .checked_sub(1)
+                        .ok_or("slider endpoint exceeds the dependency budget")?;
+                    parents.push(endpoint);
+                }
             }
         }
         Ok(Bound::Object(id))
@@ -278,6 +330,7 @@ impl Construction {
                 children.insert(id);
             }
         }
+        self.remember_slider_slot(id);
         self.update_slider_bounds(id);
         Ok(id)
     }
@@ -326,9 +379,9 @@ impl Construction {
             // GeoNumeric.resolveMinMax leaves the initial value in place
             // when either endpoint is undefined.
             let id = self.add(label, Def::Number(0.0))?;
-            let bound = |v: f64| v.is_finite().then_some(Bound::Literal(v));
             self.saved_slider_bounds
-                .insert(id, [bound(min), bound(max)]);
+                .insert(id, [Some(Bound::Literal(min)), Some(Bound::Literal(max))]);
+            self.remember_slider_slot(id);
             return Ok(id);
         }
         if !(min.is_finite() && max.is_finite()) {
@@ -363,6 +416,7 @@ impl Construction {
             }),
         )?;
         self.sliders.push((id.0, min, max));
+        self.remember_slider_slot(id);
         if min > max {
             self.values[id.0] = Value::Undefined;
         }
@@ -371,10 +425,7 @@ impl Construction {
 }
 
 fn bound_parents(bounds: [Option<Bound>; 2]) -> impl Iterator<Item = Id> {
-    bounds.into_iter().filter_map(|bound| match bound {
-        Some(Bound::Object(id)) => Some(id),
-        _ => None,
-    })
+    bounds.into_iter().flatten().filter_map(Bound::dependency)
 }
 
 fn clamp(value: f64, [min, max]: [Option<f64>; 2]) -> f64 {

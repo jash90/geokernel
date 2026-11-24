@@ -4,6 +4,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/Hits.java
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/EuclidianController.java
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawSlider.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawBoolean.java
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawSegment.java
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawRay.java
@@ -117,6 +119,7 @@ pub enum HitType {
     Filling,
     /// A point, or the outline of a curve.
     Boundary,
+    SliderKnob,
 }
 
 /// Whether the closed square of half-width `t` around `p` meets the segment
@@ -253,6 +256,22 @@ pub fn hit(
                     (p.0 - center.0, center.1 - p.1),
                     angle.radius((tr.xscale() * tr.yscale()).sqrt()),
                 )
+                .then_some(HitType::Filling)
+        }
+        Value::Number(_) if c.kind(id) == Kind::Number => {
+            let slider =
+                c.slider_geometry(id, (tr.xscale(), tr.yscale()), |(x, y)| to_screen(x, y))?;
+            if knob_hit(slider, p, t) {
+                Some(HitType::SliderKnob)
+            } else {
+                boundary(slider_track_hit(c, id, slider, p, t))
+            }
+        }
+        Value::Bool(_) => {
+            use geo_kernel::kernel::control::CHECKBOX_HIT_SIZE;
+            let (x, y) = c.checkbox_position(id)?;
+            let extent = CHECKBOX_HIT_SIZE;
+            ((x..x + extent).contains(&p.0) && (y..y + extent).contains(&p.1))
                 .then_some(HitType::Filling)
         }
         Value::Polygon { .. } => {
@@ -506,6 +525,50 @@ fn function_meets_square(
     false
 }
 
+fn knob_hit(
+    slider: geo_kernel::kernel::control::SliderGeometry,
+    at: (f64, f64),
+    threshold: f64,
+) -> bool {
+    let r = threshold + slider_blob_diameter(slider);
+    let (dx, dy) = (at.0 - slider.knob.0, at.1 - slider.knob.1);
+    dx.abs() < r && dx * dx + dy * dy <= r * r
+}
+
+fn slider_blob_diameter(slider: geo_kernel::kernel::control::SliderGeometry) -> f64 {
+    (2.0 * (slider.radius - 0.5).trunc() + 1.0).max(5.0)
+}
+
+fn slider_track_hit(
+    c: &Construction,
+    id: Id,
+    slider: geo_kernel::kernel::control::SliderGeometry,
+    at: (f64, f64),
+    threshold: f64,
+) -> bool {
+    let thickness = c.drawing_style(id).line_thickness.max(10);
+    segment_meets_square(
+        slider.start,
+        slider.end,
+        at,
+        threshold + f64::from(thickness),
+    )
+}
+
+/// DrawSlider.hitSliderNotBlob uses a larger, square exclusion zone to
+/// decide what moves after the hit detector has picked the slider.
+pub(crate) fn slider_track_grab(
+    c: &Construction,
+    id: Id,
+    slider: geo_kernel::kernel::control::SliderGeometry,
+    at: (f64, f64),
+    threshold: f64,
+) -> bool {
+    let r = 3.0 * threshold + slider_blob_diameter(slider);
+    ((at.0 - slider.knob.0).abs() > r || (at.1 - slider.knob.1).abs() > r)
+        && slider_track_hit(c, id, slider, at, threshold)
+}
+
 /// The vertices of a polygon or polyline on the screen, `None` when one of
 /// them is undefined.
 pub fn screen_vertices(c: &Construction, id: Id, t: &ViewTransform) -> Option<Vec<(f64, f64)>> {
@@ -549,6 +612,8 @@ struct Choice {
     /// The segment made first.
     first_segment: Option<Id>,
     /// The object drawn on top among the others, and among the polygons.
+    top_knob: Option<Id>,
+    layer: Option<u8>,
     top_other: Option<((HitType, u8, usize), Id)>,
     top_polygon: Option<((HitType, u8, usize), Id)>,
     /// How the selected object was hit, if it was.
@@ -558,8 +623,22 @@ struct Choice {
 impl Choice {
     fn add(&mut self, c: &Construction, id: Id, index: usize, how: HitType, selected: bool) {
         let kind = c.kind(id);
+        // HitDetector keeps the top layer before Hits.getTopHits prefers points.
+        let layer = c.drawing_style(id).layer;
+        if self.layer.is_some_and(|top| layer < top) {
+            return;
+        }
+        if self.layer != Some(layer) {
+            *self = Self {
+                layer: Some(layer),
+                ..Self::default()
+            };
+        }
         if selected {
             self.selected = Some(kind);
+        }
+        if how == HitType::SliderKnob && self.top_knob.is_none_or(|old| id > old) {
+            self.top_knob = Some(id);
         }
         let key = (how, type_priority(kind), index);
         match kind {
@@ -597,8 +676,7 @@ impl Choice {
     /// `handleMousePressedForMoveMode`: the top hits (only the points when a
     /// point is hit, `Hits.getTopHits`), without the polygons when anything
     /// else is left (`removePolygonsIfNotOnlyCS2D`); the selected object if
-    /// it is among them; else `chooseGeo`. All objects are in one layer, so
-    /// its layer rules choose nothing, and nothing is fixed or on a path.
+    /// it is among them; else `chooseGeo`. The candidates are in the top layer.
     fn choose(&self, selected: Option<Id>) -> Option<Id> {
         let kept = |k: Kind| -> bool {
             if self.points > 0 {
@@ -620,6 +698,9 @@ impl Choice {
             // lowest construction index, though its comment says the
             // most recent).
             return self.last_free.or(self.first_point);
+        }
+        if let Some(knob) = self.top_knob {
+            return Some(knob);
         }
         if self.others > 0 {
             if self.others == 1 {
@@ -664,7 +745,7 @@ pub fn pick_with_text(
             choice.add(c, id, id.index(), HitType::Filling, Some(id) == selected);
         }
         for (index, id) in c.ids().enumerate() {
-            if !accept(id) {
+            if Some(id) == text || !accept(id) {
                 continue;
             }
             if let Some(how) = hit(c, id, t, position, threshold, reach) {
@@ -975,5 +1056,64 @@ mod tests {
         // Away from the line, the retry finds the point.
         let id = pick(&c, &t, (sx + 30.0, sy - 12.0), &touch(), None, near);
         assert_eq!(label(&c, id).as_deref(), Some("A"));
+    }
+}
+
+#[cfg(test)]
+mod control_tests {
+    use super::*;
+
+    #[test]
+    fn a_higher_layer_slider_knob_wins_over_a_point() {
+        let mut c = geo_kernel::script::load("a = Slider(0, 10)\na = 5").unwrap();
+        let slider = c.id("a").unwrap();
+        let view = ViewTransform::new(geo_kernel::svg::View::fit(&c), 400.0, 300.0);
+        let at = (130.0, 50.0);
+        let (x, y) = view.screen_to_world(at.0, at.1);
+        let point = c.add("P", geo_kernel::Def::FreePoint { x, y }).unwrap();
+        let reach = Reach::square(3.0);
+        assert_eq!(pick(&c, &view, at, &reach, None, |_| true), Some(point));
+        c.set_drawing_style(
+            slider,
+            geo_kernel::kernel::DrawingStyle {
+                layer: 1,
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            pick(&c, &view, at, &reach, Some(point), |_| true),
+            Some(slider)
+        );
+    }
+
+    #[test]
+    fn a_selected_track_wins_over_an_overlapping_knob() {
+        let c = geo_kernel::script::load(
+            "a = Slider(0, 10)\na = 5\nb = Slider(0, 10)\n\
+             $sliderStyle(_62, true, 30, 50, 200, true, false, _, _)",
+        )
+        .unwrap();
+        let (a, b) = (c.id("a").unwrap(), c.id("b").unwrap());
+        let view = ViewTransform::new(geo_kernel::svg::View::fit(&c), 400.0, 300.0);
+        let reach = Reach::square(3.0);
+        assert_eq!(
+            hit(&c, a, &view, (130.0, 50.0), 3.0, &reach),
+            Some(HitType::SliderKnob)
+        );
+        assert_eq!(
+            hit(&c, b, &view, (130.0, 50.0), 3.0, &reach),
+            Some(HitType::Boundary)
+        );
+        assert_eq!(
+            pick(&c, &view, (130.0, 50.0), &reach, Some(b), |_| true),
+            Some(b)
+        );
+        let mut c = c;
+        let (x, y) = view.screen_to_world(130.0, 50.0);
+        let point = c.add("P", geo_kernel::Def::FreePoint { x, y }).unwrap();
+        assert_eq!(
+            pick(&c, &view, (130.0, 50.0), &reach, Some(b), |_| true),
+            Some(point)
+        );
     }
 }

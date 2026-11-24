@@ -140,31 +140,33 @@ fn frame_counts_are_unchanged() {
     // per shape than the one-scale grid did, and a resize keeps the
     // centre of the drawing (D11), so the keyboard's scene, whose window
     // moves, fits one more grid line than the corner-keeping one did.
+    // The slider toolbar group adds six shapes, 146 vertices and 621
+    // indices to each scene.
     let expected: &[(&str, Counts)] = &[
         (
             "idle",
             Counts {
-                shapes: 524,
-                vertices: 12268,
-                indices: 50370,
+                shapes: 530,
+                vertices: 12414,
+                indices: 50991,
                 immediate_repaints: 0,
             },
         ),
         (
             "hover",
             Counts {
-                shapes: 526,
-                vertices: 12408,
-                indices: 51087,
+                shapes: 532,
+                vertices: 12554,
+                indices: 51708,
                 immediate_repaints: 1,
             },
         ),
         (
             "drag",
             Counts {
-                shapes: 527,
-                vertices: 12588,
-                indices: 51846,
+                shapes: 533,
+                vertices: 12734,
+                indices: 52467,
                 immediate_repaints: 1,
             },
         ),
@@ -174,18 +176,18 @@ fn frame_counts_are_unchanged() {
             // the construction.
             "segment preview",
             Counts {
-                shapes: 530,
-                vertices: 12492,
-                indices: 50970,
+                shapes: 536,
+                vertices: 12638,
+                indices: 51591,
                 immediate_repaints: 1,
             },
         ),
         (
             "keyboard",
             Counts {
-                shapes: 558,
-                vertices: 14408,
-                indices: 60120,
+                shapes: 564,
+                vertices: 14554,
+                indices: 60741,
                 immediate_repaints: 0,
             },
         ),

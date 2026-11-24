@@ -15,7 +15,7 @@ use crate::view::{self, Camera};
 use eframe::egui::{self, pos2, vec2, Rect, Sense, Stroke, Ui};
 use geo_app_core::camera;
 use geo_app_core::text::{self, Label};
-use geo_kernel::kernel::{Id, Kind};
+use geo_kernel::kernel::{Id, Kind, Value};
 
 /// The zoom of the buttons over the drawing (`EuclidianView
 /// .MODE_ZOOM_FACTOR`, 1.5, about the centre).
@@ -95,6 +95,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         app.gesture = gesture;
         app.overlays.clear();
         end_drag(app, &intents);
+        if app.press_slider.take().is_some() {
+            app.wb.end_gesture();
+        }
         if fed.released {
             app.press_view = None;
         }
@@ -138,6 +141,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if app.seen_rebuilds != app.wb.rebuilds() {
         app.seen_rebuilds = app.wb.rebuilds();
         app.drag = None;
+        app.press_slider = None;
         app.tool_press = None;
         app.label_rects.borrow_mut().clear();
         app.text_rects.borrow_mut().clear();
@@ -315,7 +319,14 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // (spec E1); the delete and show/hide tools act on a click.
     let press_tool = !matches!(
         tool,
-        Tool::Move | Tool::MoveView | Tool::ZoomIn | Tool::ZoomOut | Tool::Delete | Tool::ShowHide
+        Tool::Move
+            | Tool::MoveView
+            | Tool::ZoomIn
+            | Tool::ZoomOut
+            | Tool::Delete
+            | Tool::ShowHide
+            | Tool::Slider
+            | Tool::Checkbox
     );
     // The show/hide tool shows hidden objects faintly and lets them be picked.
     let show_all = tool == Tool::ShowHide;
@@ -368,8 +379,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // A tap in the frame of a later press (release, then press) belongs to
     // the earlier press and its view.
     let tap_view = app.press_view;
+    let earlier_slider = app.press_slider;
     let tap_before_press = fed.pressed.is_some() && !fed.released;
     if let Some(pos) = fed.pressed {
+        app.press_slider = None;
         app.press_view = app
             .view
             .filter(|(r, _)| r.contains(pos.core()))
@@ -383,18 +396,6 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         ((d.x as f64, d.y as f64), pt)
     };
     let at_press = |app: &App, pos: egui::Pos2| at_view(app.press_view, pos);
-
-    // The move tool selects what a press takes hold of when the button goes
-    // down (`handleMousePressedForMoveMode`), whether it then drags or not;
-    // a press on a label takes the label and selects nothing.
-    if let (true, Some(pos)) = (move_tool, fed.owned) {
-        let (local, pt) = at_press(app, pos);
-        if app.label_at(local).is_none() {
-            if let Target::Object(id) = target(app, &pt, local) {
-                app.wb.selected = Some(id);
-            }
-        }
-    }
 
     // A press of this frame picks at once (spec E1, E2); the release of an
     // earlier press ends that one first (spec E3). Without a new press, the
@@ -428,6 +429,41 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let shift = fed.pressed_mods.shift && !fed.pressed_mods.ctrl;
     let space = ui.input(|i| i.key_down(egui::Key::Space));
     let modifiers_pan = shift || space;
+    // The move tool selects what a press takes hold of when the button goes
+    // down (`handleMousePressedForMoveMode`), whether it then drags or not;
+    // a press on a label takes the label and selects nothing.
+    let mut fixed_checkbox = None;
+    if let (true, Some(pos)) = (move_tool, fed.owned) {
+        let (local, pt) = at_press(app, pos);
+        if app.label_at(local).is_none() {
+            if let Target::Object(id) = target(app, &pt, local) {
+                app.wb.selected = Some(id);
+                if !modifiers_pan {
+                    let c = app.wb.construction();
+                    if c.kind(id) == Kind::Number {
+                        app.press_slider = Drag::slider(c, id, &pt, local, &press_reach);
+                    } else if c.checkbox_style(id).fixed && c.checkbox_position(id).is_some() {
+                        fixed_checkbox = Some(id);
+                    }
+                }
+            }
+        }
+    }
+
+    let apply_slider_press = |app: &mut App| {
+        if let (Some(pos), Some(drag)) = (fed.owned, app.press_slider) {
+            if matches!(drag.hold(), Hold::Slider) {
+                let (local, pt) = at_press(app, pos);
+                slider_pointer(app, drag.id(), &pt, local, true);
+            }
+        }
+    };
+    // A value grab advances a notch before its drag. When this frame also
+    // ends an earlier press, finish that gesture before advancing the new one.
+    if fed.early_release.is_none() {
+        apply_slider_press(app);
+    }
+
     // Which axis the press sits on, within the press's reach
     // (`HitDetector.addXAxis` / `addYAxis`: `< threshold`).
     let axis_under = |pt: &ViewTransform, (sx, sy): (f64, f64)| -> Option<bool> {
@@ -479,6 +515,15 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             return Grab::Pan;
         }
         if move_tool {
+            let slider = if fed.early_release.is_some() && fed.owned.is_some() {
+                earlier_slider
+            } else {
+                app.press_slider
+            };
+            if let Some(slider) = slider {
+                grabbed = Some(slider);
+                return Grab::Point;
+            }
             if let Some(id) = app.label_at((sx, sy)) {
                 let old = app.wb.label_offset(id).unwrap_or((0.0, 0.0));
                 grabbed = Some(Drag::label(id, old, (sx, sy)));
@@ -496,6 +541,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 .capture(pt.screen_to_world(sx, sy), (0.0, 0.0));
             grabbed = if c.kind(id) == Kind::Text {
                 Drag::text(c, id, (sx, sy), press)
+            } else if c.kind(id) == Kind::Boolean {
+                Drag::checkbox(c, id, (sx, sy))
+            } else if c.kind(id) == Kind::Number {
+                Drag::slider(c, id, &pt, (sx, sy), &press_reach)
             } else {
                 Drag::begin(c, id, press)
             };
@@ -551,7 +600,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
         app.drag = grabbed;
         if let Some(drag) = grabbed {
-            app.wb.begin_gesture();
+            if !matches!(drag.hold(), Hold::Slider) || !app.wb.gesture_open() {
+                app.wb.begin_gesture();
+            }
             if !matches!(drag.hold(), Hold::Label { .. }) {
                 app.wb.selected = Some(drag.id());
             }
@@ -579,6 +630,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             }
             Step::Label { x, y } => app.wb.set_label_offset(drag.id(), (x, y)),
             Step::Text(movement) => app.wb.move_text(drag.id(), movement),
+            Step::Slider { x, y } => slider_pointer(app, drag.id(), &now, (x, y), false),
+            Step::SliderPosition { x, y } => app.wb.move_slider(drag.id(), (x, y)),
+            Step::CheckboxPosition { x, y } => app.wb.move_checkbox(drag.id(), [x, y]),
         }
         app.drag = Some(drag);
     }
@@ -665,6 +719,16 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             Tool::ZoomIn => zoom_click(app, &mut cam, ZOOM_TOOL, local, w, h),
             Tool::ZoomOut => zoom_click(app, &mut cam, 1.0 / ZOOM_TOOL, local, w, h),
             Tool::MoveView => {}
+            Tool::Slider | Tool::Checkbox => {
+                if app.tool.control_request().is_none() {
+                    app.control_fields = if tool == Tool::Slider {
+                        ["-5".into(), "5".into(), "0.1".into()]
+                    } else {
+                        Default::default()
+                    };
+                    app.tool.begin_control(local);
+                }
+            }
             // Its press picked already (spec E1).
             _ if press_tool => {}
             _ => {
@@ -675,7 +739,12 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 };
                 let (local, pt) = at_view(view, pos);
                 let hit = if move_tool {
-                    target(app, &pt, local)
+                    let slider = if tap_before_press {
+                        earlier_slider
+                    } else {
+                        app.press_slider
+                    };
+                    slider.map_or_else(|| target(app, &pt, local), |drag| Target::Object(drag.id()))
                 } else {
                     let c = app.wb.construction();
                     let accept = |id| shown(app, id);
@@ -692,6 +761,19 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 }
             }
         }
+    }
+    if earlier_slider.is_some() && tap_before_press && app.drag.is_none() {
+        app.wb.end_gesture();
+    }
+    if fed.early_release.is_some() {
+        apply_slider_press(app);
+    }
+    // A fixed checkbox toggles on press, even if the pointer then drags.
+    if let Some(id) = fixed_checkbox {
+        toggle_checkbox(app, id);
+    }
+    if !app.gesture.pressed() && app.press_slider.take().is_some() && app.drag.is_none() {
+        app.wb.end_gesture();
     }
     let early = fed.early_release.filter(|_| fed.owned.is_none());
     // The release of a press the area no longer knows (a tap the frame
@@ -761,10 +843,18 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         Tool::MoveView => Some(egui::CursorIcon::Grab),
         Tool::ZoomIn => Some(egui::CursorIcon::ZoomIn),
         Tool::ZoomOut => Some(egui::CursorIcon::ZoomOut),
-        Tool::Move => app
-            .hovered
-            .filter(|&id| interact::movable(app.wb.construction(), id))
-            .map(|_| egui::CursorIcon::Grab),
+        Tool::Move => app.hovered.and_then(|id| {
+            let c = app.wb.construction();
+            if c.checkbox_position(id).is_some() {
+                Some(egui::CursorIcon::PointingHand)
+            } else if interact::movable(c, id)
+                || (c.kind(id) == Kind::Number && c.slider_interval(id).is_some())
+            {
+                Some(egui::CursorIcon::Grab)
+            } else {
+                None
+            }
+        }),
         _ => response.hover_pos().map(|_| egui::CursorIcon::Crosshair),
     };
     if let (Some(c), true) = (cursor, response.hovered() || app.drag.is_some()) {
@@ -1101,10 +1191,46 @@ fn feed(gesture: &mut Gesture, events: &[egui::Event], owns: impl Fn(egui::Pos2)
     fed
 }
 
+/// EuclidianController.moveNumeric pauses the timer when the pointer first
+/// changes the value, keeping the slider marked as playing for a later resume.
+fn slider_pointer(app: &mut App, id: Id, t: &ViewTransform, at: (f64, f64), click: bool) {
+    let c = app.wb.construction();
+    let Some(slider) = c.slider_geometry(id, (t.xscale(), t.yscale()), |(x, y)| {
+        t.world_to_screen(x, y)
+    }) else {
+        return;
+    };
+    let Some(value) = c.slider_pointer_value(id, slider.pointer(at), click) else {
+        return;
+    };
+    if c.value(id) == Value::Number(value) {
+        return;
+    }
+    let pause = c.animation_running() && c.animation(id).is_some_and(|animation| animation.playing);
+    if click && !app.wb.gesture_open() {
+        app.wb.begin_gesture();
+    }
+    if app.wb.set_number(id, value) && pause {
+        app.wb.set_animation_running(false);
+    }
+}
+
+fn toggle_checkbox(app: &mut App, id: Id) {
+    let c = app.wb.construction();
+    if let Value::Bool(value) = c.value(id) {
+        if c.checkbox_position(id).is_some() {
+            app.wb.set_boolean(id, !value);
+        }
+    }
+}
+
 /// A click on the drawing area, with the object under it.
 fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     if app.tool.tool() == Tool::Move {
         app.wb.selected = hit;
+        if let Some(id) = hit.filter(|&id| !app.wb.construction().checkbox_style(id).fixed) {
+            toggle_checkbox(app, id);
+        }
         app.style_bar = false;
         return;
     }

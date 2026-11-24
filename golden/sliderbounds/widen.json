@@ -1,0 +1,44 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "sliderbounds-widen-001",
+      "group": "sliderbounds",
+      "script": [
+        "m = 10",
+        "a = Slider(0, m)",
+        "b = 2 a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 8.0 },
+        { "action": "set_number", "label": "m", "value": 5.0 },
+        { "action": "set_number", "label": "m", "value": 10.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 10.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 10.0 },
+          "a": { "type": "number", "defined": true, "value": 8.0 },
+          "b": { "type": "number", "defined": true, "value": 16.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 5.0 },
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 10.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 10.0 },
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 10.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -2668,9 +2668,9 @@
     },
     "label_mode": {
       "fixture": "saved-styles-003",
-      "label": "a",
-      "saved": 1,
-      "without": 0
+      "label": "a2",
+      "saved": 9,
+      "without": 1
     },
     "label_offset": {
       "fixture": "saved-styles-003",
@@ -2704,8 +2704,8 @@
     },
     "line.thickness": {
       "fixture": "saved-styles-003",
-      "label": "a",
-      "saved": 7,
+      "label": "n",
+      "saved": 4,
       "without": 3
     },
     "ordering": {
@@ -2759,7 +2759,7 @@
       ],
       "without": [
         30.0,
-        30.0
+        50.0
       ]
     },
     "slider.show_algebra": {
@@ -2772,7 +2772,7 @@
       "fixture": "saved-styles-003",
       "label": "a",
       "saved": 150.0,
-      "without": 100.0
+      "without": 200.0
     },
     "tooltip_mode": {
       "fixture": "saved-styles-003",

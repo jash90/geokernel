@@ -67,6 +67,8 @@ pub enum Tool {
     Rotate,
     Translate,
     Dilate,
+    Slider,
+    Checkbox,
     MoveView,
     ZoomIn,
     ZoomOut,
@@ -75,7 +77,7 @@ pub enum Tool {
 }
 
 /// The tool groups of the toolbar, in the order of the reference toolbar.
-/// Groups for sliders and texts are left out.
+/// The text group is left out.
 pub const GROUPS: &[&[Tool]] = &[
     &[Tool::Move],
     &[Tool::Point, Tool::Intersect, Tool::Midpoint],
@@ -121,6 +123,7 @@ pub const GROUPS: &[&[Tool]] = &[
         Tool::Translate,
         Tool::Dilate,
     ],
+    &[Tool::Slider, Tool::Checkbox],
     &[
         Tool::MoveView,
         Tool::ZoomIn,
@@ -156,6 +159,8 @@ impl Tool {
         matches!(
             self,
             Tool::Move
+                | Tool::Slider
+                | Tool::Checkbox
                 | Tool::MoveView
                 | Tool::ZoomIn
                 | Tool::ZoomOut
@@ -303,6 +308,7 @@ pub struct ToolState {
     picks: Vec<Pick>,
     /// Set while the dialog for the number is open.
     asking: Option<NumberRequest>,
+    control_at: Option<(f64, f64)>,
 }
 
 impl ToolState {
@@ -311,6 +317,7 @@ impl ToolState {
             tool,
             picks: Vec::new(),
             asking: None,
+            control_at: None,
         }
     }
 
@@ -332,6 +339,71 @@ impl ToolState {
     /// The number the tool waits for, if any.
     pub fn asking(&self) -> Option<NumberRequest> {
         self.asking
+    }
+
+    /// The canvas location the open slider or checkbox dialog will use.
+    pub fn control_request(&self) -> Option<(f64, f64)> {
+        self.control_at
+    }
+
+    pub fn begin_control(&mut self, at: (f64, f64)) {
+        if matches!(self.tool, Tool::Slider | Tool::Checkbox) && self.control_at.is_none() {
+            self.control_at = Some(at);
+        }
+    }
+
+    pub fn finish_slider(
+        &mut self,
+        min: f64,
+        max: f64,
+        step: f64,
+        taken: impl Fn(&str) -> bool,
+    ) -> Outcome {
+        use geo_kernel::kernel::control::SliderStyle;
+        use geo_kernel::script::saved::Property;
+
+        if self.tool != Tool::Slider
+            || !(min.is_finite() && max.is_finite() && min < max && step.is_finite() && step > 0.0)
+        {
+            return Outcome::Ignored;
+        }
+        let Some(position) = self.control_at.take() else {
+            return Outcome::Ignored;
+        };
+        let label = next_label(Kind::Number, taken);
+        let value = 1.0_f64.clamp(min, max);
+        let definition = format!("{label} = $slider({value}, {min}, {max})");
+        let style = Property::SliderStyle {
+            label,
+            style: SliderStyle {
+                position: Some(position),
+                step: Some(step),
+                ..SliderStyle::default()
+            },
+        };
+        Outcome::Run(vec![definition, style.to_string()])
+    }
+
+    pub fn finish_checkbox(&mut self, caption: &str, taken: impl Fn(&str) -> bool) -> Outcome {
+        use geo_kernel::kernel::control::{encode_text, CheckboxStyle};
+        use geo_kernel::script::saved::Property;
+
+        if self.tool != Tool::Checkbox {
+            return Outcome::Ignored;
+        }
+        let Some((x, y)) = self.control_at.take() else {
+            return Outcome::Ignored;
+        };
+        let label = next_label(Kind::Boolean, taken);
+        let definition = format!("{label} = $checkBox(true, {})", encode_text(caption));
+        let style = Property::CheckboxStyle {
+            label,
+            style: CheckboxStyle {
+                position: Some([x as i32, y as i32]),
+                fixed: false,
+            },
+        };
+        Outcome::Run(vec![definition, style.to_string()])
     }
 
     fn picked(&self, label: &str) -> bool {
@@ -380,6 +452,7 @@ impl ToolState {
     pub fn reset(&mut self) {
         self.picks.clear();
         self.asking = None;
+        self.control_at = None;
     }
 
     /// Handles a click. `hit` is the existing object under the pointer that

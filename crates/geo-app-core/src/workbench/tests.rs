@@ -1965,6 +1965,36 @@ fn deleting_an_object_replays_labels_another_command_took() {
 }
 
 #[test]
+fn deleting_a_slider_keeps_the_surviving_sliders_default_position() {
+    for script in [
+        "a = Slider(0, 1)\nb = Slider(0, 1)",
+        "m = 10\na = Slider(0, m)\nb = Slider(0, m)",
+        "n = -1\nm = sqrt(n)\na = Slider(0, m)\nb = Slider(0, m)",
+        "m = 2\na = Slider((?), (?))\nb = Slider(m, (?))",
+    ] {
+        let mut w = Workbench::from_script(script).unwrap();
+        let c = w.construction();
+        assert_eq!(c.value(c.id("b").unwrap()), Value::Number(0.0));
+        let position = |w: &Workbench| {
+            let c = w.construction();
+            let b = c.id("b").unwrap();
+            c.slider_position(b, c.slider_style(b))
+        };
+        assert_eq!(position(&w), (30.0, 90.0));
+        assert!(w.delete(w.construction().id("a").unwrap()));
+        assert_eq!(position(&w), (30.0, 90.0));
+        assert!(w.undo());
+        assert_eq!(position(&w), (30.0, 90.0));
+        assert!(w.redo());
+        assert_eq!(position(&w), (30.0, 90.0));
+        assert_eq!(
+            position(&Workbench::from_script(&w.snapshot_text()).unwrap()),
+            (30.0, 90.0)
+        );
+    }
+}
+
+#[test]
 fn replay_and_redo_keep_successful_takes_before_an_invalid_update() {
     let mut w = Workbench::from_script("m = 3\nt = Take({1, 2}, m)\nn = Length(t + 1)\nD = (0, 0)")
         .unwrap();
@@ -2135,6 +2165,25 @@ fn alternating_snapshot_edits_share_one_helper_reset_budget() {
 }
 
 #[test]
+fn a_hidden_slider_does_not_take_a_default_placement_slot() {
+    let mut w = Workbench::from_script("a = Slider(0, 10)").unwrap();
+    w.toggle_visible(w.construction().id("a").unwrap());
+    w.run_line("b = Slider(0, 10)").unwrap();
+    let position = |w: &Workbench| {
+        let c = w.construction();
+        let b = c.id("b").unwrap();
+        c.slider_position(b, c.slider_style(b))
+    };
+    assert_eq!(position(&w), (30.0, 50.0));
+    w.toggle_visible(w.construction().id("a").unwrap());
+    assert_eq!(position(&w), (30.0, 50.0));
+    assert_eq!(
+        position(&Workbench::from_script(&w.snapshot_text()).unwrap()),
+        (30.0, 50.0)
+    );
+}
+
+#[test]
 fn unrelated_snapshot_edits_do_no_vertex_refresh_work() {
     let mut text = format!("# geokernel snapshot {}\n", SNAPSHOT_VERSION);
     text.push_str(concat!(
@@ -2193,6 +2242,37 @@ fn deleting_a_reader_keeps_the_circle_from_the_intermediate_edit() {
         w.construction.value(w.construction.id("t").unwrap()),
         Value::Bool(true)
     );
+}
+
+#[test]
+fn checkbox_caption_formats_the_adjacent_number_without_rounding_literal_text() {
+    use geo_kernel::kernel::control::encode_text;
+
+    let pattern = encode_text("Measure: %c / 0.333333");
+    let literal = encode_text("0.333333");
+    let w = Workbench::from_script(&format!(
+        "$numberRounding(figures, 4)\nB1 = 1 / 3\n\
+         A2 = $checkBox(true, {pattern})\nA3 = $checkBox(true, {literal})",
+    ))
+    .unwrap();
+    let c = w.construction();
+    assert_eq!(
+        c.checkbox_caption(c.id("A2").unwrap()),
+        "Measure: 0.3333 / 0.333333"
+    );
+    assert_eq!(c.checkbox_caption(c.id("A3").unwrap()), "0.333333");
+
+    let svg = geo_kernel::svg::render(c, geo_kernel::svg::View::fit(c), 800, 600);
+    assert!(svg.contains(">Measure: 0.3333 / 0.333333</text>"), "{svg}");
+}
+
+#[test]
+fn checkbox_caption_substitutions_have_bounded_output() {
+    let caption = "%v".repeat(5_000);
+    let encoded = geo_kernel::kernel::control::encode_text(&caption);
+    let w = Workbench::from_script(&format!("b = $checkBox(false, {encoded})")).unwrap();
+    let c = w.construction();
+    assert_eq!(c.checkbox_caption(c.id("b").unwrap()), caption);
 }
 
 #[test]

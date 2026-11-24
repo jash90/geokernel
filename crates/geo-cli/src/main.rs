@@ -113,22 +113,25 @@ fn write_archive(path: &Path, bytes: &[u8]) -> io::Result<()> {
 fn run(path: &str, out: Option<&str>) -> Result<(), String> {
     // A construction file is told from a script by its content, not its name.
     let bytes = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
-    let (src, hidden, conditions, assets) = if geo_import::looks_like_construction(&bytes) {
-        let imported = import_file(path, &bytes)?;
-        (
-            imported.script.join("\n"),
-            imported.hidden,
-            imported.conditions,
-            imported.image_assets,
-        )
-    } else {
-        (
-            String::from_utf8(bytes).map_err(|e| format!("{path}: {e}"))?,
-            Vec::new(),
-            Vec::new(),
-            Vec::new(),
-        )
-    };
+    let (src, hidden, conditions, assets, label_offsets) =
+        if geo_import::looks_like_construction(&bytes) {
+            let imported = import_file(path, &bytes)?;
+            (
+                imported.script.join("\n"),
+                imported.hidden,
+                imported.conditions,
+                imported.image_assets,
+                imported.label_offsets,
+            )
+        } else {
+            (
+                String::from_utf8(bytes).map_err(|e| format!("{path}: {e}"))?,
+                Vec::new(),
+                Vec::new(),
+                Vec::new(),
+                Default::default(),
+            )
+        };
     let mut c = script::load_with_assets(&src, &assets).map_err(|e| format!("{path}: {e}"))?;
     print_objects(&c);
     if let Some(out) = out {
@@ -144,7 +147,14 @@ fn run(path: &str, out: Option<&str>) -> Result<(), String> {
                 hidden.insert(id);
             }
         }
-        let rendered = svg::render_visible(&c, View::fit(&c), 800, 600, |id| !hidden.contains(&id));
+        let rendered = svg::render_visible_with_label_offsets(
+            &c,
+            View::fit(&c),
+            800,
+            600,
+            |id| !hidden.contains(&id),
+            |id| label_offsets.get(c.label(id)).copied(),
+        );
         std::fs::write(out, rendered).map_err(|e| format!("{out}: {e}"))?;
         println!("wrote {out}");
     }

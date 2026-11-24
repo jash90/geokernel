@@ -479,6 +479,25 @@ impl Workbench {
                 failure = Some(e);
                 break;
             }
+            if in_tool {
+                use geo_kernel::script::saved;
+                if let Some(property) = saved::parse(&line) {
+                    match property.and_then(|property| {
+                        property.apply(&mut self.construction)?;
+                        Ok(property)
+                    }) {
+                        Ok(property) => {
+                            self.log.record_saved_property(property);
+                            updated = true;
+                        }
+                        Err(error) => {
+                            failure = Some(error);
+                            break;
+                        }
+                    }
+                    continue;
+                }
+            }
             let before = self.construction.len();
             let step_before = self.construction.step();
             let target = geo_kernel::script::assignment_target(&self.construction, &line);
@@ -506,8 +525,12 @@ impl Workbench {
                                 )
                             })
                             .unwrap_or(line);
-                        self.log
-                            .record_definition(&self.construction, before, first, &line);
+                        self.log.record_new_definition(
+                            &mut self.construction,
+                            before,
+                            first,
+                            &line,
+                        );
                         self.log.apply_hidden_requests(&mut self.construction);
                         if let Some(first) = first.filter(|_| added) {
                             self.boundary_outputs.record(
@@ -901,18 +924,7 @@ impl Workbench {
         if id.index() >= self.construction.len() {
             return true;
         }
-        let label = self.construction.label(id);
-        if crate::scriptlog::is_internal_label(label) {
-            return false;
-        }
-        if let Some(condition) = self
-            .log
-            .condition(label)
-            .and_then(|label| self.construction.id(label))
-        {
-            return self.construction.value(condition) == Value::Bool(true);
-        }
-        !self.log.hidden.contains(label)
+        self.log.is_visible(&self.construction, id)
     }
 
     /// Shows or hides an object in the drawing, as one undo step.
@@ -1140,6 +1152,59 @@ impl Workbench {
             self.note_change();
             self.log.record_text_properties(props);
         }
+    }
+
+    /// Moves the slider track without changing the slider's number.
+    pub fn move_slider(&mut self, id: Id, (x, y): (f64, f64)) {
+        let style = self.construction.slider_style(id);
+        if style.fixed
+            || self.construction.slider_interval(id).is_none()
+            || !x.is_finite()
+            || !y.is_finite()
+        {
+            return;
+        }
+        let position = if style.absolute {
+            (x.round().max(0.0), y.round().max(0.0))
+        } else {
+            (x, y)
+        };
+        if position == self.construction.slider_position(id, style) {
+            return;
+        }
+        let mut style = style.clone();
+        style.position = Some(position);
+        self.note_change();
+        self.construction.set_slider_style(id, style.clone());
+        self.log
+            .record_saved_property(geo_kernel::script::saved::Property::SliderStyle {
+                label: self.construction.label(id).to_owned(),
+                style,
+            });
+        self.version += 1;
+    }
+
+    /// Moves an unlocked checkbox without toggling it or its dependents.
+    pub fn move_checkbox(&mut self, id: Id, position: [i32; 2]) {
+        let mut style = self.construction.checkbox_style(id);
+        let [x, y] = position.map(f64::from);
+        if style.fixed
+            || self
+                .construction
+                .checkbox_position(id)
+                .is_none_or(|p| p == (x, y))
+        {
+            return;
+        }
+        style.position = Some(position);
+        self.note_change();
+        self.construction.set_checkbox_style(id, style);
+        self.log
+            .record_saved_property(geo_kernel::script::saved::Property::CheckboxStyle {
+                label: self.construction.label(id).to_owned(),
+                style,
+            });
+        self.version += 1;
     }
 
     pub fn set_number(&mut self, id: Id, v: f64) -> bool {

@@ -14,7 +14,9 @@ use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
 use geo_kernel::algo::polygon::PolygonDef;
-use geo_kernel::kernel::control::{encode_scripts, encode_text, visibility_boolean};
+use geo_kernel::kernel::control::{
+    encode_scripts, encode_text, visibility_boolean, NumberRounding, SliderLabel,
+};
 use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
 use geo_kernel::kernel::text::{TextFont, TextOverrides, TextPosition};
 use geo_kernel::kernel::{angle::AngleStyle, Def, DrawingStyle};
@@ -59,6 +61,18 @@ pub(crate) fn convert_with_assets(
         function_path_bounds: doc.function_path_bounds,
         ..Converter::default()
     };
+    if let Some(rounding) = doc
+        .settings
+        .significant_figures
+        .map(NumberRounding::SignificantFigures)
+        .or_else(|| doc.settings.decimals.map(NumberRounding::Decimals))
+    {
+        let property = Property::NumberRounding(rounding);
+        property
+            .apply(&mut c.kernel)
+            .expect("rounding does not require an object");
+        c.out.script.push(property.to_string());
+    }
     let mut flags = Flags::default();
     let mut elements = BTreeMap::new();
     let mut polygon_inputs = BTreeMap::new();
@@ -255,8 +269,83 @@ pub(crate) fn convert_with_assets(
                 saved_style.animation = Some(Box::new(animation));
             }
         }
+        let canvas_property = match c.kernel.def(id) {
+            Def::Number(_) if el.slider.is_some() => {
+                if let Some(mode) = saved_style.label_mode {
+                    let property = Property::SliderLabel {
+                        label: el.label.clone(),
+                        presentation: SliderLabel {
+                            mode,
+                            caption: el.caption.as_str().into(),
+                        },
+                    };
+                    property
+                        .apply(&mut c.kernel)
+                        .expect("the slider was just checked");
+                    c.out.script.push(property.to_string());
+                }
+                use geo_kernel::kernel::control::SliderStyle;
+                let layout = saved_style.slider.as_deref().filter(|layout| {
+                    layout.absolute || layout.width.is_some() || layout.position.is_some()
+                });
+                let absolute = layout.is_none_or(|layout| layout.absolute);
+                let flags = layout.and_then(|layout| layout.flags);
+                let step_source = c
+                    .out
+                    .slider_animation
+                    .get(&el.label)
+                    .and_then(|animation| animation.step.as_deref());
+                let step = step_source
+                    .and_then(|step| step.parse::<f64>().ok())
+                    .filter(|step| step.is_finite());
+                style.line_thickness = el.thickness.unwrap_or(style.line_thickness);
+                style.show_label = el.label_shown.unwrap_or(style.show_label);
+                let style = SliderStyle {
+                    position: layout
+                        .and_then(|layout| layout.position)
+                        .filter(|[x, y]| x.is_finite() && y.is_finite())
+                        .map(|[x, y]| (x, y)),
+                    absolute,
+                    width: layout
+                        .and_then(|layout| layout.width)
+                        .filter(|v| v.is_finite())
+                        .unwrap_or(if absolute { 200.0 } else { 4.0 }),
+                    horizontal: flags.is_none_or(|flags| flags.horizontal),
+                    fixed: flags.is_some_and(|flags| flags.fixed)
+                        || saved_style.fixed == Some(true),
+                    knob_size: saved_style.knob_size.filter(|v| v.is_finite()),
+                    step,
+                    step_expression: step_source.filter(|_| step.is_none()).map(Into::into),
+                };
+                (style != SliderStyle::default()).then(|| Property::SliderStyle {
+                    label: el.label.clone(),
+                    style,
+                })
+            }
+            Def::Boolean(_) => {
+                style.show_label = el.label_shown.unwrap_or(style.show_label);
+                Some(Property::CheckboxStyle {
+                    label: el.label.clone(),
+                    style: geo_kernel::kernel::control::CheckboxStyle {
+                        position: el.label_offset,
+                        fixed: saved_style.checkbox_fixed == Some(true)
+                            || saved_style.fixed == Some(true),
+                    },
+                })
+            }
+            _ => None,
+        };
+        if let Some(property) = canvas_property {
+            property
+                .apply(&mut c.kernel)
+                .expect("the control kind was just checked");
+            c.out.script.push(property.to_string());
+        }
         c.out.object_styles.insert(el.label.clone(), saved_style);
-        if let Some([x, y]) = el.label_offset.filter(|[x, y]| [*x, *y] != [0, 0]) {
+        if let Some([x, y]) = el
+            .label_offset
+            .filter(|&position| position != [0, 0] && !matches!(c.kernel.def(id), Def::Boolean(_)))
+        {
             c.out
                 .label_offsets
                 .insert(el.label.clone(), (f64::from(x), f64::from(y)));

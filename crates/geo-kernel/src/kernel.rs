@@ -1112,6 +1112,11 @@ pub struct Construction {
     hidden_requests: Vec<Id>,
     /// The frozen points of the pen strokes.
     pub(crate) strokes: std::collections::BTreeMap<Id, algo::stroke::StrokeData>,
+    slider_styles: std::collections::BTreeMap<Id, control::SliderStyle>,
+    checkbox_styles: std::collections::BTreeMap<Id, control::CheckboxStyle>,
+    slider_labels: BTreeMap<Id, control::SliderLabel>,
+    number_rounding: control::NumberRounding,
+    free_booleans: Vec<Id>,
     drawing_styles: std::collections::BTreeMap<Id, DrawingStyle>,
     drawing_layers: u16,
     text_presentations: HashMap<Id, text::TextOverrides>,
@@ -1204,6 +1209,7 @@ pub struct Construction {
     /// each number, in creation order.
     sliders: Vec<(usize, f64, f64)>,
     saved_slider_bounds: HashMap<Id, [Option<slider::Bound>; 2]>,
+    slider_default_slots: BTreeMap<Id, usize>,
     slider_updates: Vec<Id>,
     slider_animation_options: HashMap<Id, [Option<String>; 2]>,
     controls: Vec<(Id, control::Control)>,
@@ -2005,6 +2011,12 @@ impl Construction {
             self.animation_running = false;
         }
         self.hidden_requests.retain(|id| id.0 < at.len);
+        self.slider_styles.split_off(&Id(at.len));
+        self.slider_default_slots.split_off(&Id(at.len));
+        self.slider_labels.split_off(&Id(at.len));
+        self.checkbox_styles.split_off(&Id(at.len));
+        self.free_booleans
+            .truncate(self.free_booleans.partition_point(|id| id.0 < at.len));
         self.drawing_styles.split_off(&Id(at.len));
         self.equation_forms.retain(|id, _| id.0 < at.len);
         self.construction_sources.retain(|id, _| id.0 < at.len);
@@ -2042,11 +2054,20 @@ impl Construction {
                     .flatten()
                     .all(|bound| bound.exists_before(at.len));
             if !keep && id.0 < at.len {
-                for bound in bounds.iter().flatten() {
-                    if let slider::Bound::Object(parent) = bound {
-                        if let Some(children) = self.children.get_mut(parent.0) {
-                            children.remove(id);
-                        }
+                if self
+                    .sliders
+                    .binary_search_by_key(&id.0, |&(owner, ..)| owner)
+                    .is_err()
+                {
+                    self.slider_default_slots.remove(&id);
+                }
+                for parent in bounds
+                    .iter()
+                    .flatten()
+                    .filter_map(|bound| bound.dependency())
+                {
+                    if let Some(children) = self.children.get_mut(parent.0) {
+                        children.remove(id);
                     }
                 }
             }
@@ -2464,6 +2485,16 @@ impl Construction {
         if let Some(path) = path {
             self.paths.insert(slot, (id.0, path));
         }
+        match (
+            self.free_booleans.binary_search(&id),
+            matches!(def, Def::Boolean(_)),
+        ) {
+            (Ok(index), false) => {
+                self.free_booleans.remove(index);
+            }
+            (Err(index), true) => self.free_booleans.insert(index, id),
+            _ => {}
+        }
         // a redefined object is a new circle without a record
         self.forget_circle_record(id.0);
         self.defs[id.0] = def;
@@ -2476,6 +2507,7 @@ impl Construction {
             false
         };
         if bounds.is_some() {
+            self.remember_slider_slot(id);
             let [step, speed] = slider_options.unwrap_or_default();
             // Copying the old visual style preserves the step as a number.
             let previous_step = self.slider_animation_options(id)[0];
@@ -3047,6 +3079,9 @@ impl Construction {
                 children.insert(id);
             }
         }
+        if matches!(def, Def::Boolean(_)) {
+            self.free_booleans.push(id);
+        }
         if !value.is_defined() {
             if let Some(record) = algo::circle::invalid_record(self, def) {
                 self.circle_records.push((id.0, record));
@@ -3498,8 +3533,8 @@ impl Construction {
     }
 
     /// True when the last coordinate or value update must replay in order
-    /// to preserve retained geometry, a hidden intersection start or an
-    /// inequality vertex helper.
+    /// to preserve retained geometry, hidden intersection starts,
+    /// inequality vertex helpers or dependent slider clamps.
     pub fn last_update_requires_replay(&self) -> bool {
         self.last_update_requires_replay
     }
@@ -3581,16 +3616,20 @@ impl Construction {
         // the set is lost, and `fit` gives a clean one on the next update.
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.defs.len());
-        self.enqueue_updated_children(start, &mut dirty);
-        self.propagate_dirty(dirty, self.evaluation_rank(start))
+        let clamped_slider = self.enqueue_updated_children(start, &mut dirty);
+        let recomputed = self.propagate_dirty(dirty, self.evaluation_rank(start));
+        // The sweep starts a fresh replay flag. Keep clamps by the initial
+        // endpoint listeners alongside changes made during the sweep.
+        self.last_update_requires_replay |= clamped_slider;
+        recomputed
     }
 
-    fn enqueue_updated_children(&mut self, parent: Id, dirty: &mut DirtySet) {
+    fn enqueue_updated_children(&mut self, parent: Id, dirty: &mut DirtySet) -> bool {
         if self.saved_slider_bounds.is_empty() {
             for child in self.children[parent.0].iter() {
                 dirty.insert(self.evaluation_rank(child));
             }
-            return;
+            return false;
         }
         // Endpoint listeners resolve the interval while the other bounds
         // still have their current values. Their downstream objects retain
@@ -3605,12 +3644,16 @@ impl Construction {
                 dirty.insert(self.evaluation_rank(child));
             }
         }
+        let mut clamped_slider = false;
         for child in sliders.drain(..) {
             if self.update_slider_bounds(child) {
+                clamped_slider = true;
+                self.construction_sources.remove(&child);
                 dirty.insert(self.evaluation_rank(child));
             }
         }
         self.slider_updates = sliders;
+        clamped_slider
     }
 
     /// After restoring its mover, AlgoOptimize updates the construction
@@ -3985,8 +4028,8 @@ impl Construction {
             if let (Propagation::RecordProtocol(before), Some(saved)) = (&mut mode, saved) {
                 before.insert(i, saved);
             }
-            if !refresh_definitions {
-                self.enqueue_updated_children(Id(i), &mut dirty);
+            if !refresh_definitions && self.enqueue_updated_children(Id(i), &mut dirty) {
+                self.last_update_requires_replay = true;
             }
         }
 

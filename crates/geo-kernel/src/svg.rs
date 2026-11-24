@@ -177,6 +177,18 @@ pub fn render_visible(
     height: u32,
     visible: impl Fn(crate::Id) -> bool,
 ) -> String {
+    render_visible_with_label_offsets(c, view, width, height, visible, |_| None)
+}
+
+/// Renders visible objects using the caller's saved label positions.
+pub fn render_visible_with_label_offsets(
+    c: &Construction,
+    view: View,
+    width: u32,
+    height: u32,
+    visible: impl Fn(Id) -> bool,
+    label_offset: impl Fn(Id) -> Option<(f64, f64)>,
+) -> String {
     let (w, h) = (width as f64, height as f64);
     let (vw, vh) = (view.xmax - view.xmin, view.ymax - view.ymin);
     let scale = (w / vw).min(h / vh);
@@ -244,6 +256,7 @@ pub fn render_visible(
             view,
             (w, h),
             ids.iter().copied().filter(|&id| same_layer(id)),
+            &label_offset,
         );
     }
     out.push_str("</svg>\n");
@@ -256,6 +269,7 @@ fn render_geometry(
     view: View,
     (w, h): (f64, f64),
     ids: impl Iterator<Item = Id>,
+    label_offset: &impl Fn(Id) -> Option<(f64, f64)>,
 ) {
     let frame = crate::plot::Frame::fit(view, w, h);
     let scale = frame.scale();
@@ -271,6 +285,7 @@ fn render_geometry(
     let mut circles = String::new();
     let mut points = String::new();
     let mut texts = String::new();
+    let mut controls = String::new();
 
     // Used to draw an "infinite" line as a segment longer than the view.
     let (mx, my) = (0.5 * (view.xmin + view.xmax), 0.5 * (view.ymin + view.ymax));
@@ -497,6 +512,75 @@ fn render_geometry(
                     write_stroke(stroke, &mut segments, |x, y| (sx(x), sy(y)));
                 }
             }
+            Value::Number(value) if c.kind(id) == Kind::Number => {
+                if let Some(slider) = c.slider_geometry(id, (scale, scale), |(x, y)| (sx(x), sy(y)))
+                {
+                    let (x1, y1) = slider.start;
+                    let (x2, y2) = slider.end;
+                    let (cx, cy) = slider.knob;
+                    let r = slider.radius;
+                    let _ = writeln!(
+                        controls,
+                        r##"<line x1="{x1:.2}" y1="{y1:.2}" x2="{x2:.2}" y2="{y2:.2}" stroke="#8493a3" stroke-width="5" stroke-linecap="round"/><circle cx="{cx:.2}" cy="{cy:.2}" r="{r:.2}" fill="#1a73e8" stroke="#1c1c1f"/>"##,
+                    );
+                    if c.drawing_style(id).show_label {
+                        let (x, y) = slider.label_anchor();
+                        let (dx, dy) = label_offset(id).unwrap_or_default();
+                        let (x, y) = (x + dx, y + dy);
+                        let _ = writeln!(
+                            controls,
+                            r#"<text x="{x:.2}" y="{y:.2}">{}</text>"#,
+                            escape(&c.slider_label(id, value))
+                        );
+                    }
+                }
+            }
+            Value::Bool(value) => {
+                use crate::kernel::control::{CHECKBOX_INSET, CHECKBOX_SIZE};
+                if let Some((x, y)) = c.checkbox_position(id) {
+                    let (x, y) = (x + CHECKBOX_INSET, y + CHECKBOX_INSET);
+                    let size = CHECKBOX_SIZE;
+                    let fill = if value { "#1a73e8" } else { "#ffffff" };
+                    let _ = writeln!(
+                        controls,
+                        r##"<rect x="{x:.2}" y="{y:.2}" width="{size:.2}" height="{size:.2}" fill="{fill}" stroke="#5f6368"/>"##
+                    );
+                    if value {
+                        let _ = writeln!(
+                            controls,
+                            r##"<path d="M {:.2} {:.2} l 5 5 10 -10" fill="none" stroke="#ffffff" stroke-width="2"/>"##,
+                            x + 6.0,
+                            y + 13.0,
+                        );
+                    }
+                    if c.drawing_style(id).show_label {
+                        let caption = c.checkbox_caption(id);
+                        let (x, y) = (x + size + 9.0, y + size / 2.0);
+                        if let Some(source) = crate::kernel::control::latex_caption(&caption) {
+                            let formula = geo_latex::layout(
+                                source,
+                                16.0,
+                                geo_latex::Style::Display,
+                                geo_latex::Face::default(),
+                            );
+                            geo_latex::write_svg(
+                                &mut controls,
+                                &formula,
+                                x - 4.0,
+                                y - f64::from(formula.size()[1]) / 2.0,
+                                TEXT_COLOR,
+                            );
+                        } else {
+                            let _ = writeln!(
+                                controls,
+                                r#"<text x="{x:.2}" y="{:.2}">{}</text>"#,
+                                y + 5.0,
+                                escape(&caption),
+                            );
+                        }
+                    }
+                }
+            }
             Value::Text => {
                 let Some((source, style)) = c
                     .text(id)
@@ -568,7 +652,6 @@ fn render_geometry(
             | Value::Circle { .. }
             | Value::Number(_)
             | Value::FunctionNVar
-            | Value::Bool(_)
             | Value::List { .. }
             | Value::HomogeneousPoint { .. }
             | Value::Curve { .. }
@@ -612,6 +695,7 @@ fn render_geometry(
     );
     out.push_str(&points);
     out.push_str(&texts);
+    out.push_str(&controls);
     let _ = writeln!(out, "</g>");
 }
 
@@ -860,5 +944,39 @@ mod chart_export_tests {
         let function = svg.find("<polyline").unwrap();
         let graph = svg.find(r#"data-label="graph""#).unwrap();
         assert!(pie < function && function < graph);
+    }
+}
+
+#[cfg(test)]
+mod control_tests {
+    use super::*;
+
+    #[test]
+    fn slider_track_and_knob_follow_the_view_scale_and_value() {
+        let c = crate::script::load(
+            "a = Slider(0, 8, 0.5)\na = 2\n\
+             $sliderStyle(_61, false, 0, 0, 2, true, false, _, 0.5)\n\
+             b = Slider(0, 8)\nb = 6\n\
+             $sliderStyle(_62, true, 30, 160, 100, false, false, _, _)\n\
+             k = 2",
+        )
+        .unwrap();
+        let svg = render(
+            &c,
+            View {
+                xmin: -5.0,
+                xmax: 5.0,
+                ymin: -5.0,
+                ymax: 5.0,
+            },
+            200,
+            200,
+        );
+        assert!(svg.contains(r#"x1="100.00" y1="100.00" x2="140.00" y2="100.00""#));
+        assert!(svg.contains(r#"cx="110.00" cy="100.00""#));
+        assert!(svg.contains(r#"x1="30.00" y1="160.00" x2="30.00" y2="60.00""#));
+        assert!(svg.contains(r#"cx="30.00" cy="85.00""#));
+        assert!(svg.contains(">a = 2</text>"));
+        assert!(!svg.contains(">k = 2</text>"));
     }
 }

@@ -1285,7 +1285,7 @@ fn define(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
 /// Numeric `Slider` overloads with optional animation increment and speed.
 fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
     let number = |c: &Construction, arg| {
-        if ungroup(arg) == "?" {
+        if matches!(ungroup(arg), "?" | "NaN") {
             return Some(f64::NAN);
         }
         crate::expr::constant_number(c, arg)
@@ -1444,7 +1444,7 @@ fn call_closes_at_end(rhs: &str, open: usize) -> bool {
     false
 }
 
-fn ungroup(source: &str) -> &str {
+pub(crate) fn ungroup(source: &str) -> &str {
     if !source.starts_with('(') {
         return source;
     }

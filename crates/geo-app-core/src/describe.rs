@@ -128,6 +128,7 @@ pub fn object_text(c: &Construction, id: Id) -> String {
         // `GeoLocusStroke.toString` gives the label
         Value::Image | Value::PenStroke { .. } => c.label(id).to_owned(),
         Value::PieChart => "PieChart".into(),
+        Value::Number(value) if c.has_slider_bounds(id) => c.format_display_number(value),
         v => value_text(&v),
     }
 }

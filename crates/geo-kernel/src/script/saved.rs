@@ -2,7 +2,8 @@
 
 use super::{object, split_call};
 use crate::kernel::control::{
-    decode_bytes, decode_scripts, decode_text, encode_scripts, encode_text, ControlScript,
+    decode_bytes, decode_scripts, decode_text, encode_scripts, encode_text, CheckboxStyle,
+    ControlScript, NumberRounding, SliderLabel, SliderStyle,
 };
 use crate::kernel::image::{RasterAsset, MAX_ASSET_BYTES};
 use crate::kernel::DrawingStyle;
@@ -23,6 +24,11 @@ pub enum Property {
         label: String,
         style: DrawingStyle,
     },
+    NumberRounding(NumberRounding),
+    SliderLabel {
+        label: String,
+        presentation: SliderLabel,
+    },
     RegularVertex {
         label: String,
         x: f64,
@@ -31,6 +37,14 @@ pub enum Property {
     SliderBounds {
         label: String,
         bounds: [Option<String>; 2],
+    },
+    SliderStyle {
+        label: String,
+        style: SliderStyle,
+    },
+    CheckboxStyle {
+        label: String,
+        style: CheckboxStyle,
     },
     ObjectScripts {
         label: String,
@@ -53,9 +67,13 @@ impl Property {
             Self::DrawingStyle { label, .. }
             | Self::RegularVertex { label, .. }
             | Self::SliderBounds { label, .. }
+            | Self::SliderLabel { label, .. }
+            | Self::SliderStyle { label, .. }
+            | Self::CheckboxStyle { label, .. }
             | Self::ObjectScripts { label, .. }
             | Self::SliderAnimation { label, .. } => Some(label),
             Self::ImageAsset { .. }
+            | Self::NumberRounding(_)
             | Self::ResetCircleRecords
             | Self::ResetArcRecords
             | Self::ResetTransposeFlags => None,
@@ -81,6 +99,17 @@ impl Property {
                 c.set_drawing_style(object(c, label)?, *style);
                 Ok(())
             }
+            Self::NumberRounding(rounding) => {
+                c.set_number_rounding(*rounding);
+                Ok(())
+            }
+            Self::SliderLabel {
+                label,
+                presentation,
+            } => {
+                c.set_slider_label(object(c, label)?, presentation.clone());
+                Ok(())
+            }
             Self::RegularVertex { label, x, y } => c
                 .restore_regular_vertex(object(c, label)?, *x, *y)
                 .map_err(|e| e.to_string()),
@@ -88,6 +117,22 @@ impl Property {
                 let id = object(c, label)?;
                 let [min, max] = bounds;
                 c.restore_slider_bounds(id, [min.as_deref(), max.as_deref()])
+            }
+            Self::SliderStyle { label, style } => {
+                let id = object(c, label)?;
+                if !matches!(c.def(id), crate::Def::Number(_)) {
+                    return Err("slider style needs a free number".into());
+                }
+                c.set_slider_style(id, style.clone());
+                Ok(())
+            }
+            Self::CheckboxStyle { label, style } => {
+                let id = object(c, label)?;
+                if !matches!(c.def(id), crate::Def::Boolean(_)) {
+                    return Err("checkbox style needs a free boolean".into());
+                }
+                c.set_checkbox_style(id, *style);
+                Ok(())
             }
             Self::ObjectScripts { label, scripts } => {
                 c.object_scripts.insert(label.clone(), scripts.clone());
@@ -167,6 +212,23 @@ impl fmt::Display for Property {
                 style.show_label,
                 style.line_thickness
             ),
+            Self::NumberRounding(rounding) => {
+                let (mode, digits) = match rounding {
+                    NumberRounding::Decimals(digits) => ("decimals", digits),
+                    NumberRounding::SignificantFigures(digits) => ("figures", digits),
+                };
+                write!(f, "$numberRounding({mode}, {digits})")
+            }
+            Self::SliderLabel {
+                label,
+                presentation,
+            } => write!(
+                f,
+                "$sliderLabel({}, {}, {})",
+                encode_text(label),
+                presentation.mode,
+                encode_text(&presentation.caption),
+            ),
             Self::RegularVertex { label, x, y } => {
                 write!(f, "$regularVertex({}, {x:?}, {y:?})", encode_text(label))
             }
@@ -197,6 +259,38 @@ impl fmt::Display for Property {
                 encode_text(label),
                 step.map_or_else(|| "_".into(), |s| format!("{s:?}"))
             ),
+            Self::SliderStyle { label, style } => {
+                let field = |v: Option<f64>| v.map_or_else(|| "_".into(), |v| format!("{v:?}"));
+                let (x, y) = style.position.unzip();
+                write!(
+                    f,
+                    "$sliderStyle({}, {}, {}, {}, {:?}, {}, {}, {}, {})",
+                    encode_text(label),
+                    style.absolute,
+                    field(x),
+                    field(y),
+                    style.width,
+                    style.horizontal,
+                    style.fixed,
+                    field(style.knob_size),
+                    style
+                        .step_expression
+                        .as_deref()
+                        .map_or_else(|| field(style.step), encode_text),
+                )
+            }
+            Self::CheckboxStyle { label, style } => {
+                let field = |v: Option<i32>| v.map_or_else(|| "_".into(), |v| v.to_string());
+                let (x, y) = style.position.map(|[x, y]| (x, y)).unzip();
+                write!(
+                    f,
+                    "$checkboxStyle({}, {}, {}, {})",
+                    encode_text(label),
+                    field(x),
+                    field(y),
+                    style.fixed,
+                )
+            }
             Self::ObjectScripts { label, scripts } => {
                 write!(f, "$objectScripts({}", encode_text(label))?;
                 for field in encode_scripts(scripts) {
@@ -243,6 +337,10 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
     }
     if !line.starts_with("$sliderBounds(")
         && !line.starts_with("$sliderAnimation(")
+        && !line.starts_with("$numberRounding(")
+        && !line.starts_with("$sliderLabel(")
+        && !line.starts_with("$sliderStyle(")
+        && !line.starts_with("$checkboxStyle(")
         && !line.starts_with("$objectScripts(")
         && !line.starts_with("$drawingStyle(")
         && !line.starts_with("$regularVertex(")
@@ -263,6 +361,21 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
                     style,
                 })
             }
+            ("$numberRounding", [mode, digits]) => {
+                let digits = digits.parse().map_err(|_| "invalid rounding precision")?;
+                Ok(Property::NumberRounding(match *mode {
+                    "decimals" => NumberRounding::Decimals(digits),
+                    "figures" => NumberRounding::SignificantFigures(digits),
+                    _ => return Err("invalid number rounding mode".into()),
+                }))
+            }
+            ("$sliderLabel", [label, mode, caption]) => Ok(Property::SliderLabel {
+                label: decode_text(label)?,
+                presentation: SliderLabel {
+                    mode: mode.parse().map_err(|_| "invalid slider label mode")?,
+                    caption: decode_text(caption)?.into(),
+                },
+            }),
             ("$regularVertex", [label, x, y]) => Ok(Property::RegularVertex {
                 label: decode_text(label)?,
                 x: x.parse().map_err(|_| "invalid vertex x coordinate")?,
@@ -273,6 +386,51 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
                 Ok(Property::SliderBounds {
                     label: decode_text(label)?,
                     bounds: [bound(*min)?, bound(*max)?],
+                })
+            }
+            ("$sliderStyle", [label, absolute, x, y, width, horizontal, fixed, knob, step]) => {
+                let number = |field: &str| {
+                    field
+                        .parse::<f64>()
+                        .ok()
+                        .filter(|v| v.is_finite())
+                        .ok_or("invalid slider number")
+                };
+                let optional = |field: &str| (field != "_").then(|| number(field)).transpose();
+                let flag = |field: &str| field.parse::<bool>().map_err(|_| "invalid slider flag");
+                Ok(Property::SliderStyle {
+                    label: decode_text(label)?,
+                    style: SliderStyle {
+                        absolute: flag(absolute)?,
+                        position: optional(x)?.zip(optional(y)?),
+                        width: number(width)?,
+                        horizontal: flag(horizontal)?,
+                        fixed: flag(fixed)?,
+                        knob_size: optional(knob)?,
+                        step: if step.starts_with('_') {
+                            None
+                        } else {
+                            optional(step)?
+                        },
+                        step_expression: (step.starts_with('_') && *step != "_")
+                            .then(|| decode_text(step).map(Arc::from))
+                            .transpose()?,
+                    },
+                })
+            }
+            ("$checkboxStyle", [label, x, y, fixed]) => {
+                let coordinate = |field: &str| {
+                    (field != "_")
+                        .then(|| field.parse::<i32>())
+                        .transpose()
+                        .map_err(|_| "invalid checkbox coordinate")
+                };
+                Ok(Property::CheckboxStyle {
+                    label: decode_text(label)?,
+                    style: CheckboxStyle {
+                        position: coordinate(x)?.zip(coordinate(y)?).map(|(x, y)| [x, y]),
+                        fixed: fixed.parse().map_err(|_| "invalid checkbox flag")?,
+                    },
                 })
             }
             ("$sliderAnimation", [label, step, speed, mode, running]) => {
