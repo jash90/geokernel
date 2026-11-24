@@ -5,7 +5,7 @@ use geo_kernel::{script, Construction, Def, Error, Kind, Value};
 
 /// Number of cases recorded by `ggb-harness` so far. Raise it when adding cases,
 /// so that losing a file is noticed.
-const MIN_GOLDEN_CASES: usize = 7144;
+const MIN_GOLDEN_CASES: usize = 7191;
 
 #[test]
 fn kernel_agrees_with_golden_data() {
@@ -152,4 +152,21 @@ fn fitted_svg_view_contains_bounded_conics() {
         assert!(view.xmin <= -radius && view.ymin <= -radius, "{view:?}");
         assert!(view.xmax >= 30.0 && view.ymax >= 30.0, "{view:?}");
     }
+}
+
+#[test]
+fn a_rolled_back_addition_restores_take_slots() {
+    let cases = model::load_all(&repo_root()).unwrap();
+    let case = cases
+        .iter()
+        .find(|c| c.id == "keptvalues-checkpoint-002")
+        .unwrap();
+    let mut c = script::load(&case.script[..3].join("\n")).unwrap();
+    let n = c.id("n").unwrap();
+    assert_eq!(c.value(n), Value::Number(0.0));
+    let checkpoint = c.checkpoint();
+    script::exec(&mut c, &case.script[3]).unwrap();
+    assert_eq!(c.value(n), Value::Number(2.0));
+    c.rollback(checkpoint).unwrap();
+    assert_eq!(c.value(n), Value::Number(0.0));
 }

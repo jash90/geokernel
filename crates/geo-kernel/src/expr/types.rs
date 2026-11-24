@@ -202,13 +202,25 @@ fn type_node(
         Node::FnName(_) => return Err("a function name needs an argument".into()),
         Node::Tuple(a, b) | Node::Polar(a, b) => {
             let (a, b) = (a as usize, b as usize);
-            if !matches!(state.tys[a], Ty::Num(_) | Ty::Bool)
-                || !matches!(state.tys[b], Ty::Num(_) | Ty::Bool)
+            let coords = [state.tys[a], state.tys[b]];
+            let scalar = |ty| matches!(ty, Ty::Num(_) | Ty::Bool);
+            let numeric_list = |ty| {
+                matches!(
+                    ty,
+                    Ty::List(Elem::Num | Elem::Bool | Elem::Empty | Elem::Any)
+                )
+            };
+            let ty = if coords.into_iter().all(scalar) {
+                Ty::Vec
+            } else if matches!(nodes[i], Node::Tuple(..))
+                && coords.into_iter().all(|ty| scalar(ty) || numeric_list(ty))
             {
+                Ty::List(Elem::Vec)
+            } else {
                 return Err("coordinates must be numbers".into());
-            }
+            };
             (
-                Ty::Vec,
+                ty,
                 1 + state.depth[a].max(state.depth[b]),
                 1u64.saturating_add(state.cost[a])
                     .saturating_add(state.cost[b]),
@@ -924,7 +936,7 @@ fn scalar_unary_type(op: Un, a: Ty) -> Result<Ty, String> {
     match (op, numeric(a)) {
         (Un::X | Un::Y, Ty::Vec) => Ok(Ty::Num(0)),
         (Un::X | Un::Y, Ty::Num(_)) => Err("`x()` and `y()` need a point or a vector".into()),
-        (Un::Abs, Ty::Vec) => Ok(Ty::Num(0)),
+        (Un::Abs | Un::Length, Ty::Vec) => Ok(Ty::Num(0)),
         (_, Ty::Vec) => Err("complex numbers are not supported".into()),
         (Un::Abs | Un::Floor | Un::Ceil | Un::Round, Ty::Num(d)) => Ok(Ty::Num(d)),
         // `MyDouble.asin(true)`: `makeAngle`
@@ -1006,8 +1018,8 @@ pub(super) fn scalar_binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
         (Bin::Mul, _, _) => Ok(Vec),
         (Bin::Div, Num(x), Num(y)) => Ok(Num(x.saturating_sub(y))),
         (Bin::Div, Vec, Num(_)) => Ok(Vec),
-        (Bin::Pow, Num(x), Num(y)) => Ok(Num(if y > 0 { 0 } else { x })),
-        (Bin::Pow, Vec, Num(_)) => Ok(Num(0)),
+        (Bin::Pow | Bin::RootPow, Num(x), Num(y)) => Ok(Num(if y > 0 { 0 } else { x })),
+        (Bin::Pow | Bin::RootPow, Vec, Num(_)) => Ok(Num(0)),
         (Bin::Round2, Num(x), Num(_)) => Ok(Num(x)),
         (Bin::Atan2 | Bin::LogB | Bin::FoldCount, Num(_), Num(_)) => Ok(Num(0)),
         (op, Num(_), Num(_)) if op.is_command() => Ok(Num(0)),

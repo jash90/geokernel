@@ -63,6 +63,7 @@ pub fn replay(case: &Case) -> CaseOutcome {
     let mut former = std::collections::HashMap::new();
     for (i, line) in case.script.iter().enumerate() {
         let before = c.len();
+        let step_before = c.step();
         match script::exec(&mut c, line) {
             Ok(Some(id)) if c.len() > before => {
                 boundary_outputs.record(&c, line, id, c.len() - before)
@@ -77,6 +78,9 @@ pub fn replay(case: &Case) -> CaseOutcome {
                 ));
                 return out;
             }
+        }
+        if c.step() != step_before {
+            boundary_outputs.grow_after_step(&mut c, |_, _, _| {});
         }
     }
     let implicit_outputs: Vec<_> = case

@@ -422,17 +422,17 @@ impl Value {
         self == other && parts(self).map(f64::to_bits) == parts(other).map(f64::to_bits)
     }
 
-    fn is_finite(&self) -> bool {
+    fn is_valid(&self) -> bool {
         match *self {
-            Value::Point { x, y } => x.is_finite() && y.is_finite(),
+            Value::Point { x, y } => !(x.is_nan() || y.is_nan()),
             Value::HomogeneousPoint { x, y, z } => !(x.is_nan() || y.is_nan() || z.is_nan()),
             Value::Line { a, b, c } => a.is_finite() && b.is_finite() && c.is_finite(),
             Value::Segment { x1, y1, x2, y2 } => {
                 x1.is_finite() && y1.is_finite() && x2.is_finite() && y2.is_finite()
             }
-            Value::Circle { cx, cy, r } => cx.is_finite() && cy.is_finite() && r.is_finite(),
+            Value::Circle { cx, cy, r } => cx.is_finite() && cy.is_finite() && !r.is_nan(),
             Value::Number(v) => !v.is_nan(),
-            Value::Vector { x, y } => x.is_finite() && y.is_finite(),
+            Value::Vector { x, y } => !(x.is_nan() || y.is_nan()),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
             Value::Bool(_) | Value::Button | Value::InputBox | Value::Image | Value::PieChart => {
                 true
@@ -971,6 +971,7 @@ enum ProtocolFields {
     Arc(Box<ArcData>),
     Path(PathState),
     Vertex,
+    ListExpression(ExprDef, Box<expr::ListRecords>),
     InequalityVertex {
         pending: bool,
         history: Option<expr::inequality::Helpers>,
@@ -1139,6 +1140,10 @@ pub struct Construction {
     /// Most recently added output for each pair owns its solver state.
     line_conic_pairs: BTreeMap<(Id, Id), usize>,
     continuous_conic_intersections: bool,
+    // Edges that must send an update even when their source value stays
+    // equal, along the input graph of a circle intersected with itself.
+    self_circle_updates: BTreeMap<Id, BTreeSet<Id>>,
+    self_circle_outputs: Vec<Id>,
     pub(crate) function_roots: algo::intersect::functions::FunctionRootCache,
     pub(crate) inequality_helpers: expr::inequality::VertexHelpers,
     pub(crate) clips: algo::polygon_clip::ClipCache,
@@ -1667,9 +1672,8 @@ impl Construction {
     }
 
     /// The coordinates of the expression vector `id` when one of them is
-    /// infinite and neither is NaN. [`Self::value`] reports such a vector
-    /// undefined, but GeoGebra counts it as defined, and expressions that
-    /// read it use the coordinates (`x(v)` is `∞`).
+    /// infinite and neither is NaN. These coordinates are also kept in
+    /// [`Self::value`], as they are defined in GeoGebra.
     pub fn infinite_vector(&self, id: Id) -> Option<(f64, f64)> {
         match self.defs.get(id.0)? {
             &Def::Expr(d) if d.kind() == Kind::Vector => match expr::raw(self, d) {
@@ -1715,7 +1719,7 @@ impl Construction {
     pub fn reads(&self, id: Id) -> Vec<Id> {
         match self.defs.get(id.0) {
             Some(def) => {
-                let mut ids = self.read_ids_with_hint(def, Some(self.hints[id.0]));
+                let mut ids = self.read_ids(def);
                 ids.extend(self.saved_text_anchor(id));
                 ids
             }
@@ -1899,6 +1903,9 @@ impl Construction {
 
     fn protocol_record(&self, i: usize) -> Option<ProtocolRecord> {
         let fields = match self.defs[i] {
+            Def::Expr(d) if expr::list_record_revision(self, d).is_some() => {
+                ProtocolFields::ListExpression(d, Box::new(expr::list_records(self, d)))
+            }
             Def::GeneralConic(_) | Def::Equation(_) => {
                 ProtocolFields::Conic(Box::new(self.conics[self.conic_slot(i)?].1))
             }
@@ -2025,6 +2032,14 @@ impl Construction {
             }
         }
         self.evaluation_order.discard_since(at.len);
+        if self
+            .self_circle_outputs
+            .last()
+            .is_some_and(|id| id.0 >= at.len)
+        {
+            self.self_circle_outputs.retain(|id| id.0 < at.len);
+            self.rebuild_self_circle_updates();
+        }
         // A removed object may have opened an element before a surviving
         // one if it was created after navigating back. Normally only the
         // tail changes, so a brief probe need not scan the whole protocol.
@@ -2178,6 +2193,7 @@ impl Construction {
         let mut restored = Vec::with_capacity(records.len());
         let len = self.len();
         for (i, record) in records.into_iter().take_while(|(i, _)| *i < len) {
+            let recompute = matches!(record.fields, ProtocolFields::ListExpression(..));
             match record.fields {
                 ProtocolFields::Circle(Some(circle)) => {
                     self.store_circle_record(i, circle);
@@ -2201,6 +2217,12 @@ impl Construction {
                     }
                 }
                 ProtocolFields::Vertex => {}
+                ProtocolFields::ListExpression(def, fields) => {
+                    // The expression must also rebuild its raw result and
+                    // element slots from the restored helper records.
+                    expr::restore_list_records(self, def, *fields);
+                    dirty.insert(self.evaluation_rank(Id(i)));
+                }
                 ProtocolFields::InequalityVertex { pending, history } => {
                     let id = Id(i);
                     if matches!(self.def(id), Def::Point(PointDef::InequalityVertex { owner, .. }) if owner == id)
@@ -2215,7 +2237,9 @@ impl Construction {
                 }
             }
             self.values[i] = record.value;
-            restored.push(i);
+            if !recompute {
+                restored.push(i);
+            }
             for child in self.children[i].iter() {
                 dirty.insert(self.evaluation_rank(child));
             }
@@ -2446,6 +2470,11 @@ impl Construction {
         // in AlgebraProcessor. A change of definition rebuilds from XML.
         let rebuild_records = !(old.is_free() && def.is_free() && old.kind() == def.kind());
         if rebuild_records {
+            for (i, &def) in self.defs.iter().enumerate() {
+                if matches!(def, Def::Expr(d) if expr::reset_list_records(self, d)) {
+                    dirty.insert(self.evaluation_rank(Id(i)));
+                }
+            }
             for &i in self
                 .circle_records
                 .iter()
@@ -2459,6 +2488,7 @@ impl Construction {
         // Redefinition rebuilds the reference's symbolic helpers, including
         // those for intersections that do not read the edited definition.
         self.proof_intersections = Default::default();
+        self.rebuild_self_circle_updates();
         let refresh = if rebuilds {
             // Restart independent vertex algorithms without refreshing the
             // definitions of their descendants as if those definitions changed.
@@ -2692,14 +2722,10 @@ impl Construction {
     /// reads (for example the line an intersection was prepared with), and
     /// its list. An object may appear more than once.
     pub(crate) fn read_ids(&self, def: &Def) -> Vec<Id> {
-        self.read_ids_with_hint(def, None)
-    }
-
-    fn read_ids_with_hint(&self, def: &Def, hint: Option<algo::intersect::Hint>) -> Vec<Id> {
         if let Def::Locus(d) = *def {
             return locus::reads(self, d);
         }
-        let mut ids = algo::intersect::hidden_parents_with_hint(self, def, hint);
+        let mut ids = algo::intersect::hidden_parents(self, def);
         ids.extend(algo::path::hidden_parents(self, def));
         ids.extend(algo::vector::hidden_parents(self, def));
         ids.extend(algo::predicate::hidden_parents(self, def));
@@ -2947,7 +2973,7 @@ impl Construction {
             self.inequality_helpers.attach(source, owner, id);
         }
         // An object that is read twice is still one child.
-        let mut parents = self.read_ids_with_hint(&def, self.hints.last().copied());
+        let mut parents = self.read_ids(&def);
         parents.sort_unstable();
         parents.dedup();
         for parent in parents {
@@ -2956,12 +2982,18 @@ impl Construction {
             }
         }
         if !value.is_defined() {
-            if let Some(record) = algo::circle::undefined_radius_record(self, def) {
+            if let Some(record) = algo::circle::invalid_record(self, def) {
                 self.circle_records.push((id.0, record));
             }
         }
         self.defs.push(def);
         self.values.push(value);
+        if let Def::IntersectCircles { c1, c2, .. } = def {
+            if c1 == c2 {
+                self.self_circle_outputs.push(id);
+                self.track_self_circle_update(c1, id);
+            }
+        }
         if def.kind() == Kind::Image {
             self.register_transformed_image(id, def);
         }
@@ -3046,6 +3078,10 @@ impl Construction {
         for (position, &id) in self.elements.iter().enumerate().skip(start) {
             self.element_of[id as usize] = ProtocolEntry::Element(position as u32);
         }
+    }
+
+    pub(crate) fn has_protocol_readers(&self) -> bool {
+        !self.protocol.is_empty()
     }
 
     /// Recomputes the objects that read the construction step and whatever
@@ -3553,6 +3589,11 @@ impl Construction {
                 _ => false,
             };
             recomputed += 1;
+            if let Some(children) = self.self_circle_updates.get(&Id(i)) {
+                for &child in children {
+                    dirty.insert(self.evaluation_rank(child));
+                }
+            }
             if refresh_definitions {
                 // A rule can use the structure of an ancestor even when
                 // intermediate objects have exactly the same value.
@@ -3783,6 +3824,39 @@ impl Construction {
         Some(recomputed)
     }
 
+    fn rebuild_self_circle_updates(&mut self) {
+        self.self_circle_updates.clear();
+        for index in 0..self.self_circle_outputs.len() {
+            let output = self.self_circle_outputs[index];
+            if let Def::IntersectCircles { c1, c2, .. } = self.def(output) {
+                if c1 == c2 {
+                    self.track_self_circle_update(c1, output);
+                }
+            }
+        }
+    }
+
+    fn track_self_circle_update(&mut self, circle: Id, output: Id) {
+        let mut pending = vec![(circle, output)];
+        let mut remaining = MAX_REDEFINITION_EDGES;
+        while let Some((input, dependent)) = pending.pop() {
+            if !self
+                .self_circle_updates
+                .entry(input)
+                .or_default()
+                .insert(dependent)
+            {
+                continue;
+            }
+            let reads = self.reads(input);
+            let Some(next) = remaining.checked_sub(reads.len()) else {
+                break;
+            };
+            remaining = next;
+            pending.extend(reads.into_iter().map(|parent| (parent, input)));
+        }
+    }
+
     fn refresh_intersection_definition(
         &mut self,
         i: usize,
@@ -3921,9 +3995,12 @@ impl Construction {
     /// Kept out of line so that the loop of [`Self::propagate`] stays small.
     #[inline(never)]
     fn update_expr(&mut self, i: usize, d: ExprDef) -> bool {
+        let revision = expr::list_record_revision(self, d);
         let (value, changed) = expr::update(self, Id(i), d);
         self.values[i] = value;
-        changed || d.kind() == Kind::Text && self.has_text_corner(Id(i))
+        let record_changed = revision.is_some() && revision != expr::list_record_revision(self, d);
+        self.last_update_requires_replay |= record_changed;
+        changed || record_changed || d.kind() == Kind::Text && self.has_text_corner(Id(i))
     }
 
     /// Recomputes the conic record of object `i` from its previous record;
@@ -4354,6 +4431,13 @@ impl Construction {
         }
     }
 
+    /// A circle whose Cartesian centre is infinite still has a defined
+    /// reference value, even though the kernel cannot draw its geometry.
+    pub(crate) fn has_infinite_circle_center(&self, id: Id) -> bool {
+        matches!(algo::circle::invalid_record(self, self.def(id)), Some((x, y, r))
+            if (x.is_infinite() || y.is_infinite()) && !r.is_nan())
+    }
+
     /// Keeps the record of a circle command for [`Self::circle_record`],
     /// before `new` replaces the value of object `i`.
     fn keep_circle_record(&mut self, i: usize, def: Def, new: Value, rebuilt: bool) -> bool {
@@ -4362,7 +4446,7 @@ impl Construction {
                 && matches!(new, Value::Circle { .. })
                 && self.forget_circle_record(i);
         }
-        if let Some(record) = algo::circle::undefined_radius_record(self, def) {
+        if let Some(record) = algo::circle::invalid_record(self, def) {
             return self.store_circle_record(i, record);
         }
         match algo::circle::keeps_record(self, def) {
@@ -4406,11 +4490,12 @@ impl Construction {
         let mut changed = false;
         let mut records = std::mem::take(&mut self.circle_records);
         records.retain_mut(|(i, record)| {
-            let fresh = algo::circle::undefined_radius_record(self, self.defs[*i]);
+            let fresh = algo::circle::invalid_record(self, self.defs[*i]);
             if let Some(fresh) = fresh {
                 if record.0.to_bits() == fresh.0.to_bits()
                     && record.1.to_bits() == fresh.1.to_bits()
-                    && record.2.is_nan()
+                    && (record.2.to_bits() == fresh.2.to_bits()
+                        || (record.2.is_nan() && fresh.2.is_nan()))
                 {
                     return true;
                 }
@@ -4439,6 +4524,25 @@ impl Construction {
         }
         self.propagate_dirty_with(dirty, 0, Propagation::Reload);
         true
+    }
+
+    /// Reloading an undo snapshot creates Transpose outputs with fresh flags.
+    pub fn reset_transpose_flags(&mut self) -> bool {
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.len());
+        let mut changed = false;
+        for (i, &def) in self.defs.iter().enumerate() {
+            if matches!(def, Def::Expr(d) if expr::reset_transpose_flags(self, d)) {
+                dirty.insert(self.evaluation_rank(Id(i)));
+                changed = true;
+            }
+        }
+        if changed {
+            self.propagate_dirty(dirty, 0);
+        } else {
+            self.dirty = dirty;
+        }
+        changed
     }
 
     fn forget_circle_record(&mut self, i: usize) -> bool {
@@ -4816,7 +4920,7 @@ impl Construction {
     /// for by intersections.
     fn compute_with(&self, def: Def, hint: impl Fn(&Self) -> algo::intersect::Hint) -> Value {
         match self.try_compute(def, hint) {
-            Some(v) if v.is_finite() => v,
+            Some(v) if v.is_valid() => v,
             _ => Value::Undefined,
         }
     }
@@ -4937,6 +5041,13 @@ impl Construction {
     }
 
     pub(crate) fn point(&self, id: Id) -> Option<(f64, f64)> {
+        self.cartesian_point(id)
+            .filter(|(x, y)| x.is_finite() && y.is_finite())
+    }
+
+    /// A Cartesian point can have an infinite coordinate with weight 1.
+    /// Projective points at infinity have no Cartesian coordinates.
+    pub(crate) fn cartesian_point(&self, id: Id) -> Option<(f64, f64)> {
         match self.value(id) {
             Value::Point { x, y } => Some((x, y)),
             _ => None,

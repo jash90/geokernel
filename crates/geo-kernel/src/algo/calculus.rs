@@ -513,7 +513,17 @@ fn sum_value(c: &Construction, d: &CalculusDef) -> Option<Value> {
         Sum::Lower | Sum::Upper => {
             let negated = sum == Sum::Upper;
             let fmin = |x: f64| if negated { -f(x) } else { f(x) };
-            lower_upper_area(c, &mut budget, &fmin, negated, (ad, bd, n, step))
+            if step.is_infinite()
+                && source_entry(c, function)
+                    .or_else(|| c.calculus_record(function)?.tree.as_ref())
+                    .is_some_and(|e| e.vars == 0)
+            {
+                // The extremum of a constant is its height even when
+                // the first bracket starts at a NaN (0 * STEP).
+                f(f64::NAN) * n as f64
+            } else {
+                lower_upper_area(c, &mut budget, &fmin, negated, (ad, bd, n, step))
+            }
         }
         Sum::Left | Sum::Rectangle | Sum::Trapezoid => {
             let upper = if sum == Sum::Trapezoid { n + 1 } else { n };
@@ -631,9 +641,17 @@ fn lower_upper_area(
             left = java_max(left, min_sample - sub_step);
             right = java_min(right, min_sample + sub_step);
         }
-        let Some(x) = expr::brent_minimum(left, right, SUM_TOLERANCE, fmin, |n| !budget.step(c, n))
-        else {
-            return f64::NAN;
+        let x = if left.is_finite() && right.is_finite() {
+            let Some(x) =
+                expr::brent_minimum(left, right, SUM_TOLERANCE, fmin, |n| !budget.step(c, n))
+            else {
+                return f64::NAN;
+            };
+            x
+        } else {
+            // A bracket with a nonfinite width supplies a NaN argument.
+            // Expressions such as If(x == 0, 2, 1) still have a value there.
+            f64::NAN
         };
         let mut y = fmin(x);
         if y.is_nan() {
@@ -1938,8 +1956,10 @@ fn integrate_unary(c: &Construction, b: &mut Builder, op: Un, arg: u32, i: u32, 
         }
         Un::Sqrt => root_rule(c, b, arg, Un::Sqrt, 3.0, 2.0),
         Un::Cbrt => root_rule(c, b, arg, Un::Cbrt, 4.0, 3.0),
-        // XCOORD and YCOORD integrate to this times x
-        Un::X | Un::Y => {
+        // GeoGebra resolves Length of a point or vector to a number object.
+        // Like XCOORD and YCOORD, a constant length integrates to this times x.
+        Un::Length if b.contains_var(arg) => b.push(Node::Num(f64::NAN)),
+        Un::X | Un::Y | Un::Length => {
             let var = b.push(Node::Var);
             b.push(Node::Bin(Bin::Mul, i, var))
         }
@@ -2007,6 +2027,26 @@ fn integrate_binary(
             } else {
                 nan(b)
             }
+        }
+        Bin::RootPow => {
+            let Node::Bin(Bin::Div, _, degree) = b.node(d) else {
+                return nan(b);
+            };
+            let Some(n) = b.number_value(c, degree) else {
+                return nan(b);
+            };
+            let divisor = if let Some(coeff) = linear_coefficient(c, b, a) {
+                (n + 1.0) * coeff
+            } else if let Some(coeff) = linear_coefficient_div(c, b, a) {
+                (n + 1.0) / coeff
+            } else {
+                return nan(b);
+            };
+            // ExpressionNode.integral: u * nroot(u, n) * n / ((n + 1) * u').
+            let product = b.push(Node::Bin(Bin::Mul, i, a));
+            let scaled = b.push(Node::Bin(Bin::Mul, product, degree));
+            let divisor = b.push(Node::Num(divisor));
+            b.push(Node::Bin(Bin::Div, scaled, divisor))
         }
         Bin::Pow => {
             // x^c
@@ -2454,6 +2494,8 @@ fn differentiate_unary(c: &Construction, b: &mut Builder, op: Un, u: u32, depth:
             b.push(Node::Bin(Bin::Div, t, three))
         }
         Un::Floor | Un::Ceil | Un::Round | Un::Not => b.push(Node::Num(0.0)),
+        // CmdLength supplies a number object for a fixed point or vector.
+        Un::Length if !b.contains_var(u) => b.push(Node::Num(0.0)),
         Un::X | Un::Y => {
             // x(A) / y(A): 0 unless the argument reads the function
             // variable, which the coordinate rules would have to expand
@@ -2544,6 +2586,19 @@ fn differentiate_binary(
                 let (d_u, d_v) = (du(b), dv(b));
                 quotient(b, d_u, d_v, u, v)
             }
+        }
+        Bin::RootPow => {
+            if let Node::Bin(Bin::Div, _, degree) = b.node(v) {
+                if is_number(b, degree) {
+                    // Derivative.get: u' * nroot(u, n) / (u * n).
+                    let root = b.push(Node::Bin(Bin::RootPow, u, v));
+                    let d = du(b);
+                    let numerator = b.push(Node::Bin(Bin::Mul, d, root));
+                    let denominator = b.push(Node::Bin(Bin::Mul, u, degree));
+                    return b.push(Node::Bin(Bin::Div, numerator, denominator));
+                }
+            }
+            derivative_power(c, b, u, v, depth)
         }
         Bin::Pow => derivative_power(c, b, u, v, depth),
         Bin::Atan2 => {

@@ -40,6 +40,7 @@ enum GrowthAnchor {
     Intersection(BoundaryDef),
     Tangent(Tangent),
     Inequality { source: Id, owner: Id },
+    PointRows(Id),
 }
 
 impl GrowthAnchor {
@@ -52,6 +53,7 @@ impl GrowthAnchor {
                 owner,
                 slot: 0,
             }) => Some(Self::Inequality { source, owner }),
+            Def::Point(PointDef::Coordinates { list, slot: 0 }) => Some(Self::PointRows(list)),
             _ => None,
         }
     }
@@ -63,6 +65,7 @@ impl GrowthAnchor {
             Self::Inequality { source, owner } => {
                 Some(inequality::vertices(c, source, owner).len())
             }
+            Self::PointRows(list) => Some(crate::expr::coordinate_rows(c, list)?.len()),
         }
     }
 
@@ -83,12 +86,18 @@ impl GrowthAnchor {
                     slot: slot as u16,
                 }))
             }
+            Self::PointRows(list) if slot < crate::expr::MAX_ELEMENTS as usize => {
+                Some(Def::Point(PointDef::Coordinates {
+                    list,
+                    slot: slot as u32,
+                }))
+            }
             _ => None,
         }
     }
 }
 
-/// Tracks unindexed intersections, implicit tangents and inequality vertices.
+/// Tracks intersections, implicit tangents, inequality vertices and points from lists.
 /// Callers keep the definitions returned by `grow` in the same journal as
 /// the edit that produced them.
 #[derive(Debug, Default)]
@@ -106,7 +115,10 @@ impl BoundaryOutputs {
     /// Whether a definition can start a group of growing outputs.
     pub fn is_command(rhs: &str) -> bool {
         rhs.split_once('(').is_some_and(|(name, _)| {
-            matches!(name.trim(), "Intersect" | "Tangent" | "Vertex" | "Corner")
+            matches!(
+                name.trim(),
+                "Intersect" | "Tangent" | "Vertex" | "Corner" | "Point"
+            )
         })
     }
 
@@ -147,11 +159,24 @@ impl BoundaryOutputs {
 
     /// Rebuilds the registry from a definition that has already executed.
     pub fn record(&mut self, c: &Construction, line: &str, first: Id, count: usize) {
-        if let Some((prefix, _)) = boundary_command(line) {
-            let name = line
-                .split_once(['=', ':'])
-                .map_or("", |(name, _)| name.trim());
-            if count > 0 && GrowthAnchor::from_def(c.def(first)).is_some() {
+        let anchor = GrowthAnchor::from_def(c.def(first));
+        let command = boundary_command(line).or_else(|| {
+            // An imported Point command may already label all the rows
+            // that existed before saving, including absent rows.
+            let (labels, rhs) = line.split_once('=')?;
+            (matches!(anchor, Some(GrowthAnchor::PointRows(_)))
+                && labels.trim().starts_with('{')
+                && matches!(script::split_call(rhs.trim()), Some(("Point", _))))
+            .then_some((c.label(first), rhs))
+        });
+        if let Some((prefix, _)) = command {
+            let name = if matches!(anchor, Some(GrowthAnchor::PointRows(_))) {
+                c.label(first)
+            } else {
+                line.split_once(['=', ':'])
+                    .map_or("", |(name, _)| name.trim())
+            };
+            if count > 0 && anchor.is_some() {
                 // Inline arguments are added before the first output.
                 let slots = count.min(c.len() - first.index());
                 self.groups.push(Outputs {
@@ -200,7 +225,34 @@ impl BoundaryOutputs {
         changed: impl Iterator<Item = Id> + Clone,
         record: impl FnMut(&Construction, Id, &str),
     ) -> bool {
-        self.update(c, changed, Some(record))
+        self.update(
+            c,
+            |_, group| changed.clone().any(|id| group.dependencies.contains(&id)),
+            Some(record),
+        )
+    }
+
+    /// Updates growing output groups that read the construction protocol.
+    pub fn grow_after_step(
+        &mut self,
+        c: &mut Construction,
+        record: impl FnMut(&Construction, Id, &str),
+    ) -> bool {
+        if !c.has_protocol_readers() {
+            return false;
+        }
+        self.update(
+            c,
+            |c, group| {
+                group.dependencies.iter().any(|&id| {
+                    matches!(
+                        c.def(id),
+                        Def::Measure(crate::algo::measure::MeasureDef::ConstructionStep(_))
+                    )
+                })
+            },
+            Some(record),
+        )
     }
 
     /// Only the removals of [`Self::grow_after`], for a replay whose
@@ -215,13 +267,17 @@ impl BoundaryOutputs {
         c: &mut Construction,
         changed: impl Iterator<Item = Id> + Clone,
     ) -> bool {
-        self.update(c, changed, None::<fn(&Construction, Id, &str)>)
+        self.update(
+            c,
+            |_, group| changed.clone().any(|id| group.dependencies.contains(&id)),
+            None::<fn(&Construction, Id, &str)>,
+        )
     }
 
     fn update(
         &mut self,
         c: &mut Construction,
-        changed: impl Iterator<Item = Id> + Clone,
+        affected: impl Fn(&Construction, &Outputs) -> bool,
         mut record: Option<impl FnMut(&Construction, Id, &str)>,
     ) -> bool {
         let revision = c.definition_revision();
@@ -234,7 +290,7 @@ impl BoundaryOutputs {
         }
         let mut released = false;
         for group in &mut self.groups {
-            if !changed.clone().any(|id| group.dependencies.contains(&id)) {
+            if !affected(c, group) {
                 continue;
             }
             let Some(anchor) = GrowthAnchor::from_def(c.def(group.first)) else {
@@ -290,7 +346,7 @@ impl BoundaryOutputs {
                         continue;
                     }
                     group.name.clone()
-                } else if frees {
+                } else if frees || matches!(anchor, GrowthAnchor::PointRows(_)) {
                     crate::algo::polygon::default_point_label(c)
                 } else {
                     script::index_label(c, &group.prefix)

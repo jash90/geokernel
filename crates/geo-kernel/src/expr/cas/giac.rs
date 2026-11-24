@@ -599,7 +599,7 @@ impl Printer<'_> {
                     Bin::Sub => "-",
                     Bin::Mul => "*",
                     Bin::Div => "/",
-                    Bin::Pow => "^",
+                    Bin::Pow | Bin::RootPow => "^",
                     _ => return None,
                 };
                 self.operand(e, l, out)?;

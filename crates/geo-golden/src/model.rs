@@ -1389,7 +1389,9 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     }
                     match snap[key].kind {
                         Kind::Point => {
-                            names.point(key) || rotated_prefixes.contains(label_prefix(key))
+                            names.point(key)
+                                || rotated_prefixes.contains(label_prefix(key))
+                                || has_point_list && POINT_LABELS.contains(&label_prefix(key))
                         }
                         Kind::Segment => names.segment(key),
                         // `Directrix` gives both lines the script label, so the
@@ -1414,6 +1416,16 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 }
                 let added = keys.difference(previous).cloned().collect();
                 check_keys(&added, &labels, |_| false).map_err(|e| format!("snapshot {i}: {e}"))?;
+                previous_keys = Some(keys);
+            }
+            Some(_)
+                if case.steps[i] == Step::Undo
+                    && i >= 2
+                    && matches!(case.steps[i - 1], Step::Add { .. }) =>
+            {
+                if !case.snapshots[i - 2].keys().eq(snap.keys()) {
+                    return Err(format!("snapshot {i} does not undo the preceding addition"));
+                }
                 previous_keys = Some(keys);
             }
             Some(previous) if matches!(&case.steps[i], Step::Delete { .. }) => {

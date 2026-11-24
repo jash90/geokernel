@@ -230,15 +230,9 @@ fn check_contagion(case: &Case, placed_on_circle: &HashMap<Id, PathState>) -> Re
             continue;
         }
         let parents = &case.deps[id.index()];
-        // An expression reads an infinite angle, or a vector with an
-        // infinite coordinate, as a value, as GeoGebra does, which counts
-        // it as defined (`x(v)` is `∞`): for expressions such a parent,
-        // which shows as undefined, is not undefined. An infinite number
-        // is a defined value in the first place.
-        let read_as_value = |p: Id| {
-            case.expr[id.index()]
-                && (case.c.infinite_number(p).is_some() || case.c.infinite_vector(p).is_some())
-        };
+        // Infinite angles can be read by expressions even when their
+        // bounded display value is undefined.
+        let read_as_value = |p: Id| case.expr[id.index()] && case.c.infinite_number(p).is_some();
         // A point at a parameter keeps the parameter it had when the number
         // becomes undefined (`PathParameter.setT` ignores NaN).
         let kept_parameter = |p: Id| matches!(case.c.def(id), Def::Path(PathDef::OnParam { param, .. }) if param == p);
@@ -308,10 +302,19 @@ fn first_history_independent_difference_with(
             let p = id_at(c, p);
             !c.value(p).is_defined() && reads_kept_input(c, id, p)
         });
+        // A self-intersection can retain the last position of an earlier
+        // intersection point until the circle itself changes.
+        let kept_intersection = matches!(
+            c.def(id),
+            Def::IntersectCircles { c1, c2, which: 0, special: Some(true) }
+                if c1 == c2
+                    && !matches!(c.def(c1), Def::CircleThrough { .. } | Def::Conic(ConicDef::ThroughThree(..)))
+                    && reads[i].iter().any(|&p| p != c1.index())
+        );
         let inherited = history[i] || reads[i].iter().any(|&p| history[p]);
         // A reader can hide its kept fields in its summary value, such as
         // an axis whose start point changes without changing its equation.
-        history[i] = inherited || kept_input || (a != b && kept_arc);
+        history[i] = inherited || kept_input || (a != b && (kept_arc || kept_intersection));
         // A degenerate or undefined arc computes its own current value
         // independently of its retained geometry and measures.
         if a != b && (!history[i] || (kept_arc && !inherited && !kept_input && a.value != b.value))

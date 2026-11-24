@@ -39,6 +39,8 @@ impl PartialEq for SlotConic {
 enum SlotExtra {
     Conic(Box<SlotConic>),
     Text(String),
+    ListShape(Arc<[Kind]>),
+    InfiniteCircle,
     Polynomial(crate::cas::Poly),
     Symbolic(String),
     /// A function the Giac backend read from its output (the `giac` feature).
@@ -69,6 +71,20 @@ impl Slot {
         }
     }
 
+    pub(super) fn undefined_list(shape: Arc<[Kind]>) -> Slot {
+        Slot {
+            extra: Some(Arc::new(SlotExtra::ListShape(shape))),
+            ..Self::undefined(Kind::List)
+        }
+    }
+
+    pub(super) fn list_shape(&self) -> Option<&[Kind]> {
+        match self.extra.as_deref()? {
+            SlotExtra::ListShape(shape) => Some(shape),
+            _ => None,
+        }
+    }
+
     pub(crate) fn with_value(kind: Kind, value: Value) -> Slot {
         Self {
             value,
@@ -88,7 +104,7 @@ impl Slot {
 
     /// A point or vector element (`kind`).
     pub(crate) fn coords(kind: Kind, x: f64, y: f64) -> Slot {
-        if !(x.is_finite() && y.is_finite()) {
+        if x.is_nan() || y.is_nan() {
             return Slot::undefined(kind);
         }
         let value = if kind == Kind::Vector {
@@ -240,8 +256,13 @@ impl Slot {
             start: 0,
             object: id,
             equation_revision,
-            extra: None,
+            extra: (kind == Kind::Circle && c.has_infinite_circle_center(id))
+                .then(|| Arc::new(SlotExtra::InfiniteCircle)),
         }
+    }
+
+    pub(super) fn is_defined(&self) -> bool {
+        self.value.is_defined() || matches!(self.extra.as_deref(), Some(SlotExtra::InfiniteCircle))
     }
 
     /// The run of a nested list, if this is one.

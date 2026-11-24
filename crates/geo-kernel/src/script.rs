@@ -108,12 +108,16 @@ pub fn load_with_assets(
     for (i, raw) in src.lines().enumerate() {
         let slider = slider_assignment_target(&c, raw);
         let before = c.len();
+        let step_before = c.step();
         let first = exec(&mut c, raw).map_err(|message| ScriptError {
             line: i + 1,
             message,
         })?;
         if let Some(first) = first.filter(|_| c.len() > before) {
             groups.record(&c, raw, first, c.len() - before);
+        }
+        if c.step() != step_before {
+            groups.grow_after_step(&mut c, |_, _, _| {});
         }
         if let Some(id) = slider {
             groups.grow(&mut c, id, |_, _, _| {});
@@ -2522,6 +2526,19 @@ fn exec_slots(c: &mut Construction, slots: &[&str], rhs: &str) -> Result<Option<
             }
             let defs = PointDef::inequality_slots(c, source, slots.len());
             return add_named_outputs(c, slots, defs);
+        }
+    }
+    if let Some(("Point", args)) = split_call(rhs) {
+        if let [arg] = args.as_slice() {
+            if let Some(list) = c.id(arg).filter(|&id| c.kind(id) == Kind::List) {
+                if slots.len() > crate::expr::MAX_ELEMENTS as usize {
+                    return Err("too many output labels for the coordinate list".into());
+                }
+                let defs = (0..slots.len() as u32)
+                    .map(|slot| Def::Point(PointDef::Coordinates { list, slot }))
+                    .collect();
+                return add_named_outputs(c, slots, defs);
+            }
         }
     }
     if let Some((name @ "Intersect", args)) = split_call(rhs) {

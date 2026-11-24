@@ -1,4 +1,5 @@
 use crate::expr::tests::{elems, flat, num, rebuilt};
+use crate::expr::Element;
 use crate::kernel::{Construction, Kind, Value};
 use crate::script::{exec, load};
 
@@ -336,6 +337,12 @@ fn a_list_past_the_element_cap_is_undefined() {
 }
 
 #[test]
+fn a_list_coordinate_creates_a_list_of_points() {
+    let c = load("l = {1, 2}\nb = (l, 1)").unwrap();
+    assert_eq!(elems(&c, "b"), "{(1, 1), (2, 1)}");
+}
+
+#[test]
 fn misplaced_lists_are_errors() {
     let base = "a = 2\nA = (1, 2)\nl = {1, 2}";
     for line in [
@@ -347,7 +354,6 @@ fn misplaced_lists_are_errors() {
         "f(x) = {x, 1}",
         "f(x) = x + l(1)",
         "f(x) = Sum({x})",
-        "b = (l, 1)",
         "b = Sequence(k, k, 1)",
         "b = Sequence(k, 2, 1, 3)",
         "b = Sequence(k, k, 1, 2, 3, 4)",
@@ -1042,7 +1048,8 @@ fn remove_undefined_keeps_the_defined_elements() {
     // a defined list with undefined elements is itself defined
     assert_eq!(elems(&c, "d"), "{{1, inf}, {2, 3}}");
     assert_eq!(elems(&c, "e"), "{true, inf}");
-    assert_eq!(elems(&c, "f"), "{(1, 1)}");
+    // A literal point with an infinite coordinate is defined too.
+    assert_eq!(elems(&c, "f"), "{(1, 1), (inf, 2)}");
     rebuilt(&c);
 }
 
@@ -1784,4 +1791,42 @@ fn a_zip_variable_over_texts_is_the_text() {
     assert_eq!(elems(&c, "n"), "{ab, c}");
     assert_eq!(elems(&c, "p"), "{{abx, aby}, {cx, cy}}");
     rebuilt(&c);
+}
+
+#[test]
+fn arithmetic_uses_retained_slots_without_defining_the_take_list() {
+    let mut c = load("m = 1\nl = {1, 2, 3}\nt = Take(l, m)\np = t + 1").unwrap();
+    let (m, t, p) = (c.id("m").unwrap(), c.id("t").unwrap(), c.id("p").unwrap());
+    c.set_number(m, 4.0).unwrap();
+    assert_eq!(c.value(t), Value::Undefined);
+    let elements = c.elements(p).unwrap();
+    assert_eq!(elements.len(), 3);
+    assert!(elements
+        .iter()
+        .all(|element| matches!(element, Element::Value(Kind::Number, Value::Undefined))));
+    c.set_number(m, 3.0).unwrap();
+    assert_eq!(c.value(t), Value::List { len: 1 });
+    assert_eq!(c.value(p), Value::List { len: 1 });
+}
+
+#[test]
+fn arithmetic_on_initially_undefined_list_helpers_uses_their_template() {
+    let c = load(
+        "a = -1\nl = {a, 2}\nu = If(a > 0, l)\nv = u + 1\nw = If(a > 0, l) + 1\n\
+         t = Take(l, 3)\np = t + 1\nq = Take(l, 3) + 1",
+    )
+    .unwrap();
+    for name in ["u", "t"] {
+        assert_eq!(c.value(c.id(name).unwrap()), Value::Undefined);
+    }
+    for name in ["v", "w"] {
+        let elements = c.elements(c.id(name).unwrap()).unwrap();
+        assert_eq!(elements.len(), 2);
+        assert!(elements
+            .iter()
+            .all(|e| matches!(e, Element::Value(Kind::Number, Value::Undefined))));
+    }
+    for name in ["p", "q"] {
+        assert_eq!(c.value(c.id(name).unwrap()), Value::List { len: 0 });
+    }
 }

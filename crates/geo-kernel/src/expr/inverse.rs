@@ -115,7 +115,7 @@ fn undo_left(op: Bin, a: f64, y: f64) -> Option<f64> {
         Bin::Sub => a - y,
         Bin::Mul => y / a,
         Bin::Div if a != 0.0 => a / y,
-        Bin::Pow => y.ln() / a.ln(),
+        Bin::Pow | Bin::RootPow => y.ln() / a.ln(),
         Bin::LogB => math::my_pow(a, y),
         _ => return None,
     })
@@ -128,7 +128,7 @@ fn undo_right<const M: bool>(ctx: &Ctx<'_, M>, op: Bin, r: u32, y: f64) -> Optio
         Bin::Sub => y + b,
         Bin::Mul => y / b,
         Bin::Div if b != 0.0 => b * y,
-        Bin::Pow if b != 0.0 && b.is_finite() => inverse_power(ctx, r, b, y),
+        Bin::Pow | Bin::RootPow if b != 0.0 && b.is_finite() => inverse_power(ctx, r, b, y),
         Bin::LogB => math::my_pow(b, 1.0 / y),
         _ => return None,
     })

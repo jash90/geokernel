@@ -41,7 +41,7 @@ pub(crate) fn with_radius(c: &Construction, center: Id, radius_id: Id) -> Option
 
 pub(crate) fn with_radius_value(c: &Construction, center: Id, r: f64) -> Option<Value> {
     let (cx, cy) = c.point(center)?;
-    let r = radius(r).filter(|r| r.is_finite())?;
+    let r = radius(r)?;
     Some(Value::Circle { cx, cy, r })
 }
 
@@ -71,18 +71,28 @@ pub(crate) fn keeps_record(c: &Construction, def: Def) -> Option<bool> {
     }
 }
 
-/// The matrix setter runs for an undefined numeric radius with a defined
-/// centre. Only the radius-dependent matrix entry is NaN.
-pub(crate) fn undefined_radius_record(c: &Construction, def: Def) -> Option<(f64, f64, f64)> {
-    let Def::CircleRadius { center, radius } = def else {
-        return None;
+/// The setter can write a circle record even when its geometry cannot
+/// be displayed: a numeric radius may be undefined, or the Cartesian
+/// centre may have an infinite coordinate with weight 1. A circle through
+/// a finite point then has an infinite half-axis.
+pub(crate) fn invalid_record(c: &Construction, def: Def) -> Option<(f64, f64, f64)> {
+    let (center, r) = match def {
+        Def::CircleRadius { center, radius } => (
+            center,
+            c.number(radius)
+                .or_else(|| c.infinite_number(radius))
+                .unwrap_or(f64::NAN),
+        ),
+        Def::Conic(ConicDef::LiteralRadius { center, radius }) => (center, radius),
+        Def::CircleThrough { center, through } => {
+            let (x, y) = c.cartesian_point(center)?;
+            let (px, py) = c.point(through)?;
+            return (x.is_infinite() || y.is_infinite()).then(|| (x, y, length(px - x, py - y)));
+        }
+        _ => return None,
     };
-    let (cx, cy) = c.point(center)?;
-    (c.number(radius).is_none() && c.infinite_number(radius).is_none()).then_some((
-        cx,
-        cy,
-        f64::NAN,
-    ))
+    let (x, y) = c.cartesian_point(center)?;
+    (x.is_infinite() || y.is_infinite() || r.is_nan()).then_some((x, y, radius(r)?))
 }
 
 #[cfg(test)]

@@ -459,6 +459,11 @@ impl System {
             proper_circle(c, id)
                 || c.circle_record(id)
                     .is_some_and(|conic| conic.ty == ConicType::Circle)
+                // Redefinition can clear the numeric record when the new
+                // coordinates are undefined. The centre and through-point
+                // still supply the equations of the symbolic circle.
+                || (!c.value(id).is_defined()
+                    && matches!(c.def(id), Def::CircleThrough { .. }))
         };
         if cached.is_none() && (!is_circle(second) || (two_circles && !is_circle(first))) {
             return None;
