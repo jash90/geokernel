@@ -45,46 +45,59 @@ fn graph_argument(printer: &Printer<'_>, id: crate::Id, out: &mut String) -> Opt
     }
 
     let c = printer.c;
-    let carrier = c.raw_carrier(id);
+    let carrier = c.raw_carrier(id).or_else(|| {
+        matches!(c.kind(id), Kind::Line | Kind::Segment | Kind::Ray).then_some((
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+        ))
+    });
     let coefficients = if let Some((a, b, c)) = carrier {
         [0.0, a, c, b]
-    } else if let Some(conic) = c.conic(id) {
-        let [xx, yy, constant, xy, x, y] = conic.matrix;
+    } else {
+        let [xx, yy, constant, xy, x, y] = c.conic(id)?.matrix;
         if xy.abs() >= crate::tol::STANDARD_PRECISION || yy.abs() >= crate::tol::STANDARD_PRECISION
         {
             return None;
         }
         [xx, 2.0 * x, constant, 2.0 * y]
-    } else {
-        return None;
     };
     let [quadratic, linear, constant, divisor] = coefficients;
-    if divisor == 0.0 || !c.value(id).is_defined() {
+    if carrier.is_none() && (divisor == 0.0 || !c.value(id).is_defined()) {
         return None;
     }
     let mut terms = Vec::new();
     for (coefficient, variable) in [
-        (-quadratic / divisor, "(x)^(2)"),
+        (
+            if carrier.is_none() {
+                -quadratic / divisor
+            } else {
+                0.0
+            },
+            "(x)^(2)",
+        ),
         (-linear / divisor, "x"),
         (-constant / divisor, ""),
     ] {
         if coefficient == 0.0 {
             continue;
         }
-        let sign = if terms.is_empty() || coefficient > 0.0 {
-            '+'
-        } else {
+        let sign = if !terms.is_empty() && coefficient < 0.0 {
             '-'
+        } else {
+            '+'
+        };
+        let magnitude = if terms.is_empty() {
+            coefficient
+        } else {
+            coefficient.abs()
         };
         let mut number = String::new();
-        printer.number(
-            if terms.is_empty() {
-                coefficient
-            } else {
-                coefficient.abs()
-            },
-            &mut number,
-        );
+        match magnitude {
+            f64::INFINITY => number.push_str("inf"),
+            f64::NEG_INFINITY => number.push_str("-inf"),
+            _ => printer.number(magnitude, &mut number),
+        }
         let term = match variable {
             "" => number,
             _ if coefficient == 1.0 => variable.into(),
@@ -135,7 +148,8 @@ pub(in crate::expr) fn function(
     let mut printer = Printer::new(c, vec!["x".into(), "y".into(), "z".into()], false);
     printer.parameter = Some(parameter);
     let mut argument = String::new();
-    if let Some(id) = source.filter(|&id| op == Op::Simplify && is_graph(c.kind(id))) {
+    let graph = source.filter(|&id| op == Op::Simplify && is_graph(c.kind(id)));
+    if let Some(id) = graph {
         if graph_argument(&printer, id, &mut argument).is_none() {
             return Some(None);
         }
@@ -148,7 +162,13 @@ pub(in crate::expr) fn function(
     };
     // AlgoCasBaseSingleArgument falls back to the input object when the
     // algebra view cannot read the returned expression.
-    Some(read_function(c, &raw, parameter).or_else(|| read_function(c, &argument, parameter)))
+    Some(read_function(c, &raw, parameter).or_else(|| {
+        if graph.is_some() {
+            read_graph(c, &argument)
+        } else {
+            read_function(c, &argument, parameter)
+        }
+    }))
 }
 
 fn read_function(c: &Construction, text: &str, parameter: &str) -> Option<FunctionResult> {
@@ -159,8 +179,18 @@ fn read_function(c: &Construction, text: &str, parameter: &str) -> Option<Functi
         } else {
             format!("ggbtmpvar{parameter}")
         };
-        rename(&mut expression, &printed, "x");
+        normalize(&mut expression, &printed, false);
     }
+    read_scalar(c, expression, text)
+}
+
+fn read_graph(c: &Construction, text: &str) -> Option<FunctionResult> {
+    let mut expression = parse(text)?;
+    normalize(&mut expression, "x", true);
+    read_scalar(c, expression, text)
+}
+
+fn read_scalar(c: &Construction, expression: Expr, text: &str) -> Option<FunctionResult> {
     if !known(&expression) {
         return None;
     }
@@ -176,17 +206,26 @@ fn read_function(c: &Construction, text: &str, parameter: &str) -> Option<Functi
     })
 }
 
-fn rename(e: &mut Expr, from: &str, to: &str) {
+/// Map the prefixed curve parameter back to x. A copied GeoLine function
+/// can also contain infinite slopes and undefined constants.
+fn normalize(e: &mut Expr, parameter: &str, graph: bool) {
     match e {
-        Expr::Name(name) if name == from => *name = to.to_owned(),
-        Expr::Neg(a) => rename(a, from, to),
+        Expr::Name(name) if name == parameter => *name = "x".to_owned(),
+        Expr::Name(name) if graph => {
+            if name == "inf" {
+                *e = Expr::Num(f64::INFINITY);
+            } else if name == "?" {
+                *e = Expr::Num(f64::NAN);
+            }
+        }
+        Expr::Neg(a) => normalize(a, parameter, graph),
         Expr::Bin(_, a, b) | Expr::Eq(a, b) => {
-            rename(a, from, to);
-            rename(b, from, to);
+            normalize(a, parameter, graph);
+            normalize(b, parameter, graph);
         }
         Expr::Call(_, args) | Expr::List(args) | Expr::Tuple(args) => {
             for a in args {
-                rename(a, from, to);
+                normalize(a, parameter, graph);
             }
         }
         _ => {}
@@ -415,6 +454,34 @@ mod tests {
         let c = Construction::new();
         let result = super::read_function(&c, "x+1", "x").unwrap();
         assert_eq!(result.value(&c, 1.0, 0.0), 2.0);
+    }
+
+    #[test]
+    fn simplify_prints_typed_and_computed_graph_coefficients() {
+        // cas-simplify-009 and cas-simplify-017.
+        let c = crate::script::load("g: 2x+3y=6\nv: x=3\nk: y=0.1x^2+0.7x-1/3").unwrap();
+        for (label, expected) in [
+            ("g", "(((-0666666666666667/1000000000000000))*(x))+(2)"),
+            ("v", "((-inf)*(x))+(inf)"),
+            ("k", "((((1/10))*((x)^(2)))+(((7/10))*(x)))-((1)/(3))"),
+        ] {
+            let printer = Printer::new(&c, Vec::new(), false);
+            let mut argument = String::new();
+            graph_argument(&printer, c.id(label).unwrap(), &mut argument).unwrap();
+            assert_eq!(argument, expected, "{label}");
+        }
+    }
+
+    #[test]
+    fn simplify_preserves_the_graph_when_giac_returns_undefined() {
+        // cas-simplify-009 and cas-simplify-010.
+        let c = Construction::new();
+        assert!(read_function(&c, "?", "x").is_none());
+        let vertical = read_graph(&c, "((-inf)*(x))+(inf)").unwrap();
+        assert_eq!(vertical.value(&c, -8.0, 0.0), f64::INFINITY);
+        assert!(vertical.value(&c, 0.0, 0.0).is_nan());
+        let coincident = read_graph(&c, "((?)*(x))+(?)").unwrap();
+        assert!(coincident.value(&c, 2.0, 0.0).is_nan());
     }
 
     #[test]
