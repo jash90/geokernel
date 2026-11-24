@@ -63,8 +63,13 @@ const MIN_README_LINES: usize = 10;
 const MAX_LINE_WORK: u64 = 160_000_000;
 
 /// A backstop for work the counter does not see (parsing, commands other
-/// than expressions): twice the time of [`MAX_LINE_WORK`] in the test build.
-const SLOW: Duration = Duration::from_secs(10);
+/// than expressions). It is a hang guard, not a performance gate: the
+/// prover's own budget of 30 million units took 12.9 s for a mutated
+/// `Prove(b)` with an eleven-line prefix on a loaded Windows runner (CI run
+/// of 2026-11-24), and the slowest counted line takes about 0.4 s locally.
+/// Under a machine load of four concurrent builds the same corpus took
+/// six times longer, so the guard leaves an order of magnitude of margin.
+const SLOW: Duration = Duration::from_secs(60);
 
 /// The number of mutated runs over all case scripts of the corpus test.
 /// Every script is mutated at least once and at most 25 times; with the
