@@ -165,4 +165,21 @@ case("slider", ["a = Slider(2, 1)", "Q = (a, a^2 / 2)"], [])
 case("slider", ["a = Slider(0, 2 * pi)", "Q = (cos(a), sin(a))", "L = Locus(Q, a)"],
      [setn("a", 3)])
 
+case("samplingbudget", [
+    "a = Slider(1,3)", "B = Sequence(a*k,k,1,4)", "Q = (Element(B,1),a)", "L = Locus(Q,a)",
+], [])
+case("samplingbudget", [
+    "a = Slider(0,1,0.01)", "u = Sum(Sequence(i*a,i,1,200000))/20000100000",
+    "Q = (a,u)", "L = Locus(Q,a)",
+], [])
+
+case("sampledgraph", [
+    "a = Slider(0,1)", "T = MinimumSpanningTree(Sequence((k,a*k),k,1,16))",
+    "Q = (a,Length(T)/1000)", "L = Locus(Q,a)",
+], [])
+# The sampling case reads the tree through Length, which depends on the
+# number of samples in T. Observe the mover, the live point and its locus.
+cases.cases[-1]["observe"] = ["a", "Q", "L"]
+
+
 cases.write()

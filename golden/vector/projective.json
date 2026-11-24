@@ -1,0 +1,96 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "vector-projective-001",
+      "group": "vector",
+      "script": [
+        "A = (0, 1)",
+        "B = (2, 1)",
+        "l = Line(A, B)",
+        "S = Intersect(l, yAxis)",
+        "v = (1, 0)",
+        "g = OrthogonalLine(S, v)",
+        "d = Direction(g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": -2.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "v": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": -0.0, "c": 0.0 },
+          "d": { "type": "vector", "defined": true, "x": -0.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "vector-projective-002",
+      "group": "vector",
+      "script": [
+        "A = (0, 1)",
+        "B = (2, 1)",
+        "l = Line(A, B)",
+        "S = ClosestPoint(l, yAxis)",
+        "g = Line(S, l)",
+        "d = Direction(g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": -2.0 },
+          "yAxis": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "d": { "type": "vector", "defined": true, "x": 4.0, "y": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "vector-projective-003",
+      "group": "vector",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 1)",
+        "C = (0, 3)",
+        "D = (2, 4)",
+        "l = Line(A, B)",
+        "m = Line(C, D)",
+        "S = Intersect(l, m)",
+        "g = Line(A, S)",
+        "h = Ray(S, C)",
+        "d = Direction(g)",
+        "e = Direction(h)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -1.0, "b": 2.0, "c": -6.0 },
+          "S": { "type": "point", "defined": false },
+          "g": { "type": "line", "defined": true, "a": 6.0, "b": -12.0, "c": 0.0 },
+          "h": { "type": "ray", "defined": false },
+          "d": { "type": "vector", "defined": true, "x": -12.0, "y": -6.0 },
+          "e": { "type": "vector", "defined": true, "x": 12.0, "y": 6.0 }
+        }
+      ]
+    }
+  ]
+}

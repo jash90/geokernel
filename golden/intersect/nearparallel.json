@@ -1,0 +1,96 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "intersect-nearparallel-001",
+      "group": "intersect",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "C = (0, 1)",
+        "D = (1, 2.000000000000057)",
+        "l = Line(A, B)",
+        "m = Line(C, D)",
+        "S = Intersect(l, m)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 2.000000000000057 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -1.0000000000000568, "b": 1.0, "c": -1.0 },
+          "S": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "intersect-nearparallel-002",
+      "group": "intersect",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "C = (0, 0.000001)",
+        "D = (1, 1.000001000000057)",
+        "l = Line(A, B)",
+        "m = Line(C, D)",
+        "S = Intersect(l, m)",
+        "g = Line(S, l)",
+        "d = Direction(g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0E-6 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.000001000000057 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -1.000000000000057, "b": 1.0, "c": -1.0E-6 },
+          "S": { "type": "point", "defined": true, "x": -1.752373395864006E7, "y": -1.752373395864006E7 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "d": { "type": "vector", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersect-nearparallel-003",
+      "group": "intersect",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "C = (0, 0.00001)",
+        "D = (1, 1.000010000000057)",
+        "l = Line(A, B)",
+        "m = Line(C, D)",
+        "S = Intersect(l, m)",
+        "g = Line(S, l)",
+        "d = Direction(g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0E-5 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.000010000000057 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -1.0000000000000568, "b": 1.0, "c": -1.0E-5 },
+          "S": { "type": "point", "defined": false },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "d": { "type": "vector", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    }
+  ]
+}

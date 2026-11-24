@@ -178,6 +178,10 @@ fn ellipse_parameter([a, b]: [f64; 2], x: f64, y: f64) -> f64 {
         PI / 2.0
     } else if py < crate::tol::STANDARD_PRECISION {
         (a * px / c2).min(1.0).acos()
+    } else if !px.is_finite() || !py.is_finite() {
+        // The normal equation has no usable root for these coordinates.
+        // A fresh projection keeps its initial first-quadrant parameter.
+        0.0
     } else {
         super::curve::bisect(0.0, PI / 2.0, |t| {
             let (sin, cos) = t.sin_cos();
@@ -202,6 +206,10 @@ fn hyperbola_parameter([a, b]: [f64; 2], x: f64, y: f64) -> f64 {
         (a * px / c2).max(1.0).acosh().sinh()
     } else if px < eps {
         b * py / c2
+    } else if !px.is_finite() || !py.is_finite() {
+        // The perpendicular polynomial has nonfinite coefficients. The
+        // reference finds no positive root and uses its zero-initialized slot.
+        0.0
     } else {
         super::curve::bisect(0.0, (a * px + b * py) / c2, |u| {
             c2 * u - a * px * u / (1.0 + u * u).sqrt() - b * py

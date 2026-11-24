@@ -180,7 +180,7 @@ pub(crate) fn disabled(c: &Construction, d: OptimizeDef) -> Option<OptimizeDef> 
 /// number at the optimum, or undefined when it has no bounds or the search
 /// fails (`AlgoOptimize.compute`).
 pub(crate) fn record(c: &mut Construction, owner: Id, d: OptimizeDef) -> Value {
-    let mut cascade = OptimizerCascade::new(c, owner, d.independent);
+    let mut cascade = OptimizerCascade::new(c, owner, d.independent, d.dependent);
     if let Some(cascade) = &mut cascade {
         return cascade.run(c, owner, d);
     }
@@ -303,6 +303,8 @@ pub(crate) fn search(
                 return f64::NAN;
             }
         }
+        // The locus recompute also updates the homogeneous point records
+        // read by later objects in the trial.
         for &i in &chain {
             crate::kernel::locus::recompute(c, i);
             crate::expr::charge(1);

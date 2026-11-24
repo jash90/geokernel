@@ -42,50 +42,11 @@ mismatches = ["0:A", "0:D", "0:E", "0:F", "0:f", "0:g", "0:h", "0:i", "0:r_{1}"]
 
 # vector
 
-[[gap]]
-id = "vector-ray-008"
-reason = "GeoGebra keeps the intersection of two parallel lines as a point at infinity and makes Ray(C, S) the ray from C in its direction; the kernel has no points at infinity, so S and the ray are undefined"
-mismatches = ["1:h"]
-
-# A parallel and a perpendicular through S = Intersect(l, m): GeoGebra keeps
-# S in homogeneous coordinates with z the raw cross product of l and m
-# (AlgoIntersectLines, GeoVec3D.cross), and AlgoLinePointLine and
-# AlgoOrthoLinePointLine multiply by it, so Direction and OrthogonalVector
-# show that factor. The lines, Slope and Distance(line, line) agree.
-[[gap]]
-id = "vector-rawscale-008"
-reason = "points carry no homogeneous weight"
-mismatches = ["0:d", "0:e", "1:d", "1:e", "2:d", "2:e", "3:d", "3:e", "4:d", "4:e"]
-
-[[gap]]
-id = "vector-rawscale-009"
-reason = "points carry no homogeneous weight"
-mismatches = ["0:o", "1:o", "2:o", "3:o", "4:o"]
-
-# predicates
-
-[[gap]]
-id = "predicates-infinity-001"
-reason = "GeoGebra keeps the intersection of parallel lines as a point at infinity, equal to itself; the kernel has no points at infinity, so S is undefined and AreEqual(S, S) is false"
-mismatches = ["0:o", "2:o", "3:o"]
-
-[[gap]]
-id = "predicates-homogeneous-001"
-reason = "AreConcyclic reads the homogeneous coordinates of intersection points, whose weight is the raw cross product of the lines; the kernel assumes weight 1, and Ptolemy's test on the scaled coordinates gives another answer"
-mismatches = ["0:t"]
-
-# points
-
-[[gap]]
-id = "points-infinity-001"
-reason = "ClosestPoint(circle, S) with S a point at infinity: GeoGebra projects the direction of S, the kernel has no points at infinity and S is undefined"
-mismatches = ["0:R", "2:R", "3:R"]
-
 # expr
 
 [[gap]]
 id = "expr-decimal-027"
-reason = "intended difference, recorded in DIFFERENCES.md: aligning 1E-100001 with 1 needs 100002 digits, past the kernel's bound on the work of one decimal operation, so it computes with doubles from there on and (... + 0.1 + 0.2 - 0.3) is 5.55E-17 instead of 0"
+reason = "intended difference, recorded in DIFFERENCES.md: aligning 1E-100001 with 1 needs 100002 digits, above the kernel's 100000-digit result limit. The remaining binary64 operations leave a rounding residual which multiplication by 1E20 turns into 5551.115123125783. GeoGebra uses BigDecimal addition and subtraction and its result rounds to 0"
 mismatches = ["0:c"]
 
 # polygon
@@ -2742,7 +2703,7 @@ mismatches = ["1:d", "1:s"]
 
 [[gap]]
 id = "stroke-limits-001"
-reason = "intended difference, recorded in DIFFERENCES.md: the smoothed stroke has 32,489 points whose exact coordinates are longer than the 1 MiB an imported XML attribute may hold; the kernel makes a stroke that could not be saved, journaled and read back undefined at creation, while the reference keeps it"
+reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps a defined stroke with 32,489 smoothed points. The kernel marks it undefined at creation because the exact coordinates exceed the 1 MiB limit for a saved XML attribute and cannot round-trip through its importer"
 mismatches = ["0:s"]
 
 [[gap]]
@@ -2885,3 +2846,9 @@ mismatches = ["2:N"]
 id = "optimizerreview-redefine-008"
 reason = "The upper endpoint reads its own slider through d. GeoGebra clamps a when b lowers that endpoint, both before and after reload in the recorded construction. During reload, the XML endpoint pass rejects the circular upper endpoint and retains the lower one (ConsElementXMLHandler.java:2647). The kernel has no cyclic listener edge and retains a = 3 and d = 6."
 mismatches = ["2:a", "2:d", "3:a", "3:d", "4:a", "4:d"]
+
+[[gap]]
+id = "locus-samplingbudget-002"
+reason = "GeoGebra completes the finite diagonal locus with 149 samples. The kernel returns L undefined after repeated evaluation of the 200,000-element Sequence exhausts the shared 80,000,000-unit sampling meter (crates/geo-kernel/src/algo/locus.rs:1578)."
+mismatches = ["0:L"]
+undefined = true

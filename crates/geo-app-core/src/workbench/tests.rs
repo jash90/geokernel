@@ -2448,3 +2448,96 @@ fn undo_reloads_an_undefined_circumcircle_arc() {
     assert!(w.delete(w.construction.id("P").unwrap()));
     assert_eq!(actual(&w, "e"), Value::Bool(false));
 }
+
+const PROJECTIVE_PROJECTION: &str = "A = (0, 0)\nB = (2, 1)\nC = (0, 3)\n\
+    l = Line(A, B)\nm = Line(C, D)\nS = Intersect(l, m)\n";
+
+fn projection_bits(c: &Construction) -> [u64; 2] {
+    let Value::Point { x, y } = c.value(c.id("R").unwrap()) else {
+        panic!("R is undefined");
+    };
+    [x.to_bits(), y.to_bits()]
+}
+
+#[test]
+fn undo_keeps_the_intermediate_closest_circle_angle() {
+    let mut w = Workbench::from_script(&format!(
+        "D = (2, 4)\n{PROJECTIVE_PROJECTION}k = Circle(A, B)\nR = ClosestPoint(k, S)"
+    ))
+    .unwrap();
+    let d = w.construction().id("D").unwrap();
+    assert!(w.move_point(d, 2.0, 5.0));
+    assert!(w.move_point(d, 0.0, 3.0));
+    assert!(w.move_point(d, 2.0, 4.0));
+    let expected = projection_bits(w.construction());
+    w.run_line("J = (5, 5)").unwrap();
+    assert!(w.undo());
+    assert_eq!(projection_bits(w.construction()), expected);
+    assert!(w.delete(w.construction().id("B").unwrap()));
+    assert!(w.construction().id("R").is_none());
+    assert!(w.undo());
+    assert_eq!(projection_bits(w.construction()), expected);
+}
+
+#[test]
+fn ggb_reload_restores_the_closest_circle_angle() {
+    let mut w = Workbench::from_script(&format!(
+        "D = (2, 4)\n{PROJECTIVE_PROJECTION}k = Circle(A, B)\nR = ClosestPoint(k, S)"
+    ))
+    .unwrap();
+    let d = w.construction().id("D").unwrap();
+    assert!(w.move_point(d, 2.0, 5.0));
+    assert!(w.move_point(d, 2.0, 4.0));
+    let expected = projection_bits(w.construction());
+    let ggb = w.export_ggb(None).unwrap();
+    let mut restored = Workbench::default();
+    restored.load_for_export(&ggb, "projection.ggb").unwrap();
+    assert_eq!(projection_bits(restored.construction()), expected);
+    assert_eq!(
+        projection_bits(&restored.log.rebuild().unwrap().0),
+        expected
+    );
+}
+
+#[test]
+fn fixed_infinite_projection_coalesces_radius_edits() {
+    let mut w = Workbench::from_script(&format!(
+        "D = (2, 4)\n{PROJECTIVE_PROJECTION}r = 2\nk = Circle(A, r)\nR = ClosestPoint(k, S)"
+    ))
+    .unwrap();
+    let radius = w.construction().id("r").unwrap();
+    let entries = w.snapshot_text().lines().count();
+    for r in [3.0_f64, 4.0, 5.0] {
+        assert!(w.set_number(radius, r));
+        assert_eq!(
+            projection_bits(w.construction()),
+            [r.to_bits(), 0.0_f64.to_bits()]
+        );
+    }
+    assert_eq!(w.snapshot_text().lines().count(), entries + 1);
+    assert_eq!(
+        projection_bits(w.construction()),
+        projection_bits(&w.log.rebuild().unwrap().0)
+    );
+}
+
+#[test]
+fn finite_projection_drag_coalesces_replay() {
+    let mut w =
+        Workbench::from_script("O = (0, 0)\nP = (1, 2)\nk = Circle(O, 2)\nR = ClosestPoint(k, P)")
+            .unwrap();
+    let point = w.construction().id("P").unwrap();
+    let entries = w.snapshot_text().lines().count();
+    w.begin_gesture();
+    for _ in 0..128 {
+        assert!(w.move_point(point, 2.0, 1.0));
+        assert!(w.move_point(point, 1.0, 2.0));
+    }
+    assert!(w.move_point(point, 2.0, 1.0));
+    w.end_gesture();
+    assert_eq!(w.snapshot_text().lines().count(), entries + 1);
+    let expected = projection_bits(w.construction());
+    w.run_line("J = (5, 5)").unwrap();
+    assert!(w.undo());
+    assert_eq!(projection_bits(w.construction()), expected);
+}

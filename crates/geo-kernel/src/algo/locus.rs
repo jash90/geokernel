@@ -41,7 +41,8 @@
 //! Upstream also stops sampling when one update of the
 //! construction takes longer than 500 ms (`MAX_TIME_FOR_ONE_STEP`); a time
 //! limit would make the points depend on the machine, so it is left out, and
-//! only the limits on the number of points and steps are kept.
+//! the kernel instead limits total sampling work, as well as the number
+//! of points and steps.
 //!
 //! A locus does not follow its moving object: upstream leaves it out of the
 //! inputs it updates from (`setInputOutput`), so dragging `P` keeps the old
@@ -448,9 +449,11 @@ pub(crate) struct Saved {
     values: Vec<(usize, Value)>,
     defs: Vec<(usize, Def)>,
     paths: Vec<(usize, PathState)>,
+    closest_angles: BTreeMap<usize, f64>,
     conics: Vec<(usize, crate::algo::conic_nd::ConicData)>,
     arcs: Vec<(usize, crate::algo::arc::ArcData)>,
     discrete: Vec<(usize, LocusData)>,
+    expressions: Vec<(crate::expr::ExprDef, crate::expr::SavedResult)>,
     inequality_helpers: BTreeMap<Id, Option<crate::expr::inequality::Helpers>>,
     inequality_helpers_changed: bool,
 }
@@ -461,15 +464,26 @@ impl Saved {
             values: Vec::with_capacity(ids.len()),
             defs: Vec::with_capacity(ids.len()),
             paths: Vec::new(),
+            closest_angles: BTreeMap::new(),
             conics: Vec::new(),
             arcs: Vec::new(),
             discrete: Vec::new(),
+            expressions: Vec::new(),
             inequality_helpers: BTreeMap::new(),
             inequality_helpers_changed: c.inequality_helpers.changed(),
         };
         for &i in ids {
-            s.values.push((i, c.values[i]));
-            s.defs.push((i, c.defs[i]));
+            let def = c.defs[i];
+            let value = if def.kind() == Kind::Point {
+                c.stored_value(Id(i))
+            } else {
+                c.values[i]
+            };
+            s.values.push((i, value));
+            s.defs.push((i, def));
+            if let Some(&angle) = c.closest_circle_parameters.get(&i) {
+                s.closest_angles.insert(i, angle);
+            }
             if let Def::Point(PointDef::InequalityVertex { owner, .. }) = c.defs[i] {
                 s.inequality_helpers
                     .entry(owner)
@@ -492,10 +506,43 @@ impl Saved {
         s
     }
 
-    /// Puts the saved state back. The objects of `chain` are recomputed
-    /// first, so that what an expression keeps besides its value (its last
-    /// raw result) follows the saved inputs again; then every saved value
-    /// and record is written back bit for bit.
+    fn with_expression_results(c: &Construction, ids: &[usize]) -> Option<Self> {
+        let mut expressions = Vec::new();
+        for &i in ids {
+            if let Def::Expr(d) = c.defs[i] {
+                expressions.push((d, crate::expr::SavedResult::of(c, d)?));
+            }
+        }
+        let mut saved = Self::of(c, ids);
+        saved.expressions = expressions;
+        Some(saved)
+    }
+
+    fn restore_values(
+        c: &mut Construction,
+        values: &[(usize, Value)],
+        closest_angles: &BTreeMap<usize, f64>,
+    ) {
+        for &(i, value) in values {
+            c.values[i] = if c.defs[i].kind() == Kind::Point {
+                c.store_point_coordinates(i, value)
+            } else {
+                value
+            };
+            if let Def::Point(PointDef::Closest { .. }) = c.defs[i] {
+                if let Some(&angle) = closest_angles.get(&i) {
+                    c.closest_circle_parameters.insert(i, angle);
+                } else {
+                    c.closest_circle_parameters.remove(&i);
+                }
+            }
+        }
+    }
+
+    /// Puts the saved state back. Expressions with snapshots keep the
+    /// original slots, raw result and retained list state even if sampling
+    /// ran out of work. Other records can refresh from the restored inputs,
+    /// after which the saved values and geometry are reinstated.
     pub(crate) fn restore(self, c: &mut Construction, chain: &[usize]) {
         for &(i, def) in &self.defs {
             c.defs[i] = def;
@@ -503,9 +550,7 @@ impl Saved {
         for &(slot, st) in &self.paths {
             c.paths[slot].1 = st;
         }
-        for &(i, v) in &self.values {
-            c.values[i] = v;
-        }
+        Self::restore_values(c, &self.values, &self.closest_angles);
         for (slot, data) in self.discrete {
             c.loci[slot].1 = data;
         }
@@ -519,17 +564,23 @@ impl Saved {
                 c.function_roots.remove_inequality(owner);
             }
         }
+        let restored_expressions = !self.expressions.is_empty();
+        for (def, result) in self.expressions {
+            result.restore(c, def);
+        }
         for &i in chain {
-            if !matches!(
-                c.defs[i],
-                Def::Discrete(_) | Def::Number(_) | Def::Point(PointDef::InequalityVertex { .. })
-            ) {
+            let refresh = match c.defs[i] {
+                Def::Expr(_) => !restored_expressions,
+                Def::Discrete(_)
+                | Def::Number(_)
+                | Def::Point(PointDef::InequalityVertex { .. }) => false,
+                _ => true,
+            };
+            if refresh {
                 recompute(c, i);
             }
         }
-        for (i, v) in self.values {
-            c.values[i] = v;
-        }
+        Self::restore_values(c, &self.values, &self.closest_angles);
         for (slot, st) in self.paths {
             c.paths[slot].1 = st;
         }
@@ -558,12 +609,24 @@ impl OptimizerCascade {
     // return immediately in AlgoOptimize and consume no search visits.
     const MAX_VISITS_PER_DEPTH: usize = 1_000_000;
 
-    pub(crate) fn new(c: &Construction, owner: Id, mover: Id) -> Option<Self> {
+    pub(crate) fn new(c: &Construction, owner: Id, mover: Id, objective: Id) -> Option<Self> {
         const MAX_EDGES: usize = 16_384;
-        if !c
+        let has_peer = c
             .children(mover)
             .take(MAX_EDGES)
-            .any(|id| id != owner && matches!(c.def(id), Def::Optimize(_)))
+            .any(|id| id != owner && matches!(c.def(id), Def::Optimize(_)));
+        // Restoring a mover can put a projection back at infinity. The
+        // final live cascade then uses the last angle from the search.
+        if !has_peer
+            && (c.homogeneous_points.is_empty()
+                || !chain(c, objective, mover).into_iter().any(|i| {
+                    matches!(
+                        c.defs[i],
+                        Def::Point(PointDef::Closest { path, point })
+                            if c.point_at_infinity(point).is_some()
+                                && crate::algo::point::circle_geometry(c, path).is_some()
+                    )
+                }))
         {
             return None;
         }
@@ -628,24 +691,14 @@ impl OptimizerCascade {
             if !crate::expr::reserve_work(2 * ids.len() as u64) {
                 return Value::Undefined;
             }
-            let mut expressions = Vec::new();
-            for &i in &ids {
-                if let Def::Expr(d) = c.defs[i] {
-                    let Some(state) = crate::expr::SavedResult::of(c, d) else {
-                        return Value::Undefined;
-                    };
-                    expressions.push((d, state));
-                }
-            }
-            let saved = Saved::of(c, &ids);
+            let Some(saved) = Saved::with_expression_results(c, &ids) else {
+                return Value::Undefined;
+            };
             self.running.push((owner, def.independent));
             let result = crate::algo::optimize::search(c, def, Some(self));
             self.running.pop();
             if self.exhausted {
                 saved.restore(c, &[]);
-                for (def, state) in expressions {
-                    state.restore(c, def);
-                }
                 return Value::Undefined;
             }
             result
@@ -709,38 +762,6 @@ impl OptimizerCascade {
     }
 }
 
-/// The undefined-for-good state of the expressions in a locus chain
-/// (`SVD`, see `expr::Stuck`). The reference samples a copy of the
-/// construction (its macro construction), so nothing a sample does reaches
-/// the live objects; the sampling puts the state back before
-/// [`Saved::restore`] recomputes the chain. An optimizer's trials update the live objects in the
-/// reference, so its search keeps what they stick.
-struct SavedExpressionState(Vec<(crate::expr::ExprDef, Vec<u32>, crate::expr::ListRecords)>);
-
-impl SavedExpressionState {
-    fn of(c: &Construction, ids: &[usize]) -> Self {
-        Self(
-            ids.iter()
-                .filter_map(|&i| match c.defs[i] {
-                    Def::Expr(d) => Some((
-                        d,
-                        crate::expr::stuck_nodes(c, d),
-                        crate::expr::list_records(c, d),
-                    )),
-                    _ => None,
-                })
-                .collect(),
-        )
-    }
-
-    fn restore(self, c: &Construction) {
-        for (d, nodes, records) in self.0 {
-            crate::expr::restore_stuck_nodes(c, d, nodes);
-            crate::expr::restore_list_records(c, d, records);
-        }
-    }
-}
-
 /// Recomputes object `i` from its parents, as an update does.
 pub(crate) fn recompute(c: &mut Construction, i: usize) {
     let def = c.defs[i];
@@ -772,7 +793,19 @@ pub(crate) fn recompute(c: &mut Construction, i: usize) {
             c.analysis.clear();
             c.values[i] = c.compute(def, i);
         }
-        _ => c.values[i] = c.compute(def, i),
+        _ => {
+            let value = match def {
+                Def::Point(PointDef::Closest { path, point }) => {
+                    c.closest_point(i, path, point, false)
+                }
+                _ => c.compute(def, i),
+            };
+            c.values[i] = if def.kind() == Kind::Point {
+                c.store_point_coordinates(i, value)
+            } else {
+                value
+            };
+        }
     }
 }
 
@@ -784,7 +817,13 @@ pub(crate) fn record(c: &mut Construction, d: LocusDef, owner: Id) -> LocusData 
     // states of the live objects stay as they were, and the copy keeps its
     // own between updates.
     let live = c.analysis.enter_copy(c, owner.0);
-    let data = record_samples(c, d, owner);
+    let end = crate::expr::work_done().saturating_add(crate::expr::MAX_EVALUATION_WORK);
+    let data = match d {
+        LocusDef::Path { .. } | LocusDef::Slider { .. } => {
+            crate::expr::with_work_deadline(end, || record_samples(c, d, owner))
+        }
+        _ => record_samples(c, d, owner),
+    };
     c.analysis.leave_copy(owner.0, live);
     data
 }
@@ -934,8 +973,9 @@ fn record_path(c: &mut Construction, q: Id, p: Id, owner: Id) -> LocusData {
     };
     let mut ids = chain.clone();
     ids.push(p.0);
-    let saved = Saved::of(c, &ids);
-    let stuck = SavedExpressionState::of(c, &ids);
+    let Some(saved) = Saved::with_expression_results(c, &ids) else {
+        return LocusData::default();
+    };
 
     // `resetMacroConstruction`: the copy of P takes P's coordinates
     // (`GeoPoint.set`, which puts them on the path again), and
@@ -957,8 +997,6 @@ fn record_path(c: &mut Construction, q: Id, p: Id, owner: Id) -> LocusData {
     let copy = PathCopy { id: p, path, st };
     let mover = Mover::new(copy.st.parameter(), min, max, closed, false);
     let data = sample(c, q, &chain, copy, mover, false);
-    // before the chain is recomputed with the saved inputs
-    stuck.restore(c);
     saved.restore(c, &chain);
     data
 }
@@ -971,8 +1009,9 @@ fn record_slider(c: &mut Construction, q: Id, a: Id) -> LocusData {
     let chain = chain(c, q, a);
     let mut ids = chain.clone();
     ids.push(a.0);
-    let saved = Saved::of(c, &ids);
-    let stuck = SavedExpressionState::of(c, &ids);
+    let Some(saved) = Saved::with_expression_results(c, &ids) else {
+        return LocusData::default();
+    };
     let copy = SliderCopy {
         id: a,
         min,
@@ -981,8 +1020,6 @@ fn record_slider(c: &mut Construction, q: Id, a: Id) -> LocusData {
     };
     let mover = Mover::new(min, min, max, false, true);
     let data = sample(c, q, &chain, copy, mover, true);
-    // before the chain is recomputed with the saved inputs
-    stuck.restore(c);
     saved.restore(c, &chain);
     data
 }
@@ -1041,7 +1078,7 @@ pub(crate) fn sample_path_point_on(
     st.update_coords();
     if let Some(slot) = c.path_slot(id.0) {
         c.paths[slot].1 = st;
-        c.values[id.0] = PathDef::value(&st);
+        c.values[id.0] = c.store_point_coordinates(id.0, PathDef::value(&st));
     }
     c.value(id)
 }
@@ -1058,7 +1095,7 @@ impl Moving for PathCopy {
     fn apply(&self, c: &mut Construction) {
         if let Some(slot) = c.path_slot(self.id.0) {
             c.paths[slot].1 = self.st;
-            c.values[self.id.0] = PathDef::value(&self.st);
+            c.values[self.id.0] = c.store_point_coordinates(self.id.0, PathDef::value(&self.st));
         }
     }
 
@@ -1443,6 +1480,7 @@ impl Cache {
 struct Run<'a, M> {
     q: Id,
     chain: &'a [usize],
+    exhausted: bool,
     view: View,
     mover: Mover,
     cache: Cache,
@@ -1529,9 +1567,17 @@ impl<M: Moving> Run<'_, M> {
                     // ConsElementXMLHandler.handleSlider skips slider tags
                     // in the macro construction. The mover still takes
                     // its sampled value, but other sliders keep theirs.
+                    if !crate::expr::reserve_work(1) {
+                        self.exhausted = true;
+                        return None;
+                    }
                     if !matches!(c.defs[i], Def::Number(_)) {
                         recompute(c, i);
                     }
+                }
+                if crate::expr::work_done() >= crate::expr::work_deadline() {
+                    self.exhausted = true;
+                    return None;
                 }
                 let q = c.point(self.q);
                 self.cache.put(key, q);
@@ -1567,6 +1613,7 @@ fn sample<M: Moving>(
     let mut run = Run {
         q,
         chain,
+        exhausted: false,
         view,
         mover,
         cache: Cache {
@@ -1588,7 +1635,11 @@ fn sample<M: Moving>(
     let max_loops = 2 * MAX_POINTS * views;
     let mut loops = 0;
     let mut finished = false;
-    while !finished && run.points.len() <= MAX_POINTS * views && loops <= max_loops {
+    while !run.exhausted
+        && !finished
+        && run.points.len() <= MAX_POINTS * views
+        && loops <= max_loops
+    {
         loops += 1;
         // lineTo may be false due to a parameter jump
         let jump = !run.mover.next();
@@ -1652,6 +1703,9 @@ fn sample<M: Moving>(
             }
         }
     }
+    if run.exhausted {
+        return LocusData::default();
+    }
     let Some(start) = run.start.take() else {
         return LocusData::default();
     };
@@ -1659,6 +1713,9 @@ fn sample<M: Moving>(
     // differs from any point, as its NaN coordinates do upstream
     copy.back_to(c, &start);
     let v = run.update(c, &copy).unwrap_or((f64::NAN, f64::NAN));
+    if run.exhausted {
+        return LocusData::default();
+    }
     if v.0 != run.last.0 || v.1 != run.last.1 {
         let line_to = run.distance_small(v, either);
         run.insert(v, line_to);
@@ -1870,6 +1927,70 @@ fn parse_hull(c: &Construction, list: &str, number: &str) -> Result<LocusDef, St
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn slider_locus_charges_cascade_visits() {
+        let mut c =
+            crate::script::load("r = Slider(1, 3)\nO = (0, 0)\nk = Circle(O, r)\nQ = Point(k, 0)")
+                .unwrap();
+        let (q, slider) = (c.id("Q").unwrap(), c.id("r").unwrap());
+        let saved = c.value(q);
+        let before = crate::expr::work_done();
+        let data = crate::expr::with_work_deadline(before + 16, || {
+            super::record_slider(&mut c, q, slider)
+        });
+        assert!(!data.defined);
+        assert_eq!(crate::expr::work_done() - before, 16);
+        assert_eq!(c.number(slider), Some(1.0));
+        assert!(c.value(q).identical(&saved));
+        assert!(super::record_slider(&mut c, q, slider).defined);
+    }
+
+    #[test]
+    fn refused_slider_locus_preserves_live_list() {
+        let mut c =
+            script::load("a = Slider(1,3)\nB = Sequence(a*k,k,1,4)\nQ = (Element(B,1),a)").unwrap();
+        let [a, list, q] = ["a", "B", "Q"].map(|label| c.id(label).unwrap());
+        for allowance in [0, 100] {
+            let end = crate::expr::work_done() + allowance;
+            let data = crate::expr::with_work_deadline(end, || super::record_slider(&mut c, q, a));
+            assert!(!data.defined);
+            assert_eq!(c.number(a), Some(1.0));
+            assert_eq!(c.point(q), Some((1.0, 1.0)));
+            let list = c.elements(list).unwrap();
+            assert_eq!(list.len(), 4);
+            for (i, entry) in list.iter().enumerate() {
+                assert!(matches!(
+                    entry,
+                    crate::expr::Element::Value(crate::Kind::Number, Value::Number(n))
+                        if n == (i + 1) as f64
+                ));
+            }
+        }
+    }
+
+    #[test]
+    fn sampled_spanning_tree_charges_graph_work() {
+        // locus-sampledgraph-001 records 16 points. GeoGebra rebuilds the
+        // tree after each of the 999 edge batches in this 1,000-point case,
+        // so the full recording does not finish in the harness.
+        let mut c = script::load(
+            "a = Slider(0,1)\nT = MinimumSpanningTree(Sequence((k,a*k),k,1,1000))\nQ = (a,Length(T)/1000)",
+        )
+        .unwrap();
+        let [a, tree, q] = ["a", "T", "Q"].map(|label| c.id(label).unwrap());
+        let start = crate::expr::work_done();
+        super::recompute(&mut c, tree.0);
+        assert!(crate::expr::work_done() - start >= 2_000_000);
+
+        let end = crate::expr::work_done() + 1_000_000;
+        let data = crate::expr::with_work_deadline(end, || super::record_slider(&mut c, q, a));
+        assert!(!data.defined);
+        assert_eq!(crate::expr::work_done(), end);
+        assert_eq!(c.locus(tree).unwrap().points.len(), 1998);
+        assert_eq!(c.point(q), Some((0.0, 1.998)));
+    }
+
     use super::OptimizerCascade;
     use crate::{script, Def, Value};
 
@@ -1884,7 +2005,7 @@ mod tests {
         let Def::Optimize(def) = c.def(n) else {
             panic!("expected an optimizer");
         };
-        let mut cascade = OptimizerCascade::new(&c, n, a).unwrap();
+        let mut cascade = OptimizerCascade::new(&c, n, a, f).unwrap();
         // Spend the last visit at this depth, then stop before the next.
         assert_eq!(cascade.remaining[0], OptimizerCascade::MAX_VISITS_PER_DEPTH);
         cascade.remaining[0] = 1;

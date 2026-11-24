@@ -899,3 +899,63 @@ fn a_saved_self_intersection_follows_the_reference_load_order() {
         assert_eq!(value("Q"), value("X"), "{name}");
     }
 }
+
+#[test]
+fn saved_free_points_keep_homogeneous_coordinates() {
+    let (snapshot, imported) = fixture("saved-projective-001");
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    check_review_values(&snapshot, &c, &[]);
+    for (label, expected) in [
+        (
+            "P",
+            Value::HomogeneousPoint {
+                x: 2.0,
+                y: 4.0,
+                z: 2.0,
+            },
+        ),
+        (
+            "T",
+            Value::HomogeneousPoint {
+                x: 2.0,
+                y: 1.0,
+                z: 0.0,
+            },
+        ),
+    ] {
+        assert_eq!(c.stored_value(c.id(label).unwrap()), expected);
+    }
+}
+
+#[test]
+fn saved_projective_point_keeps_coordinates_when_cartesian_division_overflows() {
+    let (snapshot, imported) = fixture("saved-projectiveoverflow-001");
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    check_review_values(&snapshot, &c, &[]);
+    assert_eq!(
+        c.stored_value(c.id("P").unwrap()),
+        Value::HomogeneousPoint {
+            x: 1e308,
+            y: 0.0,
+            z: 1e-6
+        },
+    );
+}
+
+#[test]
+fn coordinate_read_after_reloading_an_overflowing_point() {
+    let (snapshot, imported) = fixture("saved-projectiveoverflow-002");
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    check_review_values(&snapshot, &c, &[]);
+
+    let (_, imported) = fixture("saved-projectiveoverflow-001");
+    let mut c = script::load(&imported.script.join("\n")).unwrap();
+    script::exec(&mut c, "q = y(P)").unwrap();
+    assert_eq!(c.value(c.id("q").unwrap()), Value::Number(0.0));
+}

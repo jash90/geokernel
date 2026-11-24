@@ -245,8 +245,19 @@ fn check_contagion(case: &Case, placed_on_circle: &HashMap<Id, PathState>) -> Re
             matches!(case.c.def(id), Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) if path == p)
                 && matches!(case.c.kind(p), Kind::Arc | Kind::Sector)
         };
+        // A line through a finite point and an infinite point reads the
+        // latter's direction even though it has no Cartesian position.
+        let line_uses_direction = |p: Id| {
+            let Def::Line(a, b) = case.c.def(id) else {
+                return false;
+            };
+            let other = if p == a { b } else { a };
+            case.c.stored_value(p).is_defined()
+                && matches!(case.c.value(other), Value::Point { .. })
+        };
         let undefined = |p: Id| {
             !case.c.value(p).is_defined()
+                && !line_uses_direction(p)
                 && !read_as_value(p)
                 && !kept_parameter(p)
                 && !on_part(p)

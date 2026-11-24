@@ -1082,6 +1082,7 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
 fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id, String>> {
     if !rhs.starts_with("$saved(")
         && !rhs.starts_with("$pointOnPath(")
+        && !rhs.starts_with("$homogeneousPoint(")
         && !rhs.starts_with("$slider(")
         && !rhs.starts_with("$penStroke(")
     {
@@ -1114,6 +1115,12 @@ fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id
                 };
                 c.add(name, def).map_err(|e| e.to_string())
             }
+            ("$homogeneousPoint", [x, y, z]) => c
+                .add_saved_homogeneous_point(
+                    name,
+                    [parse_number(x)?, parse_number(y)?, parse_number(z)?],
+                )
+                .map_err(|e| e.to_string()),
             ("$penStroke", coords) => c.add_saved_stroke(name, coords),
             ("$pointOnPath", [curve, parameter]) => c
                 .add_saved_curve_point(name, object(c, curve)?, parse_number(parameter)?)
@@ -1676,6 +1683,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             | "NIntegral"
             | "IntegralBetween"
             | "Dilate"
+            | "Rotate"
             | "Derivative"
             | "NDerivative"
     ) {
@@ -1736,6 +1744,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             &[(0, Kind::Point), (1, Kind::Number), (1, Kind::Point)]
         }
         ("Circle", [_, _]) => &[(0, Kind::Point)],
+        ("Rotate", [_, _] | [_, _, _]) => &[(1, Kind::Number)],
         ("Dilate", [src, _]) if is_kind(src, Kind::Curve) || is_kind(src, Kind::Image) => {
             &[(1, Kind::Number)]
         }
@@ -1794,6 +1803,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
     let live_numbers = matches!(
         func,
         "Dilate"
+            | "Rotate"
             | "LowerSum"
             | "UpperSum"
             | "LeftSum"
@@ -2101,6 +2111,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Sector { area } => area.is_finite(),
         Value::Locus { .. } | Value::PenStroke { .. } => true,
         Value::HomogeneousPoint { .. }
+        | Value::NormalizedPointAtInfinity { .. }
         | Value::Button
         | Value::InputBox
         | Value::Image

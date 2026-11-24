@@ -22,23 +22,23 @@ NextPrime,,algebra,P2,done,1,1,Integer inputs within the exact integer range of 
 RightSide,,algebra,P2,done,3,3,"Lines, conics and implicit polynomial equations."
 PreviousPrime,,algebra,P2,done,1,1,Integer inputs within the exact integer range of the numeric object.
 IsFactored,,algebra,P2,done,2,2,Number and univariate polynomial inputs with the reference degree limit.
-Line,,geometry,P0,partial,5,3,"Line(point, point); Line(point, line, segment or ray); Line(point, vector)"
-Ray,,geometry,P1,partial,2,1,"Ray(point, point); Ray(point, vector)"
+Line,,geometry,P0,partial,5,4,"Line(point, point); Line(point, line, segment or ray); Line(point, vector)"
+Ray,,geometry,P1,done,2,2,"Ray(point, point); Ray(point, vector)"
 AngularBisector,,geometry,P1,done,2,2,"AngularBisector(point, point, point); AngularBisector(line, line)"
 OrthogonalLine,,geometry,P0,partial,5,4,"OrthogonalLine(point, line, segment or ray); OrthogonalLine(point, vector); OrthogonalLine(point, conic or conic part)"
 Tangent,,geometry,P1,done,11,11,"Tangents to conics, functions, Cartesian curves and implicit polynomials."
 Segment,,geometry,P0,partial,3,2,"Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output"
-Slope,,geometry,P1,partial,2,1,"Slope(line, segment, ray or function)"
+Slope,,geometry,P1,done,2,2,"Slope(line, segment, ray or function)"
 Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
 InteriorAngles,,geometry,P1,done,1,1,InteriorAngles(polygon)
-Direction,,geometry,P1,partial,2,1,"Direction(line, segment or ray)"
+Direction,,geometry,P1,done,2,2,"Direction(line, segment or ray)"
 Point,,geometry,P1,partial,4,1,"Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter"
 Midpoint,,geometry,P0,partial,4,3,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,partial,2,1,"LineBisector(point, point); LineBisector(segment)"
 Intersect,,geometry,P0,partial,79,73,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
 IntersectPath,,geometry,P1,partial,9,8,"Polygons with lines, segments, rays or other polygons. Conics with segments, polylines and polygon boundaries within the clipping work budget."
 IntersectRegion,,english,P2,partial,9,8,
-Distance,,geometry,P0,partial,4,2,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
+Distance,,geometry,P0,partial,4,3,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
 Length,,geometry,P1,partial,11,10,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
 Radius,,geometry,P1,done,1,1,Radius(conic or conic part); defined for circle and single-point types
 Type,,geometry,P1,todo,0,0,
@@ -67,17 +67,17 @@ PenStrokeBezier,,english,,out_of_scope,,,"A pen stroke reads the pointing device
 PointIn,,geometry,P1,done,1,1,"PointIn(polygon, conic or conic part as a single region argument)"
 AffineRatio,,geometry,P1,done,1,1,"AffineRatio(point, point, point)"
 CrossRatio,,geometry,P1,done,1,1,"CrossRatio(point, point, point, point)"
-ClosestPoint,,geometry,P1,partial,3,1,"Path and point in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers except line with segment"
+ClosestPoint,,geometry,P1,done,3,3,"Path and point in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers except line with segment"
 ClosestPointRegion,,geometry,P1,todo,0,0,
 Prove,,geometry,P1,todo,1,0,"Predicate statements (AreCollinear, AreParallel, ArePerpendicular, AreConcurrent, AreConcyclic, AreEqual of points, lines or circles) over points, lines, segments, midpoints, perpendiculars, parallels, perpendicular bisectors, circles, points on paths and labelled or indexed circle intersections, including intersections with segment and ray carriers, and line, segment or ray intersections with a focus-directrix parabola (including point and number selectors and reuse after a drag); == of points, lines, segments, circles and distances; formulas over segments with integer coefficients"
 ProveDetails,,geometry,P1,todo,2,0,"ProveDetails(boolean) for the statements Prove covers, with conditions read from a unique or variable-disjoint elimination basis; the conditions of a formula over segments are pending and the relation-tool wording differs"
 AreCollinear,,geometry,P1,todo,1,0,"AreCollinear(point, point, point)"
 AreParallel,,geometry,P1,todo,1,0,"AreParallel of two lines, segments or rays"
-AreConcyclic,,geometry,P1,todo,1,0,"AreConcyclic(point, point, point, point)"
+AreConcyclic,,geometry,P1,done,1,1,"AreConcyclic(point, point, point, point)"
 ArePerpendicular,,geometry,P1,todo,1,0,"ArePerpendicular of two lines, segments or rays"
 AreEqual,,geometry,P1,todo,1,0,"Numeric equality by object kind, including cyclic vertex equality and polynomial equality through degree four"
 AreConcurrent,,geometry,P1,done,1,1,"AreConcurrent of three lines, segments or rays"
-AreCongruent,,geometry,P1,todo,1,0,"Numeric congruence by object kind, including cyclic or reversed polygon congruence"
+AreCongruent,,geometry,P1,done,1,1,"Numeric congruence by object kind, including cyclic or reversed polygon congruence"
 IsTangent,,geometry,P1,done,1,1,"IsTangent(line, segment or ray, conic or conic part)"
 LocusEquation,,geometry,P1,partial,3,2,
 Envelope,,geometry,P1,todo,1,0,
@@ -215,7 +215,7 @@ StepGraph,,charts,P2,done,6,6,
 LineGraph,,charts,P2,done,1,1,
 PieChart,,charts,P2,done,3,3,
 ContingencyTable,,charts,,out_of_scope,,,"Produces a LaTeX contingency table, optionally with a test report."
-Sum,,statistics,P2,done,8,8,"List and indexed forms, plus variadic numbers, points, functions and text. Direct vector arguments are rejected."
+Sum,,statistics,P2,partial,8,7,"List and indexed forms, plus variadic numbers, points, functions and text. Direct vector arguments are rejected."
 Mean,mean,statistics,,out_of_scope,,,
 mean,,statistics,,out_of_scope,,,
 Variance,,statistics,,out_of_scope,,,
@@ -328,10 +328,10 @@ RandomPolynomial,,probability,,out_of_scope,,,
 RandomDiscrete,,probability,,out_of_scope,,,
 RandomPointIn,,probability,,out_of_scope,,,
 ApplyMatrix,,vector,P2,partial,10,8,"2 x 2 or 3 x 3 matrix on a point, vector, line, conic, polygon, polyline, Cartesian curve, function graph, raster image or list"
-UnitVector,,vector,P2,partial,3,1,"UnitVector(vector, line, segment or ray)"
+UnitVector,,vector,P2,partial,3,2,"UnitVector(vector, line, segment or ray)"
 Vector,,vector,P2,done,3,3,"Vector(point, point); Vector(point); a free (x, y) under a lower-case label"
 UnitOrthogonalVector,,vector,P2,done,3,3,"UnitOrthogonalVector(vector, line, segment or ray)"
-OrthogonalVector,,vector,P2,partial,3,1,"OrthogonalVector(vector, line, segment or ray)"
+OrthogonalVector,,vector,P2,partial,3,2,"OrthogonalVector(vector, line, segment or ray)"
 Invert,,vector,P2,done,2,2,
 Transpose,,vector,P2,done,3,3,
 ReducedRowEchelonForm,,vector,P2,done,3,3,

@@ -654,6 +654,7 @@ fn render_geometry(
             | Value::FunctionNVar
             | Value::List { .. }
             | Value::HomogeneousPoint { .. }
+            | Value::NormalizedPointAtInfinity { .. }
             | Value::Curve { .. }
             | Value::Button
             | Value::InputBox

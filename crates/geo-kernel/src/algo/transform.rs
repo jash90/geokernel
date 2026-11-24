@@ -248,6 +248,17 @@ pub(crate) fn dilate_element(src: Value, r: f64, sx: f64, sy: f64) -> Option<Val
     }
 }
 
+fn rotate_point(x: f64, y: f64, phi: f64, qx: f64, qy: f64) -> (f64, f64) {
+    // `MyMath.cos` snaps a cosine of magnitude below 1e-16 to 0.
+    let cos = phi.cos();
+    let cos = if cos.abs() < 1e-16 { 0.0 } else { cos };
+    let sin = phi.sin();
+    (
+        (x - qx) * cos + (qy - y) * sin + qx,
+        (x - qx) * sin + (y - qy) * cos + qy,
+    )
+}
+
 impl Map {
     /// Image of a point, or of the centre of a circle.
     pub(crate) fn point(&self, x: f64, y: f64) -> (f64, f64) {
@@ -258,16 +269,7 @@ impl Map {
                 let (x, y) = mirror_xy(x - qx, y - qy, 2.0 * (-a).atan2(b));
                 (x + qx, y + qy)
             }
-            Map::Rotate { phi, qx, qy } => {
-                // `MyMath.cos` snaps a cosine of magnitude below 1e-16 to 0.
-                let cos = phi.cos();
-                let cos = if cos.abs() < 1e-16 { 0.0 } else { cos };
-                let sin = phi.sin();
-                (
-                    (x - qx) * cos + (qy - y) * sin + qx,
-                    (x - qx) * sin + (y - qy) * cos + qy,
-                )
-            }
+            Map::Rotate { phi, qx, qy } => rotate_point(x, y, phi, qx, qy),
             Map::Dilate { r, sx, sy } => {
                 let temp = 1.0 - r;
                 (r * x + temp * sx, r * y + temp * sy)
@@ -375,6 +377,7 @@ impl Map {
             | Value::Sector { .. }
             | Value::Locus { .. }
             | Value::HomogeneousPoint { .. }
+            | Value::NormalizedPointAtInfinity { .. }
             | Value::Curve { .. }
             | Value::Button
             | Value::InputBox
@@ -435,9 +438,14 @@ fn ray_value(start: (f64, f64), (x, y, z): (f64, f64, f64)) -> Option<Value> {
 /// off the source's value covers an image of an image the same way: the
 /// rebuilt ray is what the next transformation sees.
 fn ray_image(c: &Construction, def: &TransformDef, map: &Map) -> Option<Value> {
-    let Value::Ray { x, y, a, b, .. } = c.value(source_of(def)) else {
+    let Value::Ray { x, y, a, b, c: z } = c.stored_value(source_of(def)) else {
         return None;
     };
+    if !x.is_finite() || !y.is_finite() {
+        // The stored start marks a projective point. Its affine image still
+        // has no Cartesian start, and the image of the carrier is defined.
+        return ray_value((x, y), map.line(a, b, z));
+    }
     let start = map.point(x, y);
     // the direction `(b, -a)` of the raw line, turned by the map's linear
     // part (`GeoVector.rotate`, `mirror`, `matrixTransform`)
@@ -822,6 +830,11 @@ impl Group for TransformDef {
         let map = self.map(c);
         if let (Kind::Point, Some(Map::Dilate { r, sx, sy })) = (self.kind(), map) {
             return dilate_element(c.stored_value(source_of(self)), r, sx, sy);
+        }
+        if let (Kind::Point, Some(Map::Rotate { phi, qx, qy })) = (self.kind(), map) {
+            let (x, y, z) = c.stored_value(source_of(self)).point_coords()?;
+            let (x, y) = rotate_point(x, y, phi, z * qx, z * qy);
+            return Some(Value::homogeneous_point(x, y, z));
         }
         match self.kind() {
             Kind::Ray => ray_image(c, self, &map?),

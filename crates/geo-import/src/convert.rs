@@ -1089,8 +1089,31 @@ impl Converter {
             self.claim(&el.label)?;
             self.define_element(el, expression.as_deref())?;
         }
+        if el.kind == "point" {
+            self.restore_closest_circle_angle(el)?;
+        }
         self.apply_text_style(el, font_size);
         self.record_element(el, expression.as_deref(), polygon);
+        Ok(())
+    }
+
+    fn restore_closest_circle_angle(&mut self, el: &Element) -> Result<(), ImportError> {
+        let Some(id) = self.kernel.id(&el.label) else {
+            return Ok(());
+        };
+        let Some([x, y, z]) = coords3(el).filter(|&[_, _, z]| z != 0.0) else {
+            return Ok(());
+        };
+        if let Some(angle) = self.kernel.saved_closest_circle_angle(id, x / z, y / z) {
+            let property = Property::ClosestCircleAngle {
+                label: el.label.clone(),
+                angle,
+            };
+            property
+                .apply(&mut self.kernel)
+                .map_err(ImportError::Internal)?;
+            self.out.script.push(property.to_string());
+        }
         Ok(())
     }
 
@@ -1682,12 +1705,11 @@ impl Converter {
                 };
                 let (x, y, z) = (number(x)?, number(y)?, number(z)?);
                 if el.kind == "point" {
-                    if z == 0.0 {
-                        return Ok(Err("a point at infinity".into()));
-                    }
-                    let (x, y) = if z == 1.0 { (x, y) } else { (x / z, y / z) };
-                    if !(x.is_finite() && y.is_finite()) {
+                    if ![x, y, z].into_iter().all(f64::is_finite) {
                         return Ok(Err("the coordinates are not finite".into()));
+                    }
+                    if z != 1.0 {
+                        return Ok(Ok(format!("{label} = $homogeneousPoint({x}, {y}, {z})")));
                     }
                     Ok(if is_vector_label(label) {
                         format!("{label} = $point({x}, {y})")
@@ -2252,7 +2274,12 @@ fn cross_check(
     polygon: Option<&[[f64; 2]]>,
 ) -> Option<(String, String)> {
     let kind = c.kind(id);
-    let value = c.value(id);
+    // Saved rays carry their line coefficients even without a finite start.
+    let value = if kind == Kind::Ray {
+        c.stored_value(id)
+    } else {
+        c.value(id)
+    };
     let kind_matches = kind_agrees(&el.kind, kind);
     // GeoGebra writes independent text as a quoted expression. Dependent
     // texts normally save their definition or command and omit the result.
@@ -2327,6 +2354,29 @@ fn cross_check(
                 }
             }
             _ => {}
+        }
+    }
+    if !value.is_defined() && kind == Kind::Point {
+        if let Some([sx, sy, sz]) = coords3(el) {
+            match c.stored_value(id) {
+                Value::NormalizedPointAtInfinity { x, y } => {
+                    return (!(sz == 1.0 && close(x, sx) && close(y, sy)))
+                        .then(report)
+                        .flatten();
+                }
+                // Cartesian overflow leaves the XML triple available to
+                // geometry. Check that the importer kept all three fields.
+                Value::HomogeneousPoint { x, y, z }
+                    if sz != 0.0 && (!(sx / sz).is_finite() || !(sy / sz).is_finite()) =>
+                {
+                    let saved = [sx, sy, sz];
+                    let computed = [x, y, z];
+                    return (computed != saved && computed != saved.map(|n| -n))
+                        .then(report)
+                        .flatten();
+                }
+                _ => {}
+            }
         }
     }
     let saved_defined =

@@ -616,7 +616,9 @@ impl Writer<'_> {
             }
         }
         match c.stored_value(id) {
-            Value::Point { x, y } => self.xml.coords("coords", [x, y, 1.0])?,
+            Value::Point { x, y } | Value::NormalizedPointAtInfinity { x, y } => {
+                self.xml.coords("coords", [x, y, 1.0])?;
+            }
             Value::HomogeneousPoint { x, y, z } => self.xml.coords("coords", [x, y, z])?,
             Value::Vector { x, y } => self.xml.coords("coords", [x, y, 0.0])?,
             Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => {

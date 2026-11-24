@@ -66,6 +66,7 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
     ("redefine-assignment-015", 3),
     ("textobjects-dynamic-001", 1),
     ("vector-chain-001", 0),
+    ("points-infinityedit-003", 2),
 ];
 
 const SAVED_CASES: &[&str] = &[
@@ -82,6 +83,8 @@ const SAVED_CASES: &[&str] = &[
     "saved-strokes-001.xml",
     "saved-texts-001.ggb",
     "saved-text-equations-001.xml",
+    "saved-projective-001.xml",
+    "saved-projectiveoverflow-001.xml",
     // Presentation properties per kind, set by the reference application.
     "saved-styles-001.xml",
     "saved-styles-002.xml",

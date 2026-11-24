@@ -1,0 +1,132 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "vector-projectiveupdates-001",
+      "group": "vector",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 1)",
+        "C = (0, 3)",
+        "D = (2, 4)",
+        "l = Line(A, B)",
+        "m = Line(C, D)",
+        "S = Intersect(l, m)",
+        "g = Line(A, S)",
+        "h = Ray(S, C)",
+        "d = Direction(g)",
+        "e = Direction(h)",
+        "b = IsDefined(h)",
+        "j = Line(A, h)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -1.0, "b": 2.0, "c": -6.0 },
+          "S": { "type": "point", "defined": false },
+          "g": { "type": "line", "defined": true, "a": 6.0, "b": -12.0, "c": 0.0 },
+          "h": { "type": "ray", "defined": false },
+          "d": { "type": "vector", "defined": true, "x": -12.0, "y": -6.0 },
+          "e": { "type": "vector", "defined": true, "x": 12.0, "y": 6.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "j": { "type": "line", "defined": true, "a": -6.0, "b": 12.0, "c": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "vector-projectiveupdates-002",
+      "group": "vector",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 1)",
+        "C = (0, 3)",
+        "D = (2, 4)",
+        "l = Line(A, B)",
+        "m = Line(C, D)",
+        "S = Intersect(l, m)",
+        "g = Line(A, S)",
+        "h = Ray(S, C)",
+        "d = Direction(g)",
+        "e = Direction(h)",
+        "b = IsDefined(h)",
+        "j = Line(A, h)",
+        "h2 = Rotate(h,pi/2,A)",
+        "b2 = IsDefined(h2)",
+        "j2 = Line(A,h2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -1.0, "b": 2.0, "c": -6.0 },
+          "S": { "type": "point", "defined": false },
+          "g": { "type": "line", "defined": true, "a": 6.0, "b": -12.0, "c": 0.0 },
+          "h": { "type": "ray", "defined": false },
+          "d": { "type": "vector", "defined": true, "x": -12.0, "y": -6.0 },
+          "e": { "type": "vector", "defined": true, "x": 12.0, "y": 6.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "j": { "type": "line", "defined": true, "a": -6.0, "b": 12.0, "c": 0.0 },
+          "h2": { "type": "ray", "defined": false },
+          "b2": { "type": "boolean", "defined": true, "value": true },
+          "j2": { "type": "line", "defined": true, "a": -12.0, "b": -6.0, "c": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "vector-projectiveupdates-003",
+      "group": "vector",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 1)",
+        "C = (0, 3)",
+        "D = (2, 4)",
+        "l = Line(A, B)",
+        "m = Line(C, D)",
+        "S = Intersect(l, m)",
+        "g = Line(A, S)",
+        "h = Ray(S, C)",
+        "d = Direction(g)",
+        "e = Direction(h)",
+        "b = IsDefined(h)",
+        "j = Line(A, h)",
+        "P = ClosestPoint(h,(0,4))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 2.0, "c": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -1.0, "b": 2.0, "c": -6.0 },
+          "S": { "type": "point", "defined": false },
+          "g": { "type": "line", "defined": true, "a": 6.0, "b": -12.0, "c": 0.0 },
+          "h": { "type": "ray", "defined": false },
+          "d": { "type": "vector", "defined": true, "x": -12.0, "y": -6.0 },
+          "e": { "type": "vector", "defined": true, "x": 12.0, "y": 6.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "j": { "type": "line", "defined": true, "a": -6.0, "b": 12.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.40000000000000024, "y": 3.1999999999999997 }
+        }
+      ]
+    }
+  ]
+}

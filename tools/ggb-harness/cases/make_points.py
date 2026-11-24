@@ -193,4 +193,76 @@ case("pathpair", [pt("A", 0, 0), pt("B", 2, 1), pt("C", 0, 3), pt("D", 2, 4), "l
                   "m = Line(C, D)", "P = ClosestPoint(l, m)"],
      [mv("D", 4, 1), mv("D", 2, 4), mv("D", 2, 4.000001), mv("B", 2, 0), mv("D", 4, 3)])
 
+PROJECTIVE = ["A = (0, 0)", "B = (2, 1)", "C = (0, 3)",
+              "l = Line(A, B)", "m = Line(C, D)", "S = Intersect(l, m)"]
+CIRCLE_PROJECTION = ["k = Circle(A, B)", "R = ClosestPoint(k, S)"]
+
+case("infinityedit", ["D = (2, 5)"] + PROJECTIVE +
+     ["F = (5, 5)", "P = ClosestPoint(l, S)", "Q = ClosestPoint(S, l)",
+      "k = Circle(A, B)", "R = ClosestPoint(k, B)"],
+     [{"action": "redefine", "line": "R = ClosestPoint(k, S)"}, mv("D", 2, 4)])
+case("infinityedit", ["D = (2, 5)"] + PROJECTIVE + CIRCLE_PROJECTION,
+     [mv("D", 0, 3), mv("D", 2, 4), {"action": "add", "line": "J = (5, 5)"},
+      {"action": "undo"}])
+case("infinityedit", ["D = (2, 4)"] + PROJECTIVE + CIRCLE_PROJECTION,
+     [mv("D", 2, 5), mv("D", 2, 4), {"action": "reload_ggb"}])
+case("infinityedit", ["D = (2, 4)"] + PROJECTIVE +
+     ["c = Conic({{1,0,0},{0,1,0},{0,0,-4}})", "P = ClosestPoint(c, S)"],
+     [mv("D", 2, 5), mv("D", 2, 4)])
+case("infinityedit", ["D = (2, 4)"] + PROJECTIVE +
+     ["r = 2", "k = Circle(A, r)", "R = ClosestPoint(k, S)"],
+     [setn("r", 3), setn("r", 4), setn("r", 5)])
+case("infinityedit", ["D = (2, 4)"] + PROJECTIVE + CIRCLE_PROJECTION,
+     [mv("D", 2, 5), mv("D", 0, 3), mv("D", 2, 4),
+      {"action": "add", "line": "J = (5, 5)"}, {"action": "undo"}])
+
+# Projective coordinates and retained parameters during edits and sampling.
+case("projectiveupdates", ["a = Slider(0, 1, 0.01)"],
+     [setn("a", 0)] + [{"action": "add", "line": line} for line in [
+         "C = (0, 1)", "D = (1, 1+a)", "m = Line(C, D)", "S = Intersect(xAxis, m)",
+         "G = (0, 2)", "h = Ray(G, S)", "F = (1, 1)", "g = Line(C, F)",
+         "Q = Intersect(h, g)", "L = Locus(Q, a)", "f = (x(Q)+1)^2", "M = Minimize(f, a)",
+     ]])
+case("projectiveupdates", ["D = (2, 4)"] + PROJECTIVE +
+     ["r = Slider(1, 3, 0.1)", "k = Circle(A, r)", "R = ClosestPoint(k, S)",
+      "Q = (x(R), y(R))", "L = Locus(Q, r)"], [])
+case("projectiveupdates", ["D = (2, 4)"] + PROJECTIVE +
+     ["c = Conic({{1,0,0},{0,1,0},{0,0,-4}})", "c2 = Rotate(c, pi/2, A)",
+      "R = ClosestPoint(c2, S)"], [])
+case("projectiveupdates", ["D = (2, 4)"] + PROJECTIVE +
+     ["n = 1", "c = Conic({{1,0,0},{0,n,0},{0,0,-4}})", "R = ClosestPoint(c, S)"],
+     [mv("D", 2, 5), mv("D", 2, 4), setn("n", 2), setn("n", 1)])
+case("projectiveupdates", ["D = (2, 4)"] + PROJECTIVE +
+     ["c = Conic({{1,0,0},{0,1,0},{0,0,0}})", "R = ClosestPoint(c, S)"], [])
+case("projectiveupdates", ["O = (0, 0)", "P = (1, 2)", "k = Circle(O, 2)",
+                          "R = ClosestPoint(k, P)"],
+     [mv("P", *p) for p in [(2, 1), (1, 2), (2, 1), (1, 2), (2, 1)]] +
+     [{"action": "add", "line": "J = (5, 5)"}, {"action": "undo"}])
+
+case("infinityedit", ["D = (2, 4)"] + PROJECTIVE +
+     ["k = Circle(A, 2)", "R = ClosestPoint(k, S)"],
+     [mv("D", 2, 5), mv("D", 2, 6), mv("D", 2, 4),
+      {"action": "add", "line": "J = (5, 5)"}, {"action": "undo"}])
+case("projectiveupdates", ["a = Slider(0, 1, 0.01)"],
+     [setn("a", 0)] + [{"action": "add", "line": line} for line in [
+         "C = (0, 1)", "D = (1, 1+a)", "m = Line(C, D)", "S = Intersect(xAxis, m)",
+         "G = (0, 2)", "h = Ray(G, S)", "F = (1, 1)", "g = Line(C, F)",
+         "Q = Intersect(h, g)", "L = Locus(Q, a)", "f = (x(Q)+1)^2", "M = Minimize(f, a)",
+         "k = Circle((0,0),2)", "R = ClosestPoint(k,S)", "u = (a-0.5)^2+(x(R)+2)^2",
+         "N = Minimize(u,a)",
+     ]])
+case("projectiveupdates", ["D = (2, 4)"] + PROJECTIVE +
+     ["n = 4", "c = Conic({{1,0,0},{0,1,0},{0,0,-n}})", "R = ClosestPoint(c, S)"],
+     [mv("D", 2, 5), mv("D", 2, 4), setn("n", 0), setn("n", 4)])
+case("projectiveupdates", ["D = (2, 4)"] + PROJECTIVE +
+     ["n = 1", "c = Conic({{1,0,0},{0,n,0},{0,0,-4}})", "R = ClosestPoint(c, S)"],
+     [mv("D", 2, 5), mv("D", 2, 4), setn("n", -1), setn("n", 1)])
+
+case("isolatedprojection", ["a = Slider(0, 1, 0.01)"],
+     [setn("a", 0)] + [{"action": "add", "line": line} for line in [
+         "C = (0, 1)", "D = (1, 1+a)", "m = Line(C, D)", "S = Intersect(xAxis, m)",
+         "k = Circle((0,0),2)", "R = ClosestPoint(k,S)", "u = (a-0.5)^2+(x(R)+2)^2",
+         "N = Minimize(u,a)",
+     ]])
+
 cases.write()

@@ -1533,12 +1533,31 @@ impl<const M: bool> Ctx<'_, M> {
             Val::B(..) => f64::NAN,
             Val::V(x, y) => {
                 return Ex::plain(Val::N(match op {
-                    Un::X => x,
-                    Un::Y => y,
+                    Un::X | Un::Y => {
+                        let coord = if op == Un::X { x } else { y };
+                        match self.node(a) {
+                            Node::Obj(id) if coord.is_nan() => match self.c.stored_value(id) {
+                                // A finite XML triple can have one Cartesian component
+                                // overflow. Divide only the requested coordinate.
+                                Value::HomogeneousPoint { x, y, z }
+                                    if [x, y, z].into_iter().all(f64::is_finite)
+                                        && !crate::kernel::point_at_infinity(x, y, z) =>
+                                {
+                                    if op == Un::X {
+                                        x / z
+                                    } else {
+                                        y / z
+                                    }
+                                }
+                                _ => coord,
+                            },
+                            _ => coord,
+                        }
+                    }
                     Un::Length => length(x, y),
                     Un::Abs => complex_abs(x, y),
                     _ => f64::NAN,
-                }))
+                }));
             }
         };
         let deg = self.is_angle(a);

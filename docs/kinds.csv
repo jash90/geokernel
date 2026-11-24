@@ -1,5 +1,5 @@
 kind,upstream,kernel_kind,kernel_golden,svg,app_draw,pointer_hit,tool,algebra_text,import,export,notes
-Point,POINT,Point,yes,yes,yes,yes,yes,yes,yes,partial,Export: its definition needs a saved form; polar and complex coordinate style and the vertical increment are not kept.
+Point,POINT,Point,yes,yes,yes,yes,yes,yes,yes,partial,An intersection at infinity has raw coordinates but no Cartesian drawing or hit target. Export: its definition needs a saved form; polar and complex coordinate style and the vertical increment are not kept.
 Line,LINE,Line,yes,yes,yes,yes,yes,yes,yes,partial,Export: its definition needs a saved form.
 Segment,SEGMENT,Segment,yes,yes,yes,yes,yes,yes,yes,partial,Export: its definition needs a saved form; the outlying-intersection and keep-type flags are not kept.
 Ray,RAY,Ray,yes,yes,yes,yes,yes,yes,yes,partial,Export: its definition needs a saved form; the outlying-intersection and keep-type flags are not kept.
