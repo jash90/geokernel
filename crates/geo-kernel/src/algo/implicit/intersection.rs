@@ -4,7 +4,7 @@ use super::polynomial::{evaluate, roots, substitute};
 use super::MAX_OUTPUTS;
 use crate::algo::intersect::boundary::BoundaryDef;
 use crate::algo::intersect::function_roots::interval_roots;
-use crate::algo::{polygon, Group, Parents};
+use crate::algo::{Group, Parents};
 use crate::expr::{IntersectionWork, Raw};
 use crate::kernel::locus::HEADLESS_VIEW;
 use crate::tol::STANDARD_PRECISION;
@@ -12,6 +12,10 @@ use crate::{Construction, Def, Error, Id, Kind, Value};
 
 type Point = (f64, f64);
 type Points = Vec<Option<Point>>;
+
+// The reference sizes these outputs from the result itself. Use the
+// construction's evaluation work and element limits for variable results.
+const MAX_RESULT_SLOTS: usize = crate::expr::MAX_ELEMENTS as usize;
 
 const PARTNERS: &[Kind] = &[
     Kind::Line,
@@ -128,7 +132,7 @@ impl Intersection {
     }
 
     pub(in crate::algo) fn slot(self, slot: usize) -> Option<Self> {
-        (self.can_grow() && slot < MAX_OUTPUTS).then_some(Self {
+        (self.can_grow() && slot < MAX_RESULT_SLOTS).then_some(Self {
             method: Method::Slot(u32::try_from(slot).ok()?),
             ..self
         })
@@ -156,17 +160,15 @@ impl Intersection {
     }
 
     pub(in crate::algo) fn hidden_parents(self, c: &Construction) -> Vec<Id> {
-        let mut parents = if c.kind(self.pair[1]) == Kind::PolyLine {
-            polygon::inputs(c, self.pair[1])
-        } else {
-            Vec::new()
-        };
-        if let Method::Index(index) = self.method {
-            if let Some(ids) = c.intersection_argument_parents(index) {
-                parents.extend_from_slice(ids);
-            }
+        // AlgoIntersectImplicitpolyPolyLine registers the curve and path.
+        // The path itself forwards changes even when its length stays equal.
+        match self.method {
+            Method::Index(index) => c
+                .intersection_argument_parents(index)
+                .unwrap_or_default()
+                .to_vec(),
+            _ => Vec::new(),
         }
-        parents
     }
 
     fn with_points<T>(self, c: &Construction, read: impl FnOnce(&[Option<Point>]) -> T) -> T {
@@ -220,7 +222,8 @@ fn index(n: f64) -> u32 {
 fn solve(c: &Construction, [first, other]: [Id; 2]) -> Option<Points> {
     let matrix = c.implicit_coefficients(first)?;
     let work = IntersectionWork::new();
-    let points = match c.kind(other) {
+    let partner = c.kind(other);
+    let points = match partner {
         Kind::Line => {
             let (a, b, d) = c.raw_line(other)?;
             let (x, y) = match c.def(other) {
@@ -273,7 +276,12 @@ fn solve(c: &Construction, [first, other]: [Id; 2]) -> Option<Points> {
         }
         _ => return None,
     };
-    if work.exhausted() || points.len() > MAX_OUTPUTS {
+    let limit = if matches!(partner, Kind::Function | Kind::PolyLine) {
+        MAX_RESULT_SLOTS
+    } else {
+        MAX_OUTPUTS
+    };
+    if work.exhausted() || points.len() > limit {
         return Some(vec![None]);
     }
     Some(points)
@@ -307,9 +315,9 @@ fn graph(c: &Construction, id: Id, matrix: &[Vec<f64>], work: &IntersectionWork)
         return None;
     }
     if let Some(y) = polynomial_graph(c, id, work) {
-        return Some(
-            parametric(matrix, &[0.0, 1.0], &y, [left, right], work).unwrap_or_else(|| vec![None]),
-        );
+        let points =
+            parametric(matrix, &[0.0, 1.0], &y, [left, right], work).unwrap_or_else(|| vec![None]);
+        return charge_slots(work, 0, points.len()).then_some(points);
     }
     let f = |x| {
         if !work.charge((matrix.len() * matrix.first().map_or(0, Vec::len)) as u64) {
@@ -317,10 +325,13 @@ fn graph(c: &Construction, id: Id, matrix: &[Vec<f64>], work: &IntersectionWork)
         }
         crate::plot::implicit::evaluate(matrix, x, work.sample(c, id, x))
     };
+    let roots = interval_roots(&f, left, right, scale, || work.exhausted());
+    if !charge_slots(work, 0, roots.len()) {
+        return None;
+    }
     Some(
-        interval_roots(&f, left, right, scale, || work.exhausted())
+        roots
             .into_iter()
-            .take(MAX_OUTPUTS + 1)
             .map(|x| finite(x, work.sample(c, id, x)))
             .collect(),
     )
@@ -332,11 +343,11 @@ fn polyline(
     matrix: &[Vec<f64>],
     work: &IntersectionWork,
 ) -> Option<Points> {
-    const MAX_VERTICES: usize = 512;
-    let points: Vec<_> = c.vertices(id).take(MAX_VERTICES + 1).collect();
-    if points.len() > MAX_VERTICES {
+    let vertices = c.vertices(id);
+    if !work.charge(vertices.size_hint().0 as u64) {
         return None;
     }
+    let points: Vec<_> = vertices.collect();
     let mut out = Vec::new();
     for edge in points.windows(2) {
         let [Some((x, y)), Some((end_x, end_y))] = edge else {
@@ -345,18 +356,18 @@ fn polyline(
         if x == end_x && y == end_y {
             continue;
         }
-        out.extend(
-            parametric(matrix, &[*x, end_x - x], &[*y, end_y - y], [0.0, 1.0], work)?
-                .into_iter()
-                .flatten()
-                .map(Some)
-                .take(MAX_OUTPUTS + 1 - out.len()),
-        );
-        if out.len() > MAX_OUTPUTS {
-            break;
+        let mut roots = parametric(matrix, &[*x, end_x - x], &[*y, end_y - y], [0.0, 1.0], work)?;
+        roots.retain(Option::is_some);
+        if !charge_slots(work, out.len(), roots.len()) {
+            return None;
         }
+        out.extend(roots);
     }
     Some(out)
+}
+
+fn charge_slots(work: &IntersectionWork, current: usize, added: usize) -> bool {
+    added <= MAX_RESULT_SLOTS - current && work.charge(added as u64)
 }
 
 fn parametric(
@@ -386,4 +397,107 @@ fn parametric(
 
 fn finite(x: f64, y: f64) -> Option<Point> {
     (x.is_finite() && y.is_finite()).then_some((x, y))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::algo::polygon::PolygonDef;
+    use crate::{expr, script};
+
+    #[test]
+    fn an_implicit_graph_grows_to_all_sixty_six_reference_slots() {
+        let mut c =
+            script::load("k = 0.1\nc: y^3 + y = 0\nf(x) = sin(k*x)\nP = Intersect(c, f)").unwrap();
+        let k = c.id("k").unwrap();
+        let first = c.id("P_{1}").unwrap();
+        let Def::IntersectBoundary(boundary) = c.def(first) else {
+            panic!("expected an implicit intersection");
+        };
+        let pair = [c.id("c").unwrap(), c.id("f").unwrap()];
+        c.set_number(k, 13.0).unwrap();
+        assert!(boundary.compute(&c).is_some());
+        assert_eq!(solve(&c, pair).unwrap().len(), 66);
+    }
+
+    #[test]
+    fn each_implicit_result_slot_consumes_work() {
+        let work = IntersectionWork::new();
+        assert!(work.charge(crate::expr::MAX_EVALUATION_WORK - 66));
+        assert!(charge_slots(&work, 0, 66));
+        assert!(!charge_slots(&work, 66, 1));
+        assert!(work.exhausted());
+    }
+
+    #[test]
+    fn the_implicit_polyline_command_creates_sixty_six_outputs() {
+        let c = script::load(
+            "c: y^3 + y = 0\nvertices = Sequence((j, (-1)^j), j, 0, 66)\npath = PolyLine(vertices)\nP = Intersect(c, path)",
+        ).unwrap();
+        for slot in 1..=66 {
+            let output = c.id(&format!("P_{{{slot}}}")).unwrap();
+            let (x, y) = c.point(output).unwrap();
+            assert!((x - (f64::from(slot) - 0.5)).abs() < 1e-9 && y.abs() < 1e-9);
+        }
+        assert!(c.id("P_{67}").is_none());
+    }
+
+    #[test]
+    fn translated_degree_seventy_two_elimination_finds_the_repeated_root() {
+        let c =
+            script::load("c: x^8 + x - (y - 1)^9 = 0\nd: x - (y - 1)^9 = 0\nP = Intersect(c, d)")
+                .unwrap();
+        assert_eq!(c.point(c.id("P_{1}").unwrap()), Some((0.0, 1.0)));
+    }
+
+    #[test]
+    fn degree_seventy_two_elimination_keeps_the_reference_origin() {
+        let c = script::load("c: x^8 - y = 0\nd: x - y^9 = 0\nP = Intersect(c, d)").unwrap();
+        let p = c.id("P").or_else(|| c.id("P_{1}")).unwrap();
+        assert_eq!(c.point(p), Some((0.0, 0.0)));
+    }
+
+    #[test]
+    fn named_polyline_intersections_register_only_the_two_inputs() {
+        let mut c = script::load("c: y^3 + y = 0").unwrap();
+        let curve = c.id("c").unwrap();
+        let points: Vec<_> = (0..100_000)
+            .map(|j| {
+                c.add(
+                    &format!("A{j}"),
+                    Def::FreePoint {
+                        x: f64::from(j),
+                        y: if j % 2 == 0 { 1.0 } else { -1.0 },
+                    },
+                )
+                .unwrap()
+            })
+            .collect();
+        let path = c
+            .add_with_list("path", &points, |list| {
+                Def::Polygon(PolygonDef::PolyLine(list))
+            })
+            .unwrap();
+        let before = expr::work_done();
+        let len = c.len();
+        let first = script::exec(&mut c, "P = Intersect(c, path)")
+            .unwrap()
+            .unwrap();
+        assert_eq!(c.len() - len, 99_999);
+        assert!(expr::work_done() - before < expr::MAX_EVALUATION_WORK);
+        assert_eq!(c.reads(first), [curve, path]);
+        let end = *points.last().unwrap();
+        assert_eq!(c.direct_dependents(end).collect::<Vec<_>>(), [path]);
+        let last = c.id("P_{99999}").unwrap();
+        let assert_last = |c: &Construction, expected_x: f64| {
+            let (x, y) = c.point(last).unwrap();
+            assert!((x - expected_x).abs() < 1e-9 && y.abs() < 1e-9, "{x}, {y}");
+        };
+        assert_last(&c, 99_998.5);
+        // Reflect the edge across the vertical through its start. Its length is unchanged.
+        let path_value = c.value(path);
+        c.move_point(end, 99_997.0, -1.0).unwrap();
+        assert_eq!(c.value(path), path_value);
+        assert_last(&c, 99_997.5);
+    }
 }

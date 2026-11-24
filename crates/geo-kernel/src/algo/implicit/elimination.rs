@@ -3,8 +3,8 @@
 //! Projection and refinement for intersections of polynomial equations.
 
 use super::polynomial::{
-    add_scaled, contact_roots, elimination_roots, evaluate, near_roots, product, quotient,
-    Polynomial,
+    add_scaled, contact_roots, elimination_roots, evaluate, near_roots, pair_roots, product,
+    quotient, Polynomial,
 };
 use super::MAX_OUTPUTS;
 use crate::expr::IntersectionWork;
@@ -26,7 +26,7 @@ pub(super) fn conic(
     if limited {
         // The part uses the full carrier equation. Keep separate candidates
         // around repeated projected roots when its radius comes from points.
-        return intersections(f, &g, work, true);
+        return intersections(f, &g, work, contact_roots, true);
     }
     let degree = f.len().checked_sub(1)?;
     if degree == 0 {
@@ -203,7 +203,7 @@ fn insert(points: &mut Vec<Point>, point: Point) {
 
 /// Eliminate x via a bounded, reduced Sylvester determinant in y.
 pub(super) fn pair(f: &[Vec<f64>], g: &[Vec<f64>], work: &IntersectionWork) -> Option<Vec<Point>> {
-    intersections(f, g, work, false)
+    intersections(f, g, work, pair_roots, false)
 }
 
 pub(super) fn tangent_contacts(
@@ -222,13 +222,24 @@ pub(super) fn tangent_contacts(
     if !from_point && g.iter().all(|row| row.iter().skip(1).all(|&v| v == 0.0)) {
         return constant_in_y(f, g, work);
     }
-    intersections(f, g, work, from_point)
+    intersections(
+        f,
+        g,
+        work,
+        if from_point {
+            contact_roots
+        } else {
+            elimination_roots
+        },
+        from_point,
+    )
 }
 
 fn intersections(
     f: &[Vec<f64>],
     g: &[Vec<f64>],
     work: &IntersectionWork,
+    roots: fn(&[f64], &IntersectionWork) -> Vec<f64>,
     contact: bool,
 ) -> Option<Vec<Point>> {
     let (m, n) = (f.len().checked_sub(1)?, g.len().checked_sub(1)?);
@@ -250,13 +261,21 @@ fn intersections(
         return Some(Vec::new());
     }
     let (lower, higher) = if m < n { (f, g) } else { (g, f) };
-    let roots = if contact {
-        contact_roots
-    } else {
-        elimination_roots
-    };
+    let coefficient_count = |matrix: &[Vec<f64>]| matrix.iter().map(Vec::len).sum::<usize>();
+    let slice_work = (coefficient_count(f) + coefficient_count(g)) as u64;
     let mut points = Vec::new();
-    for y in roots(&projection, work) {
+    // AlgoTangentImplicitpoly delegates its contacts to the same resultant
+    // solver as implicit-curve intersections. Both use bounded deflation for
+    // large projections, while the lower-degree slices retain their solver.
+    let projection_roots = if projection.len() > super::polynomial::MAX_DEGREE + 1 {
+        pair_roots
+    } else {
+        roots
+    };
+    for y in projection_roots(&projection, work) {
+        if !work.charge(slice_work) {
+            return None;
+        }
         let mut slice: Vec<_> = lower.iter().map(|row| evaluate(row, y)).collect();
         if slice
             .iter()
@@ -265,6 +284,11 @@ fn intersections(
             slice = higher.iter().map(|row| evaluate(row, y)).collect();
         }
         for x in roots(&slice, work) {
+            // A refinement can evaluate both residuals and gradients in
+            // each bounded Newton iteration.
+            if !work.charge(16 * 6 * slice_work) {
+                return None;
+            }
             if let Some(pair) = polish((x, y), f, g, contact) {
                 insert(&mut points, pair);
                 if points.len() > MAX_OUTPUTS {
@@ -302,6 +326,8 @@ fn constant_in_y(f: &[Vec<f64>], g: &[Vec<f64>], work: &IntersectionWork) -> Opt
 }
 
 fn sylvester(f: &[Vec<f64>], g: &[Vec<f64>], work: &IntersectionWork) -> Option<Polynomial> {
+    use super::polynomial::resultant_product;
+
     const MAX_ROWS: usize = 12;
     let (m, n) = (f.len() - 1, g.len() - 1);
     if n > MAX_ROWS {
@@ -318,9 +344,13 @@ fn sylvester(f: &[Vec<f64>], g: &[Vec<f64>], work: &IntersectionWork) -> Option<
         if lead.iter().any(|&v| v != 0.0) {
             let start = offset.min(n - 1);
             for (j, entry) in remainder.iter_mut().enumerate().take(index).skip(start) {
-                let mut next = product(entry, &g[n], work)?;
+                let mut next = resultant_product(entry, &g[n], work)?;
                 if j >= offset {
-                    add_scaled(&mut next, &product(&g[j - offset], &lead, work)?, -1.0);
+                    add_scaled(
+                        &mut next,
+                        &resultant_product(&g[j - offset], &lead, work)?,
+                        -1.0,
+                    );
                 }
                 *entry = next;
             }
@@ -367,8 +397,12 @@ fn sylvester(f: &[Vec<f64>], g: &[Vec<f64>], work: &IntersectionWork) -> Option<
         let pivot = &top[k];
         for row in bottom {
             for j in k + 1..n {
-                let mut value = product(&row[j], &pivot[k], work)?;
-                add_scaled(&mut value, &product(&row[k], &pivot[j], work)?, -1.0);
+                let mut value = resultant_product(&row[j], &pivot[k], work)?;
+                add_scaled(
+                    &mut value,
+                    &resultant_product(&row[k], &pivot[j], work)?,
+                    -1.0,
+                );
                 row[j] = quotient(value, &previous, work)?;
             }
         }

@@ -93,6 +93,7 @@ const ROOT_RELATIVE_ACCURACY: f64 = 1e-14;
 const ROOT_ABSOLUTE_ACCURACY: f64 = 1e-6;
 const ROOT_VALUE_ACCURACY: f64 = 1e-15;
 const ROOT_ITERATIONS: usize = 100;
+const LAGUERRE_MAX_EVAL: usize = 100;
 // Binary64 value of Euler's constant, the reference solver's alternate seed.
 const LAGUERRE_ALTERNATE_SEED: f64 = f64::from_bits(0x3fe2_788c_fc6f_b619);
 
@@ -477,7 +478,7 @@ pub(in crate::algo) fn polynomial_analysis_roots(
     coefficients: &[f64],
     charge: &impl Fn(u64) -> bool,
 ) -> Vec<f64> {
-    graph_roots_with_limit(coefficients, charge, Some(100))
+    graph_roots_with_limit(coefficients, charge, Some(LAGUERRE_MAX_EVAL))
 }
 
 fn graph_roots_with_limit(

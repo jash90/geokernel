@@ -6,7 +6,7 @@ use crate::compare::{
 };
 use crate::model::{implicit_output, indexed_prefix, label_prefix, Case, Step};
 use geo_app_core::workbench::Workbench;
-use geo_kernel::{script, Construction, Kind};
+use geo_kernel::{script, Construction, Def, Kind};
 
 /// One disagreement between GeoGebra and the kernel.
 #[derive(Debug, Clone, PartialEq)]
@@ -49,7 +49,12 @@ pub fn replay(case: &Case) -> CaseOutcome {
     if case.steps.iter().any(|step| {
         matches!(
             step,
-            Step::Delete { .. } | Step::ReloadGgb | Step::SliderAnimation { .. }
+            Step::Delete { .. }
+                | Step::ReloadGgb
+                | Step::SliderAnimation { .. }
+                | Step::Undo
+                | Step::Redo
+                | Step::Reload
         )
     }) {
         return replay_document(case);
@@ -85,6 +90,23 @@ pub fn replay(case: &Case) -> CaseOutcome {
         .filter_map(|line| implicit_output(line, &case.snapshots[0]).map(|(label, _)| label))
         .collect();
     for (i, (step, snapshot)) in case.steps.iter().zip(&case.snapshots).enumerate() {
+        if let Step::Append { line } = step {
+            let before = c.len();
+            match script::exec(&mut c, line) {
+                Ok(Some(id)) if c.len() > before => {
+                    boundary_outputs.record(&c, line, id, c.len() - before);
+                }
+                result => {
+                    out.mismatches.push(failure(
+                        i,
+                        "step",
+                        "the kernel appends the definition",
+                        format!("{result:?}"),
+                    ));
+                    return out;
+                }
+            }
+        }
         match apply(&mut c, step) {
             Ok(Some(id)) => {
                 boundary_outputs.grow(&mut c, id, |_, _, _| {});
@@ -145,7 +167,30 @@ fn replay_document(case: &Case) -> CaseOutcome {
             Step::SliderAnimation { label, options } => {
                 check_slider_animation(&document, label, options)
             }
-            Step::Add { line } | Step::Redefine { line } => document.run_line(line),
+            Step::Add { line } | Step::Redefine { line } | Step::Append { line } => {
+                document.run_line(line)
+            }
+            Step::AnchorText { label, point } => document.run_lines(&[format!(
+                "$textProperties({label}, -, -, -, -, -, point, {point})"
+            )]),
+            Step::Undo => document
+                .undo()
+                .then_some(())
+                .ok_or_else(|| "cannot undo".into()),
+            Step::Redo => document
+                .redo()
+                .then_some(())
+                .ok_or_else(|| "cannot redo".into()),
+            Step::Reload => {
+                let snapshot = document.snapshot_text();
+                document.restore_text(&snapshot).and_then(|rejected| {
+                    if rejected.is_empty() {
+                        Ok(())
+                    } else {
+                        Err(format!("snapshot rejected lines: {rejected:?}"))
+                    }
+                })
+            }
             Step::Reject { line, error } => match document.run_line(line) {
                 Ok(()) => Err("the document accepted the line".into()),
                 Err(e) => match error {
@@ -164,7 +209,13 @@ fn replay_document(case: &Case) -> CaseOutcome {
                 .then_some(())
                 .ok_or_else(|| format!("cannot move `{label}`")),
             Step::SetNumber { label, value } => id(label)
-                .is_some_and(|id| document.set_number(id, *value))
+                .is_some_and(|id| {
+                    // The workbench reports whether an edit changed the document.
+                    // A same-value set of a free number can also succeed.
+                    document.set_number(id, *value)
+                        || matches!(document.construction().def(id), Def::Number(old)
+                            if old.to_bits() == value.to_bits())
+                })
                 .then_some(())
                 .ok_or_else(|| format!("cannot set `{label}`")),
             Step::SetSliderBounds { .. } => {
@@ -331,9 +382,19 @@ fn compare_snapshot(
 
 fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, String> {
     match step {
-        Step::ReloadGgb | Step::SliderAnimation { .. } => unreachable!("document step"),
-        Step::Initial => Ok(None),
-        Step::Delete { .. } => unreachable!("deletions replay on the document"),
+        Step::Initial | Step::Append { .. } => Ok(None),
+        Step::AnchorText { label, point } => script::exec(
+            c,
+            &format!("$textProperties({label}, -, -, -, -, -, point, {point})"),
+        ),
+        Step::Delete { .. }
+        | Step::ReloadGgb
+        | Step::SliderAnimation { .. }
+        | Step::Undo
+        | Step::Redo
+        | Step::Reload => {
+            unreachable!("document step")
+        }
         Step::Move { label, x, y } => {
             let id = c.id(label).ok_or(format!("unknown object `{label}`"))?;
             c.move_point(id, *x, *y)

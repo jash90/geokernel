@@ -269,6 +269,121 @@ cases.case("review", ["n = 2", "P = Vertex(y > x^n && x > 4 && y > 0)"],
            [setn("n", 0.5), setn("n", 3)])
 cases.cases[-1]["track_boundary_growth"] = True
 
+# Headless drawable bounds for indexed, multiline, and formula text.
+cases.case("textbounds", [
+    pt("A", 0.3, 1.2), "b = UnicodeToLetter(10)", 'a = "A_{12}" + b + "Wide"',
+    't = Text(a, A)',
+    "P = Corner(t, 1)", "Q = Corner(t, 3)",
+], [mv("A", -0.35, 0.25)])
+cases.case("textbounds", [
+    pt("A", 1, 2), 't = Text("x^2", A, false, true)',
+    "P = Corner(t, 1)", "Q = Corner(t, 3)",
+], [mv("A", 2, 0)])
+
+cases.case("textbounds", [
+    't = Text("Before $x^2$ after", (0, 0), false, true)',
+    "P = Corner(t, 1)", "Q = Corner(t, 3)",
+], [])
+
+# A border can simplify to a line and still seed a polynomial helper
+# before the exponent becomes nonintegral.
+cases.case("helperstate", [
+    "n = 0", "q(x,y) = y > x^n && x > 4 && y > 0", "P = Vertex(q)",
+], [setn("n", 0.5), setn("n", 2)])
+cases.cases[-1]["track_boundary_growth"] = True
+
+cases.case("helperstate", [
+    "n = 0", "q(x,y) = n*y > x^n && x > 4 && y > 0", "P = Vertex(q)",
+], [setn("n", 0.5), setn("n", 2)])
+cases.cases[-1]["track_boundary_growth"] = True
+
+
+base = ["n = 2", "q(x,y) = y > x^n && x > 4 && y > 0", "P = Vertex(q)"]
+cases.case("helperstate", base, [
+    setn("n", 0.5), {"action": "append", "line": "Q = Corner(q)"}, setn("n", 2),
+])
+cases.case("helperstate", base, [
+    setn("n", 0.5), {"action": "append", "line": "Q = Corner(q)"},
+    {"action": "delete", "label": "P_{1}"}, setn("n", 2),
+])
+cases.case("helperstate", base, [
+    {"action": "redefine", "line": "q(x,y) = y > sqrt(x) && x > 4 && y > 0"},
+])
+cases.case("helperstate", ["b = 4", "n = 2",
+    "q(x,y) = y > x^n && x > b && y > 0", "P = Vertex(q)"], [
+    setn("n", 0.5), {"action": "redefine", "line": "b = 6 - n"},
+])
+cases.case("helperstate", base, [
+    setn("n", 0.5), {"action": "undo"}, {"action": "redo"}, {"action": "reload"},
+])
+
+cases.case("textbounds", [
+    't = Text("$$abc$$", (0,0), false, true)', "P = Corner(t, 3)",
+], [])
+cases.case("textbounds", ['t = "a__"', "P = Corner(t, 3)"], [])
+cases.case("textbounds", [
+    "n = 1", "A = (sqrt(n), 0)", 't = Text("hi", A)', "Q = Corner(t, 3)",
+], [setn("n", -1), setn("n", 4)])
+cases.case("textbounds", [pt("A", 0, 0), 't = "abc"'], [
+    {"action": "anchor_text", "label": "t", "point": "A"},
+    {"action": "append", "line": "Q = Corner(t, 3)"}, mv("A", 1, 1),
+])
+
+# Removing a text with a saved start point leaves the point movable.
+cases.case("reviewtwo", [pt("A", 0, 0)], [
+    {"action": "append", "line": 't = "abc"'},
+    {"action": "anchor_text", "label": "t", "point": "A"},
+    {"action": "delete", "label": "t"}, mv("A", 1, 1),
+])
+# A complete construction rebuild also resets unrelated vertex algorithms.
+for setup in (["a = 5", "b = a + 1"], ["a = 5"]):
+    cases.case("reviewtwo", base + setup, [
+        setn("n", 0.5), {"action": "redefine", "line": "a = 3*n"},
+    ])
+# Reload markers represent fresh algorithms at the current input values.
+cases.case("reviewtwo", base, [
+    setn("n", 0.5), {"action": "reload"}, {"action": "reload"}, setn("n", 2),
+])
+
+# Assigning another free value, repeating the same dependent definition, and
+# changing a constant input of the same command all update in place.
+for setup, redefine in (
+    (["a = 5", "b = a + 1"], "a = 6"),
+    (["a = 3*n", "b = a + 1"], "a = 3*n"),
+    ([pt("A", 0, 0), pt("B", 2, 0), "s = Segment(A, B)",
+      "T = Point(s, 0.25)", "u = x(T)"], "T = Point(s, 0.75)"),
+):
+    cases.case("reviewtwo", base + setup, [
+        setn("n", 0.5), {"action": "redefine", "line": redefine},
+    ])
+
+# XML definition comparison retains the spelling of a decimal literal.
+cases.case("reviewthree", base + ["a = 3*n", "b = a + 1"], [
+    setn("n", 0.5), {"action": "redefine", "line": "a = 3.0*n"},
+])
+# A dependent point can have a fresh internal parameter with unchanged text.
+cases.case("reviewthree", base + [
+    pt("A", 0, 0), pt("B", 2, 0), "s = Segment(A, B)", "m = 0.25",
+    "T = Point(s, 2*m)", "u = x(T)",
+], [setn("n", 0.5), {"action": "redefine", "line": "T = Point(s, 2*m)"}])
+# The XML reload observes the current value and fresh vertex helpers.
+cases.case("reviewthree", base + ["a = 1", "W = Vertex(q)"], [
+    setn("n", 0.5), setn("a", 1), {"action": "reload"}, setn("a", 1),
+    {"action": "reload"},
+])
+
+# A repeated undefined literal is still the same path parameter definition.
+conditional_point = "T = Point(s, If(m > 0, 2*m, ?))"
+cases.case("reviewthree", base + [
+    pt("A", 0, 0), pt("B", 2, 0), "s = Segment(A, B)", "m = 0.25",
+    conditional_point, "u = x(T)",
+], [setn("n", 0.5), {"action": "redefine", "line": conditional_point}])
+
+# Reload after alternating edits uses the current slider value.
+cases.case("reviewthree", base + ["a = 0"], [
+    setn("n", 0.5), setn("a", 1), {"action": "reload"},
+    setn("a", 0), {"action": "reload"}, setn("a", 1), {"action": "reload"},
+])
 
 cases.case("definedimage", [
     "A = (0, 0)", "B = (1, 0)", "C = (0, 1)", "D = (1, 1)",

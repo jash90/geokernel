@@ -176,7 +176,7 @@ PARTIAL = {
     "Polygon": "Live list of points, separate points, or two points and a regular polygon vertex count",
     "PolyLine": "Live list with optional Boolean or separate points with an optional false flag",
     "Centroid": "Centroid(polygon)",
-    "Vertex": "Conic, polygon, polyline and graphics view corners. Indexed polygon, polyline, segment, raster image and hidden checkbox corners. Polynomial inequality borders.",
+    "Vertex": "Conic, polygon, polyline and graphics view corners. Indexed polygon, polyline, segment, raster image, headless text and hidden checkbox corners. Inequality border intersections.",
     "InteriorAngles": "InteriorAngles(polygon)",
     "If": "If(condition, then); If(condition, then, else); If(condition, value, condition, value, ..., else)",
     "Element": "Element(list, index); Element(list, index, index, ...)",
@@ -233,7 +233,7 @@ PARTIAL = {
     "RigidPolygon": "Copy of a polygon with optional offsets or rigid polygon from three or more points",
     "TriangleCenter": "TriangleCenter(point, point, point, index)",
     "PointIn": "PointIn(polygon, conic or conic part as a single region argument)",
-    "IntersectPath": "Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices.",
+    "IntersectPath": "Polygons with lines, segments, rays or other polygons. Conics with segments, polylines and polygon boundaries within the clipping work budget.",
     "Difference": "Difference(polygon, polygon); Difference(polygon, polygon, boolean)",
 }
 

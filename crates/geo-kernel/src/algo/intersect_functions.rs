@@ -85,6 +85,13 @@ impl FunctionRootCache {
             .clear();
     }
 
+    pub(crate) fn remove_inequality(&mut self, owner: Id) {
+        self.inequalities
+            .get_mut()
+            .expect("inequality vertex cache")
+            .remove(&owner);
+    }
+
     pub(crate) fn inequality(&self, key: Id, solve: impl FnOnce() -> Vertices) -> Vertices {
         if let Some(points) = self
             .inequalities

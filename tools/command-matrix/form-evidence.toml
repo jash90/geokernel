@@ -2778,7 +2778,7 @@ difference = "geometry-command-arguments: `Vertex(image, number)`"
 [[form]]
 command = "IntersectPath"
 form = "segment,conic"
-cases = ["georestclip-segment-003", "georestclip-conicpart-001", "georestclip-conicpart-004", "georestclip-conicpart-007", "georestclip-conicpart-010", "georestclip-segment-005", "georestclip-segment-006"]
+cases = ["georestclip-segment-003", "georestclip-conicpart-001", "georestclip-conicpart-004", "georestclip-conicpart-007", "georestclip-conicpart-010", "georestclip-segment-005", "georestclip-segment-006", "georestclip-occupied-001"]
 
 [[form]]
 command = "IntersectPath"
@@ -3119,7 +3119,7 @@ cases = ["implicit-conic-001"]
 [[form]]
 command = "Tangent"
 form = "line,implicit"
-cases = ["implicit-tangents-003", "implicit-tangents-007"]
+cases = ["implicit-tangents-003", "implicit-tangents-007", "implicit-tangents-008"]
 
 [[form]]
 command = "Tangent"
@@ -3549,6 +3549,38 @@ cases = [
 
 # Defined(any) is open. Printed product simplification has gaps in logic-definedproducts.
 
+
+[[form]]
+command = "Vertex"
+form = "text,number"
+cases = ["corners-text-002"]
+difference = "geometry-command-arguments: `Corner(text, number)`, `Vertex(text, number)`"
+
+[[form]]
+command = "Vertex"
+form = "inequality"
+cases = ["corners-inequality-016", "corners-review-004", "corners-review-016", "corners-review-017"]
+difference = "geometry-command-arguments: `Corner(inequality)` and `Vertex(inequality)`"
+
+[[form]]
+command = "Intersect"
+form = "implicit,function"
+cases = ["implicit-graph-001", "implicit-graph-002", "implicit-graph-003"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,polyline"
+cases = ["implicit-polyline-001", "implicit-polyline-003", "implicit-polyline-004", "implicit-polyline-005"]
+
+[[form]]
+command = "IntersectPath"
+form = "polyline,conic"
+cases = ["georestclip-polyline-001", "georestclip-polyline-003", "georestclip-largepath-001"]
+
+[[form]]
+command = "IntersectPath"
+form = "polygon,conic"
+cases = ["georestclip-polygon-001", "georestclip-polygon-002", "georestclip-polygon-003", "georestclip-largepath-002"]
 
 [[form]]
 command = "Arc"

@@ -51,6 +51,7 @@
 
 use crate::algo::conic_nd::ConicType;
 use crate::algo::path::{self, inf_function, inverse_inf_function, Geom, PathDef, PathState};
+use crate::algo::point::PointDef;
 use crate::algo::{Group, Parents, NUMBER, POINT};
 use crate::expr::fraction::FunctionFraction;
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
@@ -450,6 +451,8 @@ pub(crate) struct Saved {
     conics: Vec<(usize, crate::algo::conic_nd::ConicData)>,
     arcs: Vec<(usize, crate::algo::arc::ArcData)>,
     discrete: Vec<(usize, LocusData)>,
+    inequality_helpers: BTreeMap<Id, Option<crate::expr::inequality::Helpers>>,
+    inequality_helpers_changed: bool,
 }
 
 impl Saved {
@@ -461,10 +464,17 @@ impl Saved {
             conics: Vec::new(),
             arcs: Vec::new(),
             discrete: Vec::new(),
+            inequality_helpers: BTreeMap::new(),
+            inequality_helpers_changed: c.inequality_helpers.changed(),
         };
         for &i in ids {
             s.values.push((i, c.values[i]));
             s.defs.push((i, c.defs[i]));
+            if let Def::Point(PointDef::InequalityVertex { owner, .. }) = c.defs[i] {
+                s.inequality_helpers
+                    .entry(owner)
+                    .or_insert_with(|| c.inequality_helpers.history(owner));
+            }
             if let Some(slot) = c.path_slot(i) {
                 s.paths.push((slot, c.paths[slot].1));
             }
@@ -499,8 +509,21 @@ impl Saved {
         for (slot, data) in self.discrete {
             c.loci[slot].1 = data;
         }
+        // Each output's saved value is already back. Recomputing it could
+        // choose a helper using the temporary history of a sample.
+        if !self.inequality_helpers.is_empty() {
+            c.inequality_helpers
+                .restore_changed(self.inequality_helpers_changed);
+            for (owner, history) in self.inequality_helpers {
+                c.inequality_helpers.restore_history(owner, history);
+                c.function_roots.remove_inequality(owner);
+            }
+        }
         for &i in chain {
-            if !matches!(c.defs[i], Def::Discrete(_) | Def::Number(_)) {
+            if !matches!(
+                c.defs[i],
+                Def::Discrete(_) | Def::Number(_) | Def::Point(PointDef::InequalityVertex { .. })
+            ) {
                 recompute(c, i);
             }
         }

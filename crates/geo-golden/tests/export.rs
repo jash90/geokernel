@@ -224,7 +224,12 @@ fn corpus() -> Vec<Case> {
                 Step::Reject { .. }
                 | Step::Delete { .. }
                 | Step::SetSliderBounds { .. }
-                | Step::SliderAnimation { .. } => {
+                | Step::SliderAnimation { .. }
+                | Step::Append { .. }
+                | Step::AnchorText { .. }
+                | Step::Undo
+                | Step::Redo
+                | Step::Reload => {
                     panic!("{name}: unexpected step")
                 }
                 Step::Animate { frames } => {
