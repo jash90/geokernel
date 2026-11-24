@@ -318,7 +318,12 @@ pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
     }
     let list_literal =
         |value: &str| value.starts_with('{') && closing(value, 0) == Some(value.len());
-    if list_literal(a) {
+    if list_literal(a)
+        || a.strip_prefix("Sequence").is_some_and(|args| {
+            let args = args.trim_start();
+            args.starts_with('(') && closing(args, 0) == Some(args.len())
+        })
+    {
         return Some(Kind::List);
     }
     // Line has one output kind across its two-argument forms.
@@ -1012,6 +1017,8 @@ mod tests {
         assert_eq!(arg_kind("true", &l), Some(Kind::Boolean));
         assert_eq!(arg_kind("(1, a)", &l), Some(Kind::Point));
         assert_eq!(arg_kind("{1, 2}", &l), Some(Kind::List));
+        assert_eq!(arg_kind("Sequence(i*a,i,1,200000)", &l), Some(Kind::List));
+        assert_eq!(arg_kind("Sequence(5) + a", &l), None);
         assert_eq!(arg_kind("Dilate({A}, 2)", &l), Some(Kind::List));
         assert_eq!(arg_kind("Dilate(A, 2)", &l), None);
         assert_eq!(arg_kind("A + (1, 0)", &l), None);

@@ -388,9 +388,9 @@ pub(super) fn list_fn<const M: bool>(
         let m = lists.with_list(ctx.c, start, len, |list| Some(matrix::Matrix::read(list)))?;
         let source = ctx.list(n)?;
         return map_list(ctx, node, source, |slot| match m?.apply(slot.value)? {
-            point @ (Value::Point { .. } | Value::HomogeneousPoint { .. }) => {
-                Some(Slot::point(point))
-            }
+            point @ (Value::Point { .. }
+            | Value::HomogeneousPoint { .. }
+            | Value::NormalizedPointAtInfinity { .. }) => Some(Slot::point(point)),
             Value::Vector { x, y } => Some(Slot::coords(Kind::Vector, x, y)),
             _ => None,
         });
@@ -452,7 +452,9 @@ pub(in crate::expr) fn dilate_slot(
     }
     Some(
         match crate::algo::transform::dilate_element(slot.value, r, sx, sy)? {
-            point @ (Value::Point { .. } | Value::HomogeneousPoint { .. }) => Slot::point(point),
+            point @ (Value::Point { .. }
+            | Value::HomogeneousPoint { .. }
+            | Value::NormalizedPointAtInfinity { .. }) => Slot::point(point),
             Value::Vector { x, y } => Slot::coords(Kind::Vector, x, y),
             value @ Value::Segment { x1, y1, x2, y2 }
                 if [x1, y1, x2, y2].into_iter().all(f64::is_finite) =>
@@ -578,7 +580,9 @@ pub(in crate::expr) fn map_list<const M: bool>(
                         Value::Vector { x, y } => Slot::coords(Kind::Point, x, y),
                         // GeoVector.set uses the point's raw x and y.
                         // GeoPoint.getCoordsInD3 supplies a zero spatial z.
-                        Value::Point { x, y } | Value::HomogeneousPoint { x, y, .. } => {
+                        Value::Point { x, y }
+                        | Value::HomogeneousPoint { x, y, .. }
+                        | Value::NormalizedPointAtInfinity { x, y } => {
                             Slot::coords(Kind::Vector, x, y)
                         }
                         _ => Slot::undefined(kind),

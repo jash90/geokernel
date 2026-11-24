@@ -87,7 +87,16 @@ impl DiscreteDef {
                 return previous.cloned().unwrap_or_default();
             }
         }
-        let mut work = Budget(MAX_EVALUATION_WORK);
+        let mut work = Budget {
+            remaining: MAX_EVALUATION_WORK,
+            shared: matches!(
+                self,
+                Self::Points {
+                    graph: PointGraph::SpanningTree,
+                    ..
+                }
+            ),
+        };
         let Some(points) = self.compute(c, &mut work) else {
             return LocusData::default();
         };
@@ -169,11 +178,21 @@ impl DiscreteDef {
     }
 }
 
-struct Budget(u64);
+struct Budget {
+    remaining: u64,
+    shared: bool,
+}
 
 impl Budget {
     fn charge(&mut self, n: usize) -> Option<()> {
-        self.0 = self.0.checked_sub(n as u64)?;
+        self.remaining = self.remaining.checked_sub(n as u64)?;
+        if self.shared && !crate::expr::reserve_work(n as u64) {
+            // A sampler must stop when the next indivisible graph step
+            // cannot fit, even if a few work units are still available.
+            let remaining = crate::expr::work_deadline().saturating_sub(crate::expr::work_done());
+            crate::expr::charge(remaining);
+            return None;
+        }
         Some(())
     }
 }
@@ -621,7 +640,14 @@ mod tests {
         ];
         // Roundoff can retain a site in both passes. Allow both sides and closure.
         let max_vertices = 2 * points.len() - 1;
-        let locus = hull(points, &mut Budget(40)).expect("three sites must fit the budget");
+        let locus = hull(
+            points,
+            &mut Budget {
+                remaining: 40,
+                shared: false,
+            },
+        )
+        .expect("three sites must fit the budget");
         assert!((2..=max_vertices).contains(&locus.len()));
     }
 
@@ -668,7 +694,17 @@ mod tests {
                 panic!("expected a discrete locus for {label}");
             };
             assert!(c.locus(id).unwrap().defined, "{label}");
-            assert!(def.compute(&c, &mut Budget(30)).is_none(), "{label}");
+            assert!(
+                def.compute(
+                    &c,
+                    &mut Budget {
+                        remaining: 30,
+                        shared: false
+                    }
+                )
+                .is_none(),
+                "{label}"
+            );
         }
     }
 }

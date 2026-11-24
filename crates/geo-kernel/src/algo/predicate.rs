@@ -211,13 +211,13 @@ fn concurrent(l1: Line3, l2: Line3, l3: Line3) -> bool {
     is_zero(det)
 }
 
-/// `GeoPoint.concyclic`: Ptolemy's theorem, with the loosest tolerance, for
-/// points whose homogeneous `z` is 1.
-fn concyclic(a: (f64, f64), b: (f64, f64), c: (f64, f64), d: (f64, f64)) -> bool {
-    let (ax, ay, az) = (a.0, a.1, 1.0);
-    let (bx, by, bz) = (b.0, b.1, 1.0);
-    let (cx, cy, cz) = (c.0, c.1, 1.0);
-    let (dx, dy, dz) = (d.0, d.1, 1.0);
+/// `GeoPoint.concyclic`: Ptolemy's theorem with raw homogeneous coordinates.
+fn concyclic(c: &Construction, points: [Id; 4]) -> bool {
+    let [(ax, ay, az), (bx, by, bz), (cx, cy, cz), (dx, dy, dz)] = points.map(|id| {
+        c.stored_value(id)
+            .point_coords()
+            .unwrap_or((f64::NAN, f64::NAN, f64::NAN))
+    });
     let ab = (bx * az - ax * bz).hypot(by * az - ay * bz);
     let ac = (cx * az - ax * cz).hypot(cy * az - ay * cz);
     let ad = (dx * az - ax * dz).hypot(dy * az - ay * dz);
@@ -519,7 +519,14 @@ pub(crate) fn objects_equal(c: &Construction, a: Id, b: Id) -> bool {
 fn equal(c: &Construction, a: Id, b: Id) -> bool {
     let (ka, kb) = (c.kind(a), c.kind(b));
     match ka {
-        Kind::Point | Kind::Segment | Kind::Vector | Kind::Number | Kind::Angle | Kind::Boolean => {
+        Kind::Point if kb == Kind::Point => {
+            match (c.point_at_infinity(a), c.point_at_infinity(b)) {
+                (Some(a), Some(b)) => lin_dep(a, b),
+                (None, None) => equal_value(ka, c.value(a), kb, c.value(b)),
+                _ => false,
+            }
+        }
+        Kind::Segment | Kind::Vector | Kind::Number | Kind::Angle | Kind::Boolean => {
             equal_value(ka, c.value(a), kb, c.value(b))
         }
         Kind::Line => match kb {
@@ -764,12 +771,7 @@ impl Group for PredicateDef {
             PredicateDef::Concurrent(a, b, d) => {
                 answer(concurrent(raw_line(c, a), raw_line(c, b), raw_line(c, d)))
             }
-            PredicateDef::Concyclic(a, b, d, e) => answer(concyclic(
-                point(c, a),
-                point(c, b),
-                point(c, d),
-                point(c, e),
-            )),
+            PredicateDef::Concyclic(a, b, d, e) => answer(concyclic(c, [a, b, d, e])),
             PredicateDef::Equal(a, b) => answer(equal(c, a, b)),
             PredicateDef::Congruent(a, b) => congruent(c, a, b).map(Value::Bool),
             PredicateDef::Tangent { line, circle } => answer(tangent(c, line, circle)),

@@ -5,7 +5,41 @@ use geo_kernel::{script, Construction, Def, Error, Kind, Value};
 
 /// Number of cases recorded by `ggb-harness` so far. Raise it when adding cases,
 /// so that losing a file is noticed.
-const MIN_GOLDEN_CASES: usize = 7273;
+const MIN_GOLDEN_CASES: usize = 7303;
+
+#[test]
+fn homogeneous_point_cases_agree() {
+    let ids = [
+        "vector-ray-008",
+        "vector-rawscale-008",
+        "vector-rawscale-009",
+        "predicates-infinity-001",
+        "predicates-homogeneous-001",
+        "points-infinity-001",
+    ];
+    let mut cases = model::load_all(&repo_root()).unwrap();
+    cases.retain(|case| ids.contains(&case.id.as_str()));
+    assert_eq!(cases.len(), ids.len());
+    let report = report::evaluate(&cases, &gaps::Gaps::new());
+    assert!(report.failures.is_empty(), "{}", report.failures.join("\n"));
+}
+
+#[test]
+fn projective_update_cases_agree() {
+    let mut cases = model::load_all(&repo_root()).unwrap();
+    cases.retain(|case| {
+        case.id.contains("-projectiveupdates-")
+            || matches!(
+                case.id.as_str(),
+                "points-infinityedit-007"
+                    | "points-isolatedprojection-001"
+                    | "locus-samplingbudget-001"
+            )
+    });
+    assert_eq!(cases.len(), 16);
+    let report = report::evaluate(&cases, &gaps::Gaps::new());
+    assert!(report.failures.is_empty(), "{}", report.failures.join("\n"));
+}
 
 #[test]
 fn kernel_agrees_with_golden_data() {

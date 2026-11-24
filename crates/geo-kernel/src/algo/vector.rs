@@ -61,7 +61,7 @@
 
 use super::lines::LineDef;
 use super::point::CoordMode;
-use super::{normalized_coefficients, Group, Parents, POINT};
+use super::{Group, Parents, POINT};
 use crate::expr::{Element, List};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
@@ -262,20 +262,18 @@ fn dot_lists(a: List<'_>, b: List<'_>) -> Option<f64> {
         .try_fold(0.0, |sum, (x, y)| Some(sum + number(x)? * number(y)?))
 }
 
-/// `GeoVec3D.lineThroughPoints` for two finite points: directed from `p` to `q`.
-fn raw_through(p: (f64, f64), q: (f64, f64)) -> (f64, f64, f64) {
-    (p.1 - q.1, q.0 - p.0, p.0 * q.1 - p.1 * q.0)
-}
-
 /// `GeoVec3D.lineThroughPointVector`: through `p` with direction `v`.
 fn raw_along(p: (f64, f64), v: (f64, f64)) -> (f64, f64, f64) {
     (-v.1, v.0, p.0 * v.1 - p.1 * v.0)
 }
 
-/// `AlgoOrthoLinePointVector`: `GeoVec3D.cross(P, -v.y, v.x, 0)` for a point
-/// with homogeneous coordinate 1.
-fn raw_ortho(p: (f64, f64), v: (f64, f64)) -> (f64, f64, f64) {
-    (-v.0, -v.1, p.0 * v.0 + p.1 * v.1)
+/// `AlgoOrthoLinePointVector`: `GeoVec3D.cross(P, -v.y, v.x, 0)`.
+fn raw_ortho(c: &Construction, p: Id, v: Id) -> Option<(f64, f64, f64)> {
+    let (x, y) = vector(c, v)?;
+    Some(super::basic::cross_direction(
+        c.stored_value(p).point_coords()?,
+        (-y, x),
+    ))
 }
 
 /// The raw `(x, y)` of a line, segment or ray, also when the kernel holds
@@ -305,14 +303,12 @@ pub(crate) fn raw_or_undefined(c: &Construction, id: Id) -> Option<(f64, f64, f6
 fn undefined_raw(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
     match c.def(id) {
         Def::Line(p, q) | Def::Vector(VectorDef::RayPoints(p, q)) => {
-            Some(raw_through(point(c, p)?, point(c, q)?))
+            super::basic::raw_line_through(c, p, q)
         }
         Def::Vector(VectorDef::RayVector(p, v) | VectorDef::LineVector(p, v)) => {
             Some(raw_along(point(c, p)?, vector(c, v)?))
         }
-        Def::Vector(VectorDef::OrthoLineVector(p, v)) => {
-            Some(raw_ortho(point(c, p)?, vector(c, v)?))
-        }
+        Def::Vector(VectorDef::OrthoLineVector(p, v)) => raw_ortho(c, p, v),
         Def::Lines(LineDef::BisectorPoints(p, q)) => {
             // `AlgoLineBisector`.
             let (a, b) = (point(c, p)?, point(c, q)?);
@@ -320,21 +316,10 @@ fn undefined_raw(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
             Some((gx, gy, -((a.0 + b.0) * gx + (a.1 + b.1) * gy) / 2.0))
         }
         Def::Parallel { through, to } => {
-            // `AlgoLinePointLine`: `GeoVec3D.cross(P, l.y, -l.x, 0)`.
-            let (px, py) = point(c, through)?;
-            let (lx, ly, _) = raw_or_undefined(c, to)?;
-            Some((py * 0.0 - -lx, ly - px * 0.0, px * -lx - py * ly))
+            super::basic::raw_parallel(c, through, raw_or_undefined(c, to)?)
         }
         Def::Perpendicular { through, to } => {
-            // `AlgoOrthoLinePointLine`: `GeoVec3D.cross(P, l.x, l.y, 0)`,
-            // then `GeoLine.getNormalizedCoefficients`.
-            let (px, py) = point(c, through)?;
-            let (lx, ly, _) = raw_or_undefined(c, to)?;
-            Some(normalized_coefficients(
-                (py * 0.0 - ly, lx - px * 0.0, px * ly - py * lx),
-                10e6,
-                1e-2,
-            ))
+            super::basic::raw_perpendicular(c, through, raw_or_undefined(c, to)?)
         }
         Def::Vector(VectorDef::Translate { src, by, .. }) => {
             // `GeoLine.translate`.
@@ -478,6 +463,7 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
         Value::Polygon { .. } | Value::PolyLine { .. } => v,
         Value::Point { .. }
         | Value::HomogeneousPoint { .. }
+        | Value::NormalizedPointAtInfinity { .. }
         | Value::Circle { .. }
         | Value::Number(_)
         | Value::Bool(_)
@@ -666,15 +652,20 @@ impl Group for VectorDef {
                 _ => None,
             },
             VectorDef::RayPoints(p, q) => {
-                let (p, q) = (point(c, p)?, point(c, q)?);
-                ray_value(p, raw_through(p, q))
+                // Keep the carrier even when there is no Cartesian start.
+                let start = point(c, p).or_else(|| {
+                    c.stored_value(p)
+                        .point_coords()
+                        .map(|_| (f64::INFINITY, f64::INFINITY))
+                })?;
+                ray_value(start, super::basic::raw_line_through(c, p, q)?)
             }
             VectorDef::RayVector(p, v) => {
                 let p = point(c, p)?;
                 ray_value(p, raw_along(p, vector(c, v)?))
             }
             VectorDef::LineVector(p, v) => line_value(raw_along(point(c, p)?, vector(c, v)?)),
-            VectorDef::OrthoLineVector(p, v) => line_value(raw_ortho(point(c, p)?, vector(c, v)?)),
+            VectorDef::OrthoLineVector(p, v) => line_value(raw_ortho(c, p, v)?),
             VectorDef::Translate { src, by, kind } => {
                 let (dx, dy) = match vector(c, by) {
                     Some(v) => v,

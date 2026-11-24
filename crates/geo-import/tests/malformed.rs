@@ -226,12 +226,22 @@ fn outputs_that_do_not_fit() {
 
 #[test]
 fn free_objects() {
-    // z other than 1 is divided through, z = 0 is a point at infinity
+    // Keep the raw coordinates of both a weighted point and a direction.
     let r = ok(&(point("A", "4", "6", "2") + &point("B", "1", "1", "0")));
-    assert_eq!(r.script, ["A = (2, 3)"]);
-    assert_eq!(r.skipped.len(), 1);
-    assert_eq!(r.skipped[0].label, "B");
-    assert!(r.skipped[0].reason.contains("infinity"));
+    assert_eq!(
+        r.script,
+        [
+            "A = $homogeneousPoint(4, 6, 2)",
+            "B = $homogeneousPoint(1, 1, 0)"
+        ]
+    );
+    assert!(r.skipped.is_empty());
+    let c = geo_kernel::script::load(&r.script.join("\n")).unwrap();
+    assert_eq!(
+        c.value(c.id("A").unwrap()),
+        geo_kernel::Value::Point { x: 2.0, y: 3.0 }
+    );
+    assert_eq!(c.value(c.id("B").unwrap()), geo_kernel::Value::Undefined);
     // a lower-case point and an upper-case vector need the forced forms
     let vector = |label: &str| {
         format!(

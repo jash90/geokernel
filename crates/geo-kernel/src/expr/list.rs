@@ -133,7 +133,10 @@ impl Slot {
     pub(crate) fn point(value: Value) -> Slot {
         debug_assert!(matches!(
             value,
-            Value::Point { .. } | Value::HomogeneousPoint { .. } | Value::Undefined
+            Value::Point { .. }
+                | Value::HomogeneousPoint { .. }
+                | Value::NormalizedPointAtInfinity { .. }
+                | Value::Undefined
         ));
         Slot {
             kind: Kind::Point,
@@ -309,6 +312,9 @@ impl Slot {
                 Value::Line { a, b, c } => [a.to_bits(), b.to_bits(), c.to_bits()],
                 Value::Point { x, y } | Value::Vector { x, y } => [x.to_bits(), y.to_bits(), 0],
                 Value::HomogeneousPoint { x, y, z } => [x.to_bits(), y.to_bits(), z.to_bits()],
+                Value::NormalizedPointAtInfinity { x, y } => {
+                    [x.to_bits(), y.to_bits(), 1.0_f64.to_bits()]
+                }
                 Value::Bool(b) => [u64::from(b), 0, 0],
                 Value::List { len } => [u64::from(len), 0, 0],
                 _ => [u64::MAX; 3],

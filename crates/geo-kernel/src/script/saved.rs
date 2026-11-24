@@ -30,6 +30,10 @@ pub enum Property {
         label: String,
         presentation: SliderLabel,
     },
+    ClosestCircleAngle {
+        label: String,
+        angle: f64,
+    },
     RegularVertex {
         label: String,
         x: f64,
@@ -66,6 +70,7 @@ impl Property {
     pub fn label(&self) -> Option<&str> {
         match self {
             Self::DrawingStyle { label, .. }
+            | Self::ClosestCircleAngle { label, .. }
             | Self::RegularVertex { label, .. }
             | Self::SliderBounds { label, .. }
             | Self::SliderLabel { label, .. }
@@ -113,6 +118,9 @@ impl Property {
                 c.set_slider_label(object(c, label)?, presentation.clone());
                 Ok(())
             }
+            Self::ClosestCircleAngle { label, angle } => c
+                .restore_closest_circle_angle(object(c, label)?, *angle)
+                .map_err(|e| e.to_string()),
             Self::RegularVertex { label, x, y } => c
                 .restore_regular_vertex(object(c, label)?, *x, *y)
                 .map_err(|e| e.to_string()),
@@ -233,6 +241,9 @@ impl fmt::Display for Property {
                 presentation.mode,
                 encode_text(&presentation.caption),
             ),
+            Self::ClosestCircleAngle { label, angle } => {
+                write!(f, "$closestCircleAngle({}, {angle:?})", encode_text(label))
+            }
             Self::RegularVertex { label, x, y } => {
                 write!(f, "$regularVertex({}, {x:?}, {y:?})", encode_text(label))
             }
@@ -350,6 +361,7 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
         && !line.starts_with("$checkboxStyle(")
         && !line.starts_with("$objectScripts(")
         && !line.starts_with("$drawingStyle(")
+        && !line.starts_with("$closestCircleAngle(")
         && !line.starts_with("$regularVertex(")
     {
         return None;
@@ -382,6 +394,10 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
                     mode: mode.parse().map_err(|_| "invalid slider label mode")?,
                     caption: decode_text(caption)?.into(),
                 },
+            }),
+            ("$closestCircleAngle", [label, angle]) => Ok(Property::ClosestCircleAngle {
+                label: decode_text(label)?,
+                angle: angle.parse().map_err(|_| "invalid closest-circle angle")?,
             }),
             ("$regularVertex", [label, x, y]) => Ok(Property::RegularVertex {
                 label: decode_text(label)?,

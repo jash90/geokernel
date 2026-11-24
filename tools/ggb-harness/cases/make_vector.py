@@ -284,4 +284,26 @@ case("rawscale", THROUGH_S + ["n = PerpendicularLine(S, g)", "o = OrthogonalVect
                               "k = Distance(n, h)", "w = Slope(n)"],
      [mv("D", 2, 3), mv("B", 4, 1), mv("E", -1, 1), mv("D", 1, 3)])
 
+WEIGHTED = ["A = (0, 1)", "B = (2, 1)", "l = Line(A, B)"]
+case("projective", WEIGHTED + ["S = Intersect(l, yAxis)", "v = (1, 0)",
+                              "g = OrthogonalLine(S, v)", "d = Direction(g)"], [])
+case("projective", WEIGHTED + ["S = ClosestPoint(l, yAxis)", "g = Line(S, l)",
+                              "d = Direction(g)"], [])
+case("projective", ["A = (0, 0)", "B = (2, 1)", "C = (0, 3)", "D = (2, 4)",
+                    "l = Line(A, B)", "m = Line(C, D)", "S = Intersect(l, m)",
+                    "g = Line(A, S)", "h = Ray(S, C)", "d = Direction(g)",
+                    "e = Direction(h)"], [])
+case("projectiveupdates", ["A = (0, 0)", "B = (2, 1)", "C = (0, 3)", "D = (2, 4)",
+                           "l = Line(A, B)", "m = Line(C, D)", "S = Intersect(l, m)",
+                           "g = Line(A, S)", "h = Ray(S, C)", "d = Direction(g)",
+                           "e = Direction(h)", "b = IsDefined(h)", "j = Line(A, h)"], [])
+
+INFINITE_START = ["A = (0, 0)", "B = (2, 1)", "C = (0, 3)", "D = (2, 4)",
+                  "l = Line(A, B)", "m = Line(C, D)", "S = Intersect(l, m)",
+                  "g = Line(A, S)", "h = Ray(S, C)", "d = Direction(g)",
+                  "e = Direction(h)", "b = IsDefined(h)", "j = Line(A, h)"]
+case("projectiveupdates", INFINITE_START +
+     ["h2 = Rotate(h,pi/2,A)", "b2 = IsDefined(h2)", "j2 = Line(A,h2)"], [])
+case("projectiveupdates", INFINITE_START + ["P = ClosestPoint(h,(0,4))"], [])
+
 cases.write()

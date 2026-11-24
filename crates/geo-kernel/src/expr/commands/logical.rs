@@ -27,12 +27,12 @@ use crate::{Construction, Def, Id, Kind, Value};
 pub(in crate::expr) fn defined_object<const M: bool>(ctx: &Ctx<'_, M>, id: Id) -> Option<bool> {
     let c = ctx.c;
     Some(match c.kind(id) {
-        Kind::Point => c
-            .stored_value(id)
-            .point_coords()
-            .is_some_and(|(x, y, z)| !crate::kernel::point_at_infinity(x, y, z)),
+        Kind::Point => {
+            c.stored_value(id).point_coords().is_some() && c.point_at_infinity(id).is_none()
+        }
         Kind::Vector => matches!(c.value(id), Value::Vector { x, y }
             if x.is_finite() && y.is_finite()),
+        Kind::Ray => c.raw_carrier(id).is_some(),
         Kind::Arc | Kind::Sector => c.stored_value(id).is_defined(),
         Kind::Function if crate::expr::object_defined(c, id) => {
             return super::text::function_has_value(ctx, id);

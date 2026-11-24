@@ -1319,6 +1319,7 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 let mut clip_prefixes = BTreeSet::new();
                 let mut rotated_prefixes = BTreeSet::new();
                 for line in &case.script {
+                    outputs.extend(referenced_axes(line).map(str::to_owned));
                     if let Some((_, rhs)) = line.split('#').next().and_then(|s| s.split_once('=')) {
                         for name in rhs.split(|ch: char| !ch.is_alphanumeric() && ch != '_') {
                             if matches!(name, "xAxis" | "yAxis") {
@@ -1437,13 +1438,18 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 let Step::Add { line } = &case.steps[i] else {
                     unreachable!()
                 };
-                let labels = script_labels(std::slice::from_ref(line));
+                let mut labels = script_labels(std::slice::from_ref(line));
                 if labels.len() != 1 || !labels.is_disjoint(previous) || !previous.is_subset(&keys)
                 {
                     return Err(format!(
                         "snapshot {i} has invalid labels after adding a command"
                     ));
                 }
+                labels.extend(
+                    referenced_axes(line)
+                        .filter(|&axis| !previous.contains(axis))
+                        .map(str::to_owned),
+                );
                 let added = keys.difference(previous).cloned().collect();
                 check_keys(&added, &labels, |_| false).map_err(|e| format!("snapshot {i}: {e}"))?;
                 previous_keys = Some(keys);
@@ -1690,6 +1696,15 @@ fn matches_indexed(key: &str, bases: &BTreeSet<String>) -> bool {
         .unwrap_or(index);
     let digits = !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()) && !n.starts_with('0');
     digits && bases.contains(base)
+}
+
+fn referenced_axes(line: &str) -> impl Iterator<Item = &str> {
+    line.split('#')
+        .next()
+        .and_then(|line| line.split_once('='))
+        .into_iter()
+        .flat_map(|(_, rhs)| rhs.split(|ch: char| !ch.is_alphanumeric() && ch != '_'))
+        .filter(|name| matches!(*name, "xAxis" | "yAxis"))
 }
 
 /// The labels of the script lines `name = Directrix(...)`.

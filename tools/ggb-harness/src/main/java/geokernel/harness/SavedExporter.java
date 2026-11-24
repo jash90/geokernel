@@ -164,6 +164,9 @@ public final class SavedExporter {
             if ("move".equals(action) && geo instanceof GeoPoint p
                     && (p.isIndependent() || p.isPointOnPath())) {
                 p.setCoords(number(step.get("x")), number(step.get("y")), 1.0);
+            } else if ("point_coords".equals(action) && geo instanceof GeoPoint p
+                    && p.isIndependent()) {
+                p.setCoords(number(step.get("x")), number(step.get("y")), number(step.get("z")));
             } else if ("curve_parameter".equals(action) && geo instanceof GeoPoint p
                     && p.getPath() instanceof GeoCurveCartesianND curve) {
                 p.getPathParameter().setT(number(step.get("value")));

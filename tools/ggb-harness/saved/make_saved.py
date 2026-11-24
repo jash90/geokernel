@@ -687,6 +687,19 @@ case("keptvalues", [
     "Q = Intersect(k, k, 2)", "P = Intersect(k, k, 1)",
 ], [mv("C", -5, 2)])
 
+case("projective", ["A = (0, 1)", "B = (2, 1)", "l = Line(A, B)", "P = (1, 2)",
+                    "g = Line(P, l)", "d = Direction(g)", "T = (2, 1)"],
+     [{"action": "point_coords", "label": "P", "x": 2, "y": 4, "z": 2},
+      {"action": "point_coords", "label": "T", "x": 2, "y": 1, "z": 0}])
+case("projectiveoverflow", ["A = (0, 1)", "B = (2, 1)", "l = Line(A, B)", "P = (1, 2)",
+                            "g = Line(P, l)", "d = Direction(g)", "T = (2, 1)"],
+     [{"action": "point_coords", "label": "P", "x": 1e308, "y": 0, "z": 1e-6},
+      {"action": "point_coords", "label": "T", "x": 2, "y": 1, "z": 0}])
+case("projectiveoverflow", ["A = (0, 1)", "B = (2, 1)", "l = Line(A, B)", "P = (1, 2)",
+                            "g = Line(P, l)", "d = Direction(g)", "T = (2, 1)", "q = y(P)"],
+     [{"action": "point_coords", "label": "P", "x": 1e308, "y": 0, "z": 1e-6},
+      {"action": "point_coords", "label": "T", "x": 2, "y": 1, "z": 0}])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")
