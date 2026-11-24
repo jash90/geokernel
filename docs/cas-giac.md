@@ -197,36 +197,9 @@ giac --test golden -- --nocapture` runs the golden data with the feature;
 `known-gaps.toml`, the cases that agree only with Giac (`agrees = true`) and
 the reason for those that still differ.
 
-| | ggb-harness cases | agree | known gaps |
-| --- | --- | --- | --- |
-| default build | 7014 | 6482 | 533 |
-| `giac` feature, library present | 7014 | 6796 | 219 |
-| `giac` feature, no library | 7014 | 6482 | 533 |
-
-Only one case that agrees without the feature differs with it:
-`cas-plot-022` records the kernel's old refusal text for `PlotSolve`, a
-command it now has; the lines are still refused (see
-`known-gaps-giac.toml`). Of the 1,394 Giac
-inputs the kernel sends for the recorded cases, all but 11 (the second
-arguments `z = 1` and `z = 0`, which the reference's two-dimensional parser
-reads as numbers, and powers of ten that the reference prints from a
-different tree) are byte for byte the reference's.
-
-Eight solving forms agree in every recorded case that may call them only
-with the feature and are counted as done, marked `giac = true` in
-`tools/command-matrix/form-evidence.toml` and in the matrix notes:
-`Solve(list)`, `Solutions(list)`, `NSolve(list)`, `NSolutions(list)`,
-`NSolutions(function, any)`, `NSolutions(line, any)`,
-`NSolutions(conic, any)`, `PlotSolve(list)`. Ten more forms agree in the
-cases that call them directly but stay open, because a case that is still a
-gap with the feature may call them (`cas-implicit-013`, `cas-name-004`,
-`cas-name-012`, `cas-degree-001`, `-003`, `-004`, `cas-hintobject-001`,
-`-002`): `Solve(line)`, `Solve(conic)`, `Solve(function, any)`,
-`Solutions(line)`, `Solutions(function, any)`, `NSolve(conic)`,
-`NSolve(function, any)`, `NSolve(line, any)`, `NSolve(conic, any)`,
-`NSolutions(conic)`. The implicit-curve forms stay
-open because the same cases also call `PlotSolve` of an implicit curve,
-whose curves the kernel does not read back yet.
+The command matrix marks forms that require the feature as done only when
+every recorded case that may call the form agrees with Giac. Those rows
+use `giac = true` in `tools/command-matrix/form-evidence.toml`.
 
 CI runs the binding, the kernel and the golden data with the feature on Linux
 (`giac-linux` in `.github/workflows/ci.yml`).

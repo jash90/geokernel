@@ -1208,8 +1208,7 @@ agrees = true
 
 [[gap]]
 id = "cas-freevariable-008"
-reason = "With Giac the system {x + y = 1, z = 0} in {x, y, z} still differs: the reference's two-dimensional parser reads the equation z = 0 as the number 0 and sends solve({(x)+(y)=1, 0},{x, y, z}), while the kernel sends z=0. Giac then answers {{-y+1,y,z}} for the reference; the elements in the free variables y and z are functions of z, and x = -y + 1 is an implicit curve in the reference's reading, which the kernel's reader of Giac output does not build."
-mismatches = ["0:r1", "0:r2"]
+agrees = true
 
 [[gap]]
 id = "cas-freevariable-009"
@@ -1217,8 +1216,7 @@ agrees = true
 
 [[gap]]
 id = "cas-freevariable-010"
-reason = "With Giac the kernel sends the reference's exact input and gets the same output, but the solutions depend on the free variable z: the reference reads them as functions of z and the assignments as implicit curves; the kernel's reader of Giac output builds functions of x or y only and no implicit curves, so the lists are undefined."
-mismatches = ["0:r1", "0:r2"]
+agrees = true
 
 [[gap]]
 id = "cas-freevariable-011"
@@ -1226,10 +1224,7 @@ agrees = true
 
 [[gap]]
 id = "cas-name-012"
-reason = "With Giac every result but r7 agrees. For Solve(f, z = 1) the reference's two-dimensional parser reads the second argument z = 1 as the number 1 and sends assume(1); the kernel sends the equation z=1, for which Giac answers {x=-3,x=3} instead of {}."
-mismatches = ["0:r7"]
-
-# PlotSolve, which the kernel has only with the feature.
+agrees = true
 
 [[gap]]
 id = "cas-implicit-002"
@@ -1377,7 +1372,7 @@ agrees = true
 
 [[gap]]
 id = "cas-plot-022"
-reason = "Agrees without the feature. golden/cas/plot.json records the five rejected lines (PlotSolve with two arguments, and of a number) with the message the kernel gave before it had the command, unknown command `PlotSolve`. The reference refuses them as well (CmdSolve.process: PlotSolve takes one argument; CmdSolve.solve: a number is no list, equation or function). With the feature the kernel has PlotSolve and refuses them with invalid arguments to `PlotSolve`."
+reason = "Agrees without the feature. golden/cas/plot.json records the five rejected lines (PlotSolve with two arguments, and of a number) with the message the kernel gave before it had the command, unknown command `PlotSolve`. The reference refuses them as well (CmdSolve.process: PlotSolve takes one argument; CmdSolve.solve: a number is no list, equation or function). With the feature the kernel has PlotSolve and refuses them with invalid arguments to `PlotSolve` (crates/geo-kernel/src/expr/parse/cas_input.rs:67 and :157)."
 mismatches = ["1:step"]
 
 # Typed decimals between -1 and 0 keep their sign in the Giac input.
@@ -1400,3 +1395,284 @@ agrees = true
 [[gap]]
 id = "cas-freevariable-007"
 agrees = true
+
+[[gap]]
+id = "cas-conic-057"
+agrees = true
+
+[[gap]]
+id = "cas-curve-001"
+agrees = true
+
+[[gap]]
+id = "cas-curve-002"
+agrees = true
+
+[[gap]]
+id = "cas-curve-003"
+agrees = true
+
+[[gap]]
+id = "cas-curve-004"
+agrees = true
+
+[[gap]]
+id = "cas-curve-005"
+agrees = true
+
+[[gap]]
+id = "cas-curve-006"
+agrees = true
+
+[[gap]]
+id = "cas-curve-007"
+agrees = true
+
+[[gap]]
+id = "cas-curve-008"
+agrees = true
+
+[[gap]]
+id = "cas-curve-009"
+agrees = true
+
+[[gap]]
+id = "cas-curve-010"
+agrees = true
+
+[[gap]]
+id = "cas-curve-013"
+agrees = true
+
+[[gap]]
+id = "cas-curve-014"
+agrees = true
+
+[[gap]]
+id = "cas-curve-015"
+agrees = true
+
+[[gap]]
+id = "cas-curve-016"
+agrees = true
+
+[[gap]]
+id = "cas-curve-018"
+agrees = true
+
+[[gap]]
+id = "cas-curve-019"
+agrees = true
+
+[[gap]]
+id = "cas-curve-020"
+agrees = true
+
+[[gap]]
+id = "cas-curve-021"
+agrees = true
+
+[[gap]]
+id = "cas-curve-023"
+agrees = true
+
+[[gap]]
+id = "cas-curve-025"
+agrees = true
+
+[[gap]]
+id = "cas-curve-026"
+agrees = true
+
+[[gap]]
+id = "cas-curve-027"
+agrees = true
+
+[[gap]]
+id = "cas-curve-028"
+agrees = true
+
+[[gap]]
+id = "cas-curve-029"
+agrees = true
+
+[[gap]]
+id = "cas-degree-001"
+agrees = true
+
+[[gap]]
+id = "cas-degree-003"
+agrees = true
+
+[[gap]]
+id = "cas-degree-004"
+agrees = true
+
+[[gap]]
+id = "cas-edge-018"
+agrees = true
+
+[[gap]]
+id = "cas-edge-022"
+agrees = true
+
+[[gap]]
+id = "cas-hintobject-001"
+agrees = true
+
+[[gap]]
+id = "cas-hintobject-002"
+agrees = true
+
+[[gap]]
+id = "cas-hintobject-003"
+agrees = true
+
+[[gap]]
+id = "cas-implicitrewrite-001"
+agrees = true
+
+[[gap]]
+id = "cas-implicitrewrite-002"
+agrees = true
+
+[[gap]]
+id = "cas-implicitrewrite-003"
+agrees = true
+
+[[gap]]
+id = "cas-implicitrewrite-004"
+agrees = true
+
+[[gap]]
+id = "cas-implicitrewrite-005"
+agrees = true
+
+[[gap]]
+id = "cas-implicitrewrite-006"
+agrees = true
+
+[[gap]]
+id = "cas-implicitrewrite-007"
+agrees = true
+
+[[gap]]
+id = "cas-implicitrewrite-008"
+agrees = true
+
+[[gap]]
+id = "cas-implicitrewrite-009"
+agrees = true
+
+[[gap]]
+id = "cas-implicitrewrite-010"
+agrees = true
+
+[[gap]]
+id = "cas-implicitrewrite-011"
+agrees = true
+
+[[gap]]
+id = "cas-implicitrewrite-012"
+agrees = true
+
+[[gap]]
+id = "cas-name-004"
+agrees = true
+
+[[gap]]
+id = "cas-name-010"
+agrees = true
+
+[[gap]]
+id = "cas-order-094"
+agrees = true
+
+[[gap]]
+id = "cas-order-096"
+agrees = true
+
+[[gap]]
+id = "cas-order-097"
+agrees = true
+
+[[gap]]
+id = "cas-shape-007"
+agrees = true
+
+[[gap]]
+id = "cas-shape-009"
+agrees = true
+
+[[gap]]
+id = "cas-shape-013"
+agrees = true
+
+[[gap]]
+id = "cas-simplify-007"
+agrees = true
+
+[[gap]]
+id = "cas-simplify-008"
+agrees = true
+
+[[gap]]
+id = "cas-simplify-009"
+agrees = true
+
+[[gap]]
+id = "cas-simplify-010"
+agrees = true
+
+[[gap]]
+id = "cas-simplify-011"
+agrees = true
+
+[[gap]]
+id = "cas-simplify-012"
+agrees = true
+
+[[gap]]
+id = "cas-simplify-013"
+agrees = true
+
+[[gap]]
+id = "cas-simplify-014"
+agrees = true
+
+[[gap]]
+id = "cas-simplify-015"
+agrees = true
+
+[[gap]]
+id = "cas-simplify-016"
+agrees = true
+
+[[gap]]
+id = "cas-simplify-017"
+agrees = true
+
+[[gap]]
+id = "cas-curve-011"
+reason = "The Linux replay agreed initially and while the curve was undefined. At a = 3, Giac returns 3*ggbtmpvart^2 and the rewritten second coordinate has value 9 at t = 0. The rewritten coordinates kept the initial a = 2, with second coordinate 4 at t = 0, because the builder did not register the FunctionObject read (crates/geo-kernel/src/expr/equation.rs:853). The same stale coordinates remain after a changes to 0 or 1."
+mismatches = ["1:r1", "1:r2", "1:r3", "3:r1", "3:r2", "3:r3", "4:r1", "4:r2", "4:r3"]
+
+[[gap]]
+id = "cas-curve-012"
+reason = "At a = 0.5 Giac returns ggbtmpvart+1/2 for Expand and 1/2*(2*ggbtmpvart+1) for Factor. The reference starts at x = 0.5, while the rewritten curve kept x = 1. The same stale value remains after a changes to 3 or 0 because the builder did not register the FunctionObject read (crates/geo-kernel/src/expr/equation.rs:853)."
+mismatches = ["1:r1", "1:r2", "2:r1", "2:r2", "3:r1", "3:r2"]
+
+[[gap]]
+id = "cas-curve-017"
+reason = "At a = 3 Giac returns ggbtmpvart+3 for the second coordinate. The reference starts at y = 3, while the rewritten curve kept y = 2. The same stale value remains after a changes to 0 or 1 because the builder did not register the FunctionObject read (crates/geo-kernel/src/expr/equation.rs:853)."
+mismatches = ["1:result", "3:result", "4:result"]
+
+[[gap]]
+id = "cas-curve-022"
+reason = "At a = -1 Giac returns ggbtmpvart^3+1 for the second coordinate. The reference starts at y = 1, while the rewritten curve kept y = -2. The same stale value remains when a changes to 0.5 because the builder did not register the FunctionObject read (crates/geo-kernel/src/expr/equation.rs:853)."
+mismatches = ["1:r1", "1:r2", "2:r1", "2:r2"]
+
+[[gap]]
+id = "cas-curve-024"
+reason = "Expand prints ggbtmpvart^2-200000000*ggbtmpvart+10000000000000000. At t = 99999999 the reference samples x = 0, while native powf rounded the square one unit higher and gave x = 2 (crates/geo-kernel/src/expr/cas/giac.rs:1349)."
+mismatches = ["0:r2"]
