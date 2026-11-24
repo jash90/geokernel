@@ -199,16 +199,6 @@ reason = "AlgoTranspose clears its output on empty input but preserves the defin
 mismatches = ["2:a"]
 
 [[gap]]
-id = "matrixdilate-applylist-006"
-reason = "ApplyMatrix reports a command error when a number is visited before any transformable list element. The kernel creates an undefined list."
-mismatches = ["1:step"]
-
-[[gap]]
-id = "matrixdilate-dilatelist-006"
-reason = "Dilate reports a command error when a number is visited before any transformable list element. The kernel creates an undefined list."
-mismatches = ["1:step"]
-
-[[gap]]
 id = "lists-take-016"
 reason = "intended difference, recorded in DIFFERENCES.md: Take(l, m) with m past the end of the list makes an undefined list, but GeoGebra keeps the elements of the last defined one, and + 1 maps over them, giving one undefined number per stale element. The undefined value of the kernel has no elements"
 mismatches = ["5:p", "6:p", "7:p"]
@@ -272,7 +262,7 @@ mismatches = ["0:g"]
 
 [[gap]]
 id = "discrete-upstream-019"
-reason = "The circumcircle test is sensitive to the last bit of cos(6) on approximately cocircular sites. The literal cocircular cases exercise the exact tie rule separately."
+reason = "The recording JVM rounds cos(6) one ulp above the portable result. On these nearly cocircular sites that changes the chosen diagonals, so the list of triangulation edges differs. The literal cocircular cases exercise the exact tie rule separately."
 mismatches = ["0:g"]
 
 # Calculus
@@ -2759,28 +2749,6 @@ id = "infinity-functions-097"
 reason = "intended difference, recorded in DIFFERENCES.md: nroot(-Infinity, 4) is Infinity in GeoGebra, whose NROOT operation hands a negative base with an even degree to Math.pow; the kernel reads nroot(a, n) as a^(1/n), where a negative base with an even root is undefined"
 mismatches = ["0:c"]
 
-# tpairfixes
-
-[[gap]]
-id = "tpairfixes-fnundef-003"
-reason = "intended difference, recorded in DIFFERENCES.md: IsDefined(f) of a function is false when GeoGebra prints the function as `?`, which it does for `? + 0 x` after dropping the zero term; the kernel asks whether the function is defined"
-mismatches = ["0:b"]
-
-[[gap]]
-id = "tpairfixes-fnundef-024"
-reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps `-(?)` as the product of -1 and the undefined constant, a defined function; the kernel negates the constant as it does for `-?`, which leaves the undefined constant alone and an undefined function"
-mismatches = ["0:b", "0:f", "0:g"]
-
-[[gap]]
-id = "tpairfixes-fnundef-029"
-reason = "intended difference, recorded in DIFFERENCES.md: IsDefined(f) of a function is false when GeoGebra prints the function as `?`, which it does for `? + 0` after dropping the zero term; the kernel asks whether the function is defined"
-mismatches = ["0:b"]
-
-[[gap]]
-id = "tpairfixes-fnundef-030"
-reason = "intended difference, recorded in DIFFERENCES.md: IsDefined(f) of a function is false when GeoGebra prints the function as `?`, which it does for `1 ?` after dropping the factor 1; the kernel asks whether the function is defined"
-mismatches = ["0:b"]
-
 [[gap]]
 id = "calculus-sums-012"
 reason = "UpperSum of a constant function over an infinite interval is positive infinity in the reference, recorded as `infinity: 1` for u in the signed recording of this file. The first rectangle then starts at 0 + 0 * Infinity, which is NaN, and the reference's minimum search still returns a height on that bracket. The kernel's search requires a finite bracket and leaves the sum undefined. The reference search is third-party code that cannot be consulted, and this one constant function does not determine its behaviour on other functions. LeftSum, d, agrees."
@@ -2981,3 +2949,34 @@ mismatches = ["0:r"]
 id = "cas-literal-001"
 reason = "Without the giac feature the kernel's own solver reads Solve(x+y=-0.75, y) with the free x in the place of the solving variable y and answers the line y = -0.375; the reference's CAS answers y = -x - 3/4 (recorded with Giac). The case was added to check typed decimals between -1 and 0 in the Giac input, and agrees with the feature (known-gaps-giac.toml)."
 mismatches = ["0:r4"]
+
+# Function value printing
+
+[[gap]]
+id = "logic-definedproducts-001"
+reason = "StringTemplate cancels two printed negative multipliers (outer -1.001 prints as -1, inner -1 is exact), so AlgoDefined sees exactly ?. The kernel's definedness scan does not cancel the signs across nested products."
+mismatches = ["0:d"]
+
+[[gap]]
+id = "logic-definedproducts-002"
+reason = "StringTemplate drops the zero product with the constant-condition If helper, so AlgoDefined sees exactly ?. The kernel's polynomial check sees the If operation and keeps the product."
+mismatches = ["0:d"]
+
+[[gap]]
+id = "logic-definedproducts-003"
+reason = "StringTemplate retains the zero product with the function application, so the printed value contains more than ?. The kernel's polynomial check accepts the application node as a leaf and drops the product."
+mismatches = ["0:d"]
+
+# List dilation
+
+[[gap]]
+id = "matrixdilate-dilateleaves-001"
+reason = "GeoGebra allocates a dilated polygon as a list element. The kernel's expression list slots cannot store the transformed polygon vertices, so the dilation is undefined."
+mismatches = ["0:n"]
+undefined = true
+
+[[gap]]
+id = "matrixdilate-dilateleaves-002"
+reason = "GeoGebra allocates a dilated Cartesian curve as a list element. The kernel's expression list slots cannot store the transformed curve definition and parameter interval, so the dilation is undefined."
+mismatches = ["0:n"]
+undefined = true

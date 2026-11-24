@@ -210,5 +210,9 @@ pub(crate) fn line_through(p: (f64, f64), q: (f64, f64)) -> Option<(f64, f64, f6
 
 /// The full conic behind a conic object, including the carrier of a conic part.
 pub(crate) fn conic_object(c: &crate::Construction, id: Id) -> Option<conic_nd::ConicData> {
-    c.arc(id).map(|arc| arc.conic).or_else(|| c.conic(id))
+    if matches!(c.kind(id), crate::Kind::Arc | crate::Kind::Sector) {
+        c.arc(id).map(|arc| arc.conic)
+    } else {
+        c.conic(id)
+    }
 }

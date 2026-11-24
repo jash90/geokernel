@@ -194,6 +194,9 @@ case("undefined", [pt("A", 0, 0), pt("B", 1, 2), pt("C", 2, 0), "a = Circumcircu
      + ["s = CircumcircularSector(A, B, C)", "sar = Area(s)", "slen = Length(s)"],
      [mv("B", 1, 0), mv("B", 3, 0), mv("B", 1, 1)])
 
+
+case("inline", ["r = CircleArc((0, 0), (1, 0), (0, 1))"], [])
+
 topic("keptpart")
 case("keptpart", [num("n", 1), pt("U", -2, 0), "A = If(n > 0, U)", pt("B", 0, 2), pt("C", 2, 0),
                   "a = CircumcircleArc(A, B, C)", "v = (5, 0)", "j = Translate(a, v)",

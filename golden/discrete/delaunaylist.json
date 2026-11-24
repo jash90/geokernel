@@ -1,0 +1,184 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "discrete-delaunaylist-001",
+      "group": "discrete",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (4, 3)",
+        "D = (0, 4)",
+        "P = (2, 1)",
+        "l = {A, B, C, D, P}",
+        "g = DelauneyTriangulation(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 2.0, "y": 3.0 },
+        { "action": "move", "label": "P", "x": 4.0, "y": 3.0 },
+        { "action": "move", "label": "P", "x": 2.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 1.0 }
+            ]
+          },
+          "g": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [4.0, 3.0, false],
+              [0.0, 4.0, true],
+              [0.0, 0.0, false],
+              [4.0, 0.0, true],
+              [0.0, 4.0, false],
+              [0.0, 0.0, true],
+              [2.0, 1.0, false],
+              [0.0, 4.0, true],
+              [4.0, 0.0, false],
+              [4.0, 3.0, true],
+              [4.0, 3.0, false],
+              [2.0, 1.0, true],
+              [4.0, 0.0, false],
+              [2.0, 1.0, true],
+              [2.0, 1.0, false],
+              [0.0, 0.0, true]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          },
+          "g": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [4.0, 3.0, false],
+              [0.0, 4.0, true],
+              [0.0, 0.0, false],
+              [4.0, 0.0, true],
+              [0.0, 4.0, false],
+              [0.0, 0.0, true],
+              [4.0, 0.0, false],
+              [2.0, 3.0, true],
+              [2.0, 3.0, false],
+              [0.0, 0.0, true],
+              [4.0, 0.0, false],
+              [4.0, 3.0, true],
+              [2.0, 3.0, false],
+              [0.0, 4.0, true],
+              [4.0, 3.0, false],
+              [2.0, 3.0, true]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 3.0 }
+            ]
+          },
+          "g": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [0.0, 0.0, false],
+              [4.0, 3.0, true],
+              [4.0, 3.0, false],
+              [0.0, 4.0, true],
+              [0.0, 4.0, false],
+              [0.0, 0.0, true],
+              [0.0, 0.0, false],
+              [4.0, 0.0, true],
+              [0.0, 0.0, false],
+              [0.0, 4.0, true],
+              [4.0, 0.0, false],
+              [4.0, 3.0, true]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 1.0 }
+            ]
+          },
+          "g": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [4.0, 3.0, false],
+              [0.0, 4.0, true],
+              [0.0, 0.0, false],
+              [4.0, 0.0, true],
+              [0.0, 4.0, false],
+              [0.0, 0.0, true],
+              [2.0, 1.0, false],
+              [0.0, 4.0, true],
+              [4.0, 0.0, false],
+              [4.0, 3.0, true],
+              [4.0, 3.0, false],
+              [2.0, 1.0, true],
+              [4.0, 0.0, false],
+              [2.0, 1.0, true],
+              [2.0, 1.0, false],
+              [0.0, 0.0, true]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

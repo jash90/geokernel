@@ -503,10 +503,7 @@ command = "Last"
 form = "text,number"
 cases = ["lists-textelem-008", "lists-textelem-012"]
 
-[[form]]
-command = "Length"
-form = "list"
-cases = ["lists-length-001", "lists-length-002", "lists-length-003"]
+# Length(list) is open. The probes in matrixdilate-dilateleaves depend on unsupported leaves.
 
 [[form]]
 command = "Length"
@@ -1255,7 +1252,7 @@ cases = ["matrixdilate-dilatefunction-001", "matrixdilate-dilatefunction-002", "
 [[form]]
 command = "Dilate"
 form = "list,number,point"
-cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-003"]
+cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-003", "matrixdilate-dilatereview-003"]
 
 [[form]]
 command = "Mod"
@@ -3399,6 +3396,149 @@ command = "PlotSolve"
 form = "list"
 cases = ["cas-plot-004", "cas-plot-021"]
 giac = true
+
+# Command spellings and remaining 2D forms.
+
+[[form]]
+command = "CircleArc"
+form = "point,point,point"
+cases = [
+  "algebralogic-logic-024",
+  "angle-conic-003",
+  "arcs-chain-001",
+  "arcs-inline-001",
+  "arcs-chain-002",
+  "arcs-circular-001",
+  "arcs-circular-002",
+  "arcs-circular-005",
+  "arcs-circular-006",
+  "arcs-circular-009",
+  "arcs-circular-011",
+  "arcs-points-001",
+  "arcs-points-005",
+  "arcs-undefined-001",
+  "commontangents-arc-001",
+  "commontangents-arc-002",
+  "commontangents-arc-003",
+  "commontangents-arc-004",
+  "conics-internalnames-001",
+  "export-conics-001",
+  "funcrest-conditional-003",
+  "funcrest-vertexform-008",
+  "geomclosure-partlength-001",
+  "geomforms-area-002",
+  "geomforms-closest-005",
+  "geomforms-pointin-008",
+  "implicit-conic-005",
+  "implicit-conic-006",
+  "implicit-conic-007",
+  "intersectconics-conicboundary-006",
+  "intersectconics-pencil-006",
+  "intersectfunctions-conicpart-001",
+  "intersections-limitedconic-002",
+  "locus-arc-001",
+  "relationreview-arcs-001",
+  "textconcat-geometry-002",
+  "transform-anglearg-004",
+  "transform-anglearg-010",
+  "transform-anglearg-014",
+  "transform-anglearg-016",
+  "transform-arcchain-001",
+  "transform-arcchain-004",
+  "transform-chain-005",
+  "transform-dilate-011",
+  "transform-dilate-024",
+  "transform-invert-019",
+  "transform-invert-020",
+  "transform-invert-025",
+  "transform-mirrorline-011",
+  "transform-mirrorline-024",
+  "transform-mirrorpoint-021",
+  "transform-mirrorpoint-022",
+  "transform-rotate-011",
+  "transform-rotate-024",
+  "transform-shear-009",
+  "transform-shear-020",
+  "transform-shear-031",
+  "transform-shear-042",
+  "transform-shear-053",
+  "transform-shear-064",
+  "transform-shear-075",
+  "transform-stretch-009",
+  "transform-stretch-020",
+  "transform-stretch-031",
+  "transform-stretch-042",
+  "transform-stretch-053",
+  "transform-stretch-064",
+  "transform-stretch-075",
+  "transform-stretchvec-009",
+  "transform-stretchvec-014",
+  "transform-stretchvec-017",
+  "transform-translate-005",
+  "transform-undefvec-005",
+  "transformsfix-branch-001",
+  "transformsfix-branch-002",
+  "transformsfix-branch-003",
+  "transformsfix-inversion-001",
+  "transformsfix-shear-007",
+  "transformsfix-undefined-001",
+  "transformsfix-undefined-008",
+]
+
+[[form]]
+command = "Dimension"
+form = "point"
+cases = [
+  "matrixdilate-upstream-001",
+  "vectorforms-coordinates-001",
+  "vectorforms-coordinates-002",
+  "vectorforms-coordinates-003",
+  "vectorforms-coordinates-005",
+  "vectorforms-inlineimages-002",
+  "vectorforms-point-001",
+  "vectorforms-point-002",
+  "vectorforms-point-003",
+  "vectorforms-point-005",
+  "vectorforms-pointforms-001",
+  "vectorforms-pointforms-002",
+  "vectorforms-projective-003",
+]
+
+[[form]]
+command = "UnitOrthogonalVector"
+form = "point"
+cases = [
+  "vectorforms-coordinates-001",
+  "vectorforms-coordinates-002",
+  "vectorforms-coordinates-003",
+  "vectorforms-coordinates-004",
+  "vectorforms-coordinates-005",
+  "vectorforms-point-001",
+  "vectorforms-point-002",
+  "vectorforms-point-003",
+  "vectorforms-point-004",
+  "vectorforms-point-005",
+  "vectorforms-pointforms-001",
+  "vectorforms-pointforms-002",
+]
+
+# Dilate(list,number) is open. Polygon and Cartesian curve list leaves have gaps in matrixdilate-dilateleaves.
+
+# Defined(any) is open. Printed product simplification has gaps in logic-definedproducts.
+
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,list"
+cases = [
+  "matrixdilate-applylist-001",
+  "matrixdilate-applylist-002",
+  "matrixdilate-applylist-003",
+  "matrixdilate-applylist-004",
+  "matrixdilate-applylist-005",
+  "matrixdilate-applylist-006",
+  "vectorforms-inlineimages-001",
+]
 
 [[form]]
 command = "Vertex"

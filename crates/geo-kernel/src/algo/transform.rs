@@ -240,6 +240,10 @@ pub(crate) fn dilate_element(src: Value, r: f64, sx: f64, sy: f64) -> Option<Val
             let (x, y) = map.vector(x, y);
             Some(Value::Vector { x, y })
         }
+        Value::Ray { x, y, a, b, .. } => {
+            let start = map.point(x, y);
+            ray_value(start, (a * r, b * r, -(a * r * start.0 + b * r * start.1)))
+        }
         _ => map.value(src),
     }
 }

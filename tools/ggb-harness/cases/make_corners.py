@@ -385,4 +385,10 @@ cases.case("reviewthree", base + ["a = 0"], [
     setn("a", 0), {"action": "reload"}, setn("a", 1), {"action": "reload"},
 ])
 
+cases.case("definedimage", [
+    "A = (0, 0)", "B = (1, 0)", "C = (0, 1)", "D = (1, 1)",
+    "g = Line(A, B)", "h = Line(C, D)", "P = Intersect(g, h)",
+    image_asset, image("pic", f"world(false, false, point({encoded('P')}), _, _)"), "b = Defined(pic)",
+], [mv("D", 1, 2), mv("D", 1, 1)])
+
 cases.write()

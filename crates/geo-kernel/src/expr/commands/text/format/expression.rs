@@ -9,7 +9,109 @@ use super::{Format, MAX_TEXT_BYTES};
 use crate::expr::eval::{Ctx, Env};
 use crate::expr::{self, Bin, Entry, Lit, Node, Un, NONE};
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Printed {
+    Zero,
+    Question,
+    Other,
+}
+
+impl Printed {
+    fn of(text: &str) -> Self {
+        match text {
+            "0" => Self::Zero,
+            "?" => Self::Question,
+            _ => Self::Other,
+        }
+    }
+}
+
 impl Format {
+    /// AlgoDefined needs only to know whether the entire default value
+    /// string is "?". Keep just the outcomes that its simplifications can
+    /// expose, so large formulas need not be rendered.
+    pub(super) fn has_value<const M: bool>(self, ctx: &Ctx<'_, M>, i: u32) -> Option<bool> {
+        self.printed(ctx, i)
+            .map(|printed| printed != Printed::Question)
+    }
+
+    fn printed<const M: bool>(self, ctx: &Ctx<'_, M>, i: u32) -> Option<Printed> {
+        let node = ctx.node(i);
+        match node {
+            Node::Var
+            | Node::VarY
+            | Node::MinusOne
+            | Node::Degree
+            | Node::Bool(_)
+            | Node::Tuple(..)
+            | Node::Polar(..)
+            | Node::Text
+            | Node::If(..)
+            | Node::List(..)
+            | Node::Un(..)
+            | Node::Apply(..)
+            | Node::Apply2(..) => {
+                return Some(Printed::Other);
+            }
+            _ => (),
+        }
+        if ctx.stop(1) {
+            return None;
+        }
+        Some(match node {
+            Node::Bin(op @ (Bin::Add | Bin::Sub), a, b) => {
+                let right = self.printed(ctx, b)?;
+                let left = self.printed(ctx, a)?;
+                match (left, right) {
+                    (_, Printed::Zero) => left,
+                    (Printed::Zero, _) if op == Bin::Add => right,
+                    _ => Printed::Other,
+                }
+            }
+            // The degree suffix is printed before the factor rule, as in
+            // `binary()`: 0° prints as 0°, not as the dropped factor 0.
+            Node::Bin(Bin::Mul, _, b) if matches!(ctx.node(b), Node::Degree) => Printed::Other,
+            Node::Bin(Bin::Mul, a, b) => match self.multiplier(ctx, a, b)? {
+                Some("1") => self.printed(ctx, b)?,
+                Some("0") => Printed::Zero,
+                _ => Printed::Other,
+            },
+            Node::Bin(Bin::FoldCount, a, b) => Printed::of(&self.number(expr::math::fold_count(
+                ctx.full_number(a),
+                ctx.full_number(b),
+            ))),
+            Node::Bin(..) => Printed::Other,
+            Node::Item(a) => self.printed(ctx, a)?,
+            _ => Printed::of(&self.expression(ctx, i, true, 0)?),
+        })
+    }
+
+    fn multiplier<const M: bool>(
+        self,
+        ctx: &Ctx<'_, M>,
+        a: u32,
+        b: u32,
+    ) -> Option<Option<&'static str>> {
+        let value = match ctx.node(a) {
+            Node::Num(value) => value,
+            Node::Obj(id) => match ctx.c.value(id) {
+                crate::Value::Number(value) => value,
+                _ => return Some(None),
+            },
+            _ => return Some(None),
+        };
+        Some(match self.number(value).as_str() {
+            "1" => Some("1"),
+            "-1" => Some("-1"),
+            "0" | "-0"
+                if value.abs() < crate::tol::MAX_PRECISION && polynomial_expression(ctx, b)? =>
+            {
+                Some("0")
+            }
+            _ => None,
+        })
+    }
+
     pub(super) fn source<const M: bool>(
         self,
         ctx: &Ctx<'_, M>,
@@ -171,14 +273,11 @@ impl Format {
                     node => node,
                 };
                 let variable = matches!(base, Node::Var | Node::VarY);
-                if let (true, Node::Obj(id)) = (
-                    substitute && self.simplify_coefficients && variable,
-                    ctx.node(a),
-                ) {
-                    match ctx.c.value(id) {
-                        crate::Value::Number(0.0) => return Some("0".into()),
-                        crate::Value::Number(1.0) => return term(b, outer),
-                        crate::Value::Number(-1.0) => return Some(format!("-{}", term(b, 6)?)),
+                if substitute && self.simplify_coefficients {
+                    match self.multiplier(ctx, a, b)? {
+                        Some("1") => return term(b, outer),
+                        Some("-1") => return Some(format!("-{}", term(b, 6)?)),
+                        Some("0") => return Some("0".into()),
                         _ => (),
                     }
                 }
@@ -196,19 +295,26 @@ impl Format {
                 (5, format!("{}{sep}{}", term(a, 5)?, term(b, 6)?))
             }
             Bin::Add | Bin::Sub => {
-                let (left, right) = (term(a, 4)?, term(b, 5)?);
                 let zero = |i| match ctx.node(i) {
                     Node::Num(x) => x == 0.0,
                     Node::Obj(id) => ctx.c.value(id) == crate::Value::Number(0.0),
                     _ => false,
                 };
                 if substitute {
-                    if zero(b) || self.simplify_coefficients && right == "0" {
+                    if zero(b) {
                         return term(a, outer);
                     }
-                    if op == Bin::Add && (zero(a) || self.simplify_coefficients && left == "0") {
+                    if op == Bin::Add && zero(a) {
                         return term(b, outer);
                     }
+                }
+                let right = term(b, 5)?;
+                if substitute && self.simplify_coefficients && right == "0" {
+                    return term(a, outer);
+                }
+                let left = term(a, 4)?;
+                if substitute && self.simplify_coefficients && op == Bin::Add && left == "0" {
+                    return Some(right);
                 }
                 let (negative, term) = right
                     .strip_prefix('-')
@@ -253,6 +359,37 @@ impl Format {
             (true, _) => format!(r"\operatorname{{{}}} \left( {arg} \right)", unary_name(op)),
         }
     }
+}
+
+/// StringTemplate accepts constant subexpressions and leaves, and checks
+/// the operations that combine variables separately.
+fn polynomial_expression<const M: bool>(ctx: &Ctx<'_, M>, i: u32) -> Option<bool> {
+    if ctx.stop(1) {
+        return None;
+    }
+    Some(match ctx.node(i) {
+        Node::Bin(Bin::Add | Bin::Sub | Bin::Mul, a, b) => {
+            polynomial_expression(ctx, a)? && polynomial_expression(ctx, b)?
+        }
+        Node::Bin(Bin::Div | Bin::Pow, a, b) => {
+            polynomial_expression(ctx, a)? && constant_expression(ctx, b)?
+        }
+        Node::If(..) => false,
+        Node::Bin(..) | Node::Un(..) => constant_expression(ctx, i)?,
+        _ => true,
+    })
+}
+
+fn constant_expression<const M: bool>(ctx: &Ctx<'_, M>, i: u32) -> Option<bool> {
+    if ctx.stop(1) {
+        return None;
+    }
+    Some(match ctx.node(i) {
+        Node::Num(_) | Node::MinusOne | Node::Degree | Node::Bool(_) => true,
+        Node::Bin(_, a, b) => constant_expression(ctx, a)? && constant_expression(ctx, b)?,
+        Node::Un(_, a) => constant_expression(ctx, a)?,
+        _ => false,
+    })
 }
 
 fn comparison_sign(op: Bin) -> &'static str {

@@ -75,17 +75,70 @@ impl Parser<'_> {
     }
 }
 
+fn independent_coordinates<const M: bool>(ctx: &Ctx<'_, M>, root: u32) -> bool {
+    let mut pending = vec![root];
+    while let Some(i) = pending.pop() {
+        if ctx.stop(1) {
+            return false;
+        }
+        let node = ctx.node(i);
+        match node {
+            Node::Tuple(..) | Node::Polar(..) | Node::Bin(..) | Node::Un(..) => {
+                pending.extend(crate::expr::children(&node));
+            }
+            Node::Num(_) | Node::MinusOne | Node::Degree | Node::Bool(_) => (),
+            _ => return false,
+        }
+    }
+    true
+}
+
 impl<const M: bool> Ctx<'_, M> {
-    pub(crate) fn is_defined_argument(&self, arg: u32) -> bool {
+    pub(crate) fn is_defined_argument(&self, arg: u32, function: bool) -> Option<bool> {
+        if function {
+            let meter = self
+                .meter
+                .is_none()
+                .then(|| crate::expr::eval::Lists::new(Vec::new()));
+            let ctx = Ctx::<true> {
+                meter: self.meter.or(meter.as_ref()),
+                lists: self.lists,
+                locals: self.locals,
+                ..Ctx::new(self.c, self.e, &crate::expr::eval::Env::None)
+            };
+            let defined = crate::expr::defined_below(&ctx, arg);
+            if ctx.stop(0) {
+                return None;
+            }
+            if !defined {
+                return Some(false);
+            }
+            return crate::expr::commands::text::function_expression_has_value(&ctx, arg);
+        }
+        match self.node(arg) {
+            Node::Obj(id) | Node::FunctionObject(id) => return super::defined_object(self, id),
+            Node::If(..) if self.e.tys[arg as usize] == Ty::Object => {
+                return self.if_alternative(arg).map_or(Some(false), |chosen| {
+                    self.is_defined_argument(chosen, false)
+                });
+            }
+            _ => (),
+        }
         if matches!(self.e.tys[arg as usize], Ty::List(_)) {
-            return self.list(arg).is_some();
+            return Some(self.list(arg).is_some());
         }
         if self.e.tys[arg as usize] == Ty::Text {
-            return self.text(arg).is_some();
+            return Some(self.text(arg).is_some());
         }
-        match self.full(arg).val {
+        Some(match self.full(arg).val {
             Val::N(x) => !x.is_nan(),
-            Val::V(x, y) => x.is_finite() && y.is_finite(),
+            Val::V(x, y) => {
+                !x.is_nan()
+                    && !y.is_nan()
+                    && (x.is_finite() && y.is_finite()
+                        || matches!(self.node(arg), Node::Tuple(..) | Node::Polar(..))
+                            && independent_coordinates(self, arg))
+            }
             Val::B(_, defined) => {
                 defined
                     || !matches!(
@@ -93,7 +146,7 @@ impl<const M: bool> Ctx<'_, M> {
                         Node::Algebra(crate::expr::AlgebraOp::IsPrime, ..)
                     )
             }
-        }
+        })
     }
 
     pub(crate) fn filter(

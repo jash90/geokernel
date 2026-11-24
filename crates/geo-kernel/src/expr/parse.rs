@@ -668,7 +668,8 @@ impl Parser<'_> {
     /// `(-x)°`, anything else is multiplied by -1.
     fn unary_minus(&mut self, e: u32, depth: u32) -> u32 {
         match self.node(e) {
-            Node::Num(v) => {
+            // GeoGebra preserves the multiplication in `-(?)`.
+            Node::Num(v) if !(v.is_nan() && self.brackets[e as usize]) => {
                 let lit = &self.lits[e as usize];
                 if lit.special() && self.bare[e as usize] {
                     let Lit::Special(decimal, spelling) = &self.lits[e as usize] else {
