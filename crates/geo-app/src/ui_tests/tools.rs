@@ -52,7 +52,8 @@ fn every_tool_works_with_real_clicks() {
     // The first output of each tool: label, kind and definition.
     let expected = |tool: Tool| -> (&str, Kind, &str) {
         match tool {
-            Tool::Point | Tool::PointOnObject => ("F", Kind::Point, "(0, 2)"),
+            Tool::Point => ("F", Kind::Point, "(0, 2)"),
+            Tool::PointOnObject => ("F", Kind::Point, "Point(yAxis)"),
             Tool::RigidPolygon => ("t1", Kind::Polygon, "RigidPolygon(A, B, C)"),
             Tool::SegmentFixed => ("g", Kind::Segment, "Segment(A, 2)"),
             Tool::AngleFixed => ("α", Kind::Angle, "Angle(A, C, 0.7853981633974483)"),
@@ -131,6 +132,12 @@ fn every_tool_works_with_real_clicks() {
         let app = h.state();
         assert_eq!(app.wb.undo_depth(), (1, 0), "{tool:?}");
         let c = app.wb.construction();
+        if tool == Tool::PointOnObject {
+            assert_eq!(
+                c.id(label).map(|id| c.value(id)),
+                Some(geo_kernel::Value::Point { x: 0.0, y: 2.0 })
+            );
+        }
         let intersection_labels = [label, "F_{2}"];
         let expected_labels = if tool == Tool::Intersect {
             let added: Vec<_> = after

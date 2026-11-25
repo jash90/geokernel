@@ -439,6 +439,40 @@
       ]
     },
     {
+      "name": "tool_point_on_y_axis",
+      "tool_mode": 501,
+      "initial_script": [
+        "A = (-6, -3)",
+        "B = (-2, -3)",
+        "C = (-4, 1)",
+        "f = Line(A, B)",
+        "D = (4, -2)",
+        "E = (6, -2)",
+        "k = Circle(D, E)",
+        "G = (-7, 3)",
+        "H = (-3, 4)",
+        "u = Vector(G, H)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            1.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            1.99
+          ]
+        }
+      ]
+    },
+    {
       "name": "tool_point_on_vector",
       "tool_mode": 501,
       "initial_script": [

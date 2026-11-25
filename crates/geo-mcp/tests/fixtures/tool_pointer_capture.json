@@ -928,6 +928,85 @@
       ]
     },
     {
+      "name": "tool_point_on_y_axis",
+      "tool_mode": 501,
+      "initial_script": [
+        "A = (-6, -3)",
+        "B = (-2, -3)",
+        "C = (-4, 1)",
+        "f = Line(A, B)",
+        "D = (4, -2)",
+        "E = (6, -2)",
+        "k = Circle(D, E)",
+        "G = (-7, 3)",
+        "H = (-3, 4)",
+        "u = Vector(G, H)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            1.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            1.99
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": -6.0, "y": -3.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": -2.0, "y": -3.0, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": -4.0, "y": 1.0, "on_path": false, "in_region": false },
+        "f": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 12.0 },
+        "D": { "type": "point", "defined": true, "x": 4.0, "y": -2.0, "on_path": false, "in_region": false },
+        "E": { "type": "point", "defined": true, "x": 6.0, "y": -2.0, "on_path": false, "in_region": false },
+        "k": { "type": "circle", "defined": true, "cx": 4.0, "cy": -2.0, "r": 2.0 },
+        "G": { "type": "point", "defined": true, "x": -7.0, "y": 3.0, "on_path": false, "in_region": false },
+        "H": { "type": "point", "defined": true, "x": -3.0, "y": 4.0, "on_path": false, "in_region": false },
+        "u": { "type": "vector", "defined": true, "x": 4.0, "y": 1.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": -6.0, "y": -3.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": -2.0, "y": -3.0, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": -4.0, "y": 1.0, "on_path": false, "in_region": false },
+            "f": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 12.0 },
+            "D": { "type": "point", "defined": true, "x": 4.0, "y": -2.0, "on_path": false, "in_region": false },
+            "E": { "type": "point", "defined": true, "x": 6.0, "y": -2.0, "on_path": false, "in_region": false },
+            "k": { "type": "circle", "defined": true, "cx": 4.0, "cy": -2.0, "r": 2.0 },
+            "G": { "type": "point", "defined": true, "x": -7.0, "y": 3.0, "on_path": false, "in_region": false },
+            "H": { "type": "point", "defined": true, "x": -3.0, "y": 4.0, "on_path": false, "in_region": false },
+            "u": { "type": "vector", "defined": true, "x": 4.0, "y": 1.0 },
+            "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0, "on_path": true, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": -3.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": -3.0, "on_path": false, "in_region": false },
+          "C": { "type": "point", "defined": true, "x": -4.0, "y": 1.0, "on_path": false, "in_region": false },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 12.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": -2.0, "on_path": false, "in_region": false },
+          "E": { "type": "point", "defined": true, "x": 6.0, "y": -2.0, "on_path": false, "in_region": false },
+          "k": { "type": "circle", "defined": true, "cx": 4.0, "cy": -2.0, "r": 2.0 },
+          "G": { "type": "point", "defined": true, "x": -7.0, "y": 3.0, "on_path": false, "in_region": false },
+          "H": { "type": "point", "defined": true, "x": -3.0, "y": 4.0, "on_path": false, "in_region": false },
+          "u": { "type": "vector", "defined": true, "x": 4.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
       "name": "tool_point_on_vector",
       "tool_mode": 501,
       "initial_script": [

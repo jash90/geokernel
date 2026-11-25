@@ -1324,7 +1324,7 @@ fn the_observed_pointer_scenarios_replay() {
         ));
         captured_passes += usize::from(!scenarios.iter().any(|scenario| scenario["name"] == name));
     }
-    assert_eq!((captured_passes, recaptured, bounded), (19, 5, 4));
+    assert_eq!((captured_passes, recaptured, bounded), (20, 5, 4));
     for s in fixture["scenarios"].as_array().unwrap() {
         let name = s["name"].as_str().unwrap();
         assert!(
