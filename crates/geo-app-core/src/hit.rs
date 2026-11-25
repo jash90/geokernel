@@ -308,9 +308,10 @@ fn hit_with_work(
             let angle = c.angle_geometry(id)?;
             let center = to_screen(angle.center.0, angle.center.1);
             angle
-                .contains(
+                .contains_with_decoration(
                     (p.0 - center.0, center.1 - p.1),
-                    angle.radius((tr.xscale() * tr.yscale()).sqrt()),
+                    c.angle_radius(id, angle, (tr.xscale() * tr.yscale()).sqrt()),
+                    c.appearance(id).right_angle.unwrap_or(true),
                 )
                 .then_some(HitType::Filling)
         }

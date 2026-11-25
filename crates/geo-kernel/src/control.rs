@@ -105,7 +105,10 @@ pub fn visibility_boolean(c: &mut Construction, owner: &str, source: &str) -> Re
             .then_some(id)
             .ok_or_else(|| format!("`{source}` is not a boolean"));
     }
-    let label = format!("\0condition:{owner}");
+    let mut label = format!("\0condition:{owner}");
+    if c.id(&label).is_some() {
+        label = format!("{label}:{}", c.len());
+    }
     if crate::expr::argument_object(c, source, &label, Kind::Boolean) {
         Ok(c.id(&label).expect("the boolean was just added"))
     } else {
@@ -252,20 +255,26 @@ impl Construction {
     }
 
     pub fn input_box_caption(&self, id: Id) -> &str {
-        if self.drawing_style(id).show_label {
-            let caption = self
-                .control(id)
-                .map(|control| control.caption.as_str())
-                .filter(|caption| !caption.is_empty())
-                .unwrap_or_else(|| self.label(id));
-            bounded_input_box_text(caption)
-        } else {
-            ""
+        if !self.drawing_style(id).show_label {
+            return "";
         }
+        let caption = self
+            .appearance(id)
+            .caption
+            .as_deref()
+            .or_else(|| self.control(id).map(|control| control.caption.as_str()))
+            .filter(|caption| !caption.is_empty())
+            .unwrap_or_else(|| self.label(id));
+        bounded_input_box_text(caption)
     }
 
     /// The preview used by the canvas, algebra panel and SVG.
     pub fn input_box_text(&self, id: Id) -> std::borrow::Cow<'_, str> {
+        if let Def::InputBox(Some(link)) = self.def(id) {
+            if let Some(rounded) = self.input_box_rounded_number(id, link) {
+                return rounded.into();
+            }
+        }
         match self.input_box_value_text(id) {
             std::borrow::Cow::Borrowed(text) => bounded_input_box_text(text).into(),
             owned => owned,
@@ -332,6 +341,14 @@ impl SliderGeometry {
 
 impl Construction {
     pub fn set_slider_style(&mut self, id: Id, style: SliderStyle) {
+        if self.slider_style(id).step != style.step {
+            if let Some(animation) = self.animations.get_mut(&id) {
+                animation.auto_step = style.step.is_none();
+                if let Some(step) = style.step {
+                    animation.step = step;
+                }
+            }
+        }
         self.slider_styles.insert(id, style);
     }
 

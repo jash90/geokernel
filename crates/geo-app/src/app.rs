@@ -21,6 +21,8 @@ fn open(app: &mut App, ctx: &egui::Context, path: &Path) {
     match crate::cli::load_into(&mut app.wb, path) {
         Ok(()) => {
             app.load_error = None;
+            app.properties = None;
+            app.property_selection.clear();
             app.show_cas = app.wb.cas_visible_on_open();
             app.show_spreadsheet = app
                 .wb
@@ -173,7 +175,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if let Some(path) = ctx.input(|i| i.raw.dropped_files.first().map(|f| f.path().to_owned())) {
         open(app, &ctx, &path);
     }
-    shortcuts(app, &ctx);
+    if app.properties.is_none() {
+        shortcuts(app, &ctx);
+    }
     // A press in the graphics view puts the keyboard away.
     let pressed_at = ctx.input(|i| {
         i.pointer
@@ -225,6 +229,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     save_dialog(app, &ctx);
     image_dialog(app, &ctx);
     function_inspector(app, &ctx);
+    crate::properties::show(app, &ctx);
 }
 
 fn save_dialog(app: &mut App, ctx: &egui::Context) {

@@ -1668,3 +1668,33 @@ fn round_one_styled_curves_share_the_zoom_budget() {
         );
     }
 }
+
+#[test]
+fn open_properties_stays_in_the_thousand_object_frame_budget() {
+    let mut w = Window::new(84);
+    assert!(w.app.wb.object_ids().count() >= 1000);
+    let idle = w.settled(5);
+    let id = w.app.wb.object_ids().next().unwrap();
+    w.app.open_properties(id);
+    let open = w.settled(5);
+    assert!(open.texts > idle.texts, "{open:?}");
+    assert_eq!(
+        (open.rows_built, open.rows_formatted, open.colour_scans),
+        (0, 0, 0)
+    );
+    assert!(open.shapes <= idle.shapes + 90, "{open:?}");
+    assert!(open.texts <= idle.texts + 40, "{open:?}");
+    assert!(open.vertices <= idle.vertices + 6000, "{open:?}");
+    assert!(open.allocs <= idle.allocs + 220, "{open:?}");
+    // Egui joins the foreground dialog and drawing layer at the end of the
+    // pass, growing the combined clipped-shape buffer once.
+    assert!(open.bytes <= 1_140_000, "idle {idle:?}; open {open:?}");
+    assert!(!open.immediate, "{open:?}");
+    let started = std::time::Instant::now();
+    w.frames(60);
+    let ms = started.elapsed().as_secs_f64() * 1000.0 / 60.0;
+    println!("properties frame: {ms:.3} ms, {open:?}");
+    if !cfg!(debug_assertions) {
+        assert!(ms <= 4.0, "properties: {ms:.3} ms (budget 4 ms)");
+    }
+}

@@ -728,6 +728,20 @@ case("projectiveoverflow", ["A = (0, 1)", "B = (2, 1)", "l = Line(A, B)", "P = (
      [{"action": "point_coords", "label": "P", "x": 1e308, "y": 0, "z": 1e-6},
       {"action": "point_coords", "label": "T", "x": 2, "y": 1, "z": 0}])
 
+# A reference witness for an edited construction, independently of the
+# properties dialog that drives the same values in the desktop tests.
+case("propertydialog", ["A = (2, 1)", "B = (4, 1)", "C = (2, 3)",
+                        "s = Segment(A, B)", "a = Slider(0, 10)", "b = 2a"],
+     [
+         st("A", color=[219, 52, 86], point=[8, 2], label_mode=3,
+            caption="Vertex", label_offset=[20, 15], selection_allowed=False,
+            tooltip_mode=3, layer=2),
+         st("s", line=[15, 7], line_opacity=128, ends=["ARROW", "CIRCLE"],
+            decoration=2),
+         {"action": "set_number", "label": "a", "value": 7},
+         {"action": "slider_bounds", "label": "a", "min": "0", "max": "4"},
+     ])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

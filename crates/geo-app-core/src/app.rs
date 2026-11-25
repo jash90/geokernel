@@ -160,6 +160,8 @@ pub struct App {
     pub keyboard: Keyboard,
     /// The graphics style bar is open.
     pub style_bar: bool,
+    pub properties: Option<crate::properties::Dialog>,
+    pub property_selection: std::collections::BTreeSet<String>,
     /// The text of the number dialog.
     pub number_text: String,
     pub control_fields: [String; 3],
@@ -275,6 +277,8 @@ impl App {
             cursor_request: None,
             keyboard: Keyboard::default(),
             style_bar: false,
+            properties: None,
+            property_selection: Default::default(),
             number_text: String::new(),
             control_fields: Default::default(),
             control_focus: false,
@@ -357,6 +361,43 @@ impl App {
         self.metrics = metrics;
         self.gesture = Gesture::new(&metrics);
         self.gesture.set_pan_lock(self.rules.pan_axis_lock);
+    }
+
+    pub fn open_properties(&mut self, id: Id) {
+        let c = self.wb.construction();
+        if self.property_selection.contains(c.label(id)) {
+            self.properties = crate::properties::Dialog::open(
+                &self.wb,
+                self.property_selection
+                    .iter()
+                    .filter_map(|label| c.id(label)),
+            );
+        } else {
+            self.properties = crate::properties::Dialog::open(&self.wb, [id]);
+        }
+    }
+
+    pub fn select_algebra_object(&mut self, id: Id, extend: bool) {
+        let c = self.wb.construction();
+        let label = c.label(id);
+        if !extend {
+            let selected = self.wb.selected == Some(id) && self.property_selection.len() <= 1;
+            self.property_selection.clear();
+            self.wb.selected = (!selected).then_some(id);
+            return;
+        }
+        if let Some(previous) = self.wb.selected {
+            self.property_selection.insert(c.label(previous).to_owned());
+        }
+        if !self.property_selection.remove(label) {
+            if self.property_selection.len() > crate::properties::MAX_EDIT_TARGETS {
+                return;
+            }
+            self.property_selection.insert(label.to_owned());
+            self.wb.selected = Some(id);
+        } else {
+            self.wb.selected = self.property_selection.last().and_then(|label| c.id(label));
+        }
     }
 
     /// Sets the rules the window runs by (`OwnerRules`) and what follows

@@ -1263,10 +1263,16 @@ impl Workbench {
 
     /// The offset of the label of `id` from its place, in pixels.
     pub fn label_offset(&self, id: Id) -> Option<(f64, f64)> {
-        if self.label_offsets.is_empty() || id.index() >= self.construction.len() {
+        if id.index() >= self.construction.len() {
             return None;
         }
-        self.label_offsets.get(self.construction.label(id)).copied()
+        let old = self.label_offsets.get(self.construction.label(id)).copied();
+        let [x, y] = self.construction.appearance(id).label_offset;
+        if x.is_none() && y.is_none() {
+            return old;
+        }
+        let (old_x, old_y) = old.unwrap_or_default();
+        Some((x.map_or(old_x, f64::from), y.map_or(old_y, f64::from)))
     }
 
     /// Moves the label of `id` to `offset` pixels from its place; no undo
@@ -1285,7 +1291,11 @@ impl Workbench {
 
     /// Moves a text while keeping the other presentation properties and its definition.
     pub fn move_text(&mut self, id: Id, movement: TextMove) {
-        let Some(style) = self.construction.text_presentation(id).filter(|s| !s.fixed) else {
+        let Some(style) = self
+            .construction
+            .text_presentation(id)
+            .filter(|s| !self.construction.appearance(id).fixed.unwrap_or(s.fixed))
+        else {
             return;
         };
         let (position, offset) = match (movement, style.position) {
@@ -1469,6 +1479,7 @@ impl Workbench {
 
 mod editor;
 mod file;
+mod properties;
 mod rows;
 #[cfg(test)]
 mod tests;

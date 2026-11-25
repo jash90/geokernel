@@ -52,6 +52,7 @@ use shared::Chain;
 pub use shared::Labels;
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 
 mod shared;
 
@@ -579,7 +580,7 @@ pub struct Log {
     ops: Chain<Op>,
     /// Labels hidden in the drawing (part of the state that undo restores).
     pub hidden: Labels,
-    conditions: BTreeMap<String, VisibilityCondition>,
+    conditions: Arc<BTreeMap<String, VisibilityCondition>>,
     /// Labels removed by `remove` since the last rebuild: lines that use them
     /// are dropped by the rebuild on purpose.
     removed: BTreeSet<String>,
@@ -629,7 +630,7 @@ impl Log {
             return Err(format!("`{target}` already has a visibility condition"));
         }
         let id = visibility_boolean(c, target, source)?;
-        self.conditions.insert(
+        Arc::make_mut(&mut self.conditions).insert(
             target.to_owned(),
             VisibilityCondition {
                 source: source.to_owned(),
@@ -638,6 +639,48 @@ impl Log {
         );
         Ok(())
     }
+    pub(crate) fn edit_condition(
+        &mut self,
+        c: &mut Construction,
+        target: &str,
+        source: &str,
+    ) -> Result<(), String> {
+        if source.is_empty() {
+            Arc::make_mut(&mut self.conditions).remove(target);
+            return Ok(());
+        }
+        let before = Arc::make_mut(&mut self.conditions).remove(target);
+        let result = self.set_condition(c, target, source).and_then(|()| {
+            let start = self.condition(target).and_then(|label| c.id(label));
+            let target = c.id(target).ok_or("missing condition target")?;
+            let mut pending: Vec<_> = start.into_iter().collect();
+            let mut seen = BTreeSet::new();
+            let mut work_left = 8192;
+            while let Some(id) = pending.pop() {
+                if id == target {
+                    return Err("circular visibility condition".into());
+                }
+                if seen.insert(id) {
+                    for parent in c.inputs(id) {
+                        if work_left == 0 {
+                            return Err("visibility condition exceeds the dependency budget".into());
+                        }
+                        work_left -= 1;
+                        pending.push(parent);
+                    }
+                }
+            }
+            Ok(())
+        });
+        if result.is_err() {
+            Arc::make_mut(&mut self.conditions).remove(target);
+            if let Some(before) = before {
+                Arc::make_mut(&mut self.conditions).insert(target.to_owned(), before);
+            }
+        }
+        result
+    }
+
     pub(crate) fn entries(&self) -> impl Iterator<Item = &Entry> {
         self.ops.items().into_iter().filter_map(|op| match op {
             Op::Define(e) => Some(e),
@@ -1907,7 +1950,7 @@ impl Log {
         for label in &self.hidden {
             let _ = writeln!(out, "SetVisibleInView({label}, 1, false)");
         }
-        for (target, condition) in &self.conditions {
+        for (target, condition) in self.conditions.iter() {
             let _ = writeln!(
                 out,
                 "{SHOW_OBJECT}({target}, {})",
@@ -1918,7 +1961,7 @@ impl Log {
     }
 
     fn replay_conditions(&self, c: &mut Construction, kept: &mut Log) {
-        for (target, condition) in &self.conditions {
+        for (target, condition) in self.conditions.iter() {
             // A deleted object can be a target or be read by a condition.
             let _ = kept.set_condition(c, target, &condition.source);
         }

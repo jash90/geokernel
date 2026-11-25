@@ -6,7 +6,7 @@ use crate::kernel::control::{
     ControlScript, InputBoxStyle, NumberRounding, SliderLabel, SliderStyle,
 };
 use crate::kernel::image::{RasterAsset, MAX_ASSET_BYTES};
-use crate::kernel::DrawingStyle;
+use crate::kernel::{appearance::Appearance, DrawingStyle, EquationForm};
 use crate::Construction;
 use std::fmt;
 use std::sync::Arc;
@@ -24,6 +24,14 @@ pub enum Property {
     DrawingStyle {
         label: String,
         style: DrawingStyle,
+    },
+    Appearance {
+        label: String,
+        style: Box<Appearance>,
+    },
+    EquationForm {
+        label: String,
+        form: EquationForm,
     },
     NumberRounding(NumberRounding),
     CellInput {
@@ -78,6 +86,8 @@ impl Property {
     pub fn label(&self) -> Option<&str> {
         match self {
             Self::DrawingStyle { label, .. }
+            | Self::Appearance { label, .. }
+            | Self::EquationForm { label, .. }
             | Self::ClosestCircleAngle { label, .. }
             | Self::RegularVertex { label, .. }
             | Self::CellInput { label, .. }
@@ -129,6 +139,13 @@ impl Property {
                 c.remember_cell_input(id, input);
                 Ok(())
             }
+            Self::Appearance { label, style } => {
+                c.set_appearance(object(c, label)?, (**style).clone())
+            }
+            Self::EquationForm { label, form } => c
+                .set_equation_form(object(c, label)?, form.clone())
+                .map(|_| ())
+                .map_err(|e| e.to_string()),
             Self::NumberRounding(rounding) => {
                 c.set_number_rounding(*rounding);
                 Ok(())
@@ -204,6 +221,16 @@ impl Property {
         match self.apply(c) {
             Ok(()) => (Some(self), Vec::new()),
             Err(error) => {
+                if let Self::Appearance { label, style } = &self {
+                    if let Some(id) = c.id(label) {
+                        c.restore_appearance(id, (**style).clone());
+                        let kept = Self::Appearance {
+                            label: label.clone(),
+                            style: Box::new(c.appearance(id).clone()),
+                        };
+                        return (Some(kept), vec![error]);
+                    }
+                }
                 let Self::SliderBounds {
                     label,
                     bounds: [Some(min), Some(max)],
@@ -268,6 +295,28 @@ impl fmt::Display for Property {
             }
             Self::CellInput { label, input } => {
                 write!(f, "$cellInput({label}, {})", encode_text(input))
+            }
+            Self::Appearance { label, style } => {
+                let json = serde_json::to_string(style).map_err(|_| fmt::Error)?;
+                write!(
+                    f,
+                    "$objectAppearance({}, {})",
+                    encode_text(label),
+                    encode_text(&json)
+                )
+            }
+            Self::EquationForm { label, form } => {
+                let parameter = match form {
+                    EquationForm::Parametric(parameter) => parameter,
+                    _ => "",
+                };
+                write!(
+                    f,
+                    "$equationForm({}, {}, {})",
+                    encode_text(label),
+                    form.xml_style(),
+                    encode_text(parameter)
+                )
             }
             Self::NumberRounding(rounding) => {
                 let (mode, digits) = match rounding {
@@ -416,6 +465,8 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
         && !line.starts_with("$inputBoxStyle(")
         && !line.starts_with("$objectScripts(")
         && !line.starts_with("$drawingStyle(")
+        && !line.starts_with("$objectAppearance(")
+        && !line.starts_with("$equationForm(")
         && !line.starts_with("$cellInput(")
         && !line.starts_with("$closestCircleAngle(")
         && !line.starts_with("$regularVertex(")
@@ -425,6 +476,26 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
     Some((|| {
         let (form, args) = split_call(line).ok_or("invalid saved property")?;
         match (form, args.as_slice()) {
+            ("$objectAppearance", [label, json]) => {
+                if json.len() > 32_768 {
+                    return Err("object appearance is too large".into());
+                }
+                let style = serde_json::from_str(&decode_text(json)?)
+                    .map_err(|err| format!("invalid object appearance: {err}"))?;
+                Ok(Property::Appearance {
+                    label: decode_text(label)?,
+                    style,
+                })
+            }
+            ("$equationForm", [label, form, parameter]) => {
+                let parameter = decode_text(parameter)?;
+                let form = EquationForm::from_xml(form, Some(&parameter))
+                    .ok_or("invalid equation form")?;
+                Ok(Property::EquationForm {
+                    label: decode_text(label)?,
+                    form,
+                })
+            }
             ("$cellInput", [label, input]) => {
                 if input.len() > 2 * crate::spreadsheet::MAX_INPUT_BYTES + 1 {
                     return Err(crate::spreadsheet::LIMIT.into());

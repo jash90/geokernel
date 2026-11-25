@@ -26,7 +26,6 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, Weak};
 
-use crate::style::FILL_OPACITY;
 /// Point radii in pixels: point size 5 for free points, 4 for dependent ones.
 pub use crate::style::FREE_POINT_RADIUS;
 const DEPENDENT_POINT_RADIUS: f32 = 4.0;
@@ -41,6 +40,7 @@ pub(crate) fn line_width(c: &Construction, id: Id, default: f32) -> f32 {
 const STROKE_STEPS: usize = 16;
 const LABEL_FONT: f32 = 16.0;
 
+mod appearance;
 pub(crate) mod charts;
 pub(crate) mod image;
 mod text;
@@ -252,7 +252,27 @@ fn paint_layer<'c>(
             c
         }
     };
-    let curve = |id: Id| Stroke::new(line_width(c, id, CURVE_WIDTH), color(id));
+    let stroke_color = |id: Id| {
+        let color = color(id);
+        c.appearance(id).line_opacity.map_or(color, |alpha| {
+            color.gamma_multiply(alpha.clamp(0, 255) as f32 / 255.0)
+        })
+    };
+    let fill_color = |id: Id| {
+        let alpha = c
+            .dynamic_fill_opacity(id)
+            .unwrap_or_else(|| style::fill_opacity(c, id));
+        color(id).gamma_multiply(alpha.clamp(0.0, 1.0) as f32)
+    };
+    let curve = |id: Id| Stroke::new(line_width(c, id, CURVE_WIDTH), stroke_color(id));
+    let line = |id: Id, points| {
+        appearance::line(
+            painter,
+            points,
+            curve(id),
+            c.appearance(id).line_type.unwrap_or(0),
+        );
+    };
 
     // Used to draw an "infinite" line as a segment longer than the view.
     let v = t.view();
@@ -277,9 +297,12 @@ fn paint_layer<'c>(
             // A moved label may lie anywhere: its object is never skipped.
             if let Some(angle) = c.angle_geometry(id) {
                 let (x, y) = screen(angle.center.0, angle.center.1);
+                let margin = c
+                    .appearance(id)
+                    .angle_radius
+                    .map_or(NEAR_ANGLE, |r| f64::from(r.clamp(10, 100)) + 20.0);
                 if !scene.cull
-                    || ((-NEAR_ANGLE..=w + NEAR_ANGLE).contains(&x)
-                        && (-NEAR_ANGLE..=h + NEAR_ANGLE).contains(&y))
+                    || ((-margin..=w + margin).contains(&x) && (-margin..=h + margin).contains(&y))
                     || (scene.label_offset)(id).is_some()
                 {
                     angles.push((id, angle));
@@ -386,14 +409,14 @@ fn paint_layer<'c>(
     for (id, angle) in angles {
         // With the scales apart the sector keeps one radius, the
         // geometric mean of the scales (exact whenever they are equal).
-        let radius = angle.radius((t.xscale() * t.yscale()).sqrt()) as f32;
+        let radius = c.angle_radius(id, angle, (t.xscale() * t.yscale()).sqrt()) as f32;
         if radius <= 0.0 {
             continue;
         }
         let vertex = p(angle.center.0, angle.center.1);
         let col = color(id);
-        let fill = col.gamma_multiply(FILL_OPACITY as f32);
-        let stroke = Stroke::new(line_width(c, id, 1.5), col);
+        let fill = fill_color(id);
+        let stroke = Stroke::new(line_width(c, id, 1.5), stroke_color(id));
         let at = |direction: f64, distance: f32| {
             let (sin, cos) = direction.sin_cos();
             vertex + vec2(cos as f32, -(sin as f32)) * distance
@@ -407,7 +430,7 @@ fn paint_layer<'c>(
             0.0
         };
         let end = angle.start + angle.sweep;
-        if angle.is_right() {
+        if angle.is_right() && c.appearance(id).right_angle.unwrap_or(true) {
             let side = radius * std::f32::consts::FRAC_1_SQRT_2;
             let points = vec![
                 vertex,
@@ -470,7 +493,6 @@ fn paint_layer<'c>(
             Value::PolyLine { .. } => false,
             _ => continue,
         };
-        let col = color(id);
         if closed {
             let Some(pts) = crate::hit::screen_vertices(c, id, t) else {
                 continue;
@@ -480,8 +502,9 @@ fn paint_layer<'c>(
                 .map(|&(x, y)| origin + vec2(x as f32, y as f32))
                 .collect();
             let mut mesh = Mesh::default();
+            let fill = fill_color(id);
             for &p in &points {
-                mesh.colored_vertex(p, col.gamma_multiply(FILL_OPACITY as f32));
+                mesh.colored_vertex(p, fill);
             }
             for [a, b, d] in shape::triangulate(&pts) {
                 mesh.add_triangle(a as u32, b as u32, d as u32);
@@ -542,7 +565,7 @@ fn paint_layer<'c>(
             }
             let Some(drawn) = curves
                 .as_ref()
-                .and_then(|curves| curves.get(c, id, color(id)))
+                .and_then(|curves| curves.get(c, id, stroke_color(id)))
             else {
                 continue;
             };
@@ -578,12 +601,12 @@ fn paint_layer<'c>(
         if let Some((a, b, k)) = c.value(id).unit_line() {
             let d = a * mx + b * my + k;
             let (fx, fy) = (mx - a * d, my - b * d);
-            painter.line_segment(
+            line(
+                id,
                 [
                     p(fx - reach * b, fy + reach * a),
                     p(fx + reach * b, fy - reach * a),
                 ],
-                curve(id),
             );
             if let Some(entry) = labelpos::line_entry(screen(fx, fy), (b, a), w, h) {
                 let pos = labelpos::line_label(entry, w, h, 24.0, 12.0);
@@ -605,7 +628,7 @@ fn paint_layer<'c>(
                 continue;
             }
             let far = (reach + (x - mx).hypot(y - my)) / len;
-            painter.line_segment([p(x, y), p(x + far * b, y - far * a)], curve(id));
+            line(id, [p(x, y), p(x + far * b, y - far * a)]);
             let s = screen(x, y);
             let entry = if in_rect(s) {
                 Some(labelpos::Entry {
@@ -634,7 +657,19 @@ fn paint_layer<'c>(
             if ![x1, y1, x2, y2].iter().all(|v| v.is_finite()) {
                 continue;
             }
-            painter.line_segment([p(x1, y1), p(x2, y2)], curve(id));
+            let [a, b] = [p(x1, y1), p(x2, y2)];
+            line(id, [a, b]);
+            let props = c.appearance(id);
+            if props.segment_ends != [None; 2] || props.decoration.is_some() {
+                appearance::segment_marks(
+                    painter,
+                    a,
+                    b,
+                    curve(id),
+                    props.segment_ends,
+                    props.decoration.unwrap_or(0),
+                );
+            }
             let pos = labelpos::segment_label(screen(x1, y1), screen(x2, y2), 12.0);
             labels.push(label(
                 id,
@@ -656,13 +691,13 @@ fn paint_layer<'c>(
         let (from, to) = (p(x0, y0), p(x0 + x, y0 + y));
         painter.line_segment([from, to], curve(id));
         let d = to - from;
-        if d.length() > 0.0 {
+        if d.length() > 0.0 && c.appearance(id).vector_arrow.unwrap_or(true) {
             let u = d / d.length();
             let n = vec2(-u.y, u.x);
             let base = to - 12.0 * u;
             painter.add(Shape::convex_polygon(
                 vec![to, base + 4.5 * n, base - 4.5 * n],
-                color(id),
+                stroke_color(id),
                 Stroke::NONE,
             ));
         }
@@ -676,7 +711,14 @@ fn paint_layer<'c>(
         ));
     }
     if c.has_loci() {
-        paint_loci(painter, c, &ids, (t, origin), color, scene.generation);
+        paint_loci(
+            painter,
+            c,
+            &ids,
+            (t, origin),
+            stroke_color,
+            scene.generation,
+        );
     }
     for &id in &ids {
         // A pen stroke: its subpaths with round ends; a lone point is the
@@ -691,7 +733,11 @@ fn paint_layer<'c>(
             }
             match points.as_slice() {
                 [at] => {
-                    painter.circle_filled(*at, CURVE_WIDTH / 2.0, color(id));
+                    painter.circle_filled(
+                        *at,
+                        line_width(c, id, CURVE_WIDTH) / 2.0,
+                        stroke_color(id),
+                    );
                 }
                 _ => {
                     painter.add(Shape::line(points, curve(id)));
@@ -713,7 +759,15 @@ fn paint_layer<'c>(
             } else {
                 DEPENDENT_POINT_RADIUS
             };
-            point_shape(painter, p(x, y), color(id), radius);
+            let props = c.appearance(id);
+            let radius = props.point_size.map_or(radius, |r| r.clamp(1, 9) as f32);
+            appearance::point(
+                painter,
+                p(x, y),
+                color(id),
+                radius,
+                props.point_style.unwrap_or(0),
+            );
             let (sx, sy) = screen(x, y);
             labels.push(label(
                 id,
@@ -732,9 +786,17 @@ fn paint_layer<'c>(
                 let col = color(id);
                 let knob = pos(slider.knob);
                 let radius = slider.radius as f32;
+                let props = c.appearance(id);
+                let track = props
+                    .slider_track_color
+                    .map_or(col, |[r, g, b]| Color32::from_rgb(r, g, b));
+                let alpha = props
+                    .line_opacity
+                    .map_or(0.45, |alpha| alpha.clamp(0, 255) as f32 / 255.0);
+                let thickness = line_width(c, id, 25.0 / 3.0);
                 painter.line_segment(
                     [pos(slider.start), pos(slider.end)],
-                    Stroke::new(5.0, col.gamma_multiply(0.45)),
+                    Stroke::new(thickness, track.gamma_multiply(alpha)),
                 );
                 if scene.hovered == Some(id) || scene.selected == Some(id) {
                     painter.circle_filled(knob, radius + 4.0, col.gamma_multiply(0.25));
@@ -880,6 +942,9 @@ fn paint_layer<'c>(
                 if c.drawing_style(id).show_label {
                     let anchor = top + vec2(size + 9.0, size * 0.5);
                     let caption = c.checkbox_caption(id);
+                    let caption = object_label(c, id, caption);
+                    let (ox, oy) = (scene.label_offset)(id).unwrap_or_default();
+                    let anchor = anchor + vec2(ox as f32, oy as f32);
                     let width = if let Some(source) =
                         geo_kernel::kernel::control::latex_caption(&caption)
                     {
@@ -939,12 +1004,30 @@ fn paint_layer<'c>(
         if sx < -20.0 || sy < -20.0 || sx > wf + 20.0 || sy > hf + 20.0 {
             continue;
         }
+        let text = object_label(c, id, text);
         let galley = painter.layout_no_wrap(text.into_owned(), font.clone(), color);
         let r = align.anchor_size(origin + vec2(sx, sy), galley.size());
         painter.galley(r.min, galley, color);
         if let Some(rects) = rects.as_mut() {
             rects.push((id, r.translate(-origin.to_vec2()).core()));
         }
+    }
+}
+
+fn object_label<'a>(c: &'a Construction, id: Id, base: Cow<'a, str>) -> Cow<'a, str> {
+    let appearance = c.appearance(id);
+    let Some(mode) = appearance.label_mode else {
+        return base;
+    };
+    let caption = || c.object_caption(id);
+    let value = || crate::describe::object_text(c, id);
+    let name = c.label(id);
+    match mode {
+        1 => Cow::Owned(format!("{name} = {}", value())),
+        2 => Cow::Owned(value()),
+        3 => caption(),
+        4 => Cow::Owned(format!("{} = {}", caption(), value())),
+        _ => Cow::Borrowed(name),
     }
 }
 
@@ -1077,6 +1160,7 @@ struct LocusDrawing {
     view: ViewTransform,
     origin: Pos2,
     color: Color32,
+    width: f32,
     pixels_per_point: f32,
     options: TessellationOptions,
     mesh: Arc<Mesh>,
@@ -1113,6 +1197,7 @@ fn paint_loci(
             continue;
         };
         let color = color(id);
+        let width = line_width(c, id, CURVE_WIDTH);
         let mesh = entries
             .get(&id)
             .filter(|entry| {
@@ -1120,6 +1205,7 @@ fn paint_loci(
                     && entry.view == *view
                     && entry.origin == origin
                     && entry.color == color
+                    && entry.width == width
                     && entry.pixels_per_point == pixels_per_point
                     && entry.options == options
             })
@@ -1131,7 +1217,7 @@ fn paint_loci(
                         let (sx, sy) = view.world_to_screen(x, y);
                         origin + vec2(sx as f32, sy as f32)
                     },
-                    Stroke::new(CURVE_WIDTH, color),
+                    Stroke::new(width, color),
                     run,
                     (pixels_per_point, options),
                 ));
@@ -1142,6 +1228,7 @@ fn paint_loci(
                         view: *view,
                         origin,
                         color,
+                        width,
                         pixels_per_point,
                         options,
                         mesh: mesh.clone(),

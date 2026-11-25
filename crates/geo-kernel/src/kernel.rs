@@ -32,6 +32,7 @@
 #[path = "algo/angle.rs"]
 pub mod angle;
 pub mod animation;
+pub mod appearance;
 #[path = "algo/axis.rs"]
 mod axis;
 #[path = "control.rs"]
@@ -1140,6 +1141,8 @@ pub struct Construction {
     slider_labels: BTreeMap<Id, control::SliderLabel>,
     number_rounding: control::NumberRounding,
     free_booleans: Vec<Id>,
+    appearance_channels: std::collections::BTreeMap<Id, [Option<appearance::Channel>; 4]>,
+    appearances: std::collections::BTreeMap<Id, appearance::Appearance>,
     drawing_styles: std::collections::BTreeMap<Id, DrawingStyle>,
     drawing_layers: u16,
     text_presentations: HashMap<Id, text::TextOverrides>,
@@ -2272,6 +2275,8 @@ impl Construction {
         self.free_booleans
             .truncate(self.free_booleans.partition_point(|id| id.0 < at.len));
         self.drawing_styles.split_off(&Id(at.len));
+        self.appearances.split_off(&Id(at.len));
+        self.appearance_channels.split_off(&Id(at.len));
         self.equation_forms.retain(|id, _| id.0 < at.len);
         self.construction_sources.retain(|id, _| id.0 < at.len);
         self.frozen_line_starts

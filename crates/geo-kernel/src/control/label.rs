@@ -12,7 +12,7 @@ use std::borrow::Cow;
 use std::fmt::Write as _;
 use std::sync::Arc;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum NumberRounding {
     Decimals(u32),
     SignificantFigures(u32),
@@ -47,6 +47,20 @@ impl Construction {
         self.slider_labels.insert(id, label);
     }
 
+    pub fn input_box_rounded_number(&self, id: Id, link: Id) -> Option<String> {
+        let rounding = self.appearance(id).input_rounding?;
+        let Value::Number(value) = self.value(link) else {
+            return None;
+        };
+        let angle = self.kind(link) == crate::Kind::Angle;
+        let mut text = String::new();
+        rounding.write(&mut text, if angle { value.to_degrees() } else { value });
+        if angle {
+            text.push('°');
+        }
+        Some(text)
+    }
+
     pub fn format_display_number(&self, value: f64) -> String {
         let mut out = String::new();
         self.number_rounding.write(&mut out, value);
@@ -79,7 +93,22 @@ impl Construction {
     }
 
     pub fn checkbox_caption(&self, id: Id) -> Cow<'_, str> {
-        self.expand_caption(id, self.control(id).map_or("", |control| &control.caption))
+        self.object_caption(id)
+    }
+
+    pub fn object_caption(&self, id: Id) -> Cow<'_, str> {
+        let caption = self
+            .appearance(id)
+            .caption
+            .as_deref()
+            .or_else(|| self.control(id).map(|control| control.caption.as_str()))
+            .unwrap_or_default();
+        self.expand_caption(id, caption)
+    }
+
+    pub fn next_cell_tooltip(&self, id: Id) -> Option<Cow<'_, str>> {
+        let next = next_cell_in_first_row(self.label(id)).and_then(|label| self.id(&label))?;
+        Some(self.caption_value(next))
     }
 
     fn expand_caption<'a>(&'a self, id: Id, caption: &'a str) -> Cow<'a, str> {

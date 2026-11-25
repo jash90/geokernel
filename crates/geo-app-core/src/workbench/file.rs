@@ -156,7 +156,7 @@ impl Workbench {
             let label = c.label(id);
             // An object from a file keeps the colour and opacity saved there.
             if !self.file_object_styles.contains_key(label) {
-                let color = palette.color(id);
+                let color = palette.static_color(id);
                 presentation
                     .colors
                     .insert(label, [color.r, color.g, color.b]);
@@ -387,12 +387,191 @@ impl Workbench {
                     .map_or(usize::MAX, |id| c.evaluation_rank(id))
             });
         }
-        let presentation = Presentation {
+        let mut presentation = Presentation {
             cas_visible,
             spreadsheet_view,
             ..self.export_presentation(view)
         };
+        let (edited_styles, edited_animation) = self.edited_file_styles(&presentation);
+        presentation
+            .object_styles
+            .extend(edited_styles.iter().map(|(&label, style)| (label, style)));
+        presentation.slider_animation.extend(
+            edited_animation
+                .iter()
+                .map(|(&label, style)| (label, style)),
+        );
         export::ggb(c, definitions, &presentation)
+    }
+
+    fn edited_file_styles(
+        &self,
+        presentation: &Presentation<'_>,
+    ) -> (
+        BTreeMap<&str, export::ObjectStyle>,
+        BTreeMap<&str, export::SliderAnimation>,
+    ) {
+        let c = self.construction();
+        let mut styles = BTreeMap::new();
+        let mut animations = BTreeMap::new();
+        for (id, edited) in c.appearances() {
+            let label = c.label(id);
+            let drawing = c.drawing_style(id);
+            let slider = c.slider_style(id);
+            let original = presentation.object_styles.get(label);
+            let mut style = original.map_or_else(
+                || export::ObjectStyle {
+                    color: presentation.colors.get(label).copied(),
+                    alpha: Some(presentation.opacity.get(label).copied().unwrap_or_default()),
+                    layer: Some(drawing.layer),
+                    label_mode: Some(i32::from(c.has_slider_bounds(id))),
+                    line: (!matches!(
+                        c.kind(id),
+                        Kind::Point
+                            | Kind::Boolean
+                            | Kind::Text
+                            | Kind::Image
+                            | Kind::InputBox
+                            | Kind::Button
+                    ))
+                    .then_some(export::LineStyle {
+                        thickness: Some(i32::from(drawing.line_thickness)),
+                        hidden_kind: Some(1),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
+                |s| (*s).clone(),
+            );
+            if let Some(caption) = &edited.caption {
+                style.caption.clone_from(caption);
+            }
+            style.label_mode = edited.label_mode.or(style.label_mode);
+            style.alpha = edited.fill_opacity.or(style.alpha);
+            style.background = edited.text_background.or(style.background);
+            style.tooltip_mode = edited.tooltip.or(style.tooltip_mode);
+            style.fixed = edited.fixed.or(style.fixed);
+            style.auxiliary = edited.auxiliary.or(style.auxiliary);
+            style.selection_allowed = edited.selection_allowed.or(style.selection_allowed);
+            style.arc_size = edited.angle_radius.or(style.arc_size);
+            style.emphasize_right_angle = edited.right_angle.or(style.emphasize_right_angle);
+            style.point_size = edited.point_size.or(style.point_size);
+            if let Some(rounding) = edited.input_rounding {
+                use geo_kernel::kernel::control::NumberRounding;
+                style.rounding = Some(match rounding {
+                    NumberRounding::Decimals(digits) => {
+                        export::Rounding::Decimals(digits.min(15) as i32)
+                    }
+                    NumberRounding::SignificantFigures(digits) => {
+                        export::Rounding::SignificantFigures(digits.clamp(1, 15) as i32)
+                    }
+                });
+            }
+            style.point_style = edited.point_style.or(style.point_style);
+            style.decoration = edited.decoration.map(i32::from).or(style.decoration);
+            style.head_style = edited.vector_arrow.map(u8::from).or(style.head_style);
+            if edited.line_type.is_some()
+                || edited.line_opacity.is_some()
+                || edited.edited_thickness
+            {
+                let line = style.line.get_or_insert_with(Default::default);
+                line.kind = edited.line_type.unwrap_or(line.kind);
+                line.opacity = edited.line_opacity.or(line.opacity);
+                line.thickness = Some(i32::from(drawing.line_thickness));
+            }
+            if edited.edited_layer {
+                style.layer = Some(drawing.layer);
+            }
+            if edited.edited_checkbox {
+                style.checkbox_fixed = Some(c.checkbox_style(id).fixed);
+            }
+            for (i, value) in edited.segment_ends.iter().enumerate() {
+                if let Some(value) = value {
+                    let names = [
+                        "default",
+                        "line",
+                        "arrow",
+                        "crows_foot",
+                        "arrow_outline",
+                        "arrow_filled",
+                        "circle_outline",
+                        "circle",
+                    ];
+                    style.ends[i] = names
+                        .get(usize::from(*value))
+                        .and_then(|name| export::SegmentEnd::from_xml(name));
+                }
+            }
+            if edited.edited_slider {
+                let (x, y) = c.slider_position(id, slider);
+                let show_algebra = style
+                    .slider
+                    .as_ref()
+                    .and_then(|s| s.flags)
+                    .is_none_or(|f| f.show_algebra);
+                style.slider = Some(Box::new(export::SliderLayout {
+                    absolute: slider.absolute,
+                    position: Some([x, y]),
+                    width: Some(slider.width),
+                    flags: Some(export::SliderFlags {
+                        fixed: slider.fixed,
+                        show_algebra,
+                        horizontal: slider.horizontal,
+                    }),
+                }));
+                style.knob_size = slider.knob_size;
+            }
+            if edited.playback.is_some() || edited.edited_slider {
+                if let Some(animation) = c.animation(id) {
+                    animations.insert(
+                        label,
+                        export::SliderAnimation {
+                            step: (!animation.auto_step).then(|| animation.step.to_string()),
+                            speed: Some(animation.speed.to_string()),
+                            mode: animation.mode.code(),
+                            playing: animation.playing,
+                        },
+                    );
+                } else if let Some(step) = slider.step {
+                    animations.insert(
+                        label,
+                        export::SliderAnimation {
+                            step: Some(step.to_string()),
+                            speed: None,
+                            mode: 1,
+                            playing: false,
+                        },
+                    );
+                }
+            }
+            if edited.dynamic.edited {
+                style.dynamic_color =
+                    edited
+                        .dynamic
+                        .channels
+                        .iter()
+                        .any(Option::is_some)
+                        .then(|| {
+                            let fallback = edited
+                                .dynamic
+                                .components(drawing.color.or(style.color).unwrap_or([0; 3]));
+                            let [red, green, blue] = std::array::from_fn(|i| {
+                                edited.dynamic.channels[i]
+                                    .clone()
+                                    .unwrap_or_else(|| fallback[i].to_string())
+                            });
+                            Box::new(export::DynamicColor {
+                                red,
+                                green,
+                                blue,
+                                alpha: edited.dynamic.channels[3].clone(),
+                                space: i32::from(edited.dynamic.space),
+                            })
+                        });
+            }
+            styles.insert(label, style);
+        }
+        (styles, animations)
     }
 
     /// The whole document as a script that `restore_text` (or `load_bytes`)

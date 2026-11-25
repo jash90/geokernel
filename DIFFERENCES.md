@@ -466,6 +466,15 @@ is needed.
 | Styled curves during anisotropic zoom | The reference redraws curves at their saved stroke thickness. | Kept mesh runs preserve their width when they have four vertices per sample. If a thin or sharp stroke requires tessellation after the frame has used its allowance, the kept mesh is scaled including its stroke width until a new plot fits the allowance. |
 | Freehand Shape and Function | Tests segment and polygon candidates, then a circle, a conic and a function. Fits conics by singular value decomposition and can remember prior polygon edges. | Uses the reference's stroke moments, line and circle thresholds and interpolation. A single closed stroke can produce a triangle or quadrilateral. Ellipse and hyperbola fitting uses normalized least squares with a fixed constant. The numerical fits and borderline classification can differ, and a stroke that requires the reference's singular or parabolic conic fit still falls back to a function or creates nothing. Each stroke takes at most 512 samples and a function spans at most 2,048 pixel columns. |
 
+## Object properties
+
+| Area | Desktop behavior |
+| --- | --- |
+| Tabs | The desktop inspector places the slider, algebra and text controls in the five general property tabs. Scripting is separate work. |
+| Selection | Modifier-click in the algebra view extends the selection. Fields shared by the selection apply as a single history entry. Selections over 512 objects, or edits whose estimated propagation exceeds 8192 object visits, are refused before applying any change. |
+| Algebra and text | The marker distinguishes auxiliary objects in the flat algebra list. Per-object numeric rounding applies to linked numeric input boxes. Text uses the bundled font family. |
+| Save | Native snapshots keep edited properties. The construction archive uses the existing writer's presentation tags. The separate slider-track color and the full import-to-drawing round trip for presentation tags are pending. |
+
 ## Construction tools
 
 | Tool | GeoGebra | geokernel | Reason |
