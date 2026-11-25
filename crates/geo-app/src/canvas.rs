@@ -28,6 +28,11 @@ const LOCUS_SAMPLE_INTERVAL: f64 = 0.08;
 /// drawing's.
 const STARTS: usize = 8;
 
+#[cfg(test)]
+thread_local! {
+    pub(crate) static BOUNDS_PASSES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
 pub fn show(app: &mut App, ui: &mut Ui) {
     let size = ui.available_size();
     let (response, painter) = ui.allocate_painter(size, Sense::click_and_drag());
@@ -108,7 +113,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // D11): the camera names the centre's world point itself, so there is
     // nothing to move. A view request is made for the new size, so it
     // comes after.
-    let bounds = view::content_bounds(app.wb.construction());
+    let frame_list_limit = view::MAX_DESKTOP_FRAME_LIST_ITEMS;
+    let mut list_items_left = frame_list_limit;
     let request = app.view_request.take();
     if app.camera.is_none() || request.is_some() {
         // A fit asked for (`setViewShowAllObjects`) measures the drawn
@@ -122,10 +128,19 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 let c = app.wb.construction();
                 t.as_ref()
                     .and_then(|t| Camera::fit_drawn(c, t, w, h, app.rules.scale_limits))
-                    .unwrap_or_else(|| Camera::fit(bounds, w, h, app.rules.scale_limits))
+                    .unwrap_or_else(|| {
+                        let bounds = camera_bounds(app, |_| true, &mut list_items_left);
+                        Camera::fit(bounds, w, h, app.rules.scale_limits)
+                    })
             }
-            Some(ViewRequest::Initial) | None => initial_camera(app, bounds, &painter, rect),
+            Some(ViewRequest::Initial) | None => {
+                initial_camera(app, &painter, rect, &mut list_items_left)
+            }
         });
+        if list_items_left < frame_list_limit {
+            // A follow-up frame can spend the full allowance on drawing.
+            ui.ctx().request_repaint();
+        }
         // A fit or the standard view is one undo step
         // (`setViewShowAllObjects(storeUndo)` / `setStandardView(true)`),
         // never the view a document opens with.
@@ -315,6 +330,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
 
     let tool = app.tool.tool();
     let move_tool = tool == Tool::Move;
+    let mut input_box_click = None;
     // A tool that builds from picks takes them when the button goes down
     // (spec E1); the delete and show/hide tools act on a click.
     let press_tool = !matches!(
@@ -335,10 +351,11 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // The show/hide tool shows hidden objects faintly and lets them be picked.
     let show_all = tool == Tool::ShowHide;
     let t = cam.transform(w, h);
-    if tool == Tool::PenStroke
-        && ui.input(|i| feed_pen(&mut app.pen_samples, &t, &i.events, owns, to_local))
-    {
-        finish_pen_stroke(app);
+    if tool == Tool::PenStroke {
+        let strokes = ui.input(|i| feed_pen(&mut app.pen_samples, &t, &i.events, owns, to_local));
+        for samples in strokes {
+            finish_pen_stroke(app, samples);
+        }
     }
     // How far a pointer reaches (`App.getCapturingThreshold` by the
     // pointer's type): the hover is the mouse's; a press is its pointer's.
@@ -711,28 +728,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                     let (x, y) = t.world_to_screen(x, y);
                     (bounds[0]..=bounds[2]).contains(&x) && (bounds[1]..=bounds[3]).contains(&y)
                 };
-                let c = app.wb.construction();
-                let hits = c
-                    .ids()
-                    .filter(|&id| {
-                        app.wb.is_visible(id)
-                            && match c.value(id) {
-                                Value::Point { x, y } => contains(x, y),
-                                Value::Segment { x1, y1, x2, y2 } => {
-                                    contains(x1, y1) && contains(x2, y2)
-                                }
-                                Value::Circle { cx, cy, r } => {
-                                    contains(cx - r, cy + r) && contains(cx + r, cy - r)
-                                }
-                                Value::Polygon { .. } | Value::PolyLine { .. } => c
-                                    .vertices(id)
-                                    .all(|p| p.is_some_and(|(x, y)| contains(x, y))),
-                                _ => false,
-                            }
-                    })
-                    .take(MAX_LIST_TOOL_MEMBERS + 1)
-                    .collect();
-                create_list(app, hits);
+                let mut work_left = MAX_LIST_TOOL_WORK;
+                if let Some(hits) = rectangle_list_hits(app, contains, &mut work_left) {
+                    create_list(app, hits, work_left);
+                }
             } else {
                 let (x0, y0, x1, y1) = camera::zoom_rectangle(from, to, w, h);
                 if x1 - x0 >= camera::ZOOM_RECT_THRESHOLD && y1 - y0 >= camera::ZOOM_RECT_THRESHOLD
@@ -806,7 +805,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                     })
                     .take(MAX_LIST_TOOL_MEMBERS + 1)
                     .collect();
-                create_list(app, hits);
+                create_list(app, hits, MAX_LIST_TOOL_WORK);
             }
             Tool::Slider | Tool::Checkbox | Tool::InputBox => {
                 if app.tool.control_request().is_none() {
@@ -844,8 +843,14 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                     }
                 };
                 match hit {
-                    Target::Object(id) => click(app, &pt, local, Some(id)),
-                    Target::Nothing => click(app, &pt, local, None),
+                    Target::Object(id) => {
+                        click(app, &pt, local, Some(id));
+                        input_box_click = Some(Some(id));
+                    }
+                    Target::Nothing => {
+                        click(app, &pt, local, None);
+                        input_box_click = Some(None);
+                    }
                     Target::Inert => {}
                 }
             }
@@ -967,7 +972,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let mut input_boxes = std::mem::take(&mut app.input_box_rects);
     input_boxes.clear();
     let input_boxes = std::cell::RefCell::new(input_boxes);
-    draw::paint(
+    draw::paint_with_list_budget(
         &painter,
         rect,
         c,
@@ -985,9 +990,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             text_rects: Some(&app.text_rects),
             input_box_rects: move_tool.then_some(&input_boxes),
         },
+        &mut list_items_left,
     );
     let input_boxes = input_boxes.into_inner();
-    input_box_editor(app, ui, rect, &input_boxes);
+    input_box_editor(app, ui, rect, &input_boxes, input_box_click);
     app.input_box_rects = input_boxes;
     if app.pen_samples.len() >= 2 {
         let samples = app
@@ -1031,15 +1037,26 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     app.view = Some((rect.core(), cam.transform(w, h)));
 }
 
+fn camera_bounds(
+    app: &App,
+    visible: impl Fn(Id) -> bool,
+    list_items_left: &mut usize,
+) -> Option<view::Bounds> {
+    #[cfg(test)]
+    BOUNDS_PASSES.with(|passes| passes.set(passes.get() + 1));
+    view::visible_content_bounds_with_list_budget(app.wb.construction(), visible, list_items_left)
+}
+
 fn initial_camera(
     app: &App,
-    bounds: Option<view::Bounds>,
     painter: &egui::Painter,
     rect: Rect,
+    list_items_left: &mut usize,
 ) -> Camera {
     let (w, h) = (f64::from(rect.width()), f64::from(rect.height()));
     let limits = app.rules.scale_limits;
     let Some(saved) = app.wb.file_view() else {
+        let bounds = camera_bounds(app, |_| true, list_items_left);
         return Camera::initial(bounds, w, h, limits);
     };
     let c = app.wb.construction();
@@ -1054,7 +1071,7 @@ fn initial_camera(
         );
         let probe = painter.clone().with_layer_id(layer);
         draw::image::paint_background(&probe, rect, c, &t, &visible, &|_| false);
-        draw::paint(
+        draw::paint_with_list_budget(
             &probe,
             rect,
             c,
@@ -1072,6 +1089,7 @@ fn initial_camera(
                 text_rects: None,
                 input_box_rects: None,
             },
+            list_items_left,
         );
         let has_objects = painter.ctx().graphics_mut(|graphics| {
             graphics.get_mut(layer).is_some_and(|list| {
@@ -1087,8 +1105,9 @@ fn initial_camera(
             return camera;
         }
     }
-    let visible_bounds = view::visible_content_bounds(c, visible);
-    Camera::fit(visible_bounds.or(bounds), w, h, limits)
+    let bounds = camera_bounds(app, visible, list_items_left)
+        .or_else(|| camera_bounds(app, |_| true, list_items_left));
+    Camera::fit(bounds, w, h, limits)
 }
 
 /// The zoom of a zoom tool's click, as one undo step at once (the owner's
@@ -1344,26 +1363,6 @@ fn toggle_checkbox(app: &mut App, id: Id) {
 fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     if app.tool.tool() == Tool::Move {
         app.wb.selected = hit;
-        let c = app.wb.construction();
-        let same_box = app
-            .input_box_edit
-            .as_ref()
-            .is_some_and(|(label, _, _)| c.id(label) == hit);
-        if !same_box {
-            if let Some((label, text, _)) = app.input_box_edit.take() {
-                commit_input_box(app, &label, &text);
-            }
-            let c = app.wb.construction();
-            app.input_box_edit = hit
-                .filter(|&id| editable_input_box(c, id).is_some())
-                .map(|id| {
-                    (
-                        c.label(id).to_owned(),
-                        c.input_box_text(id).into_owned(),
-                        true,
-                    )
-                });
-        }
         if let Some(id) = hit.filter(|&id| !app.wb.construction().checkbox_style(id).fixed) {
             toggle_checkbox(app, id);
         }
@@ -1405,13 +1404,45 @@ fn add_pen_sample(samples: &mut Vec<(f64, f64)>, t: &ViewTransform, (x, y): (f64
     }
 }
 
+#[cfg(test)]
+#[test]
+fn closing_pen_frame_limits_repeated_presses_at_one_position() {
+    let start = pos2(100.0, 100.0);
+    let end = pos2(120.0, 100.0);
+    let mut events = Vec::new();
+    for _ in 0..20 {
+        for (pos, pressed) in [(start, true), (end, false)] {
+            events.push(egui::Event::PointerButton {
+                pos,
+                button: egui::PointerButton::Primary,
+                pressed,
+                modifiers: egui::Modifiers::NONE,
+            });
+        }
+    }
+    let mut samples = Vec::new();
+    let t = Camera::STANDARD.transform(400.0, 300.0);
+    let strokes = feed_pen(
+        &mut samples,
+        &t,
+        &events,
+        |_| true,
+        |pos| (f64::from(pos.x), f64::from(pos.y)),
+    );
+    assert_eq!(strokes.len(), STARTS + 1);
+    assert!(strokes.iter().all(|stroke| stroke.len() == 2));
+    assert!(samples.is_empty());
+}
+
 fn feed_pen(
     samples: &mut Vec<(f64, f64)>,
     t: &ViewTransform,
     events: &[egui::Event],
     owns: impl Fn(egui::Pos2) -> bool,
     local: impl Fn(egui::Pos2) -> (f64, f64),
-) -> bool {
+) -> Vec<Vec<(f64, f64)>> {
+    // One stroke may already be in flight, in addition to the frame's starts.
+    let mut completed = Vec::new();
     for event in events {
         match *event {
             egui::Event::PointerButton {
@@ -1433,21 +1464,24 @@ fn feed_pen(
                 ..
             } if !samples.is_empty() => {
                 add_pen_sample(samples, t, local(pos));
-                return true;
+                completed.push(std::mem::take(samples));
+                if completed.len() == STARTS + 1 {
+                    break;
+                }
             }
             egui::Event::PointerGone | egui::Event::WindowFocused(false) => samples.clear(),
             _ => {}
         }
     }
-    false
+    completed
 }
 
-fn finish_pen_stroke(app: &mut App) {
+fn finish_pen_stroke(app: &mut App, samples: Vec<(f64, f64)>) {
     use std::fmt::Write as _;
     let c = app.wb.construction();
     let label = geo_app_core::labels::next_label(Kind::PenStroke, |label| c.id(label).is_some());
     let mut line = format!("{label} = PenStroke(");
-    for (i, (x, y)) in app.pen_samples.drain(..).enumerate() {
+    for (i, (x, y)) in samples.into_iter().enumerate() {
         if i != 0 {
             line.push_str(", ");
         }
@@ -1460,7 +1494,40 @@ fn finish_pen_stroke(app: &mut App) {
 const MAX_LIST_TOOL_MEMBERS: usize = 256;
 const MAX_LIST_TOOL_WORK: usize = 4096;
 
-fn create_list(app: &mut App, mut ids: Vec<Id>) {
+fn rectangle_list_hits(
+    app: &App,
+    contains: impl Fn(f64, f64) -> bool,
+    work_left: &mut usize,
+) -> Option<Vec<Id>> {
+    let c = app.wb.construction();
+    let mut hits = Vec::new();
+    for id in c.ids() {
+        *work_left = work_left.checked_sub(1)?;
+        if !app.wb.is_visible(id) {
+            continue;
+        }
+        let inside = match c.value(id) {
+            Value::Point { x, y } => contains(x, y),
+            Value::Segment { x1, y1, x2, y2 } => contains(x1, y1) && contains(x2, y2),
+            Value::Circle { cx, cy, r } => contains(cx - r, cy + r) && contains(cx + r, cy - r),
+            Value::Polygon { .. } | Value::PolyLine { .. } => {
+                let mut vertices = c.vertices_with_work(id, work_left)?;
+                vertices.size_hint().0 > 0
+                    && vertices.all(|p| p.is_some_and(|(x, y)| contains(x, y)))
+            }
+            _ => false,
+        };
+        if inside {
+            hits.push(id);
+            if hits.len() > MAX_LIST_TOOL_MEMBERS {
+                return None;
+            }
+        }
+    }
+    Some(hits)
+}
+
+fn create_list(app: &mut App, mut ids: Vec<Id>, mut work_left: usize) {
     use geo_kernel::Def;
     if !(2..=MAX_LIST_TOOL_MEMBERS).contains(&ids.len()) {
         return;
@@ -1468,7 +1535,6 @@ fn create_list(app: &mut App, mut ids: Vec<Id>) {
     let c = app.wb.construction();
     use geo_kernel::algo::polygon::PolygonDef;
     let selected: std::collections::BTreeSet<_> = ids.iter().copied().collect();
-    let mut work_left = MAX_LIST_TOOL_WORK;
     let Some(mut parents) = app.wb.selected_polygon_outputs(&selected, &mut work_left) else {
         return;
     };
@@ -1568,51 +1634,100 @@ fn input_box_editor(
     ui: &mut Ui,
     canvas: Rect,
     painted_input_boxes: &[(Id, geo_app_core::geom::Rect)],
+    clicked: Option<Option<Id>>,
 ) {
     use geo_kernel::kernel::control::MAX_INPUT_BOX_CHARS;
+    let mut draft = app.input_box_edit.take();
     if app.tool.tool() != Tool::Move {
-        if let Some((label, text, _)) = app.input_box_edit.take() {
+        if let Some((label, text, _)) = draft {
             commit_input_box(app, &label, &text);
         }
         return;
     }
-    let field_id = |id: Id, scope: egui::Id| scope.with(("canvas_input_box", id.index()));
-    let mut edited = None;
-    if let Some((label, mut text, focus)) = app.input_box_edit.take() {
-        let c = app.wb.construction();
-        if let Some(id) = c
-            .id(&label)
-            .filter(|&id| app.wb.is_visible(id) && editable_input_box(c, id).is_some())
-        {
-            edited = Some(id);
-            let rect = input_box_rect(c, id, canvas);
-            let field_id = field_id(id, ui.scope_id());
-            let widget = ui.put(
-                rect,
-                egui::TextEdit::singleline(&mut text)
-                    .id(field_id)
-                    .char_limit(MAX_INPUT_BOX_CHARS)
-                    .desired_width(rect.width())
-                    .min_size(rect.size()),
-            );
-            widget.widget_info(|| {
-                egui::WidgetInfo::labeled(egui::Role::TextInput, true, input_box_name(c, id))
+
+    let c = app.wb.construction();
+    let active = draft
+        .as_ref()
+        .and_then(|(label, _, _)| c.id(label))
+        .filter(|&id| editable_input_box(c, id).is_some());
+    let unpainted = active
+        .filter(|id| !painted_input_boxes.iter().any(|(painted, _)| painted == id))
+        .map(|id| (id, input_box_rect(c, id, canvas).core()));
+    let next = clicked
+        .flatten()
+        .filter(|&id| app.wb.is_visible(id) && editable_input_box(c, id).is_some());
+    let tab = active.is_some() && ui.input(|i| i.key_pressed(egui::Key::Tab));
+    let enter = active.is_some() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+    let mut focused = None;
+    let mut submitted = None;
+
+    // Register the edit widget in the same position in egui's tab order
+    // as its idle widget. Keep the old editor alive for this input frame
+    // so that text received with a click is applied before the click commits it.
+    for &(id, rect) in painted_input_boxes.iter().chain(unpainted.iter()) {
+        if editable_input_box(c, id).is_none() {
+            continue;
+        }
+        let field = ui.scope_id().with(("canvas_input_box", id.index()));
+        if Some(id) == active {
+            let (label, mut text, focus) = draft.take().unwrap();
+            let rect = rect.egui();
+            let put = |ui: &mut Ui, text: &mut String| {
+                ui.put(
+                    rect,
+                    egui::TextEdit::singleline(text)
+                        .id(field)
+                        .char_limit(MAX_INPUT_BOX_CHARS)
+                        .desired_width(rect.width())
+                        .min_size(rect.size()),
+                )
+            };
+            let visible = unpainted.is_none();
+            // TextEdit normally handles pointer blur before reading its input
+            // events. Let it consume the frame's text first and blur it below.
+            let pointer = ui.input(|i| i.pointer.any_pressed() || i.pointer.any_click());
+            let previous = pointer.then(|| {
+                ui.ctx().options_mut(|options| {
+                    std::mem::replace(
+                        &mut options.input_options.surrender_focus_on,
+                        egui::SurrenderFocusOn::Never,
+                    )
+                })
             });
-            if focus {
+            let widget = if visible {
+                let widget = put(ui, &mut text);
+                widget.widget_info(|| {
+                    egui::WidgetInfo::labeled(egui::Role::TextInput, true, input_box_name(c, id))
+                });
+                widget
+            } else {
+                ui.scope(|ui| {
+                    ui.set_opacity(0.0);
+                    put(ui, &mut text)
+                })
+                .inner
+            };
+            if let Some(previous) = previous {
+                ui.ctx().options_mut(|options| {
+                    options.input_options.surrender_focus_on = previous;
+                });
+            }
+            if focus && visible {
                 widget.request_focus();
-                let mut state = egui::TextEdit::load_state(ui.ctx(), field_id).unwrap_or_default();
+                let mut state = egui::TextEdit::load_state(ui.ctx(), field).unwrap_or_default();
                 state
                     .cursor
                     .set_char_range(Some(egui::text::CCursorRange::select_all_str(&text)));
-                egui::TextEdit::store_state(ui.ctx(), field_id, state);
+                egui::TextEdit::store_state(ui.ctx(), field, state);
             }
-            let tab = ui.input(|i| i.key_pressed(egui::Key::Tab));
-            if widget.lost_focus()
+            if !visible
+                || clicked.is_some_and(|hit| hit != Some(id))
+                || widget.lost_focus()
                 || widget.clicked_elsewhere()
                 || tab
-                || (widget.has_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)))
+                || (widget.has_focus() && enter)
             {
-                commit_input_box(app, &label, &text);
+                submitted = Some((label, text));
                 if !tab {
                     widget.surrender_focus();
                 }
@@ -1620,38 +1735,30 @@ fn input_box_editor(
             } else {
                 app.input_box_edit = Some((label, text, false));
             }
+        } else {
+            let widget = ui.interact(rect.egui(), field, egui::Sense::focusable_noninteractive());
+            widget.widget_info(|| {
+                egui::WidgetInfo::labeled(egui::Role::TextInput, true, input_box_name(c, id))
+            });
+            if widget.has_focus() {
+                focused = Some(id);
+            }
         }
     }
 
-    let c = app.wb.construction();
-    let active = app
-        .input_box_edit
-        .as_ref()
-        .and_then(|(label, _, _)| c.id(label));
-    let mut focused = None;
-    for &(id, rect) in painted_input_boxes {
-        if Some(id) == edited || editable_input_box(c, id).is_none() {
-            continue;
-        }
-        let widget = ui.interact(
-            rect.egui(),
-            field_id(id, ui.scope_id()),
-            egui::Sense::focusable_noninteractive(),
-        );
-        widget.widget_info(|| {
-            egui::WidgetInfo::labeled(egui::Role::TextInput, true, input_box_name(c, id))
-        });
-        if widget.has_focus() {
-            focused = Some(id);
-        }
+    if let Some((label, text)) = submitted {
+        commit_input_box(app, &label, &text);
     }
-    if let Some(id) = focused.filter(|_| active.is_none()) {
-        app.input_box_edit = Some((
-            c.label(id).to_owned(),
-            c.input_box_text(id).into_owned(),
-            true,
-        ));
-        ui.ctx().request_repaint();
+    if app.input_box_edit.is_none() {
+        if let Some(id) = next.or(focused) {
+            let c = app.wb.construction();
+            app.input_box_edit = Some((
+                c.label(id).to_owned(),
+                c.input_box_text(id).into_owned(),
+                true,
+            ));
+            ui.ctx().request_repaint();
+        }
     }
 }
 

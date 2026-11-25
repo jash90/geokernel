@@ -584,25 +584,23 @@ impl<'a> List<'a> {
         mut visit: impl FnMut(Option<Id>, Value) -> std::ops::ControlFlow<()>,
     ) {
         let limit = (*frame_remaining).min(MAX_CANVAS_LIST_ITEMS);
-        let mut probe = limit;
-        if !self
-            .canvas_drawable
-            .unwrap_or_else(|| self.probe_canvas_drawable(&mut probe))
-        {
-            *frame_remaining -= limit - probe;
-            return;
-        }
         let mut remaining = limit;
-        let _ = self.visit_canvas_members(&mut remaining, &mut visit);
+        if self
+            .canvas_drawable
+            .unwrap_or_else(|| self.probe_canvas_drawable(&mut remaining))
+        {
+            let _ = self.visit_canvas_members(&mut remaining, &mut visit);
+        }
         *frame_remaining -= limit - remaining;
     }
 
     fn probe_canvas_drawable(self, remaining: &mut usize) -> bool {
-        for element in self.iter() {
+        for index in 0..self.len() {
             if *remaining == 0 {
                 return false;
             }
             *remaining -= 1;
+            let element = self.get(index).unwrap();
             match element {
                 Element::Value(kind, _) if !canvas_drawable_kind(kind) => return false,
                 Element::List(nested) if !nested.probe_canvas_drawable(remaining) => return false,
@@ -795,6 +793,22 @@ fn canvas_list_scan_has_shared_and_per_list_limits() {
     let mut remaining = 300;
     list.canvas_members(&mut remaining, |_, _| std::ops::ControlFlow::Continue(()));
     assert_eq!(remaining, 300 - MAX_CANVAS_LIST_ITEMS);
+}
+
+#[cfg(test)]
+#[test]
+fn uncached_canvas_list_charges_eligibility_and_visits_to_the_same_allowance() {
+    let slots = [Slot::coords(Kind::Point, 0.0, 0.0)];
+    let list = List::new(&slots, 1);
+    for (mut left, expected_visits) in [(1, 0), (2, 1)] {
+        let mut visits = 0;
+        list.canvas_members(&mut left, |_, _| {
+            visits += 1;
+            std::ops::ControlFlow::Break(())
+        });
+        assert_eq!(left, 0);
+        assert_eq!(visits, expected_visits);
+    }
 }
 
 #[cfg(test)]

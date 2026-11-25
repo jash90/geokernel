@@ -10,4 +10,14 @@ cases.case("inputbox", [
     "point = $inputBox(A, _)", "empty = $inputBox(, _)",
     "ang = 30°", "anglefield = $inputBox(ang, _)",
 ], [setn("a", 3.5)])
+cases.case("reviewopen", [
+    "a = Slider(0, 8, 0.5)", "field = $inputBox(a, _)",
+], [setn("a", 3.5)])
+cases.case("reviewblur", [
+    "a = Slider(0, 8, 0.5)", "b = 2*a", "field = $inputBox(a, _)",
+], [setn("a", 3.5)])
+cases.case("reviewtab", [
+    "a = 0", "b = 0", "c = 0",
+    "first = $inputBox(a, _)", "second = $inputBox(b, _)", "third = $inputBox(c, _)",
+], [setn("c", 3.5)])
 cases.write()

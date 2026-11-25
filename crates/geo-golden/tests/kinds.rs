@@ -859,6 +859,14 @@ fn samples() -> Samples {
             }
         }
     }
+    let locus = cases
+        .iter()
+        .find(|case| case.id == "canvas-reviewlocus-001")
+        .expect("the recorded closing-round locus");
+    s.any
+        .entry("Locus".into())
+        .or_default()
+        .push((locus.script.clone(), "l".into()));
     // A list of named points does not draw them again, and most command
     // samples are numeric lists. Include the recorded anonymous points.
     s.any
@@ -1308,9 +1316,14 @@ fn checked_cells_agree_with_the_code() {
                 .filter(|(c, id)| c.kind(*id) != Kind::Angle || c.angle_geometry(*id).is_some())
                 .map(|(c, id)| pointer_hits(c, *id)),
         );
-        // The regular golden loci are short. Also test a sample beyond the
-        // shared desktop drawing and hit prefix.
-        let pointer_grade = if k == "Locus" && pointer_grade == Some("yes") {
+        // All short witnesses must remain hittable. The partial grade is
+        // solely for the separate, fixed desktop drawing and picking prefix.
+        let pointer_grade = if k == "Locus" {
+            assert_eq!(
+                pointer_grade,
+                Some("yes"),
+                "every short golden locus must remain hittable"
+            );
             let point = geo_kernel::LocusPoint {
                 x: 0.0,
                 y: 0.0,

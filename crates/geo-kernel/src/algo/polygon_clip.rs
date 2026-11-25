@@ -249,6 +249,21 @@ impl ClipDef {
         self.rings(c).get(self.index as usize).cloned()
     }
 
+    /// A bounded graphics query uses computed contours without recomputing an overlay.
+    pub(crate) fn cached_vertices_with_work(
+        self,
+        c: &Construction,
+        work_left: &mut usize,
+    ) -> Option<Option<Vec<XY>>> {
+        let key = self.slot(ClipOutput::Polygon, 0);
+        let rings = c.clips.rings.lock().expect("polygon overlay cache");
+        let Some(vertices) = rings.get(&key)?.get(self.index as usize) else {
+            return Some(None);
+        };
+        *work_left = work_left.checked_sub(vertices.len())?;
+        Some(Some(vertices.clone()))
+    }
+
     pub(crate) fn segments(self, c: &Construction) -> Arc<[Edge]> {
         let key = [self.first, self.second];
         let cache = &c.clips.segments;

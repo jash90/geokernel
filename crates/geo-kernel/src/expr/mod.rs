@@ -2136,6 +2136,8 @@ pub(crate) fn list(c: &Construction, id: Id) -> Option<List<'_>> {
     let list = List::new(list_slots(c, id)?, len);
     Some(match c.def(id) {
         Def::Expr(d) => list.with_canvas_drawable(entry(c, d).list_canvas_drawable),
+        // List-producing charts store only point and segment slots.
+        Def::Chart(_) => list.with_canvas_drawable(true),
         _ => list,
     })
 }

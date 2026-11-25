@@ -17,13 +17,20 @@ use std::io::Write;
 use std::path::Path;
 
 /// Opens a script or construction file into the window.
-pub fn open(app: &mut App, path: &Path) {
+fn open(app: &mut App, ctx: &egui::Context, path: &Path) {
     match crate::cli::load_into(&mut app.wb, path) {
         Ok(()) => {
             app.load_error = None;
             app.show_cas = app.wb.cas_visible_on_open();
             app.save_error = None;
             app.cancel_cas_edit();
+            app.input_box_edit = None;
+            app.input_box_rects.clear();
+            ctx.memory_mut(|memory| {
+                if let Some(id) = memory.focused() {
+                    memory.surrender_focus(id);
+                }
+            });
             app.source_path = Some(path.into());
             if app.wb.file_view().is_some() {
                 app.decor = geo_app_core::app::Decor::for_document(&app.wb);
@@ -153,7 +160,7 @@ fn region(app: &mut App, ui: &mut Ui, rect: Rect, salt: &str, f: impl FnOnce(&mu
 pub fn show(app: &mut App, ui: &mut Ui) {
     let ctx = ui.ctx().clone();
     if let Some(path) = ctx.input(|i| i.raw.dropped_files.first().map(|f| f.path().to_owned())) {
-        open(app, &path);
+        open(app, &ctx, &path);
     }
     shortcuts(app, &ctx);
     // A press in the graphics view puts the keyboard away.

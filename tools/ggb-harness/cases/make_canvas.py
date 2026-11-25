@@ -33,4 +33,22 @@ cases.case("reviewselection", [
 cases.case("reviewpen", [
     "stroke1 = PenStroke((0, 0), (1, 1), (2, 0))",
 ], [])
+cases.case("reviewstrokes", [
+    "stroke1 = PenStroke((0, 0), (1, 1), (2, 0))",
+    "stroke2 = PenStroke((0, -2), (1, -1), (2, -2))",
+], [])
+cases.case("reviewchart", [
+    "L = Sequence(k, k, 1, 256)", "M = Sequence(k, k, 1, 257)",
+    *[f"dots{k} = DotPlot(L)" for k in range(17)], "longdots = DotPlot(M)",
+], [])
+cases.case("reviewrectangle", [
+    "poly = PolyLine(Sequence((k/7000, 0), k, 1, 7000))", pt("D", 1, 1),
+], [])
+cases.case("reviewbounds", [
+    *[f"L{k} = Sequence((k, {k}), k, 1, 256)" for k in range(3)],
+], [])
+cases.case("reviewlocus", [
+    pt("A", 0, 0), pt("B", 2, 0), "k = Circle(A, B)", "P = Point(k)",
+    "Q = Midpoint(P, A)", "l = Locus(Q, P)",
+], [mv("A", 1, 1)])
 cases.write()

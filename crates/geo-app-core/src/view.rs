@@ -49,6 +49,8 @@ impl ScaleLimits {
 
 /// Scale of an empty construction (`EuclidianView.SCALE_STANDARD`).
 pub const STANDARD_SCALE: f64 = 50.0;
+/// List entries available to both camera fitting and painting in one desktop frame.
+pub const MAX_DESKTOP_FRAME_LIST_ITEMS: usize = 512;
 /// The fraction of the content's extent that "fit" keeps free on every
 /// side (`calculateRectangleOfAllObjects`: `xGap = (x1 - x0) * 0.03`).
 const FIT_MARGIN: f64 = 0.03;
@@ -83,6 +85,17 @@ pub fn content_bounds(c: &Construction) -> Option<Bounds> {
 
 /// Content bounds for objects enabled in the graphics view.
 pub fn visible_content_bounds(c: &Construction, visible: impl Fn(Id) -> bool) -> Option<Bounds> {
+    visible_content_bounds_with_list_budget(c, visible, &mut {
+        geo_kernel::expr::MAX_FRAME_CANVAS_LIST_ITEMS
+    })
+}
+
+/// Content bounds that charge list visits to the same allowance as drawing.
+pub fn visible_content_bounds_with_list_budget(
+    c: &Construction,
+    visible: impl Fn(Id) -> bool,
+    list_items_left: &mut usize,
+) -> Option<Bounds> {
     let mut b = Bounds {
         xmin: f64::INFINITY,
         ymin: f64::INFINITY,
@@ -90,7 +103,6 @@ pub fn visible_content_bounds(c: &Construction, visible: impl Fn(Id) -> bool) ->
         ymax: f64::NEG_INFINITY,
     };
     let mut any = false;
-    let mut list_items_left = 4096;
     let mut add = |b: &mut Bounds, x: f64, y: f64| {
         if x.is_finite() && y.is_finite() {
             b.grow(x, y);
@@ -131,9 +143,9 @@ pub fn visible_content_bounds(c: &Construction, visible: impl Fn(Id) -> bool) ->
                     }
                 }
             }
-            Value::List { .. } if list_items_left > 0 => {
+            Value::List { .. } if *list_items_left > 0 => {
                 if let Some(list) = c.elements(id) {
-                    list.canvas_members(&mut list_items_left, |object, value| {
+                    list.canvas_members(list_items_left, |object, value| {
                         if object.is_none() {
                             if let Value::Point { x, y } = value {
                                 add(&mut b, x, y);
@@ -551,6 +563,23 @@ mod tests {
         };
         cam.zoom_at(1.5, 200.0, 150.0, 400.0, 300.0, ScaleLimits::OURS);
         assert!(close(cam.xscale, 90.0) && close(cam.yscale, 45.0));
+    }
+
+    #[test]
+    fn closing_camera_bounds_charge_only_the_available_list_members() {
+        let c = geo_kernel::script::load(
+            "L0 = Sequence((k, 0), k, 1, 256)\nL1 = Sequence((k, 1), k, 1, 256)\n\
+             L2 = Sequence((k, 2), k, 1, 256)",
+        )
+        .unwrap();
+        let mut remaining = MAX_DESKTOP_FRAME_LIST_ITEMS;
+        let bounds = visible_content_bounds_with_list_budget(&c, |_| true, &mut remaining).unwrap();
+        assert_eq!(bounds.ymax, 1.0);
+        assert_eq!(remaining, 0);
+        assert_eq!(
+            visible_content_bounds_with_list_budget(&c, |_| true, &mut remaining),
+            None
+        );
     }
 
     #[test]

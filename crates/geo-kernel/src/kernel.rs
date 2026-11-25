@@ -1877,6 +1877,17 @@ impl Construction {
         algo::polygon::Vertices::of(self, id)
     }
 
+    /// Polygon vertices for a bounded query. Charges for preparing the shape
+    /// and for reading every vertex, including mappings along transformed paths.
+    /// Returns `None` on exhaustion or when a clipped contour is not cached.
+    pub fn vertices_with_work(
+        &self,
+        id: Id,
+        work_left: &mut usize,
+    ) -> Option<algo::polygon::Vertices<'_>> {
+        algo::polygon::Vertices::with_work(self, id, work_left)
+    }
+
     /// How many ids the stored lists hold together.
     #[cfg(test)]
     pub(crate) fn stored_ids(&self) -> usize {
@@ -5260,18 +5271,33 @@ impl Construction {
 
     /// The active source of a conditional object. Branches precede their
     /// result in the construction.
-    pub(crate) fn conditional_source(&self, mut id: Id) -> Option<Id> {
+    pub(crate) fn conditional_source(&self, id: Id) -> Option<Id> {
+        self.conditional_source_with_vertex_work(id, &mut None)
+            .flatten()
+    }
+
+    pub(crate) fn conditional_source_with_vertex_work(
+        &self,
+        mut id: Id,
+        work: &mut Option<&mut usize>,
+    ) -> Option<Option<Id>> {
         let end = expr::carrier_deadline();
         loop {
             let Some(Def::Conditional { args, .. }) = self.defs.get(id.0) else {
-                return Some(id);
+                return Some(Some(id));
             };
             if !self.values[id.0].is_defined() {
-                return None;
+                return Some(None);
             }
-            let branch = expr::conditional_branch(self, self.list(*args), end)?;
+            let args = self.list(*args);
+            if let Some(left) = work {
+                **left = left.checked_sub(args.len())?;
+            }
+            let Some(branch) = expr::conditional_branch(self, args, end) else {
+                return Some(None);
+            };
             if branch.0 >= id.0 {
-                return None;
+                return Some(None);
             }
             id = branch;
         }

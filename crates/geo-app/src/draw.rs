@@ -172,7 +172,21 @@ fn label(
     (id, text, (x as f32, y as f32), color, align)
 }
 
+#[cfg(test)]
 pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform, scene: &Scene) {
+    paint_with_list_budget(painter, rect, c, t, scene, &mut {
+        geo_app_core::view::MAX_DESKTOP_FRAME_LIST_ITEMS
+    });
+}
+
+pub fn paint_with_list_budget(
+    painter: &Painter,
+    rect: Rect,
+    c: &Construction,
+    t: &ViewTransform,
+    scene: &Scene,
+    list_items_left: &mut usize,
+) {
     if let Some(rects) = scene.label_rects {
         rects.borrow_mut().clear();
     }
@@ -181,7 +195,6 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     }
     let charts = charts::Frame::new(painter, rect, c, t, scene.generation);
     let mut curves = None;
-    let mut list_items_left = 512;
     let mut regions_left = 2;
     for layer in c.drawing_layers() {
         if c.images().len() != 0 {
@@ -197,7 +210,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             (
                 &mut curves,
                 charts.as_ref(),
-                &mut list_items_left,
+                list_items_left,
                 &mut regions_left,
             ),
         );

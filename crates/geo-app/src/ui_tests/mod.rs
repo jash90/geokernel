@@ -1362,3 +1362,172 @@ fn input_box_tab_reaches_an_idle_box_and_uses_its_caption() {
     let c = h.state().wb.construction();
     assert_eq!(c.value(c.id("b").unwrap()), Value::Number(4.0));
 }
+
+fn click_canvas_input_box(h: &mut Harness<'_, App>, label: &str) {
+    let c = h.state().wb.construction();
+    let [x, y, ..] = c.input_box_rect(c.id(label).unwrap());
+    click(
+        h,
+        at(
+            ALGEBRA_WIDTH + SPLITTER + x as f32 + 10.0,
+            TOOLBAR_HEIGHT + y as f32 + 13.0,
+        ),
+    );
+}
+
+#[test]
+fn closing_input_box_draft_stays_with_its_worksheet() {
+    let mut h = harness(
+        "a = Slider(0, 8, 0.5)\nfield = $inputBox(a, _)\n$inputBoxStyle(_6669656c64, 124, 88, 12)",
+    );
+    click_canvas_input_box(&mut h, "field");
+    h.input_mut().events.push(Event::Text("5.5".into()));
+    h.step();
+    assert_eq!(h.state().input_box_edit.as_ref().unwrap().1, "5.5");
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../golden/ggb/saved/saved-input-box-001.xml");
+    #[derive(Debug)]
+    struct Dropped(std::path::PathBuf);
+    impl egui::DroppedFile for Dropped {
+        fn path(&self) -> &std::path::Path {
+            &self.0
+        }
+
+        fn bytes(&self) -> Result<Vec<u8>, String> {
+            std::fs::read(&self.0).map_err(|error| error.to_string())
+        }
+    }
+    h.input_mut()
+        .dropped_files
+        .push(std::sync::Arc::new(Dropped(path)));
+    h.step();
+    h.input_mut().dropped_files.clear();
+    h.key_press(egui::Key::Tab);
+    h.run();
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Number(3.5));
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
+}
+
+#[test]
+fn closing_input_box_commits_when_hidden() {
+    let mut h = harness("a = Slider(0, 8, 0.5)\nb = 2 a\nfield = $inputBox(a, _)\n$inputBoxStyle(_6669656c64, 124, 88, 12)");
+    click_canvas_input_box(&mut h, "field");
+    assert!(h.state().input_box_edit.is_some());
+    h.input_mut().events.push(Event::Text("3.5".into()));
+    h.step();
+    let field = h.state().wb.construction().id("field").unwrap();
+    click(&mut h, row_marker(ROW + ROW_DEPENDENT));
+    let c = h.state().wb.construction();
+    assert!(!h.state().wb.is_visible(field));
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Number(3.5));
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Number(7.0));
+}
+
+#[test]
+fn closing_input_box_commits_text_in_the_click_frame() {
+    let mut h = harness("a = Slider(0, 8, 0.5)\nb = 2 a\nfield = $inputBox(a, _)\n$inputBoxStyle(_6669656c64, 124, 88, 12)");
+    click_canvas_input_box(&mut h, "field");
+    assert!(h.state().input_box_edit.is_some());
+    let pos = world(3.0, -2.0);
+    h.input_mut().events.push(Event::Text("3.5".into()));
+    h.input_mut().events.push(Event::PointerMoved(pos));
+    for pressed in [true, false] {
+        h.input_mut().events.push(Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Modifiers::NONE,
+        });
+    }
+    h.run();
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Number(3.5));
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Number(7.0));
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    assert!(h.state().input_box_edit.is_none());
+}
+
+#[test]
+fn closing_input_box_tab_visits_three_editors_in_order() {
+    let mut h = harness(
+        "a = 0\nb = 0\nc = 0\nfirst = $inputBox(a, _)\nsecond = $inputBox(b, _)\nthird = $inputBox(c, _)\n\
+         $inputBoxStyle(_6669727374, 124, 88, 12)\n$inputBoxStyle(_7365636f6e64, 124, 128, 12)\n\
+         $inputBoxStyle(_7468697264, 124, 168, 12)",
+    );
+    click_canvas_input_box(&mut h, "first");
+    for expected in ["second", "third"] {
+        h.key_press(egui::Key::Tab);
+        h.run();
+        assert_eq!(
+            h.state()
+                .input_box_edit
+                .as_ref()
+                .map(|edit| edit.0.as_str()),
+            Some(expected)
+        );
+    }
+    h.input_mut().events.push(Event::Text("3.5".into()));
+    h.step();
+    h.key_press(egui::Key::Enter);
+    h.run();
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("c").unwrap()), Value::Number(3.5));
+}
+
+#[test]
+fn closing_pen_keeps_both_gestures_in_one_frame() {
+    let mut h = harness("");
+    h.state_mut().select_tool(Tool::PenStroke);
+    moved(&mut h, world(0.0, 0.0));
+    for y in [0.0, -2.0] {
+        let start = world(0.0, y);
+        let end = world(2.0, y);
+        let pointer = |pos, pressed| Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Modifiers::NONE,
+        };
+        h.input_mut().events.extend([
+            pointer(start, true),
+            Event::PointerMoved(world(1.0, y + 1.0)),
+            Event::PointerMoved(end),
+            pointer(end, false),
+        ]);
+    }
+    h.step();
+    let c = h.state().wb.construction();
+    let points = || {
+        c.ids()
+            .filter_map(|id| c.stroke(id))
+            .flat_map(|s| s.defined_points())
+    };
+    assert!(points().any(|p| p.y > 0.5));
+    assert!(points().any(|p| p.y < -1.5));
+    assert_eq!(h.state().wb.undo_depth(), (2, 0));
+}
+
+#[test]
+fn closing_rectangle_aborts_if_containment_exhausts_the_work_budget() {
+    let mut h = harness("poly = PolyLine(Sequence((k/7000,0),k,1,7000))\nD = (1, 1)");
+    h.state_mut().select_tool(Tool::CreateList);
+    drag(&mut h, world(-0.5, 1.5), world(1.5, -0.5));
+    assert!(h.state().wb.construction().id("l1").is_none());
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
+}
+
+#[test]
+fn closing_settled_canvas_skips_the_bounds_pass() {
+    let mut h = harness(
+        "L0 = Sequence((k, 0), k, 1, 256)\nL1 = Sequence((k, 1), k, 1, 256)\n\
+         L2 = Sequence((k, 2), k, 1, 256)",
+    );
+    assert_eq!(h.state().camera.unwrap().cy, 0.5);
+    let before = crate::canvas::BOUNDS_PASSES.with(std::cell::Cell::get);
+    h.step();
+    assert_eq!(
+        crate::canvas::BOUNDS_PASSES.with(std::cell::Cell::get),
+        before
+    );
+}

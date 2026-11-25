@@ -1446,3 +1446,24 @@ fn canvas_sector_picking_respects_saved_fill() {
     assert_eq!(at("s", 1.0, 0.0), Some(HitType::Boundary));
     assert_eq!(at("shaded", 0.5, 0.5), Some(HitType::Filling));
 }
+
+#[test]
+fn closing_dot_plot_first_member_uses_a_single_budget_unit() {
+    let mut script = "L = Sequence(k, k, 1, 256)\nM = Sequence(k, k, 1, 257)\n".to_owned();
+    for i in 0..17 {
+        use std::fmt::Write as _;
+        writeln!(script, "dots{i} = DotPlot(L)").unwrap();
+    }
+    script.push_str("longdots = DotPlot(M)");
+    let c = geo_kernel::script::load(&script).unwrap();
+    let tr = ViewTransform::new(geo_kernel::svg::View::fit(&c), 400.0, 300.0);
+    let p = tr.world_to_screen(1.0, 1.0);
+    let reach = Reach::square(3.0);
+    let mut remaining = 18;
+    for id in c.ids().filter(|&id| c.chart(id).is_some()) {
+        assert!(hit_with_list_budget(&c, id, &tr, p, 3.0, &reach, &mut remaining).is_some());
+    }
+    assert_eq!(remaining, 0);
+    let id = c.id("longdots").unwrap();
+    assert!(hit_with_list_budget(&c, id, &tr, p, 3.0, &reach, &mut remaining).is_none());
+}
