@@ -2873,12 +2873,399 @@ reason = "At t = 1, GeoGebra dilates the retained undefined point slots and keep
 mismatches = ["1:M"]
 undefined = true
 
+# The default build refuses these CAS-view commands.
+
+[[gap]]
+id = "cas-assume-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-assume-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-cfactor-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-cfactor-002"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-cfactor-003"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-cifactor-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-cifactor-002"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-cifactor-003"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-integralsymbolic-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-integralsymbolic-002"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-integralsymbolic-003"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-eliminate-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-eliminate-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-groebnerlex-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-groebnerlex-002"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-groebnerlex-003"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-groebnerdegrevlex-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-groebnerdegrevlex-002"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-groebnerdegrevlex-003"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-groebnerlexdeg-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-groebnerlexdeg-002"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-groebnerlexdeg-003"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-numeric-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-numeric-002"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-numeric-003"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Numeric requires a CAS build\" and empty LaTeX. The reference fallback prints 1 and \\mathbf{1}."
+
+[[gap]]
+id = "cas-mixednumber-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-mixednumber-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-rationalize-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-rationalize-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-solvecubic-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-solvecubic-002"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-solvecubic-003"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-solvequartic-001"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-solvequartic-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-jordandiagonalization-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-jordandiagonalization-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-eigenvectors-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-eigenvectors-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-eigenvalues-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-eigenvalues-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-laplace-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-laplace-002"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-laplace-003"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-laplace-004"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-inverselaplace-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-inverselaplace-002"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-inverselaplace-003"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-inverselaplace-004"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-substitute-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-substitute-002"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-substitute-003"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-substitute-004"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-substitute-005"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-toexponential-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-toexponential-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-extendedgcd-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-extendedgcd-002"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-extendedgcd-003"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-modularexponent-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-modularexponent-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-characteristicpolynomial-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-characteristicpolynomial-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-minimalpolynomial-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-minimalpolynomial-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-ludecomposition-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-ludecomposition-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-qrdecomposition-001"
+mismatches = ["0:latex", "0:output"]
+reason = "This row requires the Giac CAS backend."
+
+[[gap]]
+id = "cas-qrdecomposition-002"
+mismatches = ["0:output"]
+reason = "This row requires the Giac CAS backend."
+
 [[gap]]
 id = "cascell-closing-004"
 reason = 'Kernel-only CAS rows refuse NSolutions with a starting value (text ?, LaTeX \mathbf{?}). The reference prints {1.41} and \mathbf{ \left\{ 1.41 \right\} }. See crates/geo-kernel/src/expr/cas/row.rs:131.'
 mismatches = ["0:output", "0:latex"]
 
 [[gap]]
+id = "cascell-stackclose-001"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Numeric requires a CAS build\" and empty LaTeX. The reference prints 150 and \\mathbf{150}. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-002"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Numeric requires a CAS build\" and empty LaTeX. The reference prints 0.13 and \\mathbf{0.13}. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-003"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Numeric requires a CAS build\" and empty LaTeX. The reference prints 0 and \\mathbf{0}. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-004"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Numeric requires a CAS build\" and empty LaTeX. The reference prints 1 * 10²⁰ and \\mathbf{1 \\cdot 10^{20}}. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-005"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Assume requires a CAS build\" and empty LaTeX. The reference prints {-3 / 4 π, 1 / 4 π} and \\mathbf{ \\left\\{ \\frac{-3}{4} \\; \\pi , \\frac{1}{4} \\; \\pi  \\right\\} }. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-006"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Numeric requires a CAS build\" and empty LaTeX. The reference prints 9 and \\mathbf{9}. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-007"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"ExtendedGCD requires a CAS build\" and empty LaTeX. The reference prints {1, 0, ?} and \\mathbf{ \\left\\{ 1, 0, ? \\right\\} }. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-008"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Eigenvalues requires a CAS build\" and empty LaTeX. The reference prints ? and \\mathbf{?}. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
 id = "cascell-lastround-006"
-reason = 'The CAS row reader has no chained comparison syntax (crates/geo-kernel/src/expr/cas/syntax.rs:50). The kernel prints ? and \mathbf{?}. GeoGebra prints false and \mathbf{false}.'
+reason = 'The CAS row reader rejects the comparison before cloning a middle operand that would exceed the 10,000-node limit (crates/geo-kernel/src/expr/cas/syntax.rs:111). The kernel prints ? and \mathbf{?}. GeoGebra prints false and \mathbf{false}.'
+mismatches = ["0:output", "0:latex"]
+
+[[gap]]
+id = "cascell-lastcommands-001"
+reason = 'The default build returns "Numeric requires a CAS build" with empty LaTeX (crates/geo-kernel/src/expr/cas/row.rs:62). GeoGebra prints 9 and \mathbf{9}.'
 mismatches = ["0:output", "0:latex"]

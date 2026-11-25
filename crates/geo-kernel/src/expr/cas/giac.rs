@@ -56,6 +56,10 @@ pub(super) fn row_fill(template: &str, args: &[&str]) -> Option<String> {
     Some(input)
 }
 
+pub(super) fn row_solutions(input: &str) -> Option<String> {
+    row_fill(SOLUTIONS_1, &[input])
+}
+
 pub(super) fn row_solve(name: &str, input: &str, variable: &str) -> Option<String> {
     let template = match name {
         "Solve" => SOLVE_2,
@@ -71,6 +75,20 @@ pub(super) fn row_object(c: &Construction, id: crate::Id) -> Option<String> {
     let mut printer = Printer::new(c, Vec::new(), false);
     printer.row = true;
     printer.object(id, &mut result)?;
+    Some(result)
+}
+
+/// Inline a construction function with its call arguments bound to the
+/// formal parameters, while preserving the expression's exact literals.
+pub(super) fn row_application(
+    c: &Construction,
+    id: crate::Id,
+    args: Vec<String>,
+) -> Option<String> {
+    let mut printer = Printer::new(c, Vec::new(), false);
+    printer.row = true;
+    let mut result = String::new();
+    printer.row_call(id, args, &mut result)?;
     Some(result)
 }
 
@@ -465,6 +483,7 @@ struct Printer<'a> {
     numeric: bool,
     parameter: Option<&'a str>,
     row: bool,
+    row_arguments: std::cell::RefCell<Vec<String>>,
     remaining: std::cell::Cell<usize>,
     depth: std::cell::Cell<usize>,
 }
@@ -477,6 +496,7 @@ impl<'a> Printer<'a> {
             numeric,
             parameter: None,
             row: false,
+            row_arguments: std::cell::RefCell::new(Vec::new()),
             remaining: std::cell::Cell::new(8192),
             depth: std::cell::Cell::new(0),
         }
@@ -657,6 +677,64 @@ impl<'a> Printer<'a> {
         }
     }
 
+    fn row_call(&self, id: crate::Id, args: Vec<String>, out: &mut String) -> Option<()> {
+        let Def::Expr(def) = self.c.def(id) else {
+            return None;
+        };
+        let definition = crate::expr::entry(self.c, def);
+        let arity = match (self.c.value(id), definition.nodes[definition.root as usize]) {
+            (Value::Function, _) => 1,
+            (Value::FunctionNVar, Node::SystemFunction(arity, _)) => usize::from(arity),
+            _ => return None,
+        };
+        if arity != args.len() || definition.curve_parameter.is_some() {
+            return None;
+        }
+        let definition = match &definition.extra {
+            crate::expr::StoredExtra::Cas(form) => form.tree().unwrap_or(definition),
+            _ => definition,
+        };
+        let previous = self.row_arguments.replace(args);
+        let result = self.expr(definition, definition.root, out);
+        self.row_arguments.replace(previous);
+        result
+    }
+
+    fn row_nested_call(
+        &self,
+        e: &Entry,
+        id: crate::Id,
+        inputs: &[u32],
+        out: &mut String,
+    ) -> Option<()> {
+        let mut remaining = super::row::MAX_INPUT_BYTES;
+        let args = inputs
+            .iter()
+            .map(|&input| {
+                // Print the arguments in the caller's scope, before binding
+                // the callee's parameters. Both walks share the printer budget.
+                let mut arg = String::new();
+                self.expr(e, input, &mut arg)?;
+                remaining = remaining.checked_sub(arg.len())?;
+                Some(arg)
+            })
+            .collect::<Option<Vec<_>>>()?;
+        out.push('(');
+        self.row_call(id, args, out)?;
+        out.push(')');
+        Some(())
+    }
+
+    fn row_argument(&self, index: usize, out: &mut String) -> Option<()> {
+        let arguments = self.row_arguments.borrow();
+        let argument = arguments.get(index)?;
+        if out.len().checked_add(argument.len())? > super::row::MAX_INPUT_BYTES {
+            return None;
+        }
+        out.push_str(argument);
+        Some(())
+    }
+
     /// Whether the printed definition of the subtree starts with a minus.
     fn leading_negative(&self, e: &Entry, i: u32) -> bool {
         match e.nodes[i as usize] {
@@ -718,6 +796,7 @@ impl<'a> Printer<'a> {
             let tree = result.as_ref()?.tree()?;
             return self.expr(tree, tree.root, out);
         }
+        let argument_count = self.row_arguments.borrow().len();
         match e.nodes[i as usize] {
             Node::Num(v) => {
                 match &e.lits[i as usize] {
@@ -730,6 +809,7 @@ impl<'a> Printer<'a> {
                 out.push_str("-1");
                 Some(())
             }
+            Node::Var if argument_count != 0 => self.row_argument(0, out),
             Node::Var => {
                 let parameter = self.parameter.unwrap_or("x");
                 if !matches!(parameter, "x" | "y" | "z") {
@@ -737,6 +817,10 @@ impl<'a> Printer<'a> {
                 }
                 out.push_str(parameter);
                 Some(())
+            }
+            Node::Local(index, _) if argument_count != 0 => self.row_argument(index as usize, out),
+            Node::SystemFunction(arity, body) if argument_count == usize::from(arity) => {
+                self.expr(e, body, out)
             }
             Node::Local(0, _) if self.parameter.is_some() => {
                 out.push('x');
@@ -747,6 +831,7 @@ impl<'a> Printer<'a> {
                 Some(())
             }
             Node::SystemFunction(2, body) if self.parameter.is_some() => self.expr(e, body, out),
+            Node::VarY if argument_count != 0 => self.row_argument(argument_count - 1, out),
             Node::VarY => {
                 out.push('y');
                 Some(())
@@ -770,6 +855,8 @@ impl<'a> Printer<'a> {
             // `f(x)` and a function named in an expression print as the
             // function's expression.
             Node::FunctionObject(id) => self.object(id, out),
+            Node::Apply(id, a) if self.row => self.row_nested_call(e, id, &[a], out),
+            Node::Apply2(id, a, b) if self.row => self.row_nested_call(e, id, &[a, b], out),
             Node::Apply(id, a) if e.nodes[a as usize] == Node::Var => {
                 if self.parameter.is_some() {
                     return self.object(id, out);

@@ -1,0 +1,43 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-cfactor-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "CFactor(x^2+1)", "output": "(x + ί) (x - ί)", "latex": "\\mathbf{\\left(x + i \\right) \\; \\left(x - i \\right)}" }
+    },
+    {
+      "id": "cas-cfactor-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "CFactor(y^2+1, y)", "output": "(y + ί) (y - ί)", "latex": "\\mathbf{\\left(y + i \\right) \\; \\left(y - i \\right)}" }
+    },
+    {
+      "id": "cas-cfactor-003",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "CFactor(1,2,3)", "output": "Sorry, something went wrong. Please check your input", "latex": "" }
+    }
+  ]
+}

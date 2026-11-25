@@ -4991,3 +4991,251 @@ command = "Simplify"
 form = "curve"
 cases = ["cas-curve-015", "cas-curve-016", "cas-curve-017"]
 giac = true
+
+# CAS view commands admitted to scope on 2026-11-24.
+
+[[form]]
+command = "Assume"
+form = "condition,expression"
+cases = ["cas-assume-001", "cascell-stackclose-005"]
+giac = true
+
+[[form]]
+command = "CFactor"
+form = "expression"
+cases = ["cas-cfactor-001"]
+giac = true
+
+[[form]]
+command = "CFactor"
+form = "expression,variable"
+cases = ["cas-cfactor-002"]
+giac = true
+
+[[form]]
+command = "CIFactor"
+form = "expression"
+cases = ["cas-cifactor-001"]
+giac = true
+
+[[form]]
+command = "CIFactor"
+form = "expression,variable"
+cases = ["cas-cifactor-002"]
+giac = true
+
+[[form]]
+command = "IntegralSymbolic"
+form = "expression"
+cases = ["cas-integralsymbolic-001"]
+giac = true
+
+[[form]]
+command = "IntegralSymbolic"
+form = "expression,variable"
+cases = ["cas-integralsymbolic-002"]
+giac = true
+
+[[form]]
+command = "Eliminate"
+form = "list,list"
+cases = ["cas-eliminate-001"]
+giac = true
+
+[[form]]
+command = "GroebnerLex"
+form = "list"
+cases = ["cas-groebnerlex-001"]
+giac = true
+
+[[form]]
+command = "GroebnerLex"
+form = "list,list"
+cases = ["cas-groebnerlex-002"]
+giac = true
+
+[[form]]
+command = "GroebnerDegRevLex"
+form = "list"
+cases = ["cas-groebnerdegrevlex-001"]
+giac = true
+
+[[form]]
+command = "GroebnerDegRevLex"
+form = "list,list"
+cases = ["cas-groebnerdegrevlex-002"]
+giac = true
+
+[[form]]
+command = "GroebnerLexDeg"
+form = "list"
+cases = ["cas-groebnerlexdeg-001"]
+giac = true
+
+[[form]]
+command = "GroebnerLexDeg"
+form = "list,list"
+cases = ["cas-groebnerlexdeg-002"]
+giac = true
+
+[[form]]
+command = "Numeric"
+form = "expression"
+cases = ["cas-numeric-001", "cascell-stackclose-001", "cascell-stackclose-002", "cascell-stackclose-003", "cascell-stackclose-004", "cascell-stackclose-006", "cascell-lastcommands-001"]
+giac = true
+
+[[form]]
+command = "Numeric"
+form = "expression,number"
+cases = ["cas-numeric-002"]
+giac = true
+
+[[form]]
+command = "MixedNumber"
+form = "number"
+cases = ["cas-mixednumber-001"]
+giac = true
+
+[[form]]
+command = "Rationalize"
+form = "expression"
+cases = ["cas-rationalize-001"]
+giac = true
+
+[[form]]
+command = "SolveCubic"
+form = "polynomial"
+cases = ["cas-solvecubic-001"]
+giac = true
+
+[[form]]
+command = "SolveCubic"
+form = "equation"
+cases = ["cas-solvecubic-002"]
+giac = true
+
+[[form]]
+command = "JordanDiagonalization"
+form = "matrix"
+cases = ["cas-jordandiagonalization-001"]
+giac = true
+
+[[form]]
+command = "Eigenvectors"
+form = "matrix"
+cases = ["cas-eigenvectors-001"]
+giac = true
+
+[[form]]
+command = "Eigenvalues"
+form = "matrix"
+cases = ["cas-eigenvalues-001"]
+giac = true
+
+[[form]]
+command = "Laplace"
+form = "expression"
+cases = ["cas-laplace-001"]
+giac = true
+
+[[form]]
+command = "Laplace"
+form = "expression,variable"
+cases = ["cas-laplace-002"]
+giac = true
+
+[[form]]
+command = "Laplace"
+form = "expression,variable,variable"
+cases = ["cas-laplace-003"]
+giac = true
+
+[[form]]
+command = "InverseLaplace"
+form = "expression"
+cases = ["cas-inverselaplace-001"]
+giac = true
+
+[[form]]
+command = "InverseLaplace"
+form = "expression,variable"
+cases = ["cas-inverselaplace-002"]
+giac = true
+
+[[form]]
+command = "InverseLaplace"
+form = "expression,variable,variable"
+cases = ["cas-inverselaplace-003"]
+giac = true
+
+[[form]]
+command = "Substitute"
+form = "expression,equation"
+cases = ["cas-substitute-001"]
+giac = true
+
+[[form]]
+command = "Substitute"
+form = "expression,list"
+cases = ["cas-substitute-002"]
+giac = true
+
+[[form]]
+command = "Substitute"
+form = "expression,variable,expression"
+cases = ["cas-substitute-003"]
+giac = true
+
+[[form]]
+command = "Substitute"
+form = "expression,equation,equation,equation,..."
+cases = ["cas-substitute-004"]
+giac = true
+
+[[form]]
+command = "Substitute"
+form = "expression"
+cases = ["cas-substitute-005"]
+giac = true
+
+[[form]]
+command = "ToExponential"
+form = "expression"
+cases = ["cas-toexponential-001"]
+giac = true
+
+[[form]]
+command = "ExtendedGCD"
+form = "polynomial,polynomial"
+cases = ["cas-extendedgcd-002"]
+giac = true
+
+[[form]]
+command = "ModularExponent"
+form = "number,number,number"
+cases = ["cas-modularexponent-001"]
+giac = true
+
+[[form]]
+command = "CharacteristicPolynomial"
+form = "matrix"
+cases = ["cas-characteristicpolynomial-001"]
+giac = true
+
+[[form]]
+command = "MinimalPolynomial"
+form = "matrix"
+cases = ["cas-minimalpolynomial-001"]
+giac = true
+
+[[form]]
+command = "LUDecomposition"
+form = "matrix"
+cases = ["cas-ludecomposition-001"]
+giac = true
+
+[[form]]
+command = "QRDecomposition"
+form = "matrix"
+cases = ["cas-qrdecomposition-001"]
+giac = true

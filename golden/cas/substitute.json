@@ -1,0 +1,67 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-substitute-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Substitute(x^2+y^2, x=aaa)", "output": "aaa² + y²", "latex": "\\mathbf{aaa^{2} + y^{2}}" }
+    },
+    {
+      "id": "cas-substitute-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Substitute(2x+3y-z, {x=a,y=2,z=d})", "output": "2a - d + 6", "latex": "\\mathbf{2 \\; a - d + 6}" }
+    },
+    {
+      "id": "cas-substitute-003",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Substitute((3m-3)^2-(m+3)^2, m, a)", "output": "8a² - 24a", "latex": "\\mathbf{8 \\; a^{2} - 24 \\; a}" }
+    },
+    {
+      "id": "cas-substitute-004",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Substitute(x+y+z, x=1, y=2, z=3)", "output": "6", "latex": "\\mathbf{6}" }
+    },
+    {
+      "id": "cas-substitute-005",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Substitute(1)", "output": "1", "latex": "\\mathbf{1}" }
+    }
+  ]
+}

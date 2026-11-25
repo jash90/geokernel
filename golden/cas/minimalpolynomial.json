@@ -1,0 +1,31 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-minimalpolynomial-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "MinimalPolynomial({{2,0},{0,2}})", "output": "x - 2", "latex": "\\mathbf{x - 2}" }
+    },
+    {
+      "id": "cas-minimalpolynomial-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "MinimalPolynomial(1,2)", "output": "Sorry, something went wrong. Please check your input", "latex": "" }
+    }
+  ]
+}

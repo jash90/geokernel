@@ -1,0 +1,31 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-eigenvalues-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Eigenvalues({{2,0},{0,3}})", "output": "{2, 3}", "latex": "\\mathbf{ \\left\\{ 2, 3 \\right\\} }" }
+    },
+    {
+      "id": "cas-eigenvalues-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Eigenvalues(1,2)", "output": "Sorry, something went wrong. Please check your input", "latex": "" }
+    }
+  ]
+}

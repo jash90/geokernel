@@ -1,0 +1,55 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-inverselaplace-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "InverseLaplace(1/s^2)", "output": "t", "latex": "\\mathbf{t}" }
+    },
+    {
+      "id": "cas-inverselaplace-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "InverseLaplace(1/s^2, s)", "output": "s", "latex": "\\mathbf{s}" }
+    },
+    {
+      "id": "cas-inverselaplace-003",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "InverseLaplace(1/s^2, s, t)", "output": "t", "latex": "\\mathbf{t}" }
+    },
+    {
+      "id": "cas-inverselaplace-004",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "InverseLaplace(1,2,3,4)", "output": "Sorry, something went wrong. Please check your input", "latex": "" }
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-laplace-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Laplace(t)", "output": "1 / s²", "latex": "\\mathbf{\\frac{1}{s^{2}}}" }
+    },
+    {
+      "id": "cas-laplace-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Laplace(t, t)", "output": "1 / t²", "latex": "\\mathbf{\\frac{1}{t^{2}}}" }
+    },
+    {
+      "id": "cas-laplace-003",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Laplace(t, t, s)", "output": "1 / s²", "latex": "\\mathbf{\\frac{1}{s^{2}}}" }
+    },
+    {
+      "id": "cas-laplace-004",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Laplace(1,2,3,4)", "output": "Sorry, something went wrong. Please check your input", "latex": "" }
+    }
+  ]
+}
