@@ -38,7 +38,8 @@ impl Function {
     }
 
     pub(super) fn row_text(&self) -> String {
-        // The CAS row prints positive shifts first for linear factors.
+        // The reference puts the unshifted linear factor first, then the
+        // linear shifts by magnitude, with the positive shift first on a tie.
         if let Form::Product {
             numerator,
             denominator,
@@ -47,8 +48,29 @@ impl Function {
         {
             let mut numerator = numerator.clone();
             let mut denominator = denominator.clone();
-            numerator.1.reverse();
-            denominator.1.reverse();
+            let degree = |factor: &Poly| {
+                factor
+                    .0
+                    .keys()
+                    .map(|powers| powers.iter().map(|&n| u16::from(n)).sum::<u16>())
+                    .max()
+                    .unwrap_or(0)
+            };
+            let constant =
+                |factor: &Poly| factor.0.get(&[0; 3]).copied().unwrap_or(Rat::ZERO).to_f64();
+            for (_, factors) in [&mut numerator, &mut denominator] {
+                factors.sort_by(|(a, _), (b, _)| {
+                    let a_degree = degree(a);
+                    a_degree.cmp(&degree(b)).then_with(|| {
+                        if a_degree == 1 {
+                            let (a, b) = (constant(a), constant(b));
+                            a.abs().total_cmp(&b.abs()).then_with(|| b.total_cmp(&a))
+                        } else {
+                            std::cmp::Ordering::Equal
+                        }
+                    })
+                });
+            }
             let top = print_product(&numerator);
             return if self.expanded.denominator.scalar() == Some(Rat::ONE) {
                 top

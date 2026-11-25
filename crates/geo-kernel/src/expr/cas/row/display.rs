@@ -17,7 +17,29 @@ pub(super) fn render(tree: &Expr) -> CasRow {
     CasRow {
         text: Display(tree, Style::Text, 0).to_string(),
         latex: format!(r"\mathbf{{{}}}", Display(tree, Style::Latex, 0)),
-        exact: (!exact.contains('?')).then_some(exact),
+        exact: (!exact.contains('?') && !has_approximation(tree)).then_some(exact),
+    }
+}
+
+fn approximate_number(tree: &Expr) -> Option<f64> {
+    match tree {
+        Expr::Num(n, Some(literal)) if literal.contains(['.', 'e', 'E']) && n.fract() != 0.0 => {
+            Some(*n)
+        }
+        Expr::Neg(value) => approximate_number(value).map(|n| -n),
+        _ => None,
+    }
+}
+
+fn has_approximation(tree: &Expr) -> bool {
+    match tree {
+        Expr::Num(..) => approximate_number(tree).is_some(),
+        Expr::Neg(a) => has_approximation(a),
+        Expr::Bin(_, a, b) | Expr::Eq(a, b) => has_approximation(a) || has_approximation(b),
+        Expr::Call(_, args) | Expr::List(args) | Expr::Tuple(args) => {
+            args.iter().any(has_approximation)
+        }
+        Expr::Name(_) => false,
     }
 }
 
@@ -37,6 +59,15 @@ fn precedence(tree: &Expr) -> u8 {
 impl fmt::Display for Display<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let Self(tree, style, outer) = *self;
+        if style != Style::Syntax {
+            if let Some(value) = approximate_number(tree) {
+                let text = crate::expr::commands::text::format_number_with_template(
+                    value,
+                    style == Style::Latex,
+                );
+                return f.write_str(&text);
+            }
+        }
         let child = |e, p| Display(e, style, p);
         let latex = style == Style::Latex;
         let own = precedence(tree);
@@ -104,14 +135,15 @@ impl fmt::Display for Display<'_> {
                 let left = child(a, own + u8::from(*op == b'/'));
                 write!(f, "{left}{separator}{}", child(b, own + 1))?;
             }
-            Expr::Call(name, args) => {
-                if let ("sqrt", [arg], Style::Latex) = (name.as_str(), args.as_slice(), style) {
-                    write!(f, r"\sqrt{{{}}}", child(arg, 0))?;
-                } else {
+            Expr::Call(name, args) => match (name.as_str(), args.as_slice(), style) {
+                ("sqrt", [arg], Style::Latex) => write!(f, r"\sqrt{{{}}}", child(arg, 0))?,
+                ("abs", [arg], Style::Latex) => write!(f, r"\left|{}\right|", child(arg, 0))?,
+                ("!", [arg], _) => write!(f, "{}!", child(arg, own))?,
+                _ => {
                     f.write_str(name)?;
                     sequence(f, args, style, false)?;
                 }
-            }
+            },
             Expr::List(items) => sequence(f, items, style, true)?,
             Expr::Tuple(items) => sequence(f, items, style, false)?,
             Expr::Eq(a, b) => {
@@ -152,6 +184,9 @@ fn coefficient_product(a: &Expr, b: &Expr) -> bool {
 }
 
 fn sequence(f: &mut fmt::Formatter<'_>, items: &[Expr], style: Style, list: bool) -> fmt::Result {
+    if list && items.is_empty() && style == Style::Latex {
+        return f.write_str(r"\left\{ \right\}");
+    }
     let (open, separator, close) = match (style, list) {
         (Style::Latex, true) => (r" \left\{ ", ", ", r" \right\} "),
         (Style::Latex, false) => (r"\left(", r",\;", r" \right)"),
@@ -168,4 +203,18 @@ fn sequence(f: &mut fmt::Formatter<'_>, items: &[Expr], style: Style, list: bool
         write!(f, "{}", Display(item, style, 0))?;
     }
     f.write_str(close)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn numeric_solutions_display_approximations_without_an_exact_value() {
+        let tree = super::super::parse("{1.414213562373}", false).unwrap();
+        let row = render(&tree);
+        assert_eq!(row.exact, None);
+        assert_eq!(row.text, "{1.41}");
+        assert_eq!(row.latex, r"\mathbf{ \left\{ 1.41 \right\} }");
+    }
 }

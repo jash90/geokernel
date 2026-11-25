@@ -133,6 +133,166 @@
         }
       ],
       "cascell": "f(x) = 1 + Simplify(g)"
+    },
+    {
+      "id": "cascell-closing-001",
+      "group": "cascell",
+      "script": [
+        "a = 1/3"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "3*a"
+    },
+    {
+      "id": "cascell-closing-002",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "1.2E3 + 0"
+    },
+    {
+      "id": "cascell-closing-003",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Solve(x^2/x = 0)"
+    },
+    {
+      "id": "cascell-closing-004",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "NSolutions(x^2 - 2, x = 1)"
+    },
+    {
+      "id": "cascell-closing-005",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Solve(y = 1)"
+    },
+    {
+      "id": "cascell-closing-006",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "x\u00b2 - 1"
+    },
+    {
+      "id": "cascell-closing-007",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "5!"
+    },
+    {
+      "id": "cascell-closing-008",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "abs(-3)"
+    },
+    {
+      "id": "cascell-closing-009",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "abs(x)"
+    },
+    {
+      "id": "cascell-display-001",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Factor(x^3-x)"
+    },
+    {
+      "id": "cascell-display-002",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Factor(x^4-x^2)"
+    },
+    {
+      "id": "cascell-display-003",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Factor((x-2)*(x+1)*(x+3))"
+    },
+    {
+      "id": "cascell-display-004",
+      "group": "cascell",
+      "script": [
+        "g: x + y = 0"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "g"
+    },
+    {
+      "id": "cascell-display-005",
+      "group": "cascell",
+      "script": [
+        "g: x + y = 0.5"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "g"
     }
   ]
 }

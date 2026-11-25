@@ -2872,3 +2872,8 @@ id = "optimizerreview-undefinedtransform-001"
 reason = "At t = 1, GeoGebra dilates the retained undefined point slots and keeps M as the defined list {{?}, {?}}. The kernel returns a wholly undefined M because expr/eval.rs:1912 drops the undefined source's shape before dilation reads it (expr/eval.rs:1728)."
 mismatches = ["1:M"]
 undefined = true
+
+[[gap]]
+id = "cascell-closing-004"
+reason = 'Kernel-only CAS rows refuse NSolutions with a starting value (text ?, LaTeX \mathbf{?}); the reference prints {1.41} and \mathbf{ \left\{ 1.41 \right\} }. See crates/geo-kernel/src/expr/cas/row.rs:131.'
+mismatches = ["0:output", "0:latex"]

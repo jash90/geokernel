@@ -57,7 +57,9 @@ pub(super) fn row_solve(name: &str, input: &str, variable: &str) -> String {
 
 pub(super) fn row_object(c: &Construction, id: crate::Id) -> Option<String> {
     let mut result = String::new();
-    Printer::new(c, Vec::new(), false).object(id, &mut result)?;
+    let mut printer = Printer::new(c, Vec::new(), false);
+    printer.row = true;
+    printer.object(id, &mut result)?;
     Some(result)
 }
 
@@ -436,6 +438,7 @@ struct Printer<'a> {
     /// decimals, not fractions.
     numeric: bool,
     parameter: Option<&'a str>,
+    row: bool,
     remaining: std::cell::Cell<usize>,
     depth: std::cell::Cell<usize>,
 }
@@ -447,6 +450,7 @@ impl<'a> Printer<'a> {
             names,
             numeric,
             parameter: None,
+            row: false,
             remaining: std::cell::Cell::new(8192),
             depth: std::cell::Cell::new(0),
         }
@@ -529,6 +533,19 @@ impl<'a> Printer<'a> {
             }
             _ => match self.c.value(id) {
                 Value::Number(v) => {
+                    if self.row {
+                        if let Some(definition) = super::input::number_definition(self.c, id) {
+                            let before = out.len();
+                            if self.expr(&definition, definition.root, out).is_some() {
+                                return Some(());
+                            }
+                            out.truncate(before);
+                        }
+                        if let Some(decimal) = crate::expr::free_decimal(self.c, id) {
+                            self.literal(decimal, out);
+                            return Some(());
+                        }
+                    }
                     self.object_number(id, v, false, out);
                     Some(())
                 }
@@ -636,6 +653,12 @@ impl<'a> Printer<'a> {
                 }
                 Some(())
             }
+            Node::Obj(id) if self.row => {
+                out.push_str("-(");
+                self.object(id, out)?;
+                out.push(')');
+                Some(())
+            }
             Node::Obj(id) => match self.c.value(id) {
                 Value::Number(v) => {
                     self.object_number(id, v, true, out);
@@ -710,6 +733,7 @@ impl<'a> Printer<'a> {
                 out.push_str(name);
                 Some(())
             }
+            Node::Obj(id) if self.row => self.object(id, out),
             Node::Obj(id) => match self.c.value(id) {
                 Value::Number(v) => {
                     self.object_number(id, v, false, out);
@@ -930,8 +954,11 @@ fn numeric_number(v: f64, out: &mut String) {
 fn literal(dec: &crate::expr::decimal::Dec, out: &mut String) {
     match dec.signed_coefficient() {
         Some((coefficient, exp)) if (0..20).contains(&exp) => {
-            let value = coefficient * 10i128.pow(exp as u32);
-            out.push_str(&value.to_string());
+            if let Some(value) = coefficient.checked_mul(10i128.pow(exp as u32)) {
+                out.push_str(&value.to_string());
+            } else {
+                out.push_str(&decimal_text(dec));
+            }
         }
         // The sign stays with the text, also between -1 and 0 (`-0.5`).
         Some((_, exp)) if (-29..0).contains(&exp) => {
