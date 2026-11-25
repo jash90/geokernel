@@ -5239,3 +5239,53 @@ command = "QRDecomposition"
 form = "matrix"
 cases = ["cas-qrdecomposition-001"]
 giac = true
+
+[[form]]
+command = "CellRange"
+form = "cell,cell"
+cases = ["spreadsheet-range-001"]
+
+[[form]]
+command = "CellRange"
+form = "cell,cell,type"
+cases = ["spreadsheet-range-001", "spreadsheet-typedemptyrange-001"]
+
+[[form]]
+command = "Row"
+form = "object"
+cases = ["spreadsheet-address-001"]
+
+[[form]]
+command = "Column"
+form = "object"
+cases = ["spreadsheet-address-001"]
+
+[[form]]
+command = "ColumnName"
+form = "object"
+cases = ["spreadsheet-address-001"]
+
+[[form]]
+command = "FillColumn"
+form = "number,list"
+cases = ["spreadsheet-fillcolumn-001"]
+
+[[form]]
+command = "FillCells"
+form = "cell,list"
+cases = ["spreadsheet-fillcells-001", "spreadsheet-fillformuladestination-001"]
+
+[[form]]
+command = "FillCells"
+form = "range,list"
+cases = ["spreadsheet-fillcells-001", "spreadsheet-matrix-001", "spreadsheet-inlinefillrange-001", "spreadsheet-rangebudget-001", "spreadsheet-liverangefill-001", "spreadsheet-rangefillformula-001"]
+
+[[form]]
+command = "FillCells"
+form = "range,locus"
+cases = ["spreadsheet-locus-001"]
+
+[[form]]
+command = "Cell"
+form = "number,number"
+cases = ["spreadsheet-lookup-001", "spreadsheet-textlookup-001", "spreadsheet-latecell-001", "spreadsheet-lookuptargetkind-001"]

@@ -110,6 +110,8 @@ impl OwnerRules {
 pub struct App {
     pub wb: Workbench,
     pub show_cas: bool,
+    pub show_spreadsheet: bool,
+    pub spreadsheet_editor: Option<crate::spreadsheet::Editor>,
     pub cas_editor: Option<crate::cas::Editor>,
     /// The owner's rules where the window differs from the reference app.
     pub rules: OwnerRules,
@@ -217,9 +219,15 @@ impl App {
     pub fn new(wb: Workbench, load_error: Option<String>) -> Self {
         let decor = Decor::for_document(&wb);
         let show_cas = wb.cas_visible_on_open();
+        let show_spreadsheet = wb
+            .spreadsheet_view()
+            .and_then(|view| view.visible)
+            .unwrap_or(false);
         App {
             wb,
             show_cas,
+            show_spreadsheet,
+            spreadsheet_editor: None,
             cas_editor: None,
             rules: OwnerRules::OURS,
             camera: None,
@@ -365,6 +373,7 @@ impl App {
         }
         if self.wb.undo() {
             self.cancel_cas_edit();
+            self.reload_spreadsheet_selection();
             return true;
         }
         false
@@ -378,6 +387,7 @@ impl App {
         self.reset_tool();
         if self.wb.redo() {
             self.cancel_cas_edit();
+            self.reload_spreadsheet_selection();
             return true;
         }
         false

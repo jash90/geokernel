@@ -60,12 +60,16 @@ pub fn next_label(kind: Kind, is_taken: impl Fn(&str) -> bool) -> String {
         _ => None,
     };
     if let Some(prefix) = numbered {
-        return (1..)
-            .map(|i| format!("{prefix}{i}"))
-            .find(|l| !is_taken(l))
-            .unwrap_or_default();
+        return next_numbered(prefix, is_taken);
     }
     next_from(alphabet(kind), is_taken)
+}
+
+pub(crate) fn next_numbered(prefix: &str, is_taken: impl Fn(&str) -> bool) -> String {
+    (1..)
+        .map(|i| format!("{prefix}{i}"))
+        .find(|label| !is_taken(label))
+        .unwrap_or_default()
 }
 
 /// A polygon is named by its shape and the first free index: `t1` for a

@@ -45,7 +45,7 @@ use geo_kernel::script::equation::{parse_style, Style as EquationStyle};
 use geo_kernel::script::saved::{self, mark_inline_arguments, Property, INLINE_ARGUMENTS};
 use geo_kernel::script::text::{parse_properties, Properties as TextProperties};
 use geo_kernel::script::{
-    boundary_slot_owner, find_unquoted, first_slot_owner, free_label_for, growth_owner,
+    boundary_slot_owner, find_top_level, first_slot_owner, free_label_for, growth_owner,
     restore_boundary_labels, split_comment, BoundaryOutputs,
 };
 use shared::Chain;
@@ -217,9 +217,18 @@ fn normalize_saved_definition(body: &str, comment: Option<&str>) -> String {
 
 fn normalize_definition(input: &str) -> String {
     let line = input.trim();
-    let colon = find_unquoted(line, ':');
-    let eq = find_unquoted(line, '=');
+    if geo_kernel::spreadsheet::is_fill_line(line) {
+        return line.to_owned();
+    }
+    let colon = find_top_level(line, ':');
+    let eq = find_top_level(line, '=');
     match (colon, eq) {
+        (Some(c), None)
+            if geo_kernel::spreadsheet::Address::parse(line[..c].trim()).is_some()
+                && geo_kernel::spreadsheet::Address::parse(line[c + 1..].trim()).is_some() =>
+        {
+            line.to_owned()
+        }
         (Some(c), None) => format!("{} = {}", line[..c].trim(), line[c + 1..].trim()),
         (Some(c), Some(e)) if c + 1 == e => {
             format!("{} = {}", line[..c].trim(), line[e + 1..].trim())
@@ -483,7 +492,7 @@ fn replacement_seed(c: &Construction, id: Id) -> Option<String> {
 
 /// Internal dependencies have a kernel id but no user-visible label.
 pub(crate) fn object_ids(c: &Construction) -> impl Iterator<Item = Id> + '_ {
-    outputs(c, 0)
+    outputs(c, 0).filter(|&id| !c.is_blank_cell(id))
 }
 
 fn outputs(c: &Construction, from: usize) -> impl Iterator<Item = Id> + '_ {
@@ -744,6 +753,7 @@ impl Log {
             .collect();
         if !labels.is_empty()
             || geo_kernel::script::is_construction_step_command(line)
+            || geo_kernel::spreadsheet::is_fill_line(line)
             || geo_kernel::script::is_slider_assignment(c, line)
         {
             self.ops.push(Op::Define(Entry {
@@ -1095,8 +1105,9 @@ impl Log {
             .flat_map(|entry| entry.labels.iter().map(String::as_str))
             .filter(|&label| !defined.insert(label))
             .collect();
-        if !repeated.is_empty() {
-            // Follow the current graph before replay can see a superseded rule.
+        if !repeated.is_empty() || geo_kernel::spreadsheet::Address::parse(label).is_some() {
+            // Follow the current graph before replay sees a superseded rule
+            // or recreates a removed cell as a blank formula input.
             let mut pending: Vec<_> = labels.iter().filter_map(|label| c.id(label)).collect();
             let mut visited = BTreeSet::new();
             let mut remaining = 1_000_000usize;
@@ -1110,7 +1121,11 @@ impl Log {
                         return false;
                     };
                     remaining = next;
-                    pending.push(child);
+                    match c.spreadsheet_watch_only(child, id, &mut remaining) {
+                        Ok(false) => pending.push(child),
+                        Ok(true) => {}
+                        Err(_) => return false,
+                    }
                 }
             }
             if let Some(compacted) = self.compact_removed_inputs(c, &labels, &repeated) {
@@ -2005,6 +2020,7 @@ impl Log {
                     .collect(),
                 None if is_directive
                     || geo_kernel::script::is_construction_step_command(&line)
+                    || geo_kernel::spreadsheet::is_fill_line(&line)
                     || geo_kernel::script::is_slider_assignment(&c, &line) =>
                 {
                     Vec::new()

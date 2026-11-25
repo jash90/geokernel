@@ -1,0 +1,47 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-scientificinput-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "1E3",
+          "cells": { "A1": "1E3" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=1E3",
+          "cells": { "A1": "1E3", "B1": "1000" },
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "t = A1",
+          "observe": [
+            "A1",
+            "B1"
+          ],
+          "cells": { "A1": "1E3", "B1": "1000" },
+          "outputs": {
+            "A1": { "type": "text", "defined": true, "text": "1E3" },
+            "B1": { "type": "number", "defined": true, "value": 1000.0 }
+          }
+        }
+      ]
+    }
+  ]
+}

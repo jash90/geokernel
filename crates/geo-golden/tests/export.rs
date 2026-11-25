@@ -700,6 +700,10 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
         .entry("CAS")
         .or_default()
         .insert("rows", cas_export_witness());
+    proof
+        .entry("Spreadsheet")
+        .or_default()
+        .insert("cells", spreadsheet_export_witness());
     let serialized = serde_json::to_string_pretty(&proof).unwrap() + "\n";
     let path = proof_path();
     if std::env::var_os("GEOKERNEL_EXPORT_BLESS").is_some() {
@@ -2249,4 +2253,153 @@ fn cas_export_witness() -> Value {
         }
     }
     json!({ "fixture": CAS_EXPORT_CASE, "saved": saved })
+}
+
+const SPREADSHEET_EXPORT_CASE: &str = "spreadsheet-files-001";
+
+fn spreadsheet_export_case() -> geo_golden::model::Case {
+    load_all(&repo_root())
+        .unwrap()
+        .into_iter()
+        .find(|case| case.id == SPREADSHEET_EXPORT_CASE)
+        .unwrap()
+}
+
+fn spreadsheet_export_source() -> &'static [u8] {
+    include_bytes!("../../../golden/ggb/spreadsheet/spreadsheet-files-001.xml")
+}
+
+fn spreadsheet_cells(wb: &Workbench) -> BTreeMap<String, String> {
+    let c = wb.construction();
+    c.spreadsheet_cells()
+        .map(|(address, _)| (address.label(), c.spreadsheet_display(address)))
+        .collect()
+}
+
+fn authored_spreadsheet(case: &geo_golden::model::Case) -> Workbench {
+    let mut authored = Workbench::default();
+    for step in case.spreadsheet.as_ref().unwrap() {
+        let input = step.input.as_deref().unwrap();
+        let line = match &step.cell {
+            Some(cell) => geo_kernel::spreadsheet::edit_line(
+                geo_kernel::spreadsheet::Address::parse(cell).unwrap(),
+                input,
+            ),
+            None => input.into(),
+        };
+        authored.run_line(&line).unwrap();
+    }
+    authored
+}
+
+#[test]
+fn reopens_reference_spreadsheet_settings_and_authored_cells() {
+    use geo_kernel::spreadsheet::Address;
+    let case = spreadsheet_export_case();
+    let expected = &case.spreadsheet.as_ref().unwrap().last().unwrap().cells;
+    let mut imported = Workbench::default();
+    imported
+        .load_for_export(spreadsheet_export_source(), SPREADSHEET_EXPORT_CASE)
+        .unwrap();
+    assert_eq!(&spreadsheet_cells(&imported), expected);
+    assert!(imported.spreadsheet_view().is_some());
+    let bytes = imported.export_ggb(None).unwrap();
+    let again = geo_import::import(&bytes).unwrap();
+    assert_eq!(again.spreadsheet_view.as_ref(), imported.spreadsheet_view());
+
+    let authored = authored_spreadsheet(&case);
+    let address = Address::parse("B1").unwrap();
+    let export = authored
+        .export_ggb_with_spreadsheet(None, false, true, Some(address))
+        .unwrap();
+    imported
+        .load_for_export(&export, SPREADSHEET_EXPORT_CASE)
+        .unwrap();
+    assert_eq!(&spreadsheet_cells(&imported), expected);
+    assert_eq!(
+        imported.spreadsheet_view().unwrap().selected(),
+        Some(address)
+    );
+    assert!(imported.spreadsheet_view().unwrap().visible.unwrap());
+    let c = imported.construction();
+    assert_eq!(
+        c.spreadsheet_input(Address::parse("A1").unwrap())
+            .as_deref(),
+        Some("1.250")
+    );
+    assert_eq!(c.spreadsheet_input(address).as_deref(), Some("=$A$1 * 2"));
+}
+
+fn spreadsheet_export_witness() -> Value {
+    let case = spreadsheet_export_case();
+    let expected = &case.spreadsheet.as_ref().unwrap().last().unwrap().cells;
+    let authored = authored_spreadsheet(&case);
+    let mut imported = Workbench::default();
+    imported
+        .load_for_export(spreadsheet_export_source(), SPREADSHEET_EXPORT_CASE)
+        .unwrap();
+    let container = std::env::var_os("GEOKERNEL_EXPORT_SPREADSHEET_CONTAINER").is_some();
+    let root = repo_root();
+    let dir = if container {
+        let dir = root
+            .join("tools/ggb-harness/build")
+            .join(format!("spreadsheet-export-{}", std::process::id()));
+        fs::create_dir(&dir).unwrap();
+        Scratch(dir)
+    } else {
+        Scratch::new("spreadsheet")
+    };
+    for (name, wb) in [("authored", authored), ("imported", imported)] {
+        assert_eq!(&spreadsheet_cells(&wb), expected);
+        fs::write(
+            dir.0.join(format!("{name}.ggb")),
+            wb.export_ggb(None).unwrap(),
+        )
+        .unwrap();
+    }
+    let output = if container {
+        Command::new(root.join("tools/ggb-harness/linux-x86_64.sh"))
+            .arg("export-snapshot")
+            .arg(dir.0.strip_prefix(&root).unwrap())
+            .output()
+            .unwrap()
+    } else {
+        java_snapshots(&dir.0)
+    };
+    assert!(
+        output.status.success(),
+        "spreadsheet export oracle failed:
+{}
+{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let read = |name| -> Value {
+        let snapshot: Value =
+            serde_json::from_slice(&fs::read(dir.0.join(format!("{name}.ggb.snapshot"))).unwrap())
+                .unwrap();
+        snapshot["spreadsheetCells"].clone()
+    };
+    let saved = read("authored");
+    assert_eq!(saved, read("imported"));
+    assert_eq!(saved, json!(expected));
+    json!({ "fixture": SPREADSHEET_EXPORT_CASE, "saved": saved })
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn reloads_spreadsheet_exports_in_geogebra() {
+    let witness = spreadsheet_export_witness();
+    let path = proof_path();
+    let mut proof: BTreeMap<String, BTreeMap<String, Value>> =
+        serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+    if std::env::var_os("GEOKERNEL_EXPORT_BLESS").is_some() {
+        proof
+            .entry("Spreadsheet".into())
+            .or_default()
+            .insert("cells".into(), witness);
+        fs::write(path, serde_json::to_string_pretty(&proof).unwrap() + "\n").unwrap();
+    } else {
+        assert_eq!(proof["Spreadsheet"]["cells"], witness);
+    }
 }

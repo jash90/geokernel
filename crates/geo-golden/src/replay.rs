@@ -5,7 +5,8 @@ use crate::compare::{
     compare_stroke, line_scale_agrees, numbers_agree, Sign,
 };
 use crate::model::{
-    implicit_output, indexed_prefix, label_prefix, CasAction, CasViewStep, Case, Step,
+    implicit_output, indexed_prefix, label_prefix, CasAction, CasViewStep, Case, SpreadsheetAction,
+    SpreadsheetStep, Step,
 };
 use geo_app_core::workbench::Workbench;
 use geo_kernel::{script, Construction, Def, Kind};
@@ -49,6 +50,7 @@ fn failure(step: usize, label: &str, expected: &str, actual: String) -> Mismatch
 
 pub fn replay(case: &Case) -> CaseOutcome {
     if case.casview.is_some()
+        || case.spreadsheet.is_some()
         || case.steps.iter().any(|step| {
             matches!(
                 step,
@@ -262,6 +264,9 @@ fn replay_document(case: &Case) -> CaseOutcome {
     if let Some(actions) = &case.casview {
         replay_cas_view(&mut document, &mut out, actions);
     }
+    if let Some(actions) = &case.spreadsheet {
+        replay_spreadsheet(&mut document, &mut out, actions);
+    }
     out
 }
 
@@ -296,6 +301,157 @@ fn check_slider_animation(
         }
     }
     Ok(())
+}
+
+fn replay_spreadsheet(
+    document: &mut Workbench,
+    out: &mut CaseOutcome,
+    actions: &[SpreadsheetStep],
+) {
+    use geo_kernel::spreadsheet::Address;
+    use std::collections::BTreeMap;
+    for (i, step) in actions.iter().enumerate() {
+        let address = |cell: Option<&str>| {
+            Address::parse(cell.expect("validated address")).expect("validated address")
+        };
+        let applied = match step.action {
+            SpreadsheetAction::Command => {
+                let line = step.input.as_deref().unwrap();
+                if let Some(("SetValue", args)) = script::split_call(line) {
+                    match args.as_slice() {
+                        [label, value] => document.construction().id(label)
+                            .zip(document.construction().numeric_value(value))
+                            .filter(|&(id, value)| document.set_number(id, value))
+                            .map(|_| ())
+                            .ok_or_else(|| "cannot set the cell value".into()),
+                        _ => Err("SetValue needs a cell and a number".into()),
+                    }
+                } else if let Some(("SetCoords", args)) = script::split_call(line) {
+                    match args.as_slice() {
+                        [label, x, y] => {
+                            let c = document.construction();
+                            c.id(label)
+                                .zip(c.numeric_value(x))
+                                .zip(c.numeric_value(y))
+                                .filter(|&((id, x), y)| document.move_point(id, x, y))
+                                .map(|_| ())
+                                .ok_or_else(|| "cannot move the cell point".into())
+                        }
+                        _ => Err("SetCoords needs a cell and two coordinates".into()),
+                    }
+                } else {
+                    document.run_line(line)
+                }
+            }
+            SpreadsheetAction::Visibility | SpreadsheetAction::Show => {
+                let label = step.cell.as_deref().unwrap();
+                document.construction().id(label).map_or_else(
+                    || Err(format!("missing cell {label}")),
+                    |id| {
+                        let show = step.action == SpreadsheetAction::Show;
+                        if document.is_visible(id) != show {
+                            document.toggle_visible(id);
+                        }
+                        Ok(())
+                    },
+                )
+            }
+            SpreadsheetAction::Edit => document.edit_spreadsheet_cell(
+                address(step.cell.as_deref()),
+                step.input.as_deref().unwrap(),
+            ),
+            SpreadsheetAction::Drag => geo_kernel::spreadsheet::drag_line(
+                document.construction(),
+                address(step.cell.as_deref()),
+                address(step.target.as_deref()),
+            )
+            .and_then(|line| document.run_line(&line.ok_or("empty drag source")?)),
+            SpreadsheetAction::Reload => document
+                .export_ggb(None)
+                .map_err(|e| e.to_string())
+                .and_then(|bytes| document.load_bytes(&bytes, "Spreadsheet round trip")),
+            SpreadsheetAction::DegreeMode => document.load_bytes(
+                br#"<geogebra><kernel><angleUnit val="degree"/></kernel><construction/></geogebra>"#,
+                "Spreadsheet degree mode",
+            ),
+            SpreadsheetAction::Load => {
+                document.load_bytes(step.input.as_deref().unwrap().as_bytes(), "Spreadsheet file")
+            }
+            SpreadsheetAction::Undo => document
+                .undo()
+                .then_some(())
+                .ok_or_else(|| "cannot undo".into()),
+            SpreadsheetAction::Redo => document
+                .redo()
+                .then_some(())
+                .ok_or_else(|| "cannot redo".into()),
+        };
+        if let Err(error) = applied {
+            out.mismatches
+                .push(failure(i, "spreadsheet", "the action applies", error));
+            return;
+        }
+        if let Some(view) = &step.view {
+            let actual = document.spreadsheet_view().map(|sheet| sheet.grid());
+            let expected = (view.show_grid, view.first_column_width);
+            let actual = actual.map(|grid| (grid.show_lines, f64::from(grid.columns.edge(1))));
+            if actual != Some(expected) {
+                out.mismatches.push(failure(
+                    i,
+                    "view",
+                    &format!("{expected:?}"),
+                    format!("{actual:?}"),
+                ));
+            }
+        }
+        let c = document.construction();
+        if let Some(visible) = &step.visible {
+            for (label, expected) in visible {
+                let shown = c.id(label).map(|id| document.is_visible(id));
+                if shown != Some(*expected) {
+                    out.mismatches.push(failure(
+                        i,
+                        label,
+                        &format!("visibility {expected}"),
+                        format!("visibility {shown:?}"),
+                    ));
+                }
+            }
+        }
+        let cells: BTreeMap<_, _> = c
+            .spreadsheet_cells()
+            .map(|(address, _)| (address.label(), document.spreadsheet_display(address)))
+            .collect();
+        for (label, expected) in &step.cells {
+            if cells.get(label) != Some(expected) {
+                out.mismatches.push(failure(
+                    i,
+                    label,
+                    expected,
+                    cells
+                        .get(label)
+                        .cloned()
+                        .unwrap_or_else(|| "no cell".into()),
+                ));
+            }
+        }
+        for (label, value) in &cells {
+            if !step.cells.contains_key(label) {
+                out.mismatches
+                    .push(failure(i, label, "no cell", value.clone()));
+            }
+        }
+        for (label, expected) in &step.outputs {
+            let result = c
+                .id(label)
+                .ok_or_else(|| "no object".into())
+                .and_then(|id| crate::compare::compare_construction_object(expected, c, id));
+            if let Err(error) = result {
+                out.mismatches
+                    .push(failure(i, label, &format!("{expected:?}"), error));
+            }
+        }
+    }
 }
 
 fn replay_cas_view(document: &mut Workbench, out: &mut CaseOutcome, actions: &[CasViewStep]) {

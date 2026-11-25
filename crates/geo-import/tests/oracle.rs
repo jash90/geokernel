@@ -170,6 +170,32 @@ fn compare_case(
             return imported.script;
         }
     }
+    if let Some(steps) = &case.spreadsheet {
+        let last = steps.last().expect("spreadsheet steps");
+        let actual: BTreeMap<_, _> = c
+            .spreadsheet_cells()
+            .map(|(address, _)| (address.label(), c.spreadsheet_display(address)))
+            .collect();
+        if actual != last.cells || !imported.skipped.is_empty() || !imported.mismatched.is_empty() {
+            failures.push(format!(
+                "{}: imported spreadsheet differs: {actual:?}; skipped {:?}; saved mismatches {:?}",
+                case.id, imported.skipped, imported.mismatched
+            ));
+        }
+        for (label, expected) in &last.outputs {
+            let matched = c
+                .id(label)
+                .ok_or_else(|| "missing output".into())
+                .and_then(|id| compare_construction_object(expected, &c, id).map(|_| ()));
+            if let Err(error) = matched {
+                failures.push(format!("{}: {label}: {error}", case.id));
+            }
+        }
+        totals.objects_compared += last.cells.len() + last.outputs.len();
+        totals.hidden += imported.hidden.len();
+        totals.objects_skipped += imported.skipped.len();
+        return imported.script;
+    }
     totals.hidden += imported.hidden.len();
     let skipped: HashMap<&str, &str> = imported
         .skipped

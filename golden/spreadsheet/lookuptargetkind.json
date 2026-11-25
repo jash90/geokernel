@@ -1,0 +1,47 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-lookuptargetkind-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "5",
+          "cells": { "A1": "5" },
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "v = Cell(1,1)",
+          "observe": [
+            "v"
+          ],
+          "cells": { "A1": "5" },
+          "outputs": {
+            "v": { "type": "number", "defined": true, "value": 5.0 }
+          }
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "hi",
+          "cells": { "A1": "hi" },
+          "outputs": {
+            "v": { "type": "number", "defined": false }
+          }
+        }
+      ]
+    }
+  ]
+}

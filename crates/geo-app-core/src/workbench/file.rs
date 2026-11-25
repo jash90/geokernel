@@ -69,6 +69,7 @@ impl Workbench {
             self.file_slider_animation = imported.slider_animation;
             self.file_view = imported.view;
             self.file_cas_visible = imported.cas_visible;
+            self.file_spreadsheet_view = imported.spreadsheet_view;
             self.label_offsets = imported.label_offsets;
             return Ok(());
         }
@@ -92,6 +93,24 @@ impl Workbench {
         self.file_import_losses
     }
 
+    pub fn spreadsheet_view(&self) -> Option<&geo_import::SpreadsheetView> {
+        self.file_spreadsheet_view.as_ref()
+    }
+
+    pub fn spreadsheet_grid(&self) -> &geo_import::SpreadsheetGrid {
+        self.spreadsheet_view().map_or(
+            &geo_import::SpreadsheetGrid::DEFAULT,
+            geo_import::SpreadsheetView::grid,
+        )
+    }
+
+    pub fn spreadsheet_display(&self, address: geo_kernel::spreadsheet::Address) -> String {
+        self.construction.spreadsheet_display_with_angle_unit(
+            address,
+            self.file_settings.angle_unit.as_deref() == Some("radiant"),
+        )
+    }
+
     /// Presentation the document will write to a construction file.
     pub fn export_presentation(&self, view: Option<View>) -> Presentation<'_> {
         let c = self.construction();
@@ -100,6 +119,7 @@ impl Workbench {
             view: view.or(self.file_view).unwrap_or_default(),
             settings: self.file_settings.clone(),
             cas_visible: self.file_cas_visible,
+            spreadsheet_view: self.file_spreadsheet_view.clone(),
             cas_rows: self
                 .cas_rows()
                 .iter()
@@ -159,7 +179,12 @@ impl Workbench {
 
     /// Exports the live document. The window can provide its current view.
     pub fn export_ggb(&self, view: Option<View>) -> Result<Vec<u8>, export::ExportError> {
-        self.export_with(view, None, self.file_cas_visible)
+        self.export_with(
+            view,
+            None,
+            self.file_cas_visible,
+            self.file_spreadsheet_view.clone(),
+        )
     }
 
     /// Exports the live document with the window's current CAS visibility.
@@ -168,7 +193,30 @@ impl Workbench {
         view: Option<View>,
         visible: bool,
     ) -> Result<Vec<u8>, export::ExportError> {
-        self.export_with(view, None, Some(visible))
+        self.export_with(
+            view,
+            None,
+            Some(visible),
+            self.file_spreadsheet_view.clone(),
+        )
+    }
+
+    pub fn export_ggb_with_spreadsheet(
+        &self,
+        view: Option<View>,
+        cas_visible: bool,
+        spreadsheet_visible: bool,
+        selected: Option<geo_kernel::spreadsheet::Address>,
+    ) -> Result<Vec<u8>, export::ExportError> {
+        let mut sheet = self.file_spreadsheet_view.clone();
+        if spreadsheet_visible || sheet.is_some() || selected.is_some() {
+            let sheet = sheet.get_or_insert_with(Default::default);
+            sheet.visible = Some(spreadsheet_visible);
+            if let Some(cell) = selected {
+                sheet.set_selected(cell);
+            }
+        }
+        self.export_with(view, None, Some(cas_visible), sheet)
     }
 
     /// The export with the journal line that made `label` replaced by a form
@@ -180,7 +228,12 @@ impl Workbench {
         view: Option<View>,
         label: &str,
     ) -> Result<Vec<u8>, export::ExportError> {
-        self.export_with(view, Some(label), self.file_cas_visible)
+        self.export_with(
+            view,
+            Some(label),
+            self.file_cas_visible,
+            self.file_spreadsheet_view.clone(),
+        )
     }
 
     fn export_with(
@@ -188,6 +241,7 @@ impl Workbench {
         view: Option<View>,
         unlisted: Option<&str>,
         cas_visible: Option<bool>,
+        spreadsheet_view: Option<geo_import::SpreadsheetView>,
     ) -> Result<Vec<u8>, export::ExportError> {
         let (skipped, mismatched) = self.file_import_losses;
         if skipped != 0 || mismatched != 0 {
@@ -245,10 +299,60 @@ impl Workbench {
             let names = &entry.line[..entry.line.find([':', '='])?];
             Some((entry, format!("{names}= $unlisted()")))
         });
-        let mut definitions: Vec<_> = self
+        // A scripting fill may have created several cells in one journal
+        // step, or replaced cells already named by other steps. Write their
+        // current individual definitions, in dependency order.
+        let has_fills = self
             .log
             .entries()
-            .filter_map(|entry| {
+            .any(|entry| geo_kernel::spreadsheet::is_fill_line(&entry.line));
+        let mut cell_sources = BTreeMap::new();
+        if has_fills {
+            for (_, id) in c.spreadsheet_cells() {
+                if let Some(source) = c.construction_source(id) {
+                    cell_sources.insert(c.label(id), source);
+                }
+            }
+            for entry in self
+                .log
+                .entries()
+                .filter(|entry| geo_kernel::spreadsheet::is_fill_line(&entry.line))
+            {
+                for label in &entry.labels {
+                    if let Some(id) = c.id(label) {
+                        if let Some(source) = c.construction_source(id) {
+                            cell_sources.insert(c.label(id), source);
+                        }
+                    }
+                }
+            }
+        }
+        let cell_lines: Vec<_> = cell_sources
+            .iter()
+            .map(|(&label, &source)| (format!("{label} = {source}"), [label.to_owned()]))
+            .collect();
+        let mut filtered_outputs = Vec::new();
+        let entries: Vec<_> = self.log.entries().collect();
+        if has_fills {
+            filtered_outputs = entries
+                .iter()
+                .map(|entry| {
+                    entry
+                        .labels
+                        .iter()
+                        .filter(|label| {
+                            !cell_sources.contains_key(label.as_str())
+                                && c.id(label).is_some_and(|id| !c.is_blank_cell(id))
+                        })
+                        .cloned()
+                        .collect::<Vec<_>>()
+                })
+                .collect();
+        }
+        let mut definitions: Vec<_> = entries
+            .into_iter()
+            .enumerate()
+            .filter_map(|(index, entry)| {
                 if let [label] = entry.labels.as_slice() {
                     if !std::ptr::eq(entry, assignments[label.as_str()]) {
                         return None;
@@ -261,7 +365,7 @@ impl Workbench {
                     .labels
                     .first()
                     .and_then(|label| grown.get(label.as_str()))
-                    .unwrap_or(&entry.labels);
+                    .unwrap_or_else(|| filtered_outputs.get(index).unwrap_or(&entry.labels));
                 let line = match &replaced {
                     Some((changed, line)) if std::ptr::eq(*changed, entry) => line.as_str(),
                     _ => entry.line.as_str(),
@@ -269,7 +373,12 @@ impl Workbench {
                 Some(Definition { line, outputs })
             })
             .collect();
-        if redefined {
+        definitions.extend(
+            cell_lines
+                .iter()
+                .map(|(line, outputs)| Definition { line, outputs }),
+        );
+        if redefined || has_fills {
             definitions.sort_by_key(|definition| {
                 definition
                     .outputs
@@ -280,6 +389,7 @@ impl Workbench {
         }
         let presentation = Presentation {
             cas_visible,
+            spreadsheet_view,
             ..self.export_presentation(view)
         };
         export::ggb(c, definitions, &presentation)
@@ -777,7 +887,7 @@ mod tests {
     }
 
     /// The saved files of the golden set, and those of them that do not load.
-    const GOLDEN_FILES: usize = 46;
+    const GOLDEN_FILES: usize = 47;
     const GOLDEN_FILES_NOT_LOADED: &[&str] = &[];
 
     #[test]

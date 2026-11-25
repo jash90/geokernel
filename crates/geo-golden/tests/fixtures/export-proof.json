@@ -4297,6 +4297,19 @@
       "without": 0
     }
   },
+  "Spreadsheet": {
+    "cells": {
+      "fixture": "spreadsheet-files-001",
+      "saved": {
+        "A1": "1.25",
+        "A2": "Total",
+        "A3": "3",
+        "B1": "2.5",
+        "B2": "?",
+        "B3": "4"
+      }
+    }
+  },
   "Text": {
     "algebra_label": {
       "fixture": "saved-styles-006",

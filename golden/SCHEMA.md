@@ -430,7 +430,8 @@ For every case of the groups written by `ggb-harness`, `golden/ggb/<group>/<case
 holds the construction file GeoGebra itself writes after the script has run, that is,
 the text `app.getXML()` returns, which is the content of `geogebra.xml` in a saved
 `.ggb` file. It is the state of `snapshots[0]` of the same case, with the
-final CAS table appended for `casview` cases, so the importer
+final CAS table appended for `casview` cases, or the final grid for
+`spreadsheet` cases, so the importer
 (`crates/geo-import`) can be checked against the golden values. About every 50th case
 also has a `<case id>.ggb`, the zip archive of GeoGebra's own writer without a thumbnail
 (`geogebra.xml`, `geogebra_defaults2d.xml`, `geogebra_javascript.js`), for the zip path.
@@ -489,3 +490,35 @@ What the importer reads, and where GeoGebra writes it (`MyXMLHandler`,
 An `implicit` object records the polynomial coefficient matrix in ascending
 powers of x (rows) and y (columns), its equation text, and whether the input
 form is selected.
+
+## Spreadsheet actions
+
+A case in group `spreadsheet` contains one initial construction snapshot
+and a nonempty `spreadsheet` array. An `edit` gives the address in `cell`
+and the typed text in `input`. A leading equals sign enters a formula.
+An empty input clears the cell. A `command` gives the algebra or scripting
+input and an `observe` array of construction labels to track. A `drag`
+gives the source in `cell` and the destination in `target`. The `undo`
+and `redo` actions need no inputs. A `reload` saves and reopens the
+construction. A `degree_mode` selects degrees before entering cells.
+A `visibility` action hides the named cell and a `show` action shows it. Each
+subsequent step records the visibility of those cells under `visible`.
+A `load` opens the XML in `input` and records `view.show_grid` and
+`view.first_column_width` from its spreadsheet settings.
+
+Each action records `cells`, the occupied canonical addresses mapped to
+the strings drawn by the reference spreadsheet. An absent cell is absent
+from this map. The strings are compared exactly, including rounding and
+undefined values. `outputs` maps all labels observed so far to the usual
+typed object records. Those records use the ordinary snapshot comparison
+rules and number tolerance.
+
+
+The reference file writes spreadsheet objects as labelled construction
+expressions and elements. The `<spreadsheetView>` stores the view
+settings. The exporter preserves grid editor inputs in a
+`geokernel_spreadsheet.xml` archive entry with
+`<spreadsheetView><cell label="A1" input="1.250"/></spreadsheetView>`.
+In the archive entry, this text is editor metadata for cells restored from
+the main construction. The importer also accepts a cell element inside
+the main file's spreadsheet view or construction.

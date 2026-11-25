@@ -58,6 +58,9 @@ import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoConicPart;
 import org.geogebra.common.kernel.geos.GeoCurveCartesian;
 import org.geogebra.common.kernel.geos.GeoElement;
+import org.geogebra.common.kernel.geos.GeoElementSpreadsheet;
+import org.geogebra.common.spreadsheet.kernel.KernelTabularDataAdapter;
+import org.geogebra.common.spreadsheet.core.TabularRange;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoFunctionNVar;
 import org.geogebra.common.kernel.geos.GeoImage;
@@ -334,6 +337,107 @@ final class Session {
         row.put("output", cell.getOutput(StringTemplate.defaultTemplate));
         row.put("latex", cell.getLaTeXOutput());
         return row;
+    }
+
+    List<Object> spreadsheet(List<?> actions) {
+        KernelTabularDataAdapter data = new KernelTabularDataAdapter(app);
+        kernel.attach(data);
+        app.setUndoActive(true);
+        kernel.initUndoInfo();
+        List<Object> steps = new ArrayList<>();
+        Set<String> observed = new TreeSet<>();
+        Set<String> observedVisibility = new TreeSet<>();
+        try {
+            for (Object entry : actions) {
+                Map<?, ?> action = (Map<?, ?>) entry;
+                String source = (String) action.get("input");
+                switch ((String) action.get("action")) {
+                    case "edit" -> {
+                        String label = (String) action.get("cell");
+                        var coords = GeoElementSpreadsheet.getSpreadsheetCoordsForLabel(label);
+                        data.getCellProcessor().process(source, coords.row, coords.column);
+                    }
+                    case "command" -> {
+                        processor.processAlgebraCommandNoExceptionHandling(
+                                source, false, new CommandErrorHandler(source, false), false, null);
+                        for (Object label : (List<?>) action.get("observe")) {
+                            observed.add((String) label);
+                        }
+                    }
+                    case "drag" -> {
+                        var from = GeoElementSpreadsheet.getSpreadsheetCoordsForLabel(
+                                (String) action.get("cell"));
+                        var to = GeoElementSpreadsheet.getSpreadsheetCoordsForLabel(
+                                (String) action.get("target"));
+                        var drag = data.getCellDragPasteHandler();
+                        drag.setRangeToCopy(new TabularRange(from.row, from.column));
+                        drag.setDestinationForPaste(to.row, to.column);
+                        if (!drag.pasteToDestination()) {
+                            throw new IllegalStateException("spreadsheet drag did not paste");
+                        }
+                        app.storeUndoInfo();
+                    }
+                    case "visibility", "show" -> {
+                        String label = (String) action.get("cell");
+                        GeoElement geo = kernel.lookupLabel(label);
+                        geo.setEuclidianVisible("show".equals(action.get("action")));
+                        geo.updateRepaint();
+                        observedVisibility.add(label);
+                    }
+                    case "reload" -> reloadGgb();
+                    case "degree_mode" -> kernel.setAngleUnit(Kernel.ANGLE_DEGREE);
+                    case "load" -> {
+                        try {
+                            app.getXMLio().processXMLString(source, true, false);
+                        } catch (org.geogebra.common.io.XMLParseException error) {
+                            throw new IllegalArgumentException(error);
+                        }
+                    }
+                    case "undo" -> kernel.undo();
+                    case "redo" -> kernel.redo();
+                    default -> throw new IllegalArgumentException("unknown spreadsheet action: " + action);
+                }
+                Map<String, Object> outputs = new LinkedHashMap<>();
+                for (String label : observed) {
+                    GeoElement geo = kernel.lookupLabel(label);
+                    if (geo == null) {
+                        throw new IllegalStateException("missing spreadsheet command output " + label);
+                    }
+                    outputs.put(label, describe(geo, schemaType(geo)));
+                }
+                Map<Object, Object> step = new LinkedHashMap<>(action);
+                if ("load".equals(action.get("action"))) {
+                    var view = app.getSettings().getSpreadsheet();
+                    Map<String, Object> settings = new LinkedHashMap<>();
+                    settings.put("show_grid", view.showGrid());
+                    settings.put("first_column_width", view.getColumnWidths().get(0));
+                    step.put("view", settings);
+                }
+                if (!observedVisibility.isEmpty()) {
+                    Map<String, Boolean> visible = new LinkedHashMap<>();
+                    for (String label : observedVisibility) {
+                        visible.put(label, kernel.lookupLabel(label).isEuclidianVisible());
+                    }
+                    step.put("visible", visible);
+                }
+                step.put("cells", spreadsheetCells(kernel.getConstruction()));
+                step.put("outputs", outputs);
+                steps.add(step);
+            }
+            return steps;
+        } finally {
+            kernel.detach(data);
+        }
+    }
+
+    static Map<String, Object> spreadsheetCells(Construction construction) {
+        Map<String, Object> cells = new java.util.TreeMap<>();
+        for (GeoElement geo : construction.getGeoSetConstructionOrder()) {
+            if (GeoElementSpreadsheet.hasSpreadsheetLabel(geo) && !geo.isEmptySpreadsheetCell()) {
+                cells.put(geo.getLabelSimple(), geo.toValueString(StringTemplate.defaultTemplate));
+            }
+        }
+        return cells;
     }
 
     void setView(double[] view) {

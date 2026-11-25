@@ -180,6 +180,10 @@ public final class ExportSnapshot {
         if (kernel.getConstruction().getCasCell(0) != null) {
             snapshot.put("casRows", Session.casRows(kernel.getConstruction()));
         }
+        Map<String, Object> cells = Session.spreadsheetCells(kernel.getConstruction());
+        if (!cells.isEmpty()) {
+            snapshot.put("spreadsheetCells", cells);
+        }
         return snapshot;
     }
 

@@ -26,11 +26,48 @@ pub struct Case {
     pub snapshots: Vec<BTreeMap<String, Expected>>,
     pub cascell: Option<CasCell>,
     pub casview: Option<Vec<CasViewStep>>,
+    pub spreadsheet: Option<Vec<SpreadsheetStep>>,
     /// Generator of the file this case came from. Filled by the loader.
     #[serde(skip)]
     pub generator: String,
     #[serde(skip)]
     schema: u32,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpreadsheetStep {
+    pub action: SpreadsheetAction,
+    pub input: Option<String>,
+    pub cell: Option<String>,
+    pub target: Option<String>,
+    pub observe: Option<BTreeSet<String>>,
+    pub cells: BTreeMap<String, String>,
+    pub outputs: BTreeMap<String, Expected>,
+    pub view: Option<SpreadsheetViewSnapshot>,
+    pub visible: Option<BTreeMap<String, bool>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpreadsheetViewSnapshot {
+    pub show_grid: bool,
+    pub first_column_width: f64,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SpreadsheetAction {
+    Command,
+    Reload,
+    DegreeMode,
+    Visibility,
+    Show,
+    Load,
+    Edit,
+    Drag,
+    Undo,
+    Redo,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1304,6 +1341,80 @@ fn validate_case(case: &Case) -> Result<(), String> {
         })
     {
         return Err("a cascell case needs one input and only the initial step".into());
+    }
+    if (case.group == "spreadsheet") != case.spreadsheet.is_some() {
+        return Err("only spreadsheet cases can record spreadsheet actions".into());
+    }
+    if let Some(actions) = &case.spreadsheet {
+        if actions.is_empty() || case.steps.len() != 1 {
+            return Err("a spreadsheet case needs actions and only the initial step".into());
+        }
+        let valid_address = |label: &str| {
+            geo_kernel::spreadsheet::Address::parse(label).is_some_and(|a| a.label() == label)
+        };
+        let mut observed = BTreeSet::new();
+        let mut observed_visibility = BTreeSet::new();
+        for (index, step) in actions.iter().enumerate() {
+            let cell = step.cell.as_deref().is_some_and(valid_address);
+            let valid = match step.action {
+                SpreadsheetAction::Edit => {
+                    cell && step.input.is_some() && step.observe.is_none() && step.target.is_none()
+                }
+                SpreadsheetAction::Visibility | SpreadsheetAction::Show => {
+                    observed_visibility.extend(step.cell.as_deref());
+                    cell && step.input.is_none() && step.observe.is_none() && step.target.is_none()
+                }
+                SpreadsheetAction::Command => {
+                    step.cell.is_none()
+                        && step.target.is_none()
+                        && step.observe.is_some()
+                        && step
+                            .input
+                            .as_ref()
+                            .is_some_and(|input| !input.trim().is_empty())
+                }
+                SpreadsheetAction::Load => {
+                    step.cell.is_none()
+                        && step.target.is_none()
+                        && step.observe.is_none()
+                        && step.input.as_ref().is_some_and(|xml| !xml.is_empty())
+                }
+                SpreadsheetAction::Drag => {
+                    cell && step.target.as_deref().is_some_and(valid_address)
+                        && step.input.is_none()
+                        && step.observe.is_none()
+                        && step.cell != step.target
+                }
+                SpreadsheetAction::DegreeMode => {
+                    index == 0
+                        && step.cell.is_none()
+                        && step.input.is_none()
+                        && step.target.is_none()
+                        && step.observe.is_none()
+                }
+                SpreadsheetAction::Undo | SpreadsheetAction::Redo | SpreadsheetAction::Reload => {
+                    step.cell.is_none()
+                        && step.target.is_none()
+                        && step.input.is_none()
+                        && step.observe.is_none()
+                }
+            };
+            if let Some(labels) = &step.observe {
+                observed.extend(labels.iter());
+            }
+            if !valid
+                || (step.action == SpreadsheetAction::Load) != step.view.is_some()
+                || !step.cells.keys().all(|label| valid_address(label))
+                || !step.outputs.keys().eq(observed.iter().copied())
+                || !step
+                    .visible
+                    .iter()
+                    .flat_map(|visible| visible.keys())
+                    .eq(observed_visibility.iter().copied())
+            {
+                return Err("invalid spreadsheet step".into());
+            }
+        }
     }
     if (case.group == "casview") != case.casview.is_some() {
         return Err("only casview cases can record CAS view actions".into());

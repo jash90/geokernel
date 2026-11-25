@@ -159,6 +159,10 @@ pub struct Document {
     pub items: Vec<Item>,
     pub cas_rows: Vec<SavedCasRow>,
     pub cas_visible: Option<bool>,
+    pub spreadsheet_view: Option<crate::SpreadsheetView>,
+    pub(crate) spreadsheet_cells: crate::spreadsheet::Cells,
+    pub(crate) archive_spreadsheet_cells:
+        std::collections::BTreeSet<geo_kernel::spreadsheet::Address>,
     pub settings: Settings,
     pub view: Option<crate::export::View>,
     /// How many `<construction>` tags the file has. GeoGebra's reader appends
@@ -667,8 +671,15 @@ fn read_cas_expression(
 
 /// Parses the text of a `geogebra.xml`.
 pub fn parse(text: &str) -> Result<Document, ImportError> {
+    parse_with_weight(text, 0)
+}
+
+pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, ImportError> {
     let mut reader = Reader::from_str(text);
-    let mut doc = Document::default();
+    let mut doc = Document {
+        weight,
+        ..Document::default()
+    };
     let mut in_construction = false;
     let mut seen_construction = false;
     let mut command: Option<(String, Vec<String>, Vec<String>)> = None;
@@ -678,6 +689,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
     let mut perspective_depth = None;
     let mut perspective_seen = false;
     let mut views_depth = None;
+    let mut spreadsheet_depth = None;
     let mut view = None;
     let mut depth = 0usize;
     let mut cas_depth = None;
@@ -717,6 +729,56 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 }
                 continue;
             }
+            let child_depth = depth.saturating_sub(usize::from(!empty));
+            if name == "spreadsheetView" && !in_construction && child_depth == 1 {
+                doc.spreadsheet_view.get_or_insert_with(Default::default);
+                spreadsheet_depth = (!empty).then_some(depth);
+                continue;
+            }
+            if spreadsheet_depth == Some(child_depth)
+                || name == "cell" && in_construction && element.is_none() && command.is_none()
+            {
+                if let Some((tag, attributes)) = crate::spreadsheet::setting(&name) {
+                    if doc.weight == MAX_ITEMS {
+                        return Err(ImportError::TooManyItems);
+                    }
+                    doc.weight += 1;
+                    let mut values = Vec::new();
+                    for &key in attributes {
+                        if let Some(value) = attr(e, key)? {
+                            values.push((key, value));
+                        }
+                    }
+                    doc.spreadsheet_view
+                        .as_mut()
+                        .expect("open spreadsheet view")
+                        .settings
+                        .push(crate::spreadsheet::Setting {
+                            name: tag,
+                            attributes: values,
+                        });
+                } else if name == "cell" {
+                    let address = attr(e, "label")?
+                        .and_then(|label| {
+                            geo_kernel::spreadsheet::Address::parse(&label)
+                                .filter(|address| address.label() == label)
+                        })
+                        .ok_or_else(|| bad("spreadsheet cell needs a valid label"))?;
+                    let input =
+                        attr(e, "input")?.ok_or_else(|| bad("spreadsheet cell needs input"))?;
+                    if input.len() > geo_kernel::spreadsheet::MAX_INPUT_BYTES {
+                        return Err(ImportError::AttributeTooLong);
+                    }
+                    if doc.weight == MAX_ITEMS {
+                        return Err(ImportError::TooManyItems);
+                    }
+                    doc.weight += 1;
+                    if doc.spreadsheet_cells.insert(address, input).is_some() {
+                        return Err(ImportError::DuplicateLabel(address.label()));
+                    }
+                }
+                continue;
+            }
             match name.as_str() {
                 "cellPair" if in_construction && command.is_none() && element.is_none() => {
                     if doc.weight == MAX_ITEMS {
@@ -743,6 +805,9 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     if !perspective_seen || attr(e, "id")?.as_deref() == Some("tmp") {
                         perspective_seen = true;
                         doc.cas_visible = None;
+                        if let Some(view) = &mut doc.spreadsheet_view {
+                            view.visible = None;
+                        }
                         perspective_depth = Some(depth);
                     }
                 }
@@ -755,6 +820,14 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                         && attr(e, "id")?.as_deref() == Some("8") =>
                 {
                     doc.cas_visible = Some(attr(e, "visible")?.as_deref() != Some("false"));
+                }
+                "view"
+                    if views_depth == Some(child_depth)
+                        && attr(e, "id")?.as_deref() == Some("4") =>
+                {
+                    doc.spreadsheet_view
+                        .get_or_insert_with(Default::default)
+                        .visible = Some(attr(e, "visible")?.as_deref() != Some("false"));
                 }
                 "font" if in_gui && !in_construction => {
                     doc.gui_font_size = attr(e, "size")?
@@ -1162,6 +1235,9 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 "inputCell" | "outputCell" if cas_depth == Some(depth) => cas_input = None,
                 _ if cas_depth.is_some() => {}
                 "construction" => in_construction = false,
+                "spreadsheetView" if spreadsheet_depth == Some(depth + 1) => {
+                    spreadsheet_depth = None;
+                }
                 "kernel" => in_kernel = false,
                 "views" if views_depth == Some(depth + 1) => views_depth = None,
                 "perspective" if perspective_depth == Some(depth + 1) => perspective_depth = None,
@@ -1205,6 +1281,9 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
     }
     if !seen_construction {
         return Err(ImportError::NoConstruction);
+    }
+    if let Some(sheet) = &mut doc.spreadsheet_view {
+        sheet.prepare_grid();
     }
     Ok(doc)
 }

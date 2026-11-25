@@ -1,0 +1,39 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-pointreload-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "=(1,2)",
+          "cells": { "A1": "(1, 2)" },
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "SetCoords(A1,3,4)",
+          "observe": [],
+          "cells": { "A1": "(3, 4)" },
+          "outputs": {}
+        },
+        {
+          "action": "reload",
+          "cells": { "A1": "(3, 4)" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

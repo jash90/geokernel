@@ -3289,3 +3289,18 @@ mismatches = ["0:output", "0:latex"]
 id = "cascell-lastcommands-001"
 reason = 'The default build returns "Numeric requires a CAS build" with empty LaTeX (crates/geo-kernel/src/expr/cas/row.rs:62). GeoGebra prints 9 and \mathbf{9}.'
 mismatches = ["0:output", "0:latex"]
+
+[[gap]]
+id = "spreadsheet-fillslider-001"
+reason = "GeoGebra fills A1 with 7 and replaces slider B1 with 8. The kernel requires an existing slider to keep its bounds on replacement and rejects the fill before writing A1."
+mismatches = ["1:spreadsheet"]
+
+[[gap]]
+id = "spreadsheet-labelledfill-001"
+reason = "GeoGebra writes text to A1 and 9 to B1. The kernel refuses to change A1 from a number to text because the labelled result reads it as a number. A1 stays 3, B1 remains absent, and no result is created."
+mismatches = ["1:spreadsheet"]
+
+[[gap]]
+id = "spreadsheet-filldistinctbudget-001"
+reason = "GeoGebra fills A1 with ? and B1 with 0. geokernel rejects the entire fill before writing because the shifted formulas and destinations visit more than 1,024 distinct cells. See DIFFERENCES.md."
+mismatches = ["0:spreadsheet"]

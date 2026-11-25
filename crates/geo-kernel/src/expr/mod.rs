@@ -332,6 +332,11 @@ pub(crate) enum Node {
     /// `{a, b, ...}`: the elements are the [`Node::Item`]s from the first
     /// index on, as many as the second says, one after the other.
     List(u32, u32),
+    /// The cell slots in a rectangular range in column-major order.
+    CellRange(u32, u32, Elem),
+    CellItem(Id),
+    CellWatch(Id),
+    CellLookup(u32, u32, Kind),
     /// One element of a list literal.
     Item(u32),
     /// A named geometric object in a list literal.
@@ -841,6 +846,8 @@ pub(crate) struct Entry {
     lists: bool,
     /// The elements of a list result (see [`list`]).
     items: Vec<Slot>,
+    /// Source of a literal list whose items a spreadsheet fill can copy.
+    literal_list_source: Option<Box<str>>,
     root_transform: Option<TransformActive>,
     nested_transforms: NestedTransforms,
     coordinate_layout: Option<list::CoordinateLayout>,
@@ -1032,6 +1039,7 @@ impl Entry {
             inverts,
             lists,
             items: Vec::new(),
+            literal_list_source: None,
             root_transform: None,
             nested_transforms: NestedTransforms::new(),
             coordinate_layout: None,
@@ -1213,9 +1221,11 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         }
         Node::Seq(a, b, c, d, _) => fixed[..4].copy_from_slice(&[a, b, c, d]),
         Node::Financial(_, args) => fixed.copy_from_slice(&args),
-        Node::List(first, len) | Node::TextCmd(_, first, len) | Node::Call(_, first, len) => {
-            run = first..first.saturating_add(len)
-        }
+        Node::CellLookup(a, b, _) => fixed[..2].copy_from_slice(&[a, b]),
+        Node::List(first, len)
+        | Node::CellRange(first, len, _)
+        | Node::TextCmd(_, first, len)
+        | Node::Call(_, first, len) => run = first..first.saturating_add(len),
         _ => {}
     }
     fixed.into_iter().filter(|&c| c != NONE).chain(run)
@@ -1285,7 +1295,14 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
             shift(c);
             shift(d);
         }
-        Node::List(first, _) | Node::TextCmd(_, first, _) | Node::Call(_, first, _) => shift(first),
+        Node::CellLookup(a, b, _) => {
+            shift(a);
+            shift(b);
+        }
+        Node::List(first, _)
+        | Node::CellRange(first, ..)
+        | Node::TextCmd(_, first, _)
+        | Node::Call(_, first, _) => shift(first),
         Node::Financial(_, args) => args.iter_mut().for_each(shift),
         _ => {}
     }
@@ -1296,6 +1313,7 @@ fn is_list_node(node: &Node) -> bool {
     matches!(
         node,
         Node::List(..)
+            | Node::CellRange(..)
             | Node::TextCmd(..)
             | Node::Item(_)
             | Node::ItemObject(_)
@@ -1328,6 +1346,59 @@ pub(crate) use commands::polynomial::division_list;
 
 pub(crate) fn is_expression_command(name: &str) -> bool {
     commands::is_command(name)
+        || matches!(name, "Cell" | "CellRange" | "Row" | "Column" | "ColumnName")
+}
+
+pub(crate) fn flexible_cell_dependency(c: &Construction, def: ExprDef, parent: Id) -> bool {
+    let e = entry(c, def);
+    flexible_cell_read(
+        e,
+        parent,
+        matches!(e.nodes[e.root as usize], Node::CellRange(..)),
+    )
+}
+
+pub(crate) fn spreadsheet_watch_only(
+    c: &Construction,
+    def: ExprDef,
+    parent: Id,
+    remaining: &mut usize,
+) -> Result<bool, String> {
+    let e = entry(c, def);
+    crate::spreadsheet::charge(remaining, e.nodes.len())?;
+    Ok(flexible_cell_read(e, parent, true))
+}
+
+fn flexible_cell_read(e: &Entry, parent: Id, range: bool) -> bool {
+    let mut watches = false;
+    for node in &e.nodes {
+        match *node {
+            Node::CellWatch(id) if id == parent => watches = true,
+            Node::CellItem(id) if id == parent && range => watches = true,
+            Node::CellItem(id)
+            | Node::Obj(id)
+            | Node::ItemObject(id)
+            | Node::FunctionObject(id)
+            | Node::Apply(id, _)
+            | Node::Apply2(id, ..)
+            | Node::Side(id, _)
+            | Node::ObjectDefined(id)
+                if id == parent =>
+            {
+                return false
+            }
+            Node::Cmd(def, _) if def.parents().as_slice().contains(&parent) => return false,
+            Node::Relation {
+                objects,
+                count,
+                list,
+            } if list == Some(parent) || objects[..usize::from(count)].contains(&parent) => {
+                return false;
+            }
+            _ => {}
+        }
+    }
+    watches
 }
 
 fn entry(c: &Construction, d: ExprDef) -> &Entry {
@@ -1511,6 +1582,10 @@ fn reparse(
         }
         match *node {
             Node::Obj(id) | Node::ObjectDefined(id) | Node::FunctionObject(id) => {
+                (id.0 < c.len()).then_some(())?;
+                read(id, true);
+            }
+            Node::CellItem(id) | Node::CellWatch(id) => {
                 (id.0 < c.len()).then_some(())?;
                 read(id, true);
             }
@@ -2507,6 +2582,21 @@ pub(crate) fn value_of_tree(c: &Construction, parsed: &parse::Parsed) -> Option<
 }
 
 /// Reads the current value of a numeric argument without adding an object.
+pub(crate) fn spreadsheet_coordinate(
+    c: &Construction,
+    text: &str,
+    budget: &mut usize,
+) -> Result<Option<f64>, String> {
+    let Some(parsed) = parse::parse_spreadsheet_coordinate(c, text, budget)? else {
+        return Ok(None);
+    };
+    if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {
+        return Ok(None);
+    }
+    crate::spreadsheet::charge(budget, parsed.cost as usize)?;
+    Ok(value_of_tree(c, &parsed))
+}
+
 pub(crate) fn argument_number(c: &Construction, text: &str) -> Option<f64> {
     let parsed = parse::parse_argument(c, text).ok()?;
     if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {
@@ -2625,7 +2715,23 @@ fn define_with_coordinates(
         Ty::Text => Kind::Text,
         Ty::Function => return Err("a function needs an argument".into()),
     };
-    add(c, name, parsed, kind)
+    let literal_list = matches!(parsed.nodes[parsed.root as usize], Node::List(..))
+        && rhs.starts_with('{')
+        && rhs.len() <= crate::spreadsheet::MAX_INPUT_BYTES;
+    let id = add(c, name, parsed, kind)?;
+    if literal_list {
+        if let Def::Expr(def) = c.def(id) {
+            c.exprs.entries[def.index as usize].literal_list_source = Some(rhs.into());
+        }
+    }
+    Ok(id)
+}
+
+pub(crate) fn literal_list_source(c: &Construction, id: Id) -> Option<&str> {
+    let Def::Expr(def) = c.def(id) else {
+        return None;
+    };
+    entry(c, def).literal_list_source.as_deref()
 }
 
 pub(crate) fn define_plane_inequality(

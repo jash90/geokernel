@@ -1,0 +1,69 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-directdrag-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "1",
+          "cells": { "A1": "1" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "2",
+          "cells": { "A1": "1", "A2": "2" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "A3",
+          "input": "3",
+          "cells": { "A1": "1", "A2": "2", "A3": "3" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=A1",
+          "cells": { "A1": "1", "A2": "2", "A3": "3", "B1": "1" },
+          "outputs": {}
+        },
+        {
+          "action": "drag",
+          "cell": "B1",
+          "target": "B3",
+          "cells": { "A1": "1", "A2": "2", "A3": "3", "B1": "1", "B2": "2", "B3": "3" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "8",
+          "cells": { "A1": "1", "A2": "8", "A3": "3", "B1": "1", "B2": "8", "B3": "3" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "A3",
+          "input": "9",
+          "cells": { "A1": "1", "A2": "8", "A3": "9", "B1": "1", "B2": "8", "B3": "9" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

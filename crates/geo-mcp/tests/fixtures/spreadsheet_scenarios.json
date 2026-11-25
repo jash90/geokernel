@@ -1,0 +1,8 @@
+{
+  "type_and_clear_cells": "spreadsheet-edit-001",
+  "range_and_absolute_reference": "spreadsheet-range-001",
+  "fill_row_from_the_formula_bar": "spreadsheet-fillrow-001",
+  "fill_rectangles_from_the_formula_bar": "spreadsheet-fillcells-001",
+  "drag_a_formula_with_an_absolute_reference": "spreadsheet-drag-001",
+  "undo_and_redo_recalculate_dependents": "spreadsheet-undo-001"
+}

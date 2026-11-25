@@ -286,3 +286,11 @@ CharacteristicPolynomial,cas,1,matrix
 MinimalPolynomial,cas,1,matrix
 LUDecomposition,cas,1,matrix
 QRDecomposition,cas,1,matrix
+CellRange,spreadsheet,2,"cell,cell | cell,cell,type"
+Row,spreadsheet,1,object
+Column,spreadsheet,1,object
+ColumnName,spreadsheet,1,object
+FillRow,spreadsheet,1,"number,list"
+FillColumn,spreadsheet,1,"number,list"
+FillCells,spreadsheet,4,"cell,list | range,list | range,object | range,locus"
+Cell,spreadsheet,1,"number,number"

@@ -46,6 +46,51 @@ pub(crate) const MAX_COST: u64 = 1 << 20;
 const PI_DECIMAL: &str = "3.1415926535897932385";
 const E_DECIMAL: &str = "2.7182818284590452353";
 
+/// Speculative command forms share an overall work limit even when their
+/// provisional range reads are discarded.
+struct CellBudget {
+    remaining: Option<usize>,
+    visits: Option<usize>,
+}
+
+const MAX_CELL_VISITS: usize = crate::spreadsheet::MAX_CELLS_PER_OPERATION * 16;
+
+impl Default for CellBudget {
+    fn default() -> Self {
+        Self {
+            remaining: Some(crate::spreadsheet::MAX_CELLS_PER_OPERATION),
+            visits: Some(MAX_CELL_VISITS),
+        }
+    }
+}
+
+impl CellBudget {
+    fn charge(&mut self, count: usize) -> Result<(), String> {
+        self.remaining = self.remaining.and_then(|budget| budget.checked_sub(count));
+        self.charge_visits(count)?;
+        if self.exhausted() {
+            return Err(crate::spreadsheet::LIMIT.into());
+        }
+        Ok(())
+    }
+
+    fn charge_visits(&mut self, count: usize) -> Result<(), String> {
+        self.visits = self.visits.and_then(|budget| budget.checked_sub(count));
+        self.visits
+            .map(|_| ())
+            .ok_or_else(|| crate::spreadsheet::LIMIT.into())
+    }
+
+    fn exhausted(&self) -> bool {
+        self.remaining.is_none() || self.visits.is_none()
+    }
+
+    fn reset(&mut self, remaining: Option<usize>) {
+        // Do not refund work, or mask an error, when abandoning a form.
+        self.remaining = self.remaining.and(remaining);
+    }
+}
+
 /// A parsed and type-checked expression.
 #[derive(Clone)]
 pub(crate) struct Parsed {
@@ -123,6 +168,29 @@ enum Mode<'a> {
 }
 
 fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, String> {
+    parse_in_with_work(c, src, mode, &mut Some(MAX_CELL_VISITS))
+}
+
+pub(super) fn parse_spreadsheet_coordinate(
+    c: &Construction,
+    src: &str,
+    budget: &mut usize,
+) -> Result<Option<Parsed>, String> {
+    let mut work = Some(*budget);
+    let parsed = parse_in_with_work(c, src, Mode::Argument, &mut work);
+    *budget = work.ok_or(crate::spreadsheet::LIMIT)?;
+    match parsed {
+        Err(error) if error == crate::spreadsheet::LIMIT => Err(error),
+        result => Ok(result.ok()),
+    }
+}
+
+fn parse_in_with_work(
+    c: &Construction,
+    src: &str,
+    mode: Mode<'_>,
+    work: &mut Option<usize>,
+) -> Result<Parsed, String> {
     let equation = matches!(
         mode,
         Mode::Equation | Mode::EquationLeft | Mode::ScopedEquation(_)
@@ -164,6 +232,11 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
             None
         },
         cas_variables: Vec::new(),
+        watching_cells: false,
+        cell_work: CellBudget {
+            visits: *work,
+            ..CellBudget::default()
+        },
         locals: match mode {
             Mode::System(names) | Mode::ScopedEquation(names) => {
                 names.iter().map(|n| (n.to_string(), Elem::Num)).collect()
@@ -174,7 +247,14 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
     if p.toks.is_empty() {
         return Err("empty expression".into());
     }
-    let root = p.expression()?;
+    let root = p.expression();
+    *work = p.cell_work.visits;
+    // Speculative command parsing may fall back after an error. A work
+    // budget that was exhausted still rejects the whole operation.
+    if p.cell_work.exhausted() {
+        return Err(crate::spreadsheet::LIMIT.into());
+    }
+    let root = root?;
     let root = if let Mode::System(names) | Mode::ScopedEquation(names) = mode {
         p.push(Node::SystemFunction(names.len() as u8, root))
     } else {
@@ -235,6 +315,8 @@ pub(super) struct Parser<'a> {
     /// The variables of the `Sequence`s being parsed, outermost first.
     pub(super) locals: Vec<(String, Elem)>,
     cas_variables: Vec<String>,
+    watching_cells: bool,
+    cell_work: CellBudget,
 }
 
 impl Parser<'_> {
@@ -373,6 +455,10 @@ impl Parser<'_> {
 
     /// The object named `label`, if the construction has it.
     pub(super) fn lookup(&self, label: &str) -> Option<Id> {
+        if label.contains('$') {
+            let address = crate::spreadsheet::Address::parse(label)?;
+            return self.c.id(&address.label());
+        }
         self.c.resolve_label(label)
     }
 
@@ -631,11 +717,19 @@ impl Parser<'_> {
     /// (`isConstant` and `evaluateDouble`); `None` otherwise, and for trees
     /// nested too deep to look at.
     fn constant_value(&self, i: u32, depth: u32) -> Option<f64> {
+        self.scalar_value(i, depth, false)
+    }
+
+    fn scalar_value(&self, i: u32, depth: u32, allow_objects: bool) -> Option<f64> {
         if depth > MAX_NESTING {
             return None;
         }
-        let value = |j: u32| self.constant_value(j, depth + 1);
+        let value = |j: u32| self.scalar_value(j, depth + 1, allow_objects);
         Some(match self.node(i) {
+            Node::Obj(id) if allow_objects => match self.c.value(id) {
+                crate::Value::Number(n) => n,
+                _ => return None,
+            },
             Node::Num(v) => v,
             Node::MinusOne => -1.0,
             Node::Degree => PI_180,
@@ -653,6 +747,36 @@ impl Parser<'_> {
             }
             _ => return None,
         })
+    }
+
+    fn cell_coordinate(&mut self, root: u32) -> Result<Option<f64>, String> {
+        if let Some(value) = self.scalar_value(root, 0, true) {
+            return Ok(Some(value));
+        }
+        let nodes = &self.nodes[..=root as usize];
+        self.cell_work.charge_visits(nodes.len())?;
+        let Ok((tys, depth, cost, vars)) = check(self.c, nodes, root) else {
+            return Ok(None);
+        };
+        let r = root as usize;
+        if !matches!(tys[r], Ty::Num(_)) || depth[r] > MAX_DEPTH || vars[r] != 0 {
+            return Ok(None);
+        }
+        self.cell_work.charge_visits(cost[r] as usize)?;
+        let parsed = Parsed {
+            root,
+            depth: depth[r],
+            cost: cost[r],
+            vars: vars[r],
+            nodes: nodes.to_vec(),
+            lits: self.lits[..=r].to_vec(),
+            tys,
+            parents: Vec::new(),
+            inputs: Vec::new(),
+            uses_var: false,
+            uses_y: false,
+        };
+        Ok(super::value_of_tree(self.c, &parsed))
     }
 
     /// `ExpressionNode.isConstantDouble(f, Kernel.PI_180)`.
@@ -868,12 +992,127 @@ impl Parser<'_> {
                 }
                 Ok(self.push(Node::List(first, elements.len() as u32)))
             }
+            Tok::Name { text, call: false } if self.eat(&Tok::Colon) => {
+                let end = self.cell_address()?;
+                self.cell_range(&text, &end, Elem::Empty)
+            }
             Tok::Name { text, call } => self.name(&text, call),
             _ => Err(format!(
                 "unexpected `{}`",
                 &self.src[token.start..token.end]
             )),
         }
+    }
+
+    fn cell_address(&mut self) -> Result<String, String> {
+        let Some(text) = self.name_at(self.pos).map(str::to_owned) else {
+            return Err("expected a spreadsheet address".into());
+        };
+        self.pos += 1;
+        Ok(text)
+    }
+
+    fn cell_range(&mut self, first: &str, last: &str, template: Elem) -> Result<u32, String> {
+        let range = crate::spreadsheet::Range::parse(first, last)?;
+        self.cell_work.charge(range.cell_count())?;
+        let start = self.nodes.len() as u32;
+        for address in range.column_major() {
+            let label = address.label();
+            let id = self
+                .c
+                .id(&label)
+                .ok_or_else(|| format!("unknown object `{label}`"))?;
+            self.read(id, true);
+            self.push(Node::CellItem(id));
+        }
+        Ok(self.push(Node::CellRange(
+            start,
+            self.nodes.len() as u32 - start,
+            template,
+        )))
+    }
+
+    fn spreadsheet_command(&mut self, name: &str) -> Result<Option<u32>, String> {
+        use crate::spreadsheet::Address;
+
+        let result = match name {
+            "CellRange" => {
+                self.expect(&Tok::LParen, "(")?;
+                let first = self.cell_address()?;
+                self.expect(&Tok::Comma, ",")?;
+                let last = self.cell_address()?;
+                let mut template = Elem::Empty;
+                if self.eat(&Tok::Comma) {
+                    let arg = self.expression()?;
+                    if matches!(self.node(arg), Node::Text) {
+                        template = match self.literal_text(arg) {
+                            Some("text") => Elem::Text,
+                            Some("point" | "vector") => Elem::Vec,
+                            Some("boolean") => Elem::Bool,
+                            Some("list") => Elem::List,
+                            Some("function") => Elem::Function,
+                            _ => Elem::Empty,
+                        };
+                    }
+                }
+                self.expect(&Tok::RParen, ")")?;
+                self.cell_range(&first, &last, template)?
+            }
+            "Row" | "Column" | "ColumnName" => {
+                let [arg] = self.arguments()?[..] else {
+                    return Err(format!("`{name}` takes one argument"));
+                };
+                let address = match self.node(arg) {
+                    Node::Obj(id) | Node::FunctionObject(id) => Address::parse(self.label(id)),
+                    _ => None,
+                };
+                match name {
+                    "Row" => self.push(Node::Num(address.map_or(f64::NAN, |a| f64::from(a.row)))),
+                    "Column" => {
+                        self.push(Node::Num(address.map_or(f64::NAN, |a| f64::from(a.column))))
+                    }
+                    _ => match address {
+                        Some(address) => self.text_literal(&Address::column_name(address.column)),
+                        None => {
+                            let condition = self.push(Node::Bool(false));
+                            let text = self.text_literal("");
+                            self.push(Node::If(super::IfMode::Algo, condition, text, NONE))
+                        }
+                    },
+                }
+            }
+            "Cell" => {
+                let [column, row] = self.arguments()?[..] else {
+                    return Err("`Cell` takes two arguments".into());
+                };
+                let address = self
+                    .cell_coordinate(column)?
+                    .zip(self.cell_coordinate(row)?)
+                    .and_then(|(column, row)| Address::from_numbers(column, row));
+                let selected = address.and_then(|a| self.c.spreadsheet_cell(a));
+                let kind = selected.map_or(Kind::Number, |id| self.c.kind(id));
+                if self.constant_value(column, 0).is_some() && self.constant_value(row, 0).is_some()
+                {
+                    if let Some(id) = address.and_then(|a| self.c.id(&a.label())) {
+                        self.cell_work.charge(1)?;
+                        self.read(id, true);
+                        self.push(Node::CellWatch(id));
+                    }
+                } else if !self.watching_cells {
+                    self.watching_cells = true;
+                    for (address, id) in self.c.spreadsheet_slots() {
+                        self.cell_work.charge(1)?;
+                        if self.c.id(&address.label()) == Some(id) {
+                            self.read(id, true);
+                            self.push(Node::CellWatch(id));
+                        }
+                    }
+                }
+                self.push(Node::CellLookup(column, row, kind))
+            }
+            _ => return Ok(None),
+        };
+        Ok(Some(result))
     }
 
     /// A name: a constant, the variable `x`, an object, a built-in function
@@ -1033,6 +1272,9 @@ impl Parser<'_> {
             return Ok(self.push(Node::Bin(Bin::Mul, obj, arg)));
         }
         if call {
+            if let Some(node) = self.spreadsheet_command(text)? {
+                return Ok(node);
+            }
             // `If` and the commands of a list (see `commands`)
             if let Some(node) = commands::parse(self, text)? {
                 return Ok(node);
@@ -1223,12 +1465,7 @@ impl Parser<'_> {
         takes_function: bool,
         form: impl FnOnce(&mut Self, &[u32], &[bool]) -> Result<Option<Node>, String>,
     ) -> Result<Option<u32>, String> {
-        let saved = (
-            self.pos,
-            self.parents.len(),
-            self.inputs.len(),
-            self.uses_var,
-        );
+        let saved = self.saved();
         // On an error the script parser reports what is wrong.
         let args = self.parse_arguments(takes_function).unwrap_or_default();
         let lists: Vec<bool> = args.iter().map(|&a| self.is_list(a)).collect();
@@ -1241,10 +1478,7 @@ impl Parser<'_> {
             Some(node) => Ok(Some(self.push(node))),
             None => {
                 // not a list: the script parser's command
-                self.pos = saved.0;
-                self.parents.truncate(saved.1);
-                self.inputs.truncate(saved.2);
-                self.uses_var = saved.3;
+                self.reset(saved);
                 Ok(None)
             }
         }
@@ -1253,21 +1487,25 @@ impl Parser<'_> {
     /// The state a command that read its arguments leaves behind (see
     /// [`Parser::reset`]), so that a command that takes no part of them
     /// can hand them to the script parser untouched.
-    pub(super) fn saved(&self) -> (usize, usize, usize, bool) {
+    pub(super) fn saved(&self) -> (usize, usize, usize, bool, bool, Option<usize>) {
         (
             self.pos,
             self.parents.len(),
             self.inputs.len(),
             self.uses_var,
+            self.watching_cells,
+            self.cell_work.remaining,
         )
     }
 
     /// Puts the parser back to a [`Parser::saved`] state.
-    pub(super) fn reset(&mut self, saved: (usize, usize, usize, bool)) {
+    pub(super) fn reset(&mut self, saved: (usize, usize, usize, bool, bool, Option<usize>)) {
         self.pos = saved.0;
         self.parents.truncate(saved.1);
         self.inputs.truncate(saved.2);
         self.uses_var = saved.3;
+        self.watching_cells = saved.4;
+        self.cell_work.reset(saved.5);
     }
 
     /// Whether the subtree at `i` is a list.
@@ -1474,4 +1712,47 @@ pub(super) fn list_form(
 /// The error of a list command with `n` arguments of the wrong kind.
 pub(super) fn list_arity(text: &str, n: usize) -> String {
     format!("`{text}` of a list does not take {n} arguments")
+}
+
+#[cfg(test)]
+mod spreadsheet_tests {
+    use super::*;
+
+    #[test]
+    fn repeated_dynamic_lookups_share_one_set_of_watchers() {
+        let c = crate::script::load("FillCells(A1:A1000, 2)\nn = 1").unwrap();
+        let formula = vec!["Cell(n,1)"; 100].join("+");
+        let expr = parse(&c, &formula).unwrap();
+        assert_eq!(
+            expr.nodes
+                .iter()
+                .filter(|node| matches!(node, Node::CellWatch(_)))
+                .count(),
+            1000
+        );
+    }
+
+    #[test]
+    fn lookup_coordinate_probes_share_the_parse_work_budget() {
+        let c = crate::script::load("A1 = 2").unwrap();
+        let unit = "Cell(If(true,1,2),1)";
+        let short = format!("{unit}+1");
+        assert_eq!(c.numeric_value(&short), Some(3.0));
+        let source = std::iter::repeat_n(unit, 100).collect::<Vec<_>>().join("+");
+        assert!(matches!(parse(&c, &source), Err(error) if error == crate::spreadsheet::LIMIT));
+    }
+
+    #[test]
+    fn abandoned_cell_parses_still_consume_the_work_budget() {
+        let mut budget = CellBudget::default();
+        let per_form = crate::spreadsheet::MAX_CELLS_PER_OPERATION;
+        let start = budget.remaining;
+        for _ in 0..MAX_CELL_VISITS / per_form {
+            budget.charge(per_form).unwrap();
+            budget.reset(start);
+        }
+        assert!(budget.charge(1).is_err());
+        budget.reset(start);
+        assert!(budget.exhausted());
+    }
 }

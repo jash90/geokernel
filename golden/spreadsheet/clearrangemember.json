@@ -1,0 +1,55 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-clearrangemember-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2",
+          "cells": { "A1": "2" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "3",
+          "cells": { "A1": "2", "A2": "3" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=Sum(A1:A2)",
+          "cells": { "A1": "2", "A2": "3", "B1": "5" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "",
+          "cells": { "A2": "3", "B1": "3" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "7",
+          "cells": { "A1": "7", "A2": "3", "B1": "10" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

@@ -186,12 +186,67 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
             .map_err(|e| e.to_string())?;
         return Ok(None);
     }
+    if let Some((command, args)) =
+        split_call(line).filter(|(command, _)| crate::spreadsheet::is_fill(command))
+    {
+        return crate::spreadsheet::fill(c, command, &args, None);
+    }
     let (name, rhs, colon) = assignment(line).ok_or("expected `name = definition`")?;
+    if let Some(result) = crate::spreadsheet::stored_edit(c, name, rhs) {
+        return result;
+    }
+    if let Some((command, args)) =
+        split_call(rhs).filter(|(command, _)| crate::spreadsheet::is_fill(command))
+    {
+        check_label(name)?;
+        return crate::spreadsheet::fill(c, command, &args, Some(name));
+    }
     if let Some((id, value)) = slider_assignment_value(c, name, rhs) {
         c.assign_slider_number(id, value)
             .map_err(|e| e.to_string())?;
         return Ok(None);
     }
+    if !colon && crate::spreadsheet::needs_preparation(name, rhs) {
+        let before = c.checkpoint();
+        let cell = crate::spreadsheet::Address::parse(name).is_some();
+        let result = crate::spreadsheet::prepare(c, rhs, Some(name)).and_then(|()| {
+            if cell {
+                define_prepared_cell(c, name, rhs)
+            } else {
+                let result = execute_assignment(c, name, rhs, false)?;
+                if let Some(id) = result {
+                    c.remember_construction_source(id, rhs);
+                }
+                Ok(result)
+            }
+        });
+        if result.is_err() {
+            c.discard_since(before);
+        }
+        return result;
+    }
+    execute_assignment(c, name, rhs, colon)
+}
+
+pub(crate) fn define_prepared_cell(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+) -> Result<Option<Id>, String> {
+    let result =
+        c.write_spreadsheet_cell(name, false, |c| define_assignment(c, name, rhs, false))?;
+    if let Some(id) = result {
+        c.remember_construction_source(id, rhs);
+    }
+    Ok(result)
+}
+
+fn execute_assignment(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+    colon: bool,
+) -> Result<Option<Id>, String> {
     if let Some(label) = definition_label(name) {
         if let Some(id) = c.resolve_label(label) {
             let original = c.label(id);
@@ -434,7 +489,11 @@ fn convert_source(c: &mut Construction, arg: &str) -> Result<Id, String> {
 
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
-fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+pub(crate) fn define_after_label(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+) -> Result<Option<Id>, String> {
     if let Some((command, _)) = split_call(rhs) {
         if ConicPartDef::reader_name(command).is_some() && c.id(command).is_some() {
             return crate::expr::define(c, name, rhs, is_vector_label(name)).map(Some);
@@ -767,6 +826,7 @@ fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
     let point_arguments = matches!(
         command,
         "Circle"
+            | "Segment"
             | "Polygon"
             | "PolyLine"
             | "Arc"
@@ -870,6 +930,7 @@ fn saved_argument(c: &mut Construction, source: &str, depth: usize) -> Result<St
     if let Some(id) = c.id(source) {
         return Ok(c.label(id).to_owned());
     }
+    crate::spreadsheet::prepare(c, source, None)?;
     let start = c.checkpoint();
     let label = format!("\0arg{}", c.len());
     let call = split_call(source);
@@ -1418,6 +1479,20 @@ pub fn split_comment(line: &str) -> (&str, Option<&str>) {
     (line, None)
 }
 
+/// The byte position of the first delimiter outside strings and argument groups.
+pub fn find_top_level(text: &str, delimiter: char) -> Option<usize> {
+    let mut depth = 0usize;
+    for (index, ch) in unquoted(text) {
+        match ch {
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' => depth = depth.saturating_sub(1),
+            ch if ch == delimiter && depth == 0 => return Some(index),
+            _ => {}
+        }
+    }
+    None
+}
+
 /// The byte position of the first matching character outside a string literal.
 pub fn find_unquoted(text: &str, ch: char) -> Option<usize> {
     unquoted(text).find_map(|(i, c)| (c == ch).then_some(i))
@@ -1499,6 +1574,18 @@ pub fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
     }
     let open = rhs.find('(')?;
     let inner = rhs[open + 1..].strip_suffix(')')?;
+    Some((rhs[..open].trim(), split_arguments(inner)?))
+}
+
+pub(crate) fn split_list_literal(source: &str) -> Option<Vec<&str>> {
+    let inner = source.strip_prefix('{')?.strip_suffix('}')?;
+    if inner.trim().is_empty() {
+        return Some(Vec::new());
+    }
+    split_arguments(inner)
+}
+
+fn split_arguments(inner: &str) -> Option<Vec<&str>> {
     let mut args = Vec::new();
     let mut start = 0;
     let mut depth = 0usize;
@@ -1517,7 +1604,7 @@ pub fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
         return None;
     }
     args.push(inner[start..].trim());
-    Some((rhs[..open].trim(), args))
+    Some(args)
 }
 
 /// Give unlabelled points and regions the same dependencies as named ones.

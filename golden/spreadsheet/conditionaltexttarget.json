@@ -1,0 +1,47 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-conditionaltexttarget-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "hello",
+          "cells": { "A1": "hello" },
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "n = 1",
+          "observe": [
+            "n"
+          ],
+          "cells": { "A1": "hello" },
+          "outputs": {
+            "n": { "type": "number", "defined": true, "value": 1.0 }
+          }
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=Cell(If(n>0,1,2),1)",
+          "cells": { "A1": "hello", "B1": "hello" },
+          "outputs": {
+            "n": { "type": "number", "defined": true, "value": 1.0 }
+          }
+        }
+      ]
+    }
+  ]
+}

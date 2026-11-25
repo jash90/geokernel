@@ -1,0 +1,39 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-fillangle-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "degree_mode",
+          "cells": {},
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "FillRow(2,{90°})",
+          "observe": [],
+          "cells": { "A2": "90°" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "={90°}",
+          "cells": { "A2": "90°", "B2": "{90°}" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

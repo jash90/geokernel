@@ -5,7 +5,7 @@
 use crate::describe;
 use crate::history::History;
 use crate::interact::TextMove;
-use crate::labels::next_label;
+use crate::labels::{next_label, next_numbered};
 use crate::scriptlog::{exec_definition, normalize, Log, Setting};
 use crate::snap::check_decimal_fraction;
 use crate::style::{Palette, Sides};
@@ -16,7 +16,7 @@ pub use geo_import::export::View as FileView;
 use geo_kernel::kernel::text::{TextOverrides, TextPosition};
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use geo_kernel::script::text::Properties as TextProperties;
-use geo_kernel::script::{find_unquoted, BoundaryOutputs};
+use geo_kernel::script::{find_top_level, BoundaryOutputs};
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
@@ -86,6 +86,7 @@ pub struct Workbench {
     file_slider_animation: BTreeMap<String, geo_import::export::SliderAnimation>,
     file_view: Option<geo_import::export::View>,
     file_cas_visible: Option<bool>,
+    file_spreadsheet_view: Option<geo_import::SpreadsheetView>,
     version: u64,
     /// Counts the times the construction was rebuilt or replaced. Object ids
     /// are only valid within one such period.
@@ -318,6 +319,7 @@ impl Workbench {
         self.file_slider_animation.clear();
         self.file_view = None;
         self.file_cas_visible = None;
+        self.file_spreadsheet_view = None;
         self.selected = None;
         self.undo.clear();
         self.gesture = None;
@@ -387,18 +389,24 @@ impl Workbench {
     /// running the line on a scratch copy.
     fn with_label(&self, line: String) -> String {
         if line.is_empty()
-            || find_unquoted(&line, '=').is_some()
+            || find_top_level(&line, '=').is_some()
             || geo_kernel::script::is_construction_step_command(&line)
+            || geo_kernel::spreadsheet::is_fill_line(&line)
         {
             return line;
         }
-        let kind = self.log.rebuild().ok().and_then(|(mut scratch, _)| {
+        let shape = self.log.rebuild().ok().and_then(|(mut scratch, _)| {
             let id = exec_definition(&mut scratch, &format!("Probe_ = {line}")).ok()??;
-            Some(scratch.kind(scratch.id("Probe_").unwrap_or(id)))
+            let id = scratch.id("Probe_").unwrap_or(id);
+            let matrix = scratch.elements(id).is_some_and(|list| list.is_matrix());
+            Some((scratch.kind(id), matrix))
         });
-        let label = next_label(kind.unwrap_or(Kind::Line), |l| {
-            self.construction.id(l).is_some()
-        });
+        let is_taken = |label: &str| self.construction.id(label).is_some();
+        let label = match shape {
+            Some((Kind::List, true)) => next_numbered("m", is_taken),
+            Some((kind, _)) => next_label(kind, is_taken),
+            None => next_label(Kind::Line, is_taken),
+        };
         format!("{label} = {line}")
     }
 
@@ -533,6 +541,7 @@ impl Workbench {
                 }
             }
             let before = self.construction.len();
+            let fills_cells = geo_kernel::spreadsheet::is_fill_line(&line);
             let step_before = self.construction.step();
             let target = geo_kernel::script::assignment_target(&self.construction, &line);
             let slider = geo_kernel::script::slider_assignment_target(&self.construction, &line);
@@ -543,8 +552,10 @@ impl Workbench {
             match exec_definition(&mut self.construction, &line) {
                 Ok(first) => {
                     let added = self.construction.len() > before;
-                    let mutated =
-                        !added && (assigns_slider || self.construction.step() != step_before);
+                    let mutated = !added
+                        && (assigns_slider
+                            || fills_cells
+                            || self.construction.step() != step_before);
                     let replaced = target.is_some() && first == target;
                     if added || mutated || replaced {
                         // A stroke keeps the points of its creation: the
@@ -589,6 +600,7 @@ impl Workbench {
                     redefined |= replaced;
                 }
                 Err(e) => {
+                    updated |= fills_cells;
                     failure = Some(e);
                     break;
                 }
@@ -696,6 +708,29 @@ impl Workbench {
         self.notice = None;
         self.version += 1;
         self.rebuilds += 1;
+    }
+
+    pub fn edit_spreadsheet_cell(
+        &mut self,
+        address: geo_kernel::spreadsheet::Address,
+        input: &str,
+    ) -> Result<(), String> {
+        if input.is_empty() {
+            let Some(id) = self.construction.spreadsheet_cell(address) else {
+                return Ok(());
+            };
+            let label = self.construction.label(id);
+            // A fill can own multiple cells in a single journal entry.
+            if self
+                .log
+                .define_entry(label)
+                .is_some_and(|(_, labels)| labels.len() == 1)
+                && self.delete(id)
+            {
+                return Ok(());
+            }
+        }
+        self.run_line(&geo_kernel::spreadsheet::edit_line(address, input))
     }
 
     /// Deletes an object and everything that depends on it, as one undo step.

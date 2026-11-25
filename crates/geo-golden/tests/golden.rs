@@ -5,7 +5,30 @@ use geo_kernel::{script, Construction, Def, Error, Kind, Value};
 
 /// Number of cases recorded by `ggb-harness` so far. Raise it when adding cases,
 /// so that losing a file is noticed.
-const MIN_GOLDEN_CASES: usize = 7441;
+const MIN_GOLDEN_CASES: usize = 7495;
+
+#[test]
+fn spreadsheet_closing_regressions_match_geogebra() {
+    let ids = [
+        "spreadsheet-barerange-001",
+        "spreadsheet-circularedit-001",
+        "spreadsheet-clearrangemember-001",
+        "spreadsheet-filloverlapbudget-001",
+        "spreadsheet-liverangefill-001",
+        "spreadsheet-radianmodelist-001",
+        "spreadsheet-rangefillformula-001",
+        "spreadsheet-rangefillnamedlist-001",
+        "spreadsheet-scientificinput-001",
+        "spreadsheet-segmentreload-001",
+        "spreadsheet-sliderassignment-001",
+        "spreadsheet-visibilityshow-001",
+    ];
+    let mut cases = model::load_all(&repo_root()).unwrap();
+    cases.retain(|case| ids.contains(&case.id.as_str()));
+    assert_eq!(cases.len(), ids.len());
+    let report = report::evaluate(&cases, &gaps::Gaps::new());
+    assert!(report.failures.is_empty(), "{}", report.failures.join("\n"));
+}
 
 #[test]
 fn homogeneous_point_cases_agree() {

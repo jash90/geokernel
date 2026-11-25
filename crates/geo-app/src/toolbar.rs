@@ -225,7 +225,21 @@ fn main_menu(app: &mut App, button: &Response) {
         };
         if ui.button(text::label(view)).clicked() {
             app.show_cas = !app.show_cas;
+            app.show_spreadsheet = false;
             app.cancel_cas_edit();
+            app.keyboard.open = false;
+            ui.close();
+        }
+        let view = if app.show_spreadsheet {
+            Label::AlgebraView
+        } else {
+            Label::SpreadsheetView
+        };
+        if ui.button(text::label(view)).clicked() {
+            app.show_spreadsheet = !app.show_spreadsheet;
+            app.show_cas = false;
+            app.cancel_cas_edit();
+            app.cancel_spreadsheet_edit();
             app.keyboard.open = false;
             ui.close();
         }
