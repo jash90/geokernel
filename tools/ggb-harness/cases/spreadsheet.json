@@ -843,6 +843,66 @@
       ]
     },
     {
+      "id": "spreadsheet-rangebudget-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "FillCells(A1:A600, {1})",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "v = Sum(A1:A600)",
+          "observe": [
+            "v"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "n = Length(A1:A600)",
+          "observe": [
+            "n"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-lookuptargetkind-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "5"
+        },
+        {
+          "action": "command",
+          "input": "v = Cell(1,1)",
+          "observe": [
+            "v"
+          ]
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "hi"
+        }
+      ]
+    },
+    {
       "id": "spreadsheet-viewsettings-001",
       "group": "spreadsheet",
       "script": [],

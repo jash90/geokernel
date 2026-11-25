@@ -183,3 +183,10 @@ fn reserving_lookup_coordinates_charges_expanded_function_work() {
     assert!(c.id("v").is_none());
     assert!(c.id("A1").is_none());
 }
+
+#[test]
+fn a_range_keeps_its_budget_when_command_parsing_backtracks() {
+    let c = script::load("FillCells(A1:A600, {1})\nv = Sum(A1:A600)\nn = Length(A1:A600)").unwrap();
+    assert_number(&c, "v", 600.0);
+    assert_number(&c, "n", 600.0);
+}

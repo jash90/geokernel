@@ -5278,7 +5278,7 @@ cases = ["spreadsheet-fillcells-001"]
 [[form]]
 command = "FillCells"
 form = "range,list"
-cases = ["spreadsheet-fillcells-001", "spreadsheet-matrix-001", "spreadsheet-inlinefillrange-001"]
+cases = ["spreadsheet-fillcells-001", "spreadsheet-matrix-001", "spreadsheet-inlinefillrange-001", "spreadsheet-rangebudget-001"]
 
 [[form]]
 command = "FillCells"
@@ -5288,4 +5288,4 @@ cases = ["spreadsheet-locus-001"]
 [[form]]
 command = "Cell"
 form = "number,number"
-cases = ["spreadsheet-lookup-001", "spreadsheet-textlookup-001", "spreadsheet-latecell-001"]
+cases = ["spreadsheet-lookup-001", "spreadsheet-textlookup-001", "spreadsheet-latecell-001", "spreadsheet-lookuptargetkind-001"]

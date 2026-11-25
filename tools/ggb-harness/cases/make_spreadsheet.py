@@ -83,6 +83,10 @@ cases.extend([
          command("v = Element(r,1)", "v")),
     case("geometrydisplay", {"action": "degree_mode"}, edit("A1", "=Segment((0,0),(3,4))"),
          edit("B1", "=90°")),
+    case("rangebudget", command("FillCells(A1:A600, {1})"),
+         command("v = Sum(A1:A600)", "v"), command("n = Length(A1:A600)", "n")),
+    case("lookuptargetkind", edit("A1", "5"), command("v = Cell(1,1)", "v"),
+         edit("A1", "hi")),
     case("viewsettings", {"action": "load", "input":
          '<geogebra format="5.0"><spreadsheetView><spreadsheetColumn id="0" width="200"/>'
          '<layout showGrid="false"/></spreadsheetView><construction/></geogebra>'}),

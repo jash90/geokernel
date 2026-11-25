@@ -46,6 +46,44 @@ pub(crate) const MAX_COST: u64 = 1 << 20;
 const PI_DECIMAL: &str = "3.1415926535897932385";
 const E_DECIMAL: &str = "2.7182818284590452353";
 
+/// Speculative command forms share an overall work limit even when their
+/// provisional range reads are discarded.
+struct CellBudget {
+    remaining: Option<usize>,
+    visits: Option<usize>,
+}
+
+const MAX_CELL_VISITS: usize = crate::spreadsheet::MAX_CELLS_PER_OPERATION * 16;
+
+impl Default for CellBudget {
+    fn default() -> Self {
+        Self {
+            remaining: Some(crate::spreadsheet::MAX_CELLS_PER_OPERATION),
+            visits: Some(MAX_CELL_VISITS),
+        }
+    }
+}
+
+impl CellBudget {
+    fn charge(&mut self, count: usize) -> Result<(), String> {
+        self.remaining = self.remaining.and_then(|budget| budget.checked_sub(count));
+        self.visits = self.visits.and_then(|budget| budget.checked_sub(count));
+        if self.exhausted() {
+            return Err(crate::spreadsheet::LIMIT.into());
+        }
+        Ok(())
+    }
+
+    fn exhausted(&self) -> bool {
+        self.remaining.is_none() || self.visits.is_none()
+    }
+
+    fn reset(&mut self, remaining: Option<usize>) {
+        // Do not refund work, or mask an error, when abandoning a form.
+        self.remaining = self.remaining.and(remaining);
+    }
+}
+
 /// A parsed and type-checked expression.
 #[derive(Clone)]
 pub(crate) struct Parsed {
@@ -165,7 +203,7 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
         },
         cas_variables: Vec::new(),
         watching_cells: false,
-        cell_work: Some(crate::spreadsheet::MAX_CELLS_PER_OPERATION),
+        cell_work: CellBudget::default(),
         locals: match mode {
             Mode::System(names) | Mode::ScopedEquation(names) => {
                 names.iter().map(|n| (n.to_string(), Elem::Num)).collect()
@@ -179,7 +217,7 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
     let root = p.expression();
     // Speculative command parsing may fall back after an error. A work
     // budget that was exhausted still rejects the whole operation.
-    if p.cell_work.is_none() {
+    if p.cell_work.exhausted() {
         return Err(crate::spreadsheet::LIMIT.into());
     }
     let root = root?;
@@ -244,7 +282,7 @@ pub(super) struct Parser<'a> {
     pub(super) locals: Vec<(String, Elem)>,
     cas_variables: Vec<String>,
     watching_cells: bool,
-    cell_work: Option<usize>,
+    cell_work: CellBudget,
 }
 
 impl Parser<'_> {
@@ -912,7 +950,7 @@ impl Parser<'_> {
 
     fn cell_range(&mut self, first: &str, last: &str, template: Elem) -> Result<u32, String> {
         let range = crate::spreadsheet::Range::parse(first, last)?;
-        self.charge_cells(range.cell_count())?;
+        self.cell_work.charge(range.cell_count())?;
         let start = self.nodes.len() as u32;
         for address in range.column_major() {
             let label = address.label();
@@ -928,13 +966,6 @@ impl Parser<'_> {
             self.nodes.len() as u32 - start,
             template,
         )))
-    }
-
-    fn charge_cells(&mut self, count: usize) -> Result<(), String> {
-        self.cell_work = self.cell_work.and_then(|budget| budget.checked_sub(count));
-        self.cell_work
-            .map(|_| ())
-            .ok_or_else(|| crate::spreadsheet::LIMIT.into())
     }
 
     fn spreadsheet_command(&mut self, name: &str) -> Result<Option<u32>, String> {
@@ -997,14 +1028,14 @@ impl Parser<'_> {
                 let kind = selected.map_or(Kind::Number, |id| self.c.kind(id));
                 if constant(column).is_some() && constant(row).is_some() {
                     if let Some(id) = address.and_then(|a| self.c.id(&a.label())) {
-                        self.charge_cells(1)?;
+                        self.cell_work.charge(1)?;
                         self.read(id, true);
                         self.push(Node::CellWatch(id));
                     }
                 } else if !self.watching_cells {
                     self.watching_cells = true;
                     for (address, id) in self.c.spreadsheet_slots() {
-                        self.charge_cells(1)?;
+                        self.cell_work.charge(1)?;
                         if self.c.id(&address.label()) == Some(id) {
                             self.read(id, true);
                             self.push(Node::CellWatch(id));
@@ -1390,23 +1421,25 @@ impl Parser<'_> {
     /// The state a command that read its arguments leaves behind (see
     /// [`Parser::reset`]), so that a command that takes no part of them
     /// can hand them to the script parser untouched.
-    pub(super) fn saved(&self) -> (usize, usize, usize, bool, bool) {
+    pub(super) fn saved(&self) -> (usize, usize, usize, bool, bool, Option<usize>) {
         (
             self.pos,
             self.parents.len(),
             self.inputs.len(),
             self.uses_var,
             self.watching_cells,
+            self.cell_work.remaining,
         )
     }
 
     /// Puts the parser back to a [`Parser::saved`] state.
-    pub(super) fn reset(&mut self, saved: (usize, usize, usize, bool, bool)) {
+    pub(super) fn reset(&mut self, saved: (usize, usize, usize, bool, bool, Option<usize>)) {
         self.pos = saved.0;
         self.parents.truncate(saved.1);
         self.inputs.truncate(saved.2);
         self.uses_var = saved.3;
         self.watching_cells = saved.4;
+        self.cell_work.reset(saved.5);
     }
 
     /// Whether the subtree at `i` is a list.
@@ -1631,5 +1664,19 @@ mod spreadsheet_tests {
                 .count(),
             1000
         );
+    }
+
+    #[test]
+    fn abandoned_cell_parses_still_consume_the_work_budget() {
+        let mut budget = CellBudget::default();
+        let per_form = crate::spreadsheet::MAX_CELLS_PER_OPERATION;
+        let start = budget.remaining;
+        for _ in 0..MAX_CELL_VISITS / per_form {
+            budget.charge(per_form).unwrap();
+            budget.reset(start);
+        }
+        assert!(budget.charge(1).is_err());
+        budget.reset(start);
+        assert!(budget.exhausted());
     }
 }
