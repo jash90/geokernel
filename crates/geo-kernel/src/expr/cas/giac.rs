@@ -45,14 +45,25 @@ const PLOTSOLVE_1: &str = "[[ggbplarg:=ggbsort(normal([op(solve(%0))]))],[when(s
 /// function (`GeoGebraCAS.getCASCommand`).
 const PLOTSOLVE_2: &str = "ggbtmpvarPlotSolve(%0,%1)";
 
-pub(super) fn row_solve(name: &str, input: &str, variable: &str) -> String {
+pub(super) fn row_fill(template: &str, args: &[&str]) -> Option<String> {
+    let parts = || template_parts(template, args, args);
+    let size = parts().try_fold(0usize, |size, part| {
+        let size = size.checked_add(part.len())?;
+        (size <= super::row::MAX_INPUT_BYTES).then_some(size)
+    })?;
+    let mut input = String::with_capacity(size);
+    input.extend(parts());
+    Some(input)
+}
+
+pub(super) fn row_solve(name: &str, input: &str, variable: &str) -> Option<String> {
     let template = match name {
         "Solve" => SOLVE_2,
         "Solutions" => SOLUTIONS_2,
         "NSolve" => NSOLVE_2,
         _ => NSOLUTIONS_2,
     };
-    fill(template, &[input, variable], &[input, variable])
+    row_fill(template, &[input, variable])
 }
 
 pub(super) fn row_object(c: &Construction, id: crate::Id) -> Option<String> {
@@ -290,7 +301,7 @@ pub(in crate::expr) fn with_cartesian_variables(mut names: Vec<String>) -> Vec<S
 }
 
 /// Whether a printed equation names the variable.
-fn has_variable(printed: &str, name: &str) -> bool {
+pub(super) fn has_variable(printed: &str, name: &str) -> bool {
     let bytes = printed.as_bytes();
     printed.match_indices(name).any(|(k, _)| {
         let before = k.checked_sub(1).map(|j| bytes[j]);
@@ -402,29 +413,44 @@ fn print_hint(
 /// `GeoGebraCAS.getCASCommand`'s substitution: `%n` and `%%n` (numeric) are
 /// replaced by argument `n`; the `_` escaping of `Ggb2giac.p` is undone.
 fn fill(template: &str, args: &[&str], numeric: &[&str]) -> String {
-    let mut out = String::with_capacity(template.len() + 64);
-    let bytes = template.as_bytes();
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'%' {
-            let mut j = i + 1;
-            let numeric_form = bytes.get(j) == Some(&b'%');
-            if numeric_form {
-                j += 1;
-            }
-            let args = if numeric_form { numeric } else { args };
-            if let Some(d) = bytes.get(j).filter(|b| b.is_ascii_digit()) {
-                if let Some(arg) = args.get(usize::from(d - b'0')) {
-                    out.push_str(arg);
-                    i = j + 1;
-                    continue;
-                }
+    template_parts(template, args, numeric).collect()
+}
+
+/// Yield literal runs and each placeholder's replacement without copying
+/// the arguments. The row translator can measure the complete input first.
+fn template_parts<'a>(
+    mut template: &'a str,
+    args: &'a [&'a str],
+    numeric: &'a [&'a str],
+) -> impl Iterator<Item = &'a str> {
+    std::iter::from_fn(move || {
+        if template.is_empty() {
+            return None;
+        }
+        let literal = template.find('%').unwrap_or(template.len());
+        if literal > 0 {
+            let (part, rest) = template.split_at(literal);
+            template = rest;
+            return Some(part);
+        }
+        let (offset, args) = if template.starts_with("%%") {
+            (2, numeric)
+        } else {
+            (1, args)
+        };
+        if let Some(digit) = template
+            .as_bytes()
+            .get(offset)
+            .filter(|b| b.is_ascii_digit())
+        {
+            if let Some(&arg) = args.get(usize::from(digit - b'0')) {
+                template = &template[offset + 1..];
+                return Some(arg);
             }
         }
-        out.push(bytes[i] as char);
-        i += 1;
-    }
-    out
+        template = &template[1..];
+        Some("%")
+    })
 }
 
 /// Prints trees the way the reference's Giac template prints the

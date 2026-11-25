@@ -1,6 +1,6 @@
 use super::{Poly, Quotient, Rat, Work};
 use crate::cas::factor;
-use crate::expr::{entry, free_decimal, Bin, Entry, Node, StoredExtra};
+use crate::expr::{entry, free_decimal, Bin, Entry, Node, StoredExtra, Un};
 use crate::{Construction, Def, Id, Value};
 
 pub(super) fn variables() -> [Quotient; 3] {
@@ -186,6 +186,10 @@ fn read_at<const DEFINITIONS: bool>(
                 }
                 _ => unreachable!(),
             }
+        }
+        Node::Un(Un::Abs, arg) if DEFINITIONS => {
+            let value = args(arg, work)?.scalar()?;
+            Some(number(if value.num < 0 { value.neg()? } else { value }))
         }
         Node::Cas(op, a, b) if op.is_function() => {
             let source = args(a, work)?;

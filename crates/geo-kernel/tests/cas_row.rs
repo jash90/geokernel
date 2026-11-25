@@ -91,3 +91,17 @@ fn evaluates_recorded_exact_row_regressions() {
     }
     assert!(failures.is_empty(), "{}", failures.join("\n"));
 }
+
+#[cfg(not(feature = "giac"))]
+#[test]
+fn named_absolute_fraction_keeps_its_exact_definition() {
+    let c = geo_kernel::script::load("a = abs(1/3)").unwrap();
+    assert_eq!(c.evaluate_cas_row("3*a").exact.as_deref(), Some("1"));
+}
+
+#[cfg(not(feature = "giac"))]
+#[test]
+fn reciprocal_solve_excludes_the_inner_pole() {
+    let c = Construction::new();
+    assert_eq!(c.evaluate_cas_row("Solve(1/(1/x) = 0)").text, "{}");
+}

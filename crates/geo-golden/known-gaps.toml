@@ -2897,3 +2897,8 @@ mismatches = ["0:1.input", "1:1.input", "1:2.output", "1:2.latex", "1:2.number",
 id = "casview-closing-009"
 reason = "The reference collapses the saved input to one digit and a single trailing space. The importer preserves all 16,385 bytes and marks the row unevaluated with the same saved output 1."
 mismatches = ["0:1.input"]
+
+[[gap]]
+id = "cascell-lastround-006"
+reason = 'The CAS row reader has no chained comparison syntax (crates/geo-kernel/src/expr/cas/syntax.rs:50). The kernel prints ? and \mathbf{?}. GeoGebra prints false and \mathbf{false}.'
+mismatches = ["0:output", "0:latex"]

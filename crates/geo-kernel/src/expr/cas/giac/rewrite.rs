@@ -29,7 +29,7 @@ pub(in crate::expr::cas) fn input(op: Op, argument: &str) -> Option<String> {
         Op::IFactor => IFACTOR,
         _ => return None,
     };
-    Some(fill(template, &[argument], &[]))
+    row_fill(template, &[argument])
 }
 
 /// CmdSimplify converts a line, segment or conic to a function. An
