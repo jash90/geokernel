@@ -172,6 +172,7 @@ fn large_batch_is_refused_before_it_partially_changes_the_selection() {
 fn tab_order_follows_the_form_and_escape_returns_focus_to_graphics() {
     let mut h = harness("A = (2, 1)");
     open_point_properties(&mut h);
+    pick(&mut h, "Pokaż obiekt");
     h.get_by_label("Podpis").focus();
     h.run();
     for label in ["Pokaż obiekt", "Pokaż etykietę", "Treść etykiety"] {
@@ -183,6 +184,9 @@ fn tab_order_follows_the_form_and_escape_returns_focus_to_graphics() {
     h.run();
     assert!(h.state().properties.is_none());
     assert!(h.get_by_label("Widok graficzny").is_focused());
+    h.key_press_modifiers(Modifiers::COMMAND, egui::Key::Z);
+    h.run();
+    assert_eq!(h.state().wb.undo_depth(), (0, 1));
 }
 
 #[test]

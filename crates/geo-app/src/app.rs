@@ -80,7 +80,8 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
     // the text, Escape leaves the field.
     // egui drops the focus itself when Escape arrives, so the field
     // counts as focused if it was a frame ago.
-    let typing = ctx.egui_wants_keyboard_input();
+    let typing = ctx.egui_wants_keyboard_input()
+        && !ctx.memory(|memory| memory.has_focus(crate::properties::canvas_id()));
     let was_typing = std::mem::replace(&mut app.was_typing, typing);
     let typing = typing || was_typing;
     // egui ends any drag on Escape, whoever takes the key afterwards.
