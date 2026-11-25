@@ -696,6 +696,10 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
             }
         }
     }
+    proof
+        .entry("CAS")
+        .or_default()
+        .insert("rows", cas_export_witness());
     let serialized = serde_json::to_string_pretty(&proof).unwrap() + "\n";
     let path = proof_path();
     if std::env::var_os("GEOKERNEL_EXPORT_BLESS").is_some() {
@@ -2150,4 +2154,99 @@ fn geogebra_reloads_a_slider_with_an_undefined_endpoint() {
     let s = reloaded.construction().id("s").unwrap();
     assert!(reloaded.set_number(limit, 4.0));
     assert_eq!(reloaded.construction().slider_bounds(s), [None, Some(4.0)]);
+}
+
+const CAS_EXPORT_CASE: &str = "casview-rows-002";
+
+fn cas_export_case() -> geo_golden::model::Case {
+    load_all(&repo_root())
+        .unwrap()
+        .into_iter()
+        .find(|case| case.id == CAS_EXPORT_CASE)
+        .unwrap()
+}
+
+fn check_cas_export(wb: &Workbench, expected: &[geo_golden::model::CasViewRow]) {
+    assert_eq!(wb.cas_rows().len(), expected.len());
+    for (actual, expected) in wb.cas_rows().iter().zip(expected) {
+        assert_eq!(actual.input, expected.input);
+        assert_eq!(actual.output.text, expected.output);
+        assert_eq!(actual.output.latex, expected.latex);
+    }
+}
+
+#[test]
+fn reopens_the_reference_cas_table_and_a_new_export() {
+    let case = cas_export_case();
+    let rows = &case.casview.as_ref().unwrap().last().unwrap().rows;
+    let mut wb = Workbench::default();
+    wb.load_for_export(
+        include_bytes!("../../../golden/ggb/casview/casview-rows-002.xml"),
+        CAS_EXPORT_CASE,
+    )
+    .unwrap();
+    check_cas_export(&wb, rows);
+    let export = wb.export_ggb(None).unwrap();
+    wb.load_for_export(&export, CAS_EXPORT_CASE).unwrap();
+    check_cas_export(&wb, rows);
+}
+
+fn cas_export_witness() -> Value {
+    let case = cas_export_case();
+    let actions = case.casview.as_ref().unwrap();
+    let expected = &actions.last().unwrap().rows;
+    let mut authored = Workbench::from_script(&case.script.join("\n")).unwrap();
+    for step in actions {
+        assert!(authored.submit_cas(step.row - 1, step.input.as_deref().unwrap()));
+    }
+    check_cas_export(&authored, expected);
+    let mut imported = Workbench::default();
+    imported
+        .load_for_export(
+            include_bytes!("../../../golden/ggb/casview/casview-rows-002.xml"),
+            CAS_EXPORT_CASE,
+        )
+        .unwrap();
+    let dir = Scratch::new("cas");
+    for (name, wb, visible) in [("authored", authored, true), ("imported", imported, false)] {
+        fs::write(
+            dir.0.join(format!("{name}.ggb")),
+            wb.export_ggb_with_cas_visibility(None, visible).unwrap(),
+        )
+        .unwrap();
+    }
+    let output = Command::new(repo_root().join("tools/ggb-harness/harness.sh"))
+        .env("GGB_HARNESS_CAS", "1")
+        .arg("export-snapshot")
+        .arg(&dir.0)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "CAS export oracle failed:\n{}\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let read = |name| -> Value {
+        let snapshot: Value =
+            serde_json::from_slice(&fs::read(dir.0.join(format!("{name}.ggb.snapshot"))).unwrap())
+                .unwrap();
+        snapshot["casRows"].clone()
+    };
+    let saved = read("authored");
+    assert_eq!(saved, read("imported"));
+    let actual = saved
+        .as_array()
+        .expect("reference did not reload the CAS table");
+    assert_eq!(actual.len(), expected.len());
+    for (actual, expected) in actual.iter().zip(expected) {
+        assert_eq!(actual["input"], expected.input);
+        assert_eq!(actual["output"], expected.output);
+        assert_eq!(actual["latex"], expected.latex);
+        if let Some(number) = expected.number {
+            assert!(numbers_agree(actual["number"].as_f64().unwrap(), number));
+        }
+    }
+    json!({ "fixture": CAS_EXPORT_CASE, "saved": saved })
 }

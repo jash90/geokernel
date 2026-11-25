@@ -20,7 +20,7 @@ import org.geogebra.common.main.App;
 
 /**
  * Writes the construction file GeoGebra itself produces for every case of the
- * case inputs (the state right after the script has run).
+ * case inputs (after the script and any CAS view actions).
  *
  * <p>Usage: {@code GgbExporter <cases.json> <out dir> <sample step> <zip step>}.
  * For a case file whose group is {@code g}, case number {@code n} (counting from
@@ -76,6 +76,9 @@ public final class GgbExporter {
             try {
                 for (Object line : (List<?>) input.get("script")) {
                     session.run((String) line);
+                }
+                if (input.get("casview") instanceof List<?> actions) {
+                    session.casView(actions);
                 }
             } catch (RuntimeException e) {
                 throw new IllegalStateException("case " + id + " failed: " + e.getMessage(), e);

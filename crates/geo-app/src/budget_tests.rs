@@ -1404,3 +1404,25 @@ fn a_thousand_canvas_sliders_and_checkboxes_fit_the_frame_budget() {
         }
     }
 }
+
+#[test]
+fn a_thousand_cas_rows_only_render_the_visible_range() {
+    let mut w = Window::with("", String::new());
+    w.app.show_cas = true;
+    for i in 0..1000 {
+        assert!(w.app.wb.submit_cas(i, &format!("{i} / 1009")));
+    }
+    let counts = w.settled(5);
+    let layouts = crate::latex::layouts_built();
+    let start = std::time::Instant::now();
+    assert_eq!(w.frames(60), counts);
+    let mean_ms = start.elapsed().as_secs_f64() * 1000.0 / 60.0;
+    println!("CAS idle frame: {mean_ms:.2} ms, {counts:?}");
+    assert_eq!(crate::latex::layouts_built(), layouts);
+    assert!(counts.texts <= 120, "{counts:?}");
+    assert!(counts.shapes < 800, "{counts:?}");
+    assert!(counts.allocs < 500, "{counts:?}");
+    assert!(counts.bytes < 200_000, "{counts:?}");
+    assert!(counts.vertices < 17_000, "{counts:?}");
+    assert!(!counts.immediate, "{counts:?}");
+}

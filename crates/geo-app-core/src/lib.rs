@@ -10,6 +10,7 @@
 pub mod app;
 pub mod arc;
 pub mod camera;
+pub mod cas;
 pub mod describe;
 pub mod errors;
 pub mod geom;

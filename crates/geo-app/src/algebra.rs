@@ -34,14 +34,7 @@ struct Actions {
 }
 
 pub fn show(app: &mut App, ui: &mut Ui) {
-    if let Some(e) = app.load_error.clone() {
-        ui.horizontal_wrapped(|ui| {
-            ui.colored_label(theme::ERROR, format!("Nie można wczytać pliku: {e}"));
-            if ui.small_button("Zamknij").clicked() {
-                app.load_error = None;
-            }
-        });
-    }
+    crate::app::file_notices(app, ui);
     app.wb.refresh_rows();
     let mut actions = Actions::default();
     let kept: Option<String> = ui.data(|d| d.get_temp(kept_id()));

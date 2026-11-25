@@ -142,6 +142,7 @@ public final class ExportSnapshot {
                 }
             }
         };
+        GiacOracle.configure(app);
         logger.setLogLevel(Log.Level.TRACE);
         Log.setLogger(logger);
         try (InputStream in = Files.newInputStream(file)) {
@@ -176,6 +177,9 @@ public final class ExportSnapshot {
         snapshot.put("styles", styles);
         snapshot.put("settings", settings);
         snapshot.put("reported", reported);
+        if (kernel.getConstruction().getCasCell(0) != null) {
+            snapshot.put("casRows", Session.casRows(kernel.getConstruction()));
+        }
         return snapshot;
     }
 

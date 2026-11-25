@@ -20,6 +20,12 @@ import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 
 import org.geogebra.common.cas.view.CASCellProcessor;
+import org.geogebra.common.cas.view.CASInputHandler;
+import org.geogebra.common.cas.view.CASTable;
+import org.geogebra.common.cas.view.CASTableCellEditor;
+import org.geogebra.common.cas.view.CASView;
+import org.geogebra.common.io.XMLStringBuilder;
+import org.geogebra.common.io.layout.DockPanelData;
 import org.geogebra.common.factories.AwtFactoryCommon;
 import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
@@ -175,13 +181,154 @@ final class Session {
     }
 
     Map<String, Object> casCell(String input) {
-        String fixed = new CASCellProcessor(app.getLocalization()).fixInputErrors(input);
         GeoCasCell cell = new GeoCasCell(kernel.getConstruction());
+        evaluateCasCell(cell, input, true);
+        return casCellSnapshot(cell, input);
+    }
+
+    private void evaluateCasCell(GeoCasCell cell, String input, boolean last) {
+        String oldXml = app.getXML();
+        String fixed = new CASCellProcessor(app.getLocalization()).fixInputErrors(input);
         cell.setInput(fixed);
         cell.setProcessingInformation("", fixed, "");
         cell.setEvalCommand("Evaluate");
-        processor.processCasCell(cell, true, app.getXML());
+        processor.processCasCell(cell, last, oldXml);
+    }
 
+    List<Object> casView(List<?> actions) {
+        boolean undo = actions.stream().anyMatch(value ->
+                "undo".equals(((Map<?, ?>) value).get("action")));
+        if (undo) {
+            kernel.setUndoActive(true);
+            kernel.initUndoInfo();
+        }
+        List<Object> steps = new ArrayList<>();
+        for (Object value : actions) {
+            Map<?, ?> action = (Map<?, ?>) value;
+            String kind = (String) action.get("action");
+            int row = Math.toIntExact((Long) action.get("row"));
+            String input = (String) action.get("input");
+            Construction construction = kernel.getConstruction();
+            GeoCasCell cell = construction.getCasCell(row - 1);
+            Map<Object, Object> step = new LinkedHashMap<>(action);
+            switch (kind) {
+                case "undo", "redo":
+                    restoreStep(kind);
+                    break;
+                case "load":
+                    String cells = (String) action.get("xml");
+                    if (action.get("repeat") instanceof Long repeat) {
+                        cells = cells.repeat(Math.toIntExact(repeat));
+                    }
+                    String xml = app.getXML().replace("</construction>", cells + "</construction>");
+                    try {
+                        app.getXMLio().processXMLString(xml, true, false);
+                    } catch (org.geogebra.common.io.XMLParseException error) {
+                        throw new IllegalStateException(error);
+                    }
+                    break;
+                case "visibility":
+                    DockPanelData panel = new DockPanelData(App.VIEW_CAS, null,
+                            (Boolean) action.get("visible"), false, false,
+                            new AwtFactoryCommon().newRectangle(0, 0, 640, 480), "3", 300);
+                    XMLStringBuilder viewXml = new XMLStringBuilder();
+                    panel.getXml(viewXml);
+                    step.put("view_xml", viewXml.toString().trim());
+                    break;
+                case "enter", "static_edit":
+                    processCasViewInput(row - 1, input == null ? "" : input);
+                    break;
+                case "evaluate":
+                    if (row < 1 || cell != null || row > 1 && construction.getCasCell(row - 2) == null) {
+                        throw new IllegalArgumentException("evaluate must append a row");
+                    }
+                    evaluateCasCell(new GeoCasCell(construction), input, true);
+                    break;
+                case "edit":
+                    evaluateCasCell(java.util.Objects.requireNonNull(cell), input,
+                            construction.getCasCell(row) == null);
+                    break;
+                case "delete":
+                    java.util.Objects.requireNonNull(cell).remove();
+                    construction.updateCasCells();
+                    break;
+                default:
+                    throw new IllegalArgumentException("unknown CAS view action: " + kind);
+            }
+            if (undo && ("evaluate".equals(kind) || "edit".equals(kind) || "delete".equals(kind))) {
+                kernel.storeUndoInfo();
+            }
+            step.put("rows", casRows(kernel.getConstruction()));
+            steps.add(step);
+        }
+        return steps;
+    }
+
+    /** Binds the reference's input controller to the selected cell without a GUI. */
+    private void processCasViewInput(int selected, String input) {
+        Construction construction = kernel.getConstruction();
+        GeoCasCell existing = construction.getCasCell(selected);
+        GeoCasCell cell = existing == null ? new GeoCasCell(construction) : existing;
+        CASTableCellEditor editor = (CASTableCellEditor) java.lang.reflect.Proxy.newProxyInstance(
+                CASTableCellEditor.class.getClassLoader(), new Class<?>[] { CASTableCellEditor.class },
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getInput" -> input;
+                    case "getInputSelectedText" -> "";
+                    case "getInputSelectionStart", "getInputSelectionEnd" -> 0;
+                    case "setInputSelectionStart", "setInputSelectionEnd" -> null;
+                    default -> throw new UnsupportedOperationException(method.getName());
+                });
+        int count = casRows(construction).size();
+        CASTable table = (CASTable) java.lang.reflect.Proxy.newProxyInstance(
+                CASTable.class.getClassLoader(), new Class<?>[] { CASTable.class },
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getSelectedRow" -> selected;
+                    case "getSelectedRows" -> new int[] { selected };
+                    case "getEditor" -> editor;
+                    case "getGeoCasCell" -> (Integer) args[0] == selected
+                            ? cell : construction.getCasCell((Integer) args[0]);
+                    case "getRowCount" -> count + 1;
+                    case "getApplication" -> app;
+                    case "startEditingRow", "stopEditing" -> null;
+                    case "keepEditing" -> false;
+                    default -> throw new UnsupportedOperationException(method.getName());
+                });
+        CASView view = new CASView(kernel) {
+            @Override public App getApp() { return app; }
+            @Override public CASTable getConsoleTable() { return table; }
+            @Override public void repaintView() { }
+            @Override public boolean suggestRepaint() { return false; }
+            @Override public boolean hasFocus() { return false; }
+            @Override public void showSubstituteDialog(String a, String b, String c, int row) {
+                throw new UnsupportedOperationException();
+            }
+        };
+        new CASInputHandler(view).processCurrentRow("Evaluate", false, app.getXML());
+    }
+
+    static List<Object> casRows(Construction construction) {
+        List<Object> rows = new ArrayList<>();
+        for (int i = 0; ; i++) {
+            GeoCasCell cell = construction.getCasCell(i);
+            if (cell == null) {
+                return rows;
+            }
+            Map<String, Object> snapshot = casCellSnapshot(cell, cell.getLocalizedInput());
+            String[] parts = ((String) snapshot.get("output")).split(" / ", -1);
+            if (parts.length <= 2 && Arrays.stream(parts).allMatch(part -> NUMBER.matcher(part).matches())) {
+                double number = Double.parseDouble(parts[0]);
+                if (parts.length == 2) {
+                    number /= Double.parseDouble(parts[1]);
+                }
+                if (Double.isFinite(number)) {
+                    snapshot.put("number", number);
+                }
+            }
+            rows.add(snapshot);
+        }
+    }
+
+    private static Map<String, Object> casCellSnapshot(GeoCasCell cell, String input) {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("input", input);
         row.put("output", cell.getOutput(StringTemplate.defaultTemplate));

@@ -9,6 +9,7 @@
 mod algebra;
 mod app;
 mod canvas;
+mod cas;
 pub mod cli;
 mod curves;
 mod draw;

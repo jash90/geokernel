@@ -46,6 +46,8 @@ impl Default for View {
 pub struct Presentation<'a> {
     pub view: View,
     pub settings: Settings,
+    pub cas_rows: Vec<crate::SavedCasRow>,
+    pub cas_visible: Option<bool>,
     /// Colours of the objects that have no saved style.
     pub colors: BTreeMap<&'a str, [u8; 3]>,
     /// Fill opacity the application draws those objects with, from 0 to 1.
@@ -369,6 +371,12 @@ pub fn ggb<'a>(
             construction.label(id)
         )));
     }
+    for row in &presentation.cas_rows {
+        writer.xml.cas_row(row)?;
+        if writer.xml.buffer.len() as u64 > archive::MAX_XML_BYTES {
+            return Err(failure("construction XML exceeds the import size limit"));
+        }
+    }
     writer.xml.buffer.push_str("</construction>\n</geogebra>\n");
     if writer.xml.buffer.len() as u64 > archive::MAX_XML_BYTES
         || writer.images.len() + 1 > archive::MAX_ZIP_ENTRIES
@@ -404,6 +412,34 @@ struct Writer<'a> {
 
 impl Writer<'_> {
     fn settings(&mut self) -> Result<(), ExportError> {
+        if let Some(cas_visible) = self.presentation.cas_visible {
+            self.xml.buffer.push_str(
+                "<gui><perspectives><perspective id=\"tmp\"><panes>\n\
+                 <pane location=\"\" divider=\"0.32\" orientation=\"1\"/>\n\
+                 </panes><views>\n",
+            );
+            for (id, visible, location, size) in [
+                ("1", true, "1", "600"),
+                ("2", !cas_visible, "3", "300"),
+                ("8", cas_visible, "3", "300"),
+            ] {
+                self.xml.tag(
+                    "view",
+                    &[
+                        ("id", id),
+                        ("visible", if visible { "true" } else { "false" }),
+                        ("inframe", "false"),
+                        ("stylebar", "false"),
+                        ("location", location),
+                        ("size", size),
+                        ("window", "0,0,640,480"),
+                    ],
+                )?;
+            }
+            self.xml
+                .buffer
+                .push_str("</views></perspective></perspectives></gui>\n");
+        }
         let View {
             size: [width, height],
             origin: [x, y],
@@ -689,8 +725,18 @@ struct Xml {
 
 impl Xml {
     fn attributes(&mut self, name: &str, attrs: &[(&str, &str)]) -> Result<(), ExportError> {
+        self.attributes_with_limit(name, attrs, crate::xml::MAX_ATTRIBUTE_BYTES)
+    }
+
+    fn attributes_with_limit(
+        &mut self,
+        name: &str,
+        attrs: &[(&str, &str)],
+        limit: usize,
+    ) -> Result<(), ExportError> {
         self.items += match name {
-            "command" | "expression" | "element" => 1,
+            "command" | "element" | "cellPair" => 1,
+            "expression" if attrs.iter().any(|(key, _)| *key == "label") => 1,
             "output" => attrs.len(),
             _ => 0,
         };
@@ -700,7 +746,7 @@ impl Xml {
         self.buffer.push('<');
         self.buffer.push_str(name);
         for (key, value) in attrs {
-            if value.len() > crate::xml::MAX_ATTRIBUTE_BYTES {
+            if value.len() > limit {
                 return Err(failure(
                     "construction XML attribute exceeds the import size limit",
                 ));
@@ -726,7 +772,7 @@ impl Xml {
                     _ => self.buffer.push(ch),
                 }
             }
-            if self.buffer.len() - start > crate::xml::MAX_ATTRIBUTE_BYTES {
+            if self.buffer.len() - start > limit {
                 return Err(failure(
                     "construction XML attribute exceeds the import size limit",
                 ));
@@ -744,6 +790,59 @@ impl Xml {
 
     fn tag(&mut self, name: &str, attrs: &[(&str, &str)]) -> Result<(), ExportError> {
         self.attributes(name, attrs)?;
+        self.buffer.push_str("/>\n");
+        Ok(())
+    }
+
+    fn cas_row(&mut self, row: &crate::SavedCasRow) -> Result<(), ExportError> {
+        self.open("cascell", &[])?;
+        self.open("cellPair", &[])?;
+        if row.as_text {
+            self.open("useAsText", &[])?;
+            self.tag("FontStyle", &[("value", "0")])?;
+            self.buffer.push_str("</useAsText>\n");
+        }
+        if !row.input.is_empty() {
+            self.open("inputCell", &[])?;
+            let mut attrs = vec![("value", row.input.as_str())];
+            let input = &row.input_options;
+            attrs.extend(
+                [
+                    ("prefix", input.prefix.as_deref()),
+                    ("eval", input.eval.as_deref()),
+                    ("postfix", input.postfix.as_deref()),
+                    ("evalCmd", input.command.as_deref()),
+                    ("pointList", input.point_list.then_some("true")),
+                ]
+                .into_iter()
+                .filter_map(|(key, value)| Some((key, value?))),
+            );
+            self.cas_expression(&attrs)?;
+            self.buffer.push_str("</inputCell>\n");
+        }
+        if let Some(value) = &row.output {
+            self.open("outputCell", &[])?;
+            let output = &row.output_options;
+            let mut attrs = vec![("value", value.as_str())];
+            attrs.extend(
+                [
+                    ("evalCommand", output.command.as_deref()),
+                    ("evalComment", output.comment.as_deref()),
+                    ("error", output.error.then_some("true")),
+                    ("native", output.native.then_some("true")),
+                ]
+                .into_iter()
+                .filter_map(|(key, value)| Some((key, value?))),
+            );
+            self.cas_expression(&attrs)?;
+            self.buffer.push_str("</outputCell>\n");
+        }
+        self.buffer.push_str("</cellPair>\n</cascell>\n");
+        Ok(())
+    }
+
+    fn cas_expression(&mut self, attrs: &[(&str, &str)]) -> Result<(), ExportError> {
+        self.attributes_with_limit("expression", attrs, archive::MAX_XML_BYTES as usize)?;
         self.buffer.push_str("/>\n");
         Ok(())
     }

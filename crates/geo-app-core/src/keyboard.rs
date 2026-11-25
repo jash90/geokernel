@@ -166,6 +166,30 @@ pub fn press(app: &mut App, key: Key) {
         app.keyboard.shift = !app.keyboard.shift;
         return;
     }
+    if app.show_cas {
+        if app.cas_editor.is_none() {
+            app.edit_cas_row(app.wb.cas_rows().len().min(crate::cas::MAX_ROWS - 1));
+        }
+        let Some(editor) = app.cas_editor.as_mut() else {
+            return;
+        };
+        let mut cursor = app.input_cursor;
+        let mut draft = editor.draft.clone();
+        let submit = apply(&mut draft, &mut cursor, key, app.keyboard.shift);
+        if draft.len() <= crate::cas::MAX_INPUT_BYTES {
+            editor.draft = draft;
+            app.input_cursor = cursor;
+            app.cursor_request = Some(cursor);
+        }
+        if matches!(key, Key::Text { .. }) {
+            app.keyboard.shift = false;
+        }
+        editor.focus = true;
+        if submit {
+            app.submit_cas_input();
+        }
+        return;
+    }
     let mut cursor = app.input_cursor;
     let submit = apply(&mut app.input, &mut cursor, key, app.keyboard.shift);
     if matches!(key, Key::Text { .. }) {

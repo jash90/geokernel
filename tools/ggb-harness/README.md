@@ -92,6 +92,15 @@ To record one or more CAS topics without rewriting other golden files, set
 Linux x86_64 script. The `cascell` group records one exact CAS view row per
 case. The CAS-view command fixtures in `cas` use the same row field.
 
+To regenerate just the CAS interaction recordings and the corresponding
+construction files, run the case generator and select the group in the container:
+
+```sh
+python3 -I tools/ggb-harness/cases/make_casview.py
+GEOGEBRA_SRC=<checkout> tools/ggb-harness/linux-x86_64.sh golden casview
+GEOGEBRA_SRC=<checkout> tools/ggb-harness/linux-x86_64.sh ggb 1 50 casview
+```
+
 ### Native CAS oracle
 
 On macOS arm64 and Linux x86_64, `build` also downloads the published

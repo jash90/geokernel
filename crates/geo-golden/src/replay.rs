@@ -2,9 +2,11 @@
 
 use crate::compare::{
     compare_arc, compare_conic, compare_extra, compare_list, compare_locus, compare_sampled,
-    compare_stroke, line_scale_agrees, Sign,
+    compare_stroke, line_scale_agrees, numbers_agree, Sign,
 };
-use crate::model::{implicit_output, indexed_prefix, label_prefix, Case, Step};
+use crate::model::{
+    implicit_output, indexed_prefix, label_prefix, CasAction, CasViewStep, Case, Step,
+};
 use geo_app_core::workbench::Workbench;
 use geo_kernel::{script, Construction, Def, Kind};
 
@@ -46,17 +48,19 @@ fn failure(step: usize, label: &str, expected: &str, actual: String) -> Mismatch
 }
 
 pub fn replay(case: &Case) -> CaseOutcome {
-    if case.steps.iter().any(|step| {
-        matches!(
-            step,
-            Step::Delete { .. }
-                | Step::ReloadGgb
-                | Step::SliderAnimation { .. }
-                | Step::Undo
-                | Step::Redo
-                | Step::Reload
-        )
-    }) {
+    if case.casview.is_some()
+        || case.steps.iter().any(|step| {
+            matches!(
+                step,
+                Step::Delete { .. }
+                    | Step::ReloadGgb
+                    | Step::SliderAnimation { .. }
+                    | Step::Undo
+                    | Step::Redo
+                    | Step::Reload
+            )
+        })
+    {
         return replay_document(case);
     }
     let mut out = CaseOutcome::default();
@@ -255,6 +259,9 @@ fn replay_document(case: &Case) -> CaseOutcome {
         }
         compare_snapshot(&mut out, c, i, snapshot, &Default::default());
     }
+    if let Some(actions) = &case.casview {
+        replay_cas_view(&mut document, &mut out, actions);
+    }
     out
 }
 
@@ -289,6 +296,114 @@ fn check_slider_animation(
         }
     }
     Ok(())
+}
+
+fn replay_cas_view(document: &mut Workbench, out: &mut CaseOutcome, actions: &[CasViewStep]) {
+    for (i, step) in actions.iter().enumerate() {
+        let row = step.row - 1;
+        let applied = match step.action {
+            CasAction::Evaluate | CasAction::Edit | CasAction::StaticEdit => {
+                document.submit_cas(row, step.input.as_deref().expect("validated CAS input"))
+            }
+            CasAction::Delete => document.delete_cas(row),
+            CasAction::Undo => document.undo(),
+            CasAction::Redo => document.redo(),
+            CasAction::Enter => {
+                let mut app = geo_app_core::app::App::new(std::mem::take(document), None);
+                app.edit_cas_row(row);
+                app.submit_cas_input();
+                *document = app.wb;
+                document.cas_rows().len() > row
+            }
+            CasAction::Load => {
+                let cells = step
+                    .xml
+                    .as_deref()
+                    .unwrap()
+                    .repeat(step.repeat.unwrap_or(1));
+                let xml = format!("<geogebra><construction>{cells}</construction></geogebra>");
+                document.load_bytes(xml.as_bytes(), "CAS recording").is_ok()
+            }
+            CasAction::Visibility => {
+                let tag = step.view_xml.as_deref().unwrap();
+                let xml = format!(
+                    "<geogebra><gui><perspectives><perspective id=\"tmp\"><views>\
+                    {tag}</views></perspective></perspectives></gui><construction/></geogebra>"
+                );
+                let mut saved = Workbench::default();
+                saved.load_bytes(xml.as_bytes(), "CAS perspective").unwrap();
+                let app = geo_app_core::app::App::new(saved, None);
+                if app.show_cas != step.visible.unwrap() {
+                    out.mismatches.push(failure(
+                        i,
+                        "visible",
+                        &step.visible.unwrap().to_string(),
+                        app.show_cas.to_string(),
+                    ));
+                }
+                true
+            }
+        };
+        if !applied {
+            out.mismatches.push(failure(
+                i,
+                "action",
+                "CAS action applied",
+                format!("{:?} was refused", step.action),
+            ));
+            return;
+        }
+        let actual = document.cas_rows();
+        if actual.len() != step.rows.len() {
+            out.mismatches.push(failure(
+                i,
+                "rows",
+                &step.rows.len().to_string(),
+                actual.len().to_string(),
+            ));
+        }
+        for (n, (expected, actual)) in step.rows.iter().zip(actual).enumerate() {
+            for (field, expected, actual) in [
+                ("input", &expected.input, &actual.input),
+                ("output", &expected.output, &actual.output.text),
+                ("latex", &expected.latex, &actual.output.latex),
+            ] {
+                if expected != actual {
+                    out.mismatches.push(failure(
+                        i,
+                        &format!("{}.{field}", n + 1),
+                        expected,
+                        actual.clone(),
+                    ));
+                }
+            }
+            if let Some(expected) = expected.number {
+                let actual = if actual.unevaluated {
+                    cas_number(&actual.output.text)
+                } else {
+                    actual.output.exact.as_deref().and_then(cas_number)
+                };
+                if !actual.is_some_and(|actual| numbers_agree(expected, actual)) {
+                    out.mismatches.push(failure(
+                        i,
+                        &format!("{}.number", n + 1),
+                        &expected.to_string(),
+                        format!("{actual:?}"),
+                    ));
+                }
+            }
+        }
+    }
+}
+
+/// With the same forms the harness records, read the exact scalar without
+/// rounding it to the current algebra display precision.
+fn cas_number(exact: &str) -> Option<f64> {
+    if let Some((num, den)) = exact.split_once('/') {
+        Some(num.trim().parse::<f64>().ok()? / den.trim().parse::<f64>().ok()?)
+    } else {
+        exact.parse().ok()
+    }
 }
 
 fn compare_snapshot(

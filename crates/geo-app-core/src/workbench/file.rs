@@ -62,11 +62,13 @@ impl Workbench {
                 notice,
             )
             .map_err(|e| format!("{name}: {e}"))?;
+            self.cas = crate::cas::Table::from_file(&self.construction, imported.cas_rows);
             self.file_settings = imported.settings;
             self.file_import_losses = (imported.skipped.len(), imported.mismatched.len());
             self.file_object_styles = imported.object_styles;
             self.file_slider_animation = imported.slider_animation;
             self.file_view = imported.view;
+            self.file_cas_visible = imported.cas_visible;
             self.label_offsets = imported.label_offsets;
             return Ok(());
         }
@@ -77,6 +79,12 @@ impl Workbench {
     /// The primary view saved by the document, when present.
     pub fn file_view(&self) -> Option<View> {
         self.file_view
+    }
+
+    /// Restores the file's CAS panel preference. Older files only have the rows.
+    pub fn cas_visible_on_open(&self) -> bool {
+        self.file_cas_visible
+            .unwrap_or_else(|| !self.cas_rows().is_empty())
     }
 
     /// Skipped objects and mismatched values in the file used to open the document.
@@ -91,6 +99,25 @@ impl Workbench {
         let mut presentation = Presentation {
             view: view.or(self.file_view).unwrap_or_default(),
             settings: self.file_settings.clone(),
+            cas_visible: self.file_cas_visible,
+            cas_rows: self
+                .cas_rows()
+                .iter()
+                .map(|entry| {
+                    entry
+                        .saved
+                        .clone()
+                        .unwrap_or_else(|| geo_import::SavedCasRow {
+                            input: entry.input.clone(),
+                            output: Some(entry.output.exact.as_deref().unwrap_or("?").into()),
+                            output_options: geo_import::CasOutputOptions {
+                                command: Some("Evaluate".into()),
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        })
+                })
+                .collect(),
             object_styles: self
                 .file_object_styles
                 .iter()
@@ -132,7 +159,16 @@ impl Workbench {
 
     /// Exports the live document. The window can provide its current view.
     pub fn export_ggb(&self, view: Option<View>) -> Result<Vec<u8>, export::ExportError> {
-        self.export_with(view, None)
+        self.export_with(view, None, self.file_cas_visible)
+    }
+
+    /// Exports the live document with the window's current CAS visibility.
+    pub fn export_ggb_with_cas_visibility(
+        &self,
+        view: Option<View>,
+        visible: bool,
+    ) -> Result<Vec<u8>, export::ExportError> {
+        self.export_with(view, None, Some(visible))
     }
 
     /// The export with the journal line that made `label` replaced by a form
@@ -144,13 +180,14 @@ impl Workbench {
         view: Option<View>,
         label: &str,
     ) -> Result<Vec<u8>, export::ExportError> {
-        self.export_with(view, Some(label))
+        self.export_with(view, Some(label), self.file_cas_visible)
     }
 
     fn export_with(
         &self,
         view: Option<View>,
         unlisted: Option<&str>,
+        cas_visible: Option<bool>,
     ) -> Result<Vec<u8>, export::ExportError> {
         let (skipped, mismatched) = self.file_import_losses;
         if skipped != 0 || mismatched != 0 {
@@ -241,7 +278,11 @@ impl Workbench {
                     .map_or(usize::MAX, |id| c.evaluation_rank(id))
             });
         }
-        export::ggb(c, definitions, &self.export_presentation(view))
+        let presentation = Presentation {
+            cas_visible,
+            ..self.export_presentation(view)
+        };
+        export::ggb(c, definitions, &presentation)
     }
 
     /// The whole document as a script that `restore_text` (or `load_bytes`)
@@ -736,7 +777,7 @@ mod tests {
     }
 
     /// The saved files of the golden set, and those of them that do not load.
-    const GOLDEN_FILES: usize = 45;
+    const GOLDEN_FILES: usize = 46;
     const GOLDEN_FILES_NOT_LOADED: &[&str] = &[];
 
     #[test]

@@ -76,6 +76,34 @@ The Linux x86_64 harness uses native Giac and records both strings. The
 comparator requires exact string equality for each. Construction snapshots
 retain their usual comparison rules.
 
+### CAS view interactions
+
+Group `casview` uses the same initial construction step and adds a nonempty
+`casview` array. Each entry has an `action` and a one-based `row`
+number before the action. Evaluate appends a row. Evaluate, edit and
+`static_edit` take the typed `input` string. The reference input controller
+handles `static_edit` and `enter` on the blank row. Delete may remove
+dependent rows. `undo` and `redo` restore reference checkpoints. `load`
+opens saved cells from the `xml` field, optionally repeated `repeat` times.
+`visibility` records the docking XML in `view_xml` for the requested
+`visible` flag. Document-wide actions use row 1.
+
+After each action, `rows` lists every committed CAS cell in display order.
+The empty editor below the last row is outside the recording.
+
+| Row field | Meaning |
+| --- | --- |
+| `input` | The cell's input after GeoGebra updates row references. |
+| `output` | The printed result, including `?` for an undefined result. |
+| `latex` | The rendered expression from `GeoCasCell.getLaTeXOutput`. |
+| `number` (optional) | A finite scalar when the output is a plain decimal, integer or fraction. |
+
+Row count and order must agree. The input, printed output and LaTeX strings
+must match exactly. When a number is recorded, the exact result also has to
+agree numerically within `1e-9 * max(1, |expected|, |actual|)`. For a row
+that exceeds the evaluation limits, compare the number in the saved
+display instead. The Linux x86_64 harness records these cases with native Giac.
+
 ## Step
 
 | `action` | Other fields | Meaning |
@@ -401,7 +429,8 @@ difference nor go stale.
 For every case of the groups written by `ggb-harness`, `golden/ggb/<group>/<case id>.xml`
 holds the construction file GeoGebra itself writes after the script has run, that is,
 the text `app.getXML()` returns, which is the content of `geogebra.xml` in a saved
-`.ggb` file. It is the state of `snapshots[0]` of the same case, so the importer
+`.ggb` file. It is the state of `snapshots[0]` of the same case, with the
+final CAS table appended for `casview` cases, so the importer
 (`crates/geo-import`) can be checked against the golden values. About every 50th case
 also has a `<case id>.ggb`, the zip archive of GeoGebra's own writer without a thumbnail
 (`geogebra.xml`, `geogebra_defaults2d.xml`, `geogebra_javascript.js`), for the zip path.
