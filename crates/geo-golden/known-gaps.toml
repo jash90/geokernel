@@ -3259,3 +3259,8 @@ reason = "The default build returns \"ExtendedGCD requires a CAS build\" and emp
 id = "cascell-stackclose-008"
 mismatches = ["0:latex", "0:output"]
 reason = "The default build returns \"Eigenvalues requires a CAS build\" and empty LaTeX. The reference prints ? and \\mathbf{?}. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-lastround-006"
+reason = 'The CAS row reader has no chained comparison syntax (crates/geo-kernel/src/expr/cas/syntax.rs:50). The kernel prints ? and \mathbf{?}. GeoGebra prints false and \mathbf{false}.'
+mismatches = ["0:output", "0:latex"]

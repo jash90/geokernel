@@ -32,7 +32,7 @@ fn template(op: Op) -> Option<&'static str> {
 }
 
 fn input(op: Op, argument: &str) -> Option<String> {
-    Some(fill(template(op)?, &[argument], &[]))
+    row_fill(template(op)?, &[argument])
 }
 
 pub(in crate::expr::cas) fn row_input(op: Op, argument: &str, index: usize) -> Option<String> {

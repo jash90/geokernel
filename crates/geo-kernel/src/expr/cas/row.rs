@@ -7,7 +7,7 @@ mod translation;
 
 use super::syntax::{parse, Expr};
 use super::{functional, input, neighboring_prime, solutions, Op};
-use crate::cas::{real_roots, Quotient, Rat, Roots, Work};
+use crate::cas::{real_roots, Poly, Quotient, Rat, Roots, Work};
 use crate::{Construction, Value};
 
 pub(super) const MAX_INPUT_BYTES: usize = 64 * 1024;
@@ -249,6 +249,11 @@ fn exact(c: &Construction, tree: Expr, work: &mut Work<'_>) -> Option<Expr> {
                 .map(|item| calculate(item, work))
                 .collect::<Option<Vec<_>>>()?,
         ),
+        // A finite scientific literal outside the default numeric range
+        // cannot be evaluated as an infinity.
+        Expr::Num(n, Some(ref text)) if n.is_infinite() && text.contains(['e', 'E']) => {
+            return None;
+        }
         Expr::Num(..) => reduce(tree, work)?,
     })
 }
@@ -298,7 +303,7 @@ fn reduce(tree: Expr, work: &mut Work<'_>) -> Option<Expr> {
 }
 
 fn quotient(tree: &Expr, work: &mut Work<'_>) -> Option<Quotient> {
-    quotient_with(tree, work, &mut |leaf, _| {
+    quotient_with(tree, work, &mut None, &mut |leaf, _| {
         let Expr::Name(name) = leaf else {
             return None;
         };
@@ -312,6 +317,7 @@ fn quotient(tree: &Expr, work: &mut Work<'_>) -> Option<Quotient> {
 fn quotient_with(
     tree: &Expr,
     work: &mut Work<'_>,
+    poles: &mut Option<Vec<Vec<Rat>>>,
     leaf_value: &mut impl FnMut(&Expr, &mut Work<'_>) -> Option<Quotient>,
 ) -> Option<Quotient> {
     work.spend(1)?;
@@ -320,19 +326,27 @@ fn quotient_with(
             &crate::expr::decimal::Dec::parse(text)?,
         )?),
         Expr::Num(n, None) => input::number(Rat::from_value(*n)?),
-        Expr::Neg(a) => input::number(Rat::ZERO).sub(quotient_with(a, work, leaf_value)?, work)?,
+        Expr::Neg(a) => {
+            input::number(Rat::ZERO).sub(quotient_with(a, work, poles, leaf_value)?, work)?
+        }
         Expr::Bin(op, a, b) => {
-            let a = quotient_with(a, work, leaf_value)?;
-            let b = quotient_with(b, work, leaf_value)?;
+            let a = quotient_with(a, work, poles, leaf_value)?;
+            let b = quotient_with(b, work, poles, leaf_value)?;
             match op {
                 b'+' => a.add(b, work)?,
                 b'-' => a.sub(b, work)?,
                 b'*' => a.mul(b, work)?,
-                b'/' => a.div(b, work)?,
+                b'/' => {
+                    exclude_poles(poles, &b.denominator, work)?;
+                    a.div(b, work)?
+                }
                 b'^' => {
                     let exponent = b.scalar()?;
                     if exponent.den != 1 {
                         return None;
+                    }
+                    if exponent.num <= 0 {
+                        exclude_poles(poles, &a.denominator, work)?;
                     }
                     a.pow(exponent.num, work)?
                 }
@@ -341,6 +355,23 @@ fn quotient_with(
         }
         _ => leaf_value(tree, work)?,
     })
+}
+
+// Inversion and zeroth powers can erase a denominator from the quotient
+// while its zeros remain outside the domain of the original expression.
+fn exclude_poles(
+    poles: &mut Option<Vec<Vec<Rat>>>,
+    denominator: &Poly,
+    work: &mut Work<'_>,
+) -> Option<()> {
+    if let Some(poles) = poles {
+        if denominator.scalar().is_none() {
+            let coefficients = solutions::dense_at(denominator, 0);
+            work.spend(coefficients.len())?;
+            poles.push(coefficients);
+        }
+    }
+    Some(())
 }
 
 /// A one-argument solve prefers x when it occurs, then the first free name.
@@ -392,28 +423,31 @@ fn solve(c: &Construction, name: &str, equation: &Expr, work: &mut Work<'_>) -> 
     let mut resolve = |leaf: &Expr, work: &mut Work<'_>| match leaf {
         Expr::Call(..) => {
             let value = exact(c, leaf.clone(), work)?;
-            quotient_with(&value, work, &mut resolve_name)
+            quotient_with(&value, work, &mut None, &mut resolve_name)
         }
         _ => resolve_name(leaf, work),
     };
-    // Keep the original denominator until roots outside the domain have been removed.
+    let mut poles = Some(Vec::new());
     let polynomial = match equation {
         Expr::Eq(a, b) => {
-            let a = quotient_with(a, work, &mut resolve)?;
-            let b = quotient_with(b, work, &mut resolve)?;
+            let a = quotient_with(a, work, &mut poles, &mut resolve)?;
+            let b = quotient_with(b, work, &mut poles, &mut resolve)?;
             a.sub(b, work)?
         }
-        expression => quotient_with(expression, work, &mut resolve)?,
+        expression => quotient_with(expression, work, &mut poles, &mut resolve)?,
     };
-    let denominator = solutions::dense_at(&polynomial.denominator, 0);
+    exclude_poles(&mut poles, &polynomial.denominator, work)?;
+    let poles = poles?;
     let Roots::Finite(roots) = real_roots(&polynomial.numerator.coefficients()?, work)? else {
-        return (denominator.len() == 1).then(|| Expr::List(vec![Expr::Name(variable.into())]));
+        return (poles.is_empty()).then(|| Expr::List(vec![Expr::Name(variable.into())]));
     };
     let mut results = Vec::new();
-    for root in roots {
-        work.spend(denominator.len())?;
-        if solutions::is_pole(root, &denominator) {
-            continue;
+    'roots: for root in roots {
+        for denominator in &poles {
+            work.spend(denominator.len())?;
+            if solutions::is_pole(root, denominator) {
+                continue 'roots;
+            }
         }
         let value = parse(&solutions::exact(root)?, false)?;
         results.push(if name == "Solve" {

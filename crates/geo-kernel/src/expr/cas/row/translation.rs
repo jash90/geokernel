@@ -173,6 +173,36 @@ fn function(c: &Construction, name: &str) -> Option<crate::Id> {
     .then_some(id)
 }
 
+fn binary(op: u8, lhs: &str, rhs: &str) -> Option<String> {
+    (lhs.len() + rhs.len() + 5 <= MAX_INPUT_BYTES).then(|| format!("({lhs}){}({rhs})", op as char))
+}
+
+fn factorial(value: &str) -> Option<String> {
+    let template = if value
+        .bytes()
+        .all(|b| b.is_ascii_alphanumeric() || b == b'_')
+    {
+        "%0!"
+    } else {
+        "(%0)!"
+    };
+    giac::row_fill(template, &[value])
+}
+
+fn argument_variable(c: &Construction, arg: &Expr, source: &str) -> String {
+    // A named equation acquires its Cartesian variables when printed.
+    if matches!(arg, Expr::Name(label) if c.resolve_label(label).is_some()) && source.contains('=')
+    {
+        if let Some(axis) = ["x", "y", "z"]
+            .into_iter()
+            .find(|axis| giac::has_variable(source, axis))
+        {
+            return axis.into();
+        }
+    }
+    variable(solve_variable(c, arg))
+}
+
 struct Translator<'a> {
     c: &'a Construction,
     command_index: usize,
@@ -187,27 +217,27 @@ impl Translator<'_> {
                 Some(id) => giac::row_object(self.c, id)?,
                 None => variable(name),
             },
-            Expr::Neg(a) => format!("-({})", self.print(a)?),
+            Expr::Neg(a) => giac::row_fill("-(%0)", &[&self.print(a)?])?,
             Expr::Bin(op, a, b) => {
                 if *op == b'&' {
                     giac::row_fill("(%0 && %1)", &[&self.print(a)?, &self.print(b)?])?
                 } else if let Some(op) = super::super::syntax::relation(*op) {
-                    format!("{} {op} {}", self.print(a)?, self.print(b)?)
+                    giac::row_fill("%0 %1 %2", &[&self.print(a)?, op, &self.print(b)?])?
                 } else {
-                    format!("({}){}({})", self.print(a)?, *op as char, self.print(b)?)
+                    binary(*op, &self.print(a)?, &self.print(b)?)?
                 }
             }
             Expr::Eq(a, b) => {
                 let left = match &**a {
                     Expr::Call(name, args) if name != "!" && !BUILTINS.contains(&name.as_str()) => {
-                        format!("{}({})", variable(name), self.arguments(args, ",")?)
+                        giac::row_fill("%0(%1)", &[&variable(name), &self.arguments(args, ",")?])?
                     }
                     _ => self.print(a)?,
                 };
-                format!("{left}={}", self.print(b)?)
+                giac::row_fill("%0=%1", &[&left, &self.print(b)?])?
             }
-            Expr::List(items) => format!("{{{}}}", self.arguments(items, ", ")?),
-            Expr::Tuple(items) => format!("({})", self.arguments(items, ", ")?),
+            Expr::List(items) => giac::row_fill("{%0}", &[&self.arguments(items, ", ")?])?,
+            Expr::Tuple(items) => giac::row_fill("(%0)", &[&self.arguments(items, ", ")?])?,
             Expr::Call(name, args) => self.command(name, args)?,
         };
         (text.len() <= MAX_INPUT_BYTES).then_some(text)
@@ -232,35 +262,27 @@ impl Translator<'_> {
         if let [arg] = args {
             if BUILTINS.contains(&name) {
                 let name = if name == "ln" { "log" } else { name };
-                return Some(format!("{name}({})", self.print(arg)?));
+                return giac::row_fill("%0(%1)", &[name, &self.print(arg)?]);
             }
         }
 
         self.command_index += 1;
         let index = self.command_index;
         match (name, args) {
-            ("!", [arg]) => {
-                let value = self.print(arg)?;
-                Some(
-                    if matches!(arg, Expr::Num(..) | Expr::Name(_)) && !value.starts_with('(') {
-                        format!("{value}!")
-                    } else {
-                        format!("({value})!")
-                    },
-                )
-            }
+            ("!", [arg]) => factorial(&self.print(arg)?),
             // GeoCasCell's algebra fallback drops an unsupported Numeric wrapper.
             ("Numeric", [first, _, _, ..]) => giac::row_fill(EVALUATE, &[&self.print(first)?]),
             ("Evaluate", [arg]) => giac::row_fill(EVALUATE, &[&self.print(arg)?]),
-            ("NextPrime", [arg]) => Some(format!("nextprime({})", self.print(arg)?)),
-            ("PreviousPrime", [arg]) => Some(format!(
-                "[[ggbpparg0:={}],if (ggbpparg0>2) then prevprime(ggbpparg0) else 0/0 fi][1]",
-                self.print(arg)?
-            )),
+            ("NextPrime", [arg]) => giac::row_fill("nextprime(%0)", &[&self.print(arg)?]),
+            ("PreviousPrime", [arg]) => giac::row_fill(
+                "[[ggbpparg0:=%0],if (ggbpparg0>2) then prevprime(ggbpparg0) else 0/0 fi][1]",
+                &[&self.print(arg)?],
+            ),
             ("Solutions", [arg]) => giac::row_solutions(&self.print(arg)?),
             ("Solve" | "NSolve" | "NSolutions", [arg]) => {
-                let variable = variable(solve_variable(self.c, arg));
-                giac::row_solve(name, &self.print(arg)?, &variable)
+                let source = self.print(arg)?;
+                let variable = argument_variable(self.c, arg, &source);
+                giac::row_solve(name, &source, &variable)
             }
             ("Solve" | "Solutions" | "NSolve" | "NSolutions", [arg, variable]) => {
                 giac::row_solve(name, &self.print(arg)?, &self.print(variable)?)
@@ -361,5 +383,40 @@ mod tests {
     fn cas_cell_refuses_unknown_calls_before_dispatch() {
         let c = Construction::new();
         assert!(translate(&c, &parse("unknown(1)", true).unwrap()).is_none());
+    }
+
+    #[test]
+    fn translated_named_factorial_keeps_the_sign_inside() {
+        let c = crate::script::load("a = -1").unwrap();
+        let tree = parse("a!", true).unwrap();
+        let mut printer = Translator {
+            c: &c,
+            command_index: 0,
+        };
+        assert_eq!(printer.print(&tree).as_deref(), Some("(-1)!"));
+    }
+
+    #[test]
+    fn translated_named_equation_selects_its_variable() {
+        let c = crate::script::load("g: y = 1").unwrap();
+        let tree = parse("Solve(g)", true).unwrap();
+        let expected = giac::row_solve("Solve", "y=1", "y").unwrap();
+        assert_eq!(translate(&c, &tree).as_deref(), Some(expected.as_str()));
+    }
+
+    #[test]
+    fn binary_translation_checks_its_size_before_assembly() {
+        let operand = literal("1E40000").unwrap();
+        assert!(binary(b'+', &operand, &operand).is_none());
+        let fits = "1".repeat(MAX_INPUT_BYTES - 6);
+        assert_eq!(binary(b'+', &fits, "0").unwrap().len(), MAX_INPUT_BYTES);
+    }
+
+    #[test]
+    fn row_solve_checks_repetitions_before_assembly() {
+        let rhs = literal("1E10000").unwrap();
+        let equation = format!("x={rhs}");
+        assert!(giac::row_solve("Solve", &equation, "x").is_none());
+        assert!(giac::row_solve("Solve", "x=1", "x").is_some());
     }
 }

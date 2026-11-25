@@ -332,7 +332,7 @@ pub(in crate::expr) fn with_cartesian_variables(mut names: Vec<String>) -> Vec<S
 }
 
 /// Whether a printed equation names the variable.
-fn has_variable(printed: &str, name: &str) -> bool {
+pub(super) fn has_variable(printed: &str, name: &str) -> bool {
     let bytes = printed.as_bytes();
     printed.match_indices(name).any(|(k, _)| {
         let before = k.checked_sub(1).map(|j| bytes[j]);

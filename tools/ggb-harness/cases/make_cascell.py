@@ -55,6 +55,13 @@ cases = [
     case("stackclose", 6, "Numeric(f(3))", "f(x) = x^2"),
     case("stackclose", 7, f"ExtendedGCD({'9' * 20_000}, 1)"),
     case("stackclose", 8, "Eigenvalues({1,2})"),
+    case("lastround", 1, "3*a", "a = abs(1/3)"),
+    case("lastround", 2, "Solve(1/(1/x) = 0)"),
+    case("lastround", 3, "a!", "a = -1"),
+    case("lastround", 4, "Solve(g)", "g: y = 1"),
+    case("lastround", 6, "0<(" * 11 + "x" + ")<1" * 11),
+    case("lastround", 7, "1E40000 + 1E40000"),
+    case("lastround", 8, "Solve(x = 1E10000)"),
 ]
 Path(__file__).with_name("cascell.json").write_text(
     json.dumps({"cases": cases}, indent=2) + "\n", encoding="utf-8"

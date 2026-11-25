@@ -628,7 +628,7 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         let numeric_expression = c.kind(*id).is_number()
             && crate::expr::plain_number(rhs).is_none()
             && !rhs.ends_with('°')
-            && split_call(rhs).is_none();
+            && split_call(rhs).is_none_or(|(name, _)| crate::expr::is_function_name(name));
         let coordinate_expression = c.kind(*id) == Kind::Point
             && rhs
                 .strip_prefix('(')
