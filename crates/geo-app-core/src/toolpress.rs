@@ -564,14 +564,16 @@ impl App {
                 .as_ref()
                 .is_some_and(|(_, kind)| *kind == Kind::Function)
         {
-            if let (Some(id), Outcome::Run(lines)) = (id, &mut outcome) {
+            if let Outcome::Run(lines) = &mut outcome {
                 let c = self.wb.construction();
-                let count = c.function_tool_output_count(id, tool == Tool::Extremum);
-                if count > 1 {
-                    let names = crate::labels::free_point_labels(|name| c.id(name).is_some())
-                        .take(count)
-                        .collect::<Vec<_>>();
-                    if let Some((_, rhs)) = lines[0].split_once(" = ") {
+                let (_, rhs) = lines[0]
+                    .split_once(" = ")
+                    .expect("tool recipe is an assignment");
+                if let Some(Ok(count)) = geo_kernel::script::multi_output_count(c, rhs) {
+                    if count > 1 {
+                        let names = crate::labels::free_point_labels(|name| c.id(name).is_some())
+                            .take(count)
+                            .collect::<Vec<_>>();
                         lines[0] = format!("{{{}}} = {rhs}", names.join(", "));
                     }
                 }

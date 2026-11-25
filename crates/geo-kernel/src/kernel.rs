@@ -5484,15 +5484,6 @@ impl Construction {
         expr::compare_objects(self, &[a, b])
     }
 
-    /// Counts the output slots for a function analysis tool using the
-    /// same cached, metered solve as the construction command.
-    pub fn function_tool_output_count(&self, id: Id, extremum: bool) -> usize {
-        if id.index() >= self.len() || self.kind(id) != Kind::Function {
-            return 0;
-        }
-        algo::analysis::AnalysisDef::tool_output_count(self, id, extremum)
-    }
-
     /// The current numerical findings of a Relation command.
     pub fn relation_reports(&self, id: Id) -> Option<Vec<algo::predicate::RelationReport>> {
         expr::relation_reports(self, id)
