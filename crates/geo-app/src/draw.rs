@@ -63,6 +63,8 @@ pub struct Scene<'a> {
     pub label_rects: Option<&'a RefCell<Vec<(Id, geom::Rect)>>>,
     /// The bodies of visible texts, in canvas coordinates for picking.
     pub text_rects: Option<&'a RefCell<Vec<(Id, geom::Rect)>>>,
+    /// Visible InputBox widget positions in window coordinates.
+    pub input_box_rects: Option<&'a RefCell<Vec<(Id, geom::Rect)>>>,
 }
 
 /// How far outside the area, in pixels, an object's points may lie and
@@ -777,6 +779,9 @@ fn paint_layer<'c>(
             let [x, y, width, height] = c.input_box_rect(id).map(|v| v as f32);
             let widget = Rect::from_min_size(origin + vec2(x, y), vec2(width, height));
             if rect.intersects(widget) {
+                if let Some(rects) = scene.input_box_rects {
+                    rects.borrow_mut().push((id, widget.core()));
+                }
                 painter.rect(
                     widget,
                     0.0,
@@ -1117,7 +1122,7 @@ fn locus_mesh(
         }
         run.points.clear();
     };
-    for pt in points {
+    for pt in geo_app_core::hit::canvas_locus_samples(points) {
         let at = p(pt.x, pt.y);
         if !pt.line_to || !at.is_finite() {
             flush(&mut run);
@@ -1156,6 +1161,7 @@ mod tests {
                 label_offset: &|_| None,
                 label_rects: None,
                 text_rects: None,
+                input_box_rects: None,
             };
             paint(ui.painter(), rect, c, &t, &scene);
         });
@@ -1188,6 +1194,7 @@ mod tests {
                     label_offset: &|_| None,
                     label_rects: None,
                     text_rects: None,
+                    input_box_rects: None,
                 };
                 paint(ui.painter(), rect, c, &view, &scene);
             });
@@ -1292,6 +1299,7 @@ mod tests {
                     label_offset: &|_| None,
                     label_rects: None,
                     text_rects: Some(&text_rects),
+                    input_box_rects: None,
                 };
                 paint(ui.painter(), rect, wb.construction(), &t, &scene);
             });
@@ -1338,6 +1346,7 @@ mod tests {
                     label_offset: &|_| None,
                     label_rects: None,
                     text_rects: None,
+                    input_box_rects: None,
                 };
                 paint(ui.painter(), rect, wb.construction(), &t, &scene);
             });
@@ -1442,6 +1451,7 @@ mod tests {
                     label_offset: &|_| None,
                     label_rects: None,
                     text_rects: None,
+                    input_box_rects: None,
                 };
                 paint(ui.painter(), rect, wb.construction(), &t, &scene);
             }

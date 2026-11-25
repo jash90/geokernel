@@ -376,6 +376,23 @@ A partial run (a sample step above 1) never deletes a file. A full run (sample
 step 1) removes the files of the group directories it did not produce (for
 example the archives of another zip step) and prints each one as `pruned <path>`.
 
+### Canvas review observations
+
+```sh
+python3 tools/ggb-harness/cases/make_canvas.py
+python3 tools/ggb-harness/saved/make_saved.py
+GEOGEBRA_SRC=<checkout> tools/ggb-harness/linux-x86_64.sh golden canvas
+GEOGEBRA_SRC=<checkout> tools/ggb-harness/linux-x86_64.sh canvas-review
+```
+
+Use GeoGebra revision `112919f2d450ec7430a5cd3b65dba226fdc43b74`.
+The second container command compiles the review probes against the existing
+harness build, saves the rounding and sector fixtures, and reports observations
+of list drawability, tool selections, pen events and shape hits. The InputBox
+probe submits to the linked object at the model boundary. Native focus
+delivery and the five original desktop replay event sequences are outside
+these probes.
+
 ### Files saved after moves
 
 ```sh

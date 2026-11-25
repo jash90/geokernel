@@ -335,20 +335,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // The show/hide tool shows hidden objects faintly and lets them be picked.
     let show_all = tool == Tool::ShowHide;
     let t = cam.transform(w, h);
-    if tool == Tool::PenStroke {
-        let finish = fed.late_release.or(fed.early_release);
-        if let Some(at) = fed.owned {
-            app.pen_samples.clear();
-            add_pen_sample(&mut app.pen_samples, &t, to_local(at));
-        }
-        if !app.pen_samples.is_empty() {
-            if let Some(at) = finish.or(response.hover_pos()) {
-                add_pen_sample(&mut app.pen_samples, &t, to_local(at));
-            }
-            if finish.is_some() {
-                finish_pen_stroke(app);
-            }
-        }
+    if tool == Tool::PenStroke
+        && ui.input(|i| feed_pen(&mut app.pen_samples, &t, &i.events, owns, to_local))
+    {
+        finish_pen_stroke(app);
     }
     // How far a pointer reaches (`App.getCapturingThreshold` by the
     // pointer's type): the hover is the mouse's; a press is its pointer's.
@@ -786,17 +776,33 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 if app.tool.control_request().is_none() {
                     app.control_fields = Default::default();
                     app.control_focus = true;
-                    app.tool.begin_control(t.screen_to_world(local.0, local.1));
+                    let c = app.wb.construction();
+                    let anchor = hit::pick(c, &t, local, &press_reach, None, |id| {
+                        c.kind(id) == Kind::Point && shown(app, id)
+                    });
+                    app.tool.begin_text(
+                        t.screen_to_world(local.0, local.1),
+                        anchor.map(|id| c.label(id)),
+                    );
                 }
             }
             Tool::CreateList => {
                 let c = app.wb.construction();
+                let mut list_items_left = geo_kernel::expr::MAX_FRAME_CANVAS_LIST_ITEMS;
                 let hits = c
                     .ids()
                     .filter(|&id| {
                         shown(app, id)
-                            && hit::hit(c, id, &t, local, press_reach.threshold, &press_reach)
-                                .is_some()
+                            && hit::hit_with_list_budget(
+                                c,
+                                id,
+                                &t,
+                                local,
+                                press_reach.threshold,
+                                &press_reach,
+                                &mut list_items_left,
+                            )
+                            .is_some()
                     })
                     .take(MAX_LIST_TOOL_MEMBERS + 1)
                     .collect();
@@ -958,6 +964,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let ghost = |id: Id| show_all && !app.wb.is_visible(id);
     draw::image::paint_background(&painter, rect, c, &t, &visible, &ghost);
     grid::paint(&painter, rect, &t, app.decor, app.metrics.numbering_px);
+    let mut input_boxes = std::mem::take(&mut app.input_box_rects);
+    input_boxes.clear();
+    let input_boxes = std::cell::RefCell::new(input_boxes);
     draw::paint(
         &painter,
         rect,
@@ -974,9 +983,12 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             label_offset: &|id| app.wb.label_offset(id),
             label_rects: Some(&app.label_rects),
             text_rects: Some(&app.text_rects),
+            input_box_rects: move_tool.then_some(&input_boxes),
         },
     );
-    input_box_editor(app, ui, rect);
+    let input_boxes = input_boxes.into_inner();
+    input_box_editor(app, ui, rect, &input_boxes);
+    app.input_box_rects = input_boxes;
     if app.pen_samples.len() >= 2 {
         let samples = app
             .pen_samples
@@ -1058,6 +1070,7 @@ fn initial_camera(
                 label_offset: &|id| app.wb.label_offset(id),
                 label_rects: None,
                 text_rects: None,
+                input_box_rects: None,
             },
         );
         let has_objects = painter.ctx().graphics_mut(|graphics| {
@@ -1332,24 +1345,25 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     if app.tool.tool() == Tool::Move {
         app.wb.selected = hit;
         let c = app.wb.construction();
-        app.input_box_edit = hit.and_then(|id| {
-            let geo_kernel::Def::InputBox(Some(link)) = c.def(id) else {
-                return None;
-            };
-            let editable = matches!(
-                c.def(link),
-                geo_kernel::Def::Number(_)
-                    | geo_kernel::Def::Angle(_)
-                    | geo_kernel::Def::Boolean(_)
-            ) || c.is_independent_text(link);
-            editable.then(|| {
-                (
-                    c.label(id).to_owned(),
-                    c.input_box_text(id).into_owned(),
-                    true,
-                )
-            })
-        });
+        let same_box = app
+            .input_box_edit
+            .as_ref()
+            .is_some_and(|(label, _, _)| c.id(label) == hit);
+        if !same_box {
+            if let Some((label, text, _)) = app.input_box_edit.take() {
+                commit_input_box(app, &label, &text);
+            }
+            let c = app.wb.construction();
+            app.input_box_edit = hit
+                .filter(|&id| editable_input_box(c, id).is_some())
+                .map(|id| {
+                    (
+                        c.label(id).to_owned(),
+                        c.input_box_text(id).into_owned(),
+                        true,
+                    )
+                });
+        }
         if let Some(id) = hit.filter(|&id| !app.wb.construction().checkbox_style(id).fixed) {
             toggle_checkbox(app, id);
         }
@@ -1391,6 +1405,43 @@ fn add_pen_sample(samples: &mut Vec<(f64, f64)>, t: &ViewTransform, (x, y): (f64
     }
 }
 
+fn feed_pen(
+    samples: &mut Vec<(f64, f64)>,
+    t: &ViewTransform,
+    events: &[egui::Event],
+    owns: impl Fn(egui::Pos2) -> bool,
+    local: impl Fn(egui::Pos2) -> (f64, f64),
+) -> bool {
+    for event in events {
+        match *event {
+            egui::Event::PointerButton {
+                pos,
+                button: egui::PointerButton::Primary,
+                pressed: true,
+                ..
+            } if owns(pos) => {
+                samples.clear();
+                add_pen_sample(samples, t, local(pos));
+            }
+            egui::Event::PointerMoved(pos) if !samples.is_empty() => {
+                add_pen_sample(samples, t, local(pos));
+            }
+            egui::Event::PointerButton {
+                pos,
+                button: egui::PointerButton::Primary,
+                pressed: false,
+                ..
+            } if !samples.is_empty() => {
+                add_pen_sample(samples, t, local(pos));
+                return true;
+            }
+            egui::Event::PointerGone | egui::Event::WindowFocused(false) => samples.clear(),
+            _ => {}
+        }
+    }
+    false
+}
+
 fn finish_pen_stroke(app: &mut App) {
     use std::fmt::Write as _;
     let c = app.wb.construction();
@@ -1407,6 +1458,7 @@ fn finish_pen_stroke(app: &mut App) {
 }
 
 const MAX_LIST_TOOL_MEMBERS: usize = 256;
+const MAX_LIST_TOOL_WORK: usize = 4096;
 
 fn create_list(app: &mut App, mut ids: Vec<Id>) {
     use geo_kernel::Def;
@@ -1414,17 +1466,33 @@ fn create_list(app: &mut App, mut ids: Vec<Id>) {
         return;
     }
     let c = app.wb.construction();
-    let mut parent_points = std::collections::BTreeSet::new();
+    use geo_kernel::algo::polygon::PolygonDef;
+    let selected: std::collections::BTreeSet<_> = ids.iter().copied().collect();
+    let mut work_left = MAX_LIST_TOOL_WORK;
+    let Some(mut parents) = app.wb.selected_polygon_outputs(&selected, &mut work_left) else {
+        return;
+    };
     for &id in &ids {
-        if let Def::Segment(a, b) = c.def(id) {
-            parent_points.extend([a, b]);
+        match c.def(id) {
+            Def::Segment(a, b) | Def::Polygon(PolygonDef::Regular { a, b, .. }) => {
+                parents.extend([a, b]);
+            }
+            Def::Polygon(PolygonDef::Polygon(list) | PolygonDef::PolyLine(list)) => {
+                let vertices = c.list(list);
+                let Some(left) = work_left.checked_sub(vertices.len()) else {
+                    return;
+                };
+                work_left = left;
+                parents.extend(vertices.iter().copied().filter(|id| selected.contains(id)));
+            }
+            _ => {}
         }
     }
-    ids.retain(|id| !parent_points.contains(id));
+    ids.retain(|id| !parents.contains(id));
     if ids.len() < 2 || ids.iter().map(|&id| c.label(id).len()).sum::<usize>() > 16384 {
         return;
     }
-    ids.sort_unstable();
+    ids.sort_unstable_by_key(|&id| c.drawing_order(id));
     let label = geo_app_core::labels::next_label(Kind::List, |label| c.id(label).is_some());
     let members = ids
         .iter()
@@ -1436,69 +1504,154 @@ fn create_list(app: &mut App, mut ids: Vec<Id>) {
     )]));
 }
 
-fn input_box_editor(app: &mut App, ui: &mut Ui, canvas: Rect) {
-    use geo_kernel::kernel::control::MAX_INPUT_BOX_CHARS;
-    let Some((label, mut text, focus)) = app.input_box_edit.take() else {
-        return;
-    };
-    if app.tool.tool() != Tool::Move {
-        return;
-    }
-    let c = app.wb.construction();
-    let Some(id) = c.id(&label).filter(|&id| app.wb.is_visible(id)) else {
-        return;
-    };
+fn editable_input_box(c: &geo_kernel::Construction, id: Id) -> Option<Id> {
     let geo_kernel::Def::InputBox(Some(link)) = c.def(id) else {
+        return None;
+    };
+    (matches!(
+        c.def(link),
+        geo_kernel::Def::Number(_) | geo_kernel::Def::Angle(_) | geo_kernel::Def::Boolean(_)
+    ) || c.is_independent_text(link))
+    .then_some(link)
+}
+
+fn input_box_rect(c: &geo_kernel::Construction, id: Id, canvas: Rect) -> Rect {
+    let [x, y, width, height] = c.input_box_rect(id).map(|v| v as f32);
+    Rect::from_min_size(canvas.min + vec2(x, y), vec2(width, height))
+}
+
+fn input_box_name(c: &geo_kernel::Construction, id: Id) -> &str {
+    let caption = c.input_box_caption(id);
+    if caption.is_empty() {
+        c.label(id)
+    } else {
+        caption
+    }
+}
+
+fn commit_input_box(app: &mut App, label: &str, text: &str) {
+    let c = app.wb.construction();
+    let Some((id, link)) = c
+        .id(label)
+        .and_then(|id| Some((id, editable_input_box(c, id)?)))
+    else {
         return;
     };
-    let [x, y, width, height] = c.input_box_rect(id).map(|v| v as f32);
-    let rect = Rect::from_min_size(canvas.min + vec2(x, y), vec2(width, height));
-    let field_id = ui.scope_id().with(("canvas_input_box", id.index()));
-    let widget = ui.put(
-        rect,
-        egui::TextEdit::singleline(&mut text)
-            .id(field_id)
-            .char_limit(MAX_INPUT_BOX_CHARS)
-            .desired_width(width)
-            .min_size(rect.size()),
-    );
-    widget.widget_info(|| egui::WidgetInfo::labeled(egui::Role::TextInput, true, &label));
-    if focus {
-        widget.request_focus();
-        let mut state = egui::TextEdit::load_state(ui.ctx(), field_id).unwrap_or_default();
-        state
-            .cursor
-            .set_char_range(Some(egui::text::CCursorRange::select_all_str(&text)));
-        egui::TextEdit::store_state(ui.ctx(), field_id, state);
+    if text == c.input_box_text(id) {
+        return;
     }
-    if ui.input(|i| i.key_pressed(egui::Key::Enter)) && (widget.has_focus() || widget.lost_focus())
-    {
-        match c.def(link) {
-            geo_kernel::Def::Number(_) => {
-                if let Some(value) = crate::app::parse_number(&text) {
-                    app.wb.set_number(link, value);
-                }
+    match c.def(link) {
+        geo_kernel::Def::Number(_) => {
+            if let Some(value) = crate::app::parse_number(text) {
+                app.wb.set_number(link, value);
             }
-            geo_kernel::Def::Angle(_) if text != c.input_box_text(id) => {
-                let value = text.trim().trim_end_matches('°');
-                if let Some(value) = crate::app::parse_number(value) {
-                    app.wb.set_number(link, value.to_radians());
-                }
-            }
-            geo_kernel::Def::Boolean(_) => {
-                if let Ok(value) = text.trim().parse::<bool>() {
-                    app.wb.set_boolean(link, value);
-                }
-            }
-            _ if c.is_independent_text(link) && text != c.input_box_text(id) => {
-                let literal = geo_kernel::script::text::literal(&text);
-                let _: Result<(), _> = app.wb.run_line(&format!("{} = {literal}", c.label(link)));
-            }
-            _ => {}
         }
-        widget.surrender_focus();
-    } else if !widget.lost_focus() {
-        app.input_box_edit = Some((label, text, false));
+        geo_kernel::Def::Angle(_) => {
+            if let Some(value) = crate::app::parse_number(text.trim().trim_end_matches('°')) {
+                app.wb.set_number(link, value.to_radians());
+            }
+        }
+        geo_kernel::Def::Boolean(_) => {
+            if let Ok(value) = text.trim().parse::<bool>() {
+                app.wb.set_boolean(link, value);
+            }
+        }
+        _ => {
+            let literal = geo_kernel::script::text::literal(text);
+            let _: Result<(), _> = app.wb.run_line(&format!("{} = {literal}", c.label(link)));
+        }
+    }
+}
+
+fn input_box_editor(
+    app: &mut App,
+    ui: &mut Ui,
+    canvas: Rect,
+    painted_input_boxes: &[(Id, geo_app_core::geom::Rect)],
+) {
+    use geo_kernel::kernel::control::MAX_INPUT_BOX_CHARS;
+    if app.tool.tool() != Tool::Move {
+        if let Some((label, text, _)) = app.input_box_edit.take() {
+            commit_input_box(app, &label, &text);
+        }
+        return;
+    }
+    let field_id = |id: Id, scope: egui::Id| scope.with(("canvas_input_box", id.index()));
+    let mut edited = None;
+    if let Some((label, mut text, focus)) = app.input_box_edit.take() {
+        let c = app.wb.construction();
+        if let Some(id) = c
+            .id(&label)
+            .filter(|&id| app.wb.is_visible(id) && editable_input_box(c, id).is_some())
+        {
+            edited = Some(id);
+            let rect = input_box_rect(c, id, canvas);
+            let field_id = field_id(id, ui.scope_id());
+            let widget = ui.put(
+                rect,
+                egui::TextEdit::singleline(&mut text)
+                    .id(field_id)
+                    .char_limit(MAX_INPUT_BOX_CHARS)
+                    .desired_width(rect.width())
+                    .min_size(rect.size()),
+            );
+            widget.widget_info(|| {
+                egui::WidgetInfo::labeled(egui::Role::TextInput, true, input_box_name(c, id))
+            });
+            if focus {
+                widget.request_focus();
+                let mut state = egui::TextEdit::load_state(ui.ctx(), field_id).unwrap_or_default();
+                state
+                    .cursor
+                    .set_char_range(Some(egui::text::CCursorRange::select_all_str(&text)));
+                egui::TextEdit::store_state(ui.ctx(), field_id, state);
+            }
+            let tab = ui.input(|i| i.key_pressed(egui::Key::Tab));
+            if widget.lost_focus()
+                || widget.clicked_elsewhere()
+                || tab
+                || (widget.has_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)))
+            {
+                commit_input_box(app, &label, &text);
+                if !tab {
+                    widget.surrender_focus();
+                }
+                ui.ctx().request_repaint();
+            } else {
+                app.input_box_edit = Some((label, text, false));
+            }
+        }
+    }
+
+    let c = app.wb.construction();
+    let active = app
+        .input_box_edit
+        .as_ref()
+        .and_then(|(label, _, _)| c.id(label));
+    let mut focused = None;
+    for &(id, rect) in painted_input_boxes {
+        if Some(id) == edited || editable_input_box(c, id).is_none() {
+            continue;
+        }
+        let widget = ui.interact(
+            rect.egui(),
+            field_id(id, ui.scope_id()),
+            egui::Sense::focusable_noninteractive(),
+        );
+        widget.widget_info(|| {
+            egui::WidgetInfo::labeled(egui::Role::TextInput, true, input_box_name(c, id))
+        });
+        if widget.has_focus() {
+            focused = Some(id);
+        }
+    }
+    if let Some(id) = focused.filter(|_| active.is_none()) {
+        app.input_box_edit = Some((
+            c.label(id).to_owned(),
+            c.input_box_text(id).into_owned(),
+            true,
+        ));
+        ui.ctx().request_repaint();
     }
 }
 

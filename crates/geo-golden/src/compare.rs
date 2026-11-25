@@ -178,6 +178,12 @@ pub fn compare_list(
                     got.implicit_at(c, k).ok_or("missing implicit curve data")?;
                 compare_implicit(w, matrix, user, &equation)
             }
+            Element::Value(kind @ (Kind::Polygon | Kind::PolyLine), value) => {
+                let vertices = got
+                    .object(k)
+                    .map_or_else(Vec::new, |id| c.vertices(id).collect());
+                compare_object(w, kind, &value, &vertices)
+            }
             Element::Value(kind, value) => compare(w, kind, &value),
         }
         .map_err(|why| format!("element {}: {why}", k + 1))?;

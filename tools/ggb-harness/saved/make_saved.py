@@ -596,6 +596,21 @@ case("input-box", [
     {"action": "set_number", "label": "a", "value": 3.5},
 ])
 
+case("input-rounding", [
+    "a = Slider(0, 8, 0.00001)", "fixedPlaces = InputBox(a)",
+    "significantDigits = InputBox(a)",
+], [
+    {"action": "set_number", "label": "a", "value": 1.23456},
+    st("fixedPlaces", decimals=4), st("significantDigits", figures=5),
+])
+
+case("canvas-sector", [
+    pt("A", 0, 0), pt("B", 2, 0), pt("C", 0, 2),
+    "s = CircularSector(A, B, C)", "shaded = CircularSector(A, B, C)",
+], [
+    st("s", alpha=0), st("shaded", alpha=0, fill=["HATCH", 45, 10]),
+])
+
 # Images.
 style_case(image_points, [
     styled("art", "control", color=None, dynamic_color=None, color_space=None,

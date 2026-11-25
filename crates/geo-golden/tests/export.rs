@@ -94,6 +94,8 @@ const SAVED_CASES: &[&str] = &[
     "saved-styles-006.xml",
     "saved-styles-007.xml",
     "saved-input-box-001.xml",
+    "saved-input-rounding-001.xml",
+    "saved-canvas-sector-001.xml",
     "saved-styles-008.ggb",
     // Styled objects that are undefined in the saved state.
     "saved-styles-009.xml",
@@ -991,6 +993,8 @@ const WITNESSES: &[(&str, &[(&str, &str)])] = &[
             ("saved-styles-007", "field"),
             ("saved-styles-007", "empty"),
             ("saved-input-box-001", "field"),
+            ("saved-input-rounding-001", "fixedPlaces"),
+            ("saved-input-rounding-001", "significantDigits"),
         ],
     ),
     (
@@ -1169,6 +1173,8 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
                 "background",
                 "label_offset",
                 "input_length",
+                "decimals",
+                "figures",
             ],
         ],
         // The reference shows the algebra label again when it names an
@@ -2277,4 +2283,15 @@ fn input_box_export_keeps_the_link_and_widget_geometry() {
     let xml = exported_xml(&again);
     assert!(xml.contains(r#"<labelOffset x="124" y="88""#));
     assert!(xml.contains(r#"<length val="12""#));
+}
+
+#[test]
+fn input_box_export_keeps_both_rounding_modes() {
+    let source = include_bytes!("../../../golden/ggb/saved/saved-input-rounding-001.xml");
+    let mut wb = Workbench::default();
+    wb.load_for_export(source, "input-box-rounding").unwrap();
+    let (_, again) = round_trip("input-box-rounding", &wb, None);
+    let xml = exported_xml(&again);
+    assert!(xml.contains(r#"<decimals val="4""#));
+    assert!(xml.contains(r#"<significantfigures val="5""#));
 }

@@ -200,8 +200,8 @@ pub(crate) fn locus_pick_is_valid(
     match first {
         Some(first) => c
             .id(first.label())
-            .is_some_and(|point| c.can_trace_locus(point, id)),
-        None => c.kind(id) == Kind::Point && !c.def(id).is_free(),
+            .is_some_and(|first| c.can_trace_locus(first, id) || c.can_trace_locus(id, first)),
+        None => (c.kind(id) == Kind::Point && !c.def(id).is_free()) || c.has_slider_bounds(id),
     }
 }
 
@@ -346,6 +346,7 @@ pub struct ToolState {
     /// Set while the dialog for the number is open.
     asking: Option<NumberRequest>,
     control_at: Option<(f64, f64)>,
+    text_anchor: Option<String>,
 }
 
 impl ToolState {
@@ -355,6 +356,7 @@ impl ToolState {
             picks: Vec::new(),
             asking: None,
             control_at: None,
+            text_anchor: None,
         }
     }
 
@@ -390,6 +392,13 @@ impl ToolState {
         ) && self.control_at.is_none()
         {
             self.control_at = Some(at);
+        }
+    }
+
+    pub fn begin_text(&mut self, at: (f64, f64), anchor: Option<&str>) {
+        if self.tool == Tool::Text && self.control_at.is_none() {
+            self.begin_control(at);
+            self.text_anchor = anchor.map(str::to_owned);
         }
     }
 
@@ -491,10 +500,15 @@ impl ToolState {
             .char_indices()
             .nth(MAX_PLACED_TEXT_CHARS)
             .map_or(text, |(at, _)| &text[..at]);
+        let anchor = self.text_anchor.take();
         let properties = Properties {
             label: &label,
             overrides: TextOverrides {
-                position: Some(TextPosition::World { x, y }),
+                position: Some(
+                    anchor
+                        .as_deref()
+                        .map_or(TextPosition::World { x, y }, TextPosition::Point),
+                ),
                 ..TextOverrides::default()
             },
         };
@@ -551,6 +565,7 @@ impl ToolState {
         self.picks.clear();
         self.asking = None;
         self.control_at = None;
+        self.text_anchor = None;
     }
 
     /// Handles a click. `hit` is the existing object under the pointer that

@@ -101,8 +101,8 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
                 )
         }
         Tool::Locus => match picks {
-            [] => cand == Some(Kind::Point),
-            [Kind::Point] => matches!(cand, Some(Kind::Point | Kind::Number)),
+            [] | [Kind::Point] => matches!(cand, Some(Kind::Point | Kind::Number)),
+            [Kind::Number] => cand == Some(Kind::Point),
             _ => false,
         },
         Tool::Slope => {
@@ -325,7 +325,10 @@ pub(super) fn build(
     };
     let (rhs, name) = match tool {
         Tool::Point | Tool::VectorPolygon => return lines,
-        Tool::Locus => construct("Locus", &args, Kind::Locus),
+        Tool::Locus => (
+            format!("Locus({})", point_first()),
+            Name::Fresh(Kind::Locus),
+        ),
         Tool::Intersect if kinds.contains(&Kind::Conic) => {
             let (line, conic) = if kinds[0] == Kind::Line {
                 (a(0), a(1))

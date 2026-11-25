@@ -229,14 +229,20 @@ impl fmt::Display for Property {
                 }
                 f.write_str(")")
             }
-            Self::DrawingStyle { label, style } => write!(
-                f,
-                "$drawingStyle({}, {}, {}, {})",
-                encode_text(label),
-                style.layer,
-                style.show_label,
-                style.line_thickness
-            ),
+            Self::DrawingStyle { label, style } => {
+                write!(
+                    f,
+                    "$drawingStyle({}, {}, {}, {}",
+                    encode_text(label),
+                    style.layer,
+                    style.show_label,
+                    style.line_thickness
+                )?;
+                if style.sector_outline_only {
+                    f.write_str(", outline")?;
+                }
+                f.write_str(")")
+            }
             Self::NumberRounding(rounding) => {
                 let (mode, digits) = match rounding {
                     NumberRounding::Decimals(digits) => ("decimals", digits),
@@ -392,11 +398,14 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
     Some((|| {
         let (form, args) = split_call(line).ok_or("invalid saved property")?;
         match (form, args.as_slice()) {
-            ("$drawingStyle", [label, layer, shown, thickness]) => {
+            ("$drawingStyle", [label, layer, shown, thickness, rest @ ..])
+                if rest.is_empty() || rest == ["outline"] =>
+            {
                 let style = DrawingStyle {
                     layer: layer.parse().map_err(|_| "invalid drawing layer")?,
                     show_label: shown.parse().map_err(|_| "invalid label visibility")?,
                     line_thickness: thickness.parse().map_err(|_| "invalid line thickness")?,
+                    sector_outline_only: !rest.is_empty(),
                 };
                 Ok(Property::DrawingStyle {
                     label: decode_text(label)?,

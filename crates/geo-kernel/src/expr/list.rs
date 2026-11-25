@@ -447,10 +447,25 @@ pub struct List<'a> {
     slots: &'a [Slot],
     start: u32,
     len: u32,
+    canvas_drawable: Option<bool>,
 }
 
 /// The number of entries a list can contribute to a canvas traversal.
 pub const MAX_CANVAS_LIST_ITEMS: usize = 256;
+
+/// The number of entries all lists together may contribute to one graphics pass.
+pub const MAX_FRAME_CANVAS_LIST_ITEMS: usize = 4096;
+
+pub(super) fn canvas_drawable_slots(slots: &[Slot]) -> bool {
+    slots.iter().all(|slot| canvas_drawable_kind(slot.kind))
+}
+
+fn canvas_drawable_kind(kind: Kind) -> bool {
+    !matches!(
+        kind,
+        Kind::Number | Kind::Boolean | Kind::InputBox | Kind::Button
+    )
+}
 
 /// One element of a [`List`].
 #[derive(Clone, Copy, Debug)]
@@ -525,8 +540,18 @@ impl<'a> List<'a> {
         Self::from_run(slots, 0, len)
     }
 
+    pub(super) fn with_canvas_drawable(mut self, drawable: bool) -> Self {
+        self.canvas_drawable = Some(drawable);
+        self
+    }
+
     pub(super) fn from_run(slots: &'a [Slot], start: u32, len: u32) -> List<'a> {
-        List { slots, start, len }
+        List {
+            slots,
+            start,
+            len,
+            canvas_drawable: None,
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -544,11 +569,7 @@ impl<'a> List<'a> {
         }
         let slot = &self.slots[self.start as usize + k];
         Some(match slot.run() {
-            Some((start, len)) => Element::List(List {
-                slots: self.slots,
-                start,
-                len,
-            }),
+            Some((start, len)) => Element::List(List::from_run(self.slots, start, len)),
             None => slot
                 .text_value()
                 .map_or_else(|| Element::Value(slot.kind, slot.shown()), Element::Text),
@@ -564,7 +585,10 @@ impl<'a> List<'a> {
     ) {
         let limit = (*frame_remaining).min(MAX_CANVAS_LIST_ITEMS);
         let mut probe = limit;
-        if !self.canvas_drawable(&mut probe) {
+        if !self
+            .canvas_drawable
+            .unwrap_or_else(|| self.probe_canvas_drawable(&mut probe))
+        {
             *frame_remaining -= limit - probe;
             return;
         }
@@ -573,17 +597,15 @@ impl<'a> List<'a> {
         *frame_remaining -= limit - remaining;
     }
 
-    fn canvas_drawable(self, remaining: &mut usize) -> bool {
+    fn probe_canvas_drawable(self, remaining: &mut usize) -> bool {
         for element in self.iter() {
             if *remaining == 0 {
-                break;
+                return false;
             }
             *remaining -= 1;
             match element {
-                Element::Value(Kind::Number | Kind::Boolean | Kind::InputBox | Kind::Button, _) => {
-                    return false;
-                }
-                Element::List(nested) if !nested.canvas_drawable(remaining) => return false,
+                Element::Value(kind, _) if !canvas_drawable_kind(kind) => return false,
+                Element::List(nested) if !nested.probe_canvas_drawable(remaining) => return false,
                 _ => {}
             }
         }
@@ -596,11 +618,12 @@ impl<'a> List<'a> {
         visit: &mut impl FnMut(Option<Id>, Value) -> std::ops::ControlFlow<()>,
     ) -> std::ops::ControlFlow<()> {
         use std::ops::ControlFlow;
-        for (i, member) in self.iter().enumerate() {
+        for i in 0..self.len() {
             if *remaining == 0 {
                 break;
             }
             *remaining -= 1;
+            let member = self.get(i).unwrap();
             match member {
                 Element::List(list) => list.visit_canvas_members(remaining, visit)?,
                 Element::Value(
@@ -772,4 +795,21 @@ fn canvas_list_scan_has_shared_and_per_list_limits() {
     let mut remaining = 300;
     list.canvas_members(&mut remaining, |_, _| std::ops::ControlFlow::Continue(()));
     assert_eq!(remaining, 300 - MAX_CANVAS_LIST_ITEMS);
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_list_checks_eligibility_beyond_the_drawn_prefix() {
+    let c = crate::script::load(
+        "L = Append(Sequence((k, 0), k, 1, 256), 7)\nM = Join({7}, Sequence((k, 0), k, 1, 256))",
+    )
+    .unwrap();
+    for label in ["L", "M"] {
+        let mut remaining = 4096;
+        c.elements(c.id(label).unwrap())
+            .unwrap()
+            .canvas_members(&mut remaining, |_, _| {
+                panic!("{label} is not drawable");
+            });
+    }
 }

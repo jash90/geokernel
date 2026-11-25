@@ -2624,3 +2624,26 @@ fn finite_projection_drag_coalesces_replay() {
     assert!(w.undo());
     assert_eq!(projection_bits(w.construction()), expected);
 }
+
+#[test]
+fn selecting_polygon_outputs_charges_entries_and_outputs() {
+    let wb = Workbench::from_script(
+        "A = (0, 0)\nB = (1, 0)\nC = (0, 1)\np = Polygon(A, B, C)\nD = (2, 2)",
+    )
+    .unwrap();
+    let c = wb.construction();
+    let p = c.id("p").unwrap();
+    let sides = c
+        .ids()
+        .filter(|&id| wb.polygon_of_side(id) == Some(p))
+        .collect::<BTreeSet<_>>();
+    assert_eq!(sides.len(), 3);
+    let selected = sides.iter().copied().chain([p]).collect();
+    assert!(wb.selected_polygon_outputs(&selected, &mut 4).is_none());
+    let mut left = 5;
+    assert_eq!(
+        wb.selected_polygon_outputs(&selected, &mut left),
+        Some(sides)
+    );
+    assert_eq!(left, 0);
+}

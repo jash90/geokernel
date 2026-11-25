@@ -39,7 +39,7 @@ impl View {
             ymax: f64::NEG_INFINITY,
         };
         let mut v = empty();
-        let mut list_items_left = 4096;
+        let mut list_items_left = crate::expr::MAX_FRAME_CANVAS_LIST_ITEMS;
         let mut texts = empty();
         let mut grow = |x: f64, y: f64| {
             if !(x.is_finite() && y.is_finite()) {
@@ -254,6 +254,7 @@ pub fn render_visible_with_label_offsets(
             extras::image(&mut out, c, id, assets[&image.asset.id()], scale, screen);
         }
     }
+    let mut allowances = (crate::expr::MAX_FRAME_CANVAS_LIST_ITEMS, 8);
     for layer in c.drawing_layers() {
         let same_layer = |id| c.drawing_style(id).layer == layer;
         for &id in ids.iter().filter(|&&id| same_layer(id)) {
@@ -270,6 +271,7 @@ pub fn render_visible_with_label_offsets(
             (w, h),
             ids.iter().copied().filter(|&id| same_layer(id)),
             &label_offset,
+            &mut allowances,
         );
     }
     out.push_str("</svg>\n");
@@ -283,6 +285,7 @@ fn render_geometry(
     (w, h): (f64, f64),
     ids: impl Iterator<Item = Id>,
     label_offset: &impl Fn(Id) -> Option<(f64, f64)>,
+    (list_items_left, regions_left): &mut (usize, usize),
 ) {
     let frame = crate::plot::Frame::fit(view, w, h);
     let scale = frame.scale();
@@ -299,8 +302,6 @@ fn render_geometry(
     let mut points = String::new();
     let mut texts = String::new();
     let mut controls = String::new();
-    let mut list_items_left = 4096;
-    let mut regions_left = 8;
 
     // Used to draw an "infinite" line as a segment longer than the view.
     let (mx, my) = (0.5 * (view.xmin + view.xmax), 0.5 * (view.ymin + view.ymax));
@@ -609,8 +610,8 @@ fn render_geometry(
                     );
                 }
             }
-            Value::FunctionNVar if regions_left > 0 && c.is_plane_inequality(id) => {
-                regions_left -= 1;
+            Value::FunctionNVar if *regions_left > 0 && c.is_plane_inequality(id) => {
+                *regions_left -= 1;
                 let tiles = crate::plot::inequality::tiles(c, id, &frame);
                 if !tiles.is_empty() {
                     let _ = write!(polygons, r#"<path class="inequality" d=""#);
@@ -626,7 +627,7 @@ fn render_geometry(
             Value::List { .. } => {
                 use std::ops::ControlFlow;
                 if let Some(list) = c.elements(id) {
-                    list.canvas_members(&mut list_items_left, |object, value| {
+                    list.canvas_members(list_items_left, |object, value| {
                         if object.is_none() {
                             match value {
                                 Value::Point { x, y } => {
@@ -1117,4 +1118,30 @@ fn canvas_remaining_svg_draws_a_cartesian_curve_and_a_boolean_region() {
     assert!(svg("curve").contains("<polyline"));
     assert!(svg("region").contains("class=\"inequality\""));
     assert!(!svg("f").contains("class=\"inequality\""));
+}
+
+#[test]
+fn canvas_svg_shares_region_and_list_limits_across_layers() {
+    use std::fmt::Write as _;
+
+    let mut script = String::new();
+    for i in 0..32 {
+        writeln!(script, "L{i} = Sequence((k/100, 0), k, 1, 256)").unwrap();
+    }
+    for i in 0..16 {
+        writeln!(script, "region{i}(x,y) = y > x + {}", i as f64 / 10.0).unwrap();
+    }
+    let mut c = crate::script::load(&script).unwrap();
+    for label in (16..32)
+        .map(|i| format!("L{i}"))
+        .chain((8..16).map(|i| format!("region{i}")))
+    {
+        let id = c.id(&label).unwrap();
+        let mut style = c.drawing_style(id);
+        style.layer = 1;
+        c.set_drawing_style(id, style);
+    }
+    let svg = render(&c, View::fit(&c), 800, 600);
+    assert_eq!(svg.matches("class=\"inequality\"").count(), 8);
+    assert_eq!(svg.matches("<circle ").count(), 4096);
 }

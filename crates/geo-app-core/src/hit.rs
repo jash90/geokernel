@@ -178,15 +178,29 @@ pub fn hit(
     t: f64,
     reach: &Reach,
 ) -> Option<HitType> {
+    hit_with_list_budget(c, id, tr, p, t, reach, &mut {
+        geo_kernel::expr::MAX_CANVAS_LIST_ITEMS
+    })
+}
+
+/// A shape hit sharing the caller's list budget with the other hits in its pass.
+pub fn hit_with_list_budget(
+    c: &Construction,
+    id: Id,
+    tr: &ViewTransform,
+    p: (f64, f64),
+    t: f64,
+    reach: &Reach,
+    list_items_left: &mut usize,
+) -> Option<HitType> {
     let to_screen = |x: f64, y: f64| tr.world_to_screen(x, y);
     let boundary = |hit: bool| hit.then_some(HitType::Boundary);
     match c.value(id) {
         Value::List { .. } => {
             use std::ops::ControlFlow;
             let mut result = None;
-            c.elements(id)?.canvas_members(
-                &mut { geo_kernel::expr::MAX_CANVAS_LIST_ITEMS },
-                |object, value| {
+            c.elements(id)?
+                .canvas_members(list_items_left, |object, value| {
                     let found = if let Some(object) = object {
                         hit(c, object, tr, p, t, reach)
                     } else {
@@ -209,8 +223,7 @@ pub fn hit(
                     } else {
                         ControlFlow::Continue(())
                     }
-                },
-            );
+                });
             result
         }
         Value::Point { x, y } => {
@@ -276,7 +289,9 @@ pub fn hit(
             if part_meets_square(&part, tr, p, t + CURVE_STROKE / 2.0) {
                 Some(HitType::Boundary)
             } else {
-                sector_contains(&part, tr.screen_to_world(p.0, p.1)).then_some(HitType::Filling)
+                (!c.drawing_style(id).sector_outline_only
+                    && sector_contains(&part, tr.screen_to_world(p.0, p.1)))
+                .then_some(HitType::Filling)
             }
         }
         Value::Conic { .. } => {
@@ -502,7 +517,12 @@ pub fn part_axis_crossings(part: &ArcData, axis: usize, offset: f64) -> impl Ite
     })
 }
 
-const MAX_LOCUS_PICK_EDGES: usize = 10_000;
+/// Drawing and picking use the same prefix of a locus.
+pub const MAX_CANVAS_LOCUS_SAMPLES: usize = 10_001;
+
+pub fn canvas_locus_samples(points: &[LocusPoint]) -> &[LocusPoint] {
+    &points[..points.len().min(MAX_CANVAS_LOCUS_SAMPLES)]
+}
 
 fn locus_meets_square(
     points: &[LocusPoint],
@@ -510,26 +530,35 @@ fn locus_meets_square(
     p: (f64, f64),
     half: f64,
 ) -> bool {
-    points.windows(2).take(MAX_LOCUS_PICK_EDGES).any(|pair| {
-        let a = pair[0];
-        let b = pair[1];
-        b.line_to
-            && [a.x, a.y, b.x, b.y].into_iter().all(f64::is_finite)
-            && segment_meets_square(to_screen(a.x, a.y), to_screen(b.x, b.y), p, half)
-    })
+    let mut previous = None;
+    for point in canvas_locus_samples(points) {
+        if !point.x.is_finite() || !point.y.is_finite() {
+            previous = None;
+            continue;
+        }
+        let at = to_screen(point.x, point.y);
+        if previous.filter(|_| point.line_to).map_or_else(
+            || (at.0 - p.0).abs() <= half && (at.1 - p.1).abs() <= half,
+            |from| segment_meets_square(from, at, p, half),
+        ) {
+            return true;
+        }
+        previous = Some(at);
+    }
+    false
 }
 
 #[cfg(test)]
 #[test]
 fn canvas_remaining_locus_picking_stops_at_the_edge_limit() {
-    let points: Vec<_> = (0..=MAX_LOCUS_PICK_EDGES + 1)
+    let points: Vec<_> = (0..=MAX_CANVAS_LOCUS_SAMPLES)
         .map(|i| LocusPoint {
             x: i as f64 * 10.0,
             y: 0.0,
             line_to: true,
         })
         .collect();
-    let end = MAX_LOCUS_PICK_EDGES as f64 * 10.0;
+    let end = (MAX_CANVAS_LOCUS_SAMPLES - 1) as f64 * 10.0;
     assert!(locus_meets_square(
         &points,
         |x, y| (x, y),
@@ -873,7 +902,8 @@ pub fn pick_with_text(
     text: Option<Id>,
     accept: impl Fn(Id) -> bool,
 ) -> Option<Id> {
-    let pass = |threshold: f64| {
+    let mut list_items_left = geo_kernel::expr::MAX_FRAME_CANVAS_LIST_ITEMS;
+    let mut pass = |threshold: f64| {
         let mut choice = Choice::default();
         if let Some(id) = text {
             choice.add(c, id, id.index(), HitType::Filling, Some(id) == selected);
@@ -882,7 +912,9 @@ pub fn pick_with_text(
             if c.kind(id) == Kind::Text || !accept(id) {
                 continue;
             }
-            if let Some(how) = hit(c, id, t, position, threshold, reach) {
+            if let Some(how) =
+                hit_with_list_budget(c, id, t, position, threshold, reach, &mut list_items_left)
+            {
                 choice.add(c, id, index, how, Some(id) == selected);
             }
         }
@@ -906,9 +938,22 @@ pub fn hits(
     reach: &Reach,
     accept: impl Fn(Id) -> bool,
 ) -> Vec<Id> {
-    let pass = |threshold: f64| -> Vec<Id> {
+    let mut list_items_left = geo_kernel::expr::MAX_FRAME_CANVAS_LIST_ITEMS;
+    let mut pass = |threshold: f64| -> Vec<Id> {
         c.ids()
-            .filter(|&id| accept(id) && hit(c, id, t, (sx, sy), threshold, reach).is_some())
+            .filter(|&id| {
+                accept(id)
+                    && hit_with_list_budget(
+                        c,
+                        id,
+                        t,
+                        (sx, sy),
+                        threshold,
+                        reach,
+                        &mut list_items_left,
+                    )
+                    .is_some()
+            })
             .collect()
     };
     let found = pass(reach.threshold);
@@ -1332,4 +1377,72 @@ fn canvas_remaining_image_picking_uses_the_raster_quad() {
         checked = true;
     }
     assert!(checked);
+}
+
+#[test]
+fn canvas_picking_shares_the_list_allowance() {
+    use std::fmt::Write as _;
+    let mut script = String::new();
+    for i in 0..16 {
+        writeln!(script, "L{i} = Sequence((k, 10), k, 1, 256)").unwrap();
+    }
+    script.push_str("L16 = {(0, 0)}\n");
+    let c = geo_kernel::script::load(&script).unwrap();
+    let tr = ViewTransform::new(
+        geo_kernel::svg::View {
+            xmin: -5.0,
+            xmax: 5.0,
+            ymin: -5.0,
+            ymax: 5.0,
+        },
+        400.0,
+        400.0,
+    );
+    let at = tr.world_to_screen(0.0, 0.0);
+    let reach = Reach::square(3.0);
+    assert!(hits(&c, &tr, at, &reach, |_| true).is_empty());
+    assert_eq!(pick(&c, &tr, at, &reach, None, |_| true), None);
+    let last = c.id("L16").unwrap();
+    assert_eq!(pick(&c, &tr, at, &reach, None, |id| id == last), Some(last));
+}
+
+#[test]
+fn canvas_locus_picks_a_lone_sample_without_joining_gaps() {
+    let points = [
+        LocusPoint {
+            x: 0.0,
+            y: 0.0,
+            line_to: false,
+        },
+        LocusPoint {
+            x: 10.0,
+            y: 0.0,
+            line_to: false,
+        },
+    ];
+    assert!(locus_meets_square(&points, |x, y| (x, y), (0.0, 0.0), 1.0));
+    assert!(!locus_meets_square(&points, |x, y| (x, y), (5.0, 0.0), 1.0));
+}
+
+#[test]
+fn canvas_sector_picking_respects_saved_fill() {
+    let imported = geo_import::import(include_bytes!(
+        "../../../golden/ggb/saved/saved-canvas-sector-001.xml"
+    ))
+    .unwrap();
+    let c = geo_kernel::script::load(&imported.script.join("\n")).unwrap();
+    let tr = ViewTransform::new(geo_kernel::svg::View::fit(&c), 800.0, 600.0);
+    let at = |label, x, y| {
+        hit(
+            &c,
+            c.id(label).unwrap(),
+            &tr,
+            tr.world_to_screen(x, y),
+            3.0,
+            &Reach::square(3.0),
+        )
+    };
+    assert_eq!(at("s", 0.5, 0.5), None);
+    assert_eq!(at("s", 1.0, 0.0), Some(HitType::Boundary));
+    assert_eq!(at("shaded", 0.5, 0.5), Some(HitType::Filling));
 }

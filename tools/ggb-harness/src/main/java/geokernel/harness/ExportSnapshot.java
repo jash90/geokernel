@@ -236,6 +236,8 @@ public final class ExportSnapshot {
         fields.put("fixed", geo.isLocked());
         if (geo instanceof GeoInputBox box) {
             fields.put("input_length", box.getLength());
+            fields.put("decimals", box.useSignificantFigures() ? -1 : box.getPrintDecimals());
+            fields.put("figures", box.useSignificantFigures() ? box.getPrintFigures() : -1);
         }
         fields.put("auxiliary", geo.isAuxiliaryObject());
         fields.put("selection_allowed", geo.isSelectionAllowed(null));

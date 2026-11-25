@@ -15,10 +15,11 @@ pub const FREE_POINT_RADIUS: f32 = 5.0;
 /// gets the decimal `0.1` and not a widened 32-bit value.
 pub const FILL_OPACITY: f64 = 0.1;
 
-/// The opacity of the fill the canvas draws for an object, 0 for an outline.
+/// The default fill opacity saved for a canvas object, 0 for an outline.
 pub fn fill_opacity(c: &Construction, id: Id) -> f64 {
     match c.kind(id) {
         Kind::Polygon | Kind::Angle => FILL_OPACITY,
+        Kind::Sector if !c.drawing_style(id).sector_outline_only => FILL_OPACITY,
         _ => 0.0,
     }
 }

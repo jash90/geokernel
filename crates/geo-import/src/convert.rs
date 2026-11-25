@@ -228,6 +228,13 @@ pub(crate) fn convert_with_assets(
                 fill.pattern = 0;
             }
         }
+        if c.kernel.kind(id) == Kind::Sector {
+            style.sector_outline_only = saved_style.alpha.is_some_and(|alpha| alpha <= 0.0)
+                && saved_style
+                    .fill
+                    .as_ref()
+                    .is_none_or(|fill| fill.pattern == 0);
+        }
         // A caption taken from a text that is not there is dropped, as the
         // reference reader drops it.
         if let Some(caption) = saved_style.dynamic_caption.take() {

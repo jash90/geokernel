@@ -1458,6 +1458,8 @@ pub struct DrawingStyle {
     pub layer: u8,
     pub show_label: bool,
     pub line_thickness: u8,
+    /// A saved sector with no opacity or fill pattern has no interior hit.
+    pub sector_outline_only: bool,
 }
 
 impl Default for DrawingStyle {
@@ -1466,6 +1468,7 @@ impl Default for DrawingStyle {
             layer: 0,
             show_label: true,
             line_thickness: 3,
+            sector_outline_only: false,
         }
     }
 }
@@ -3428,6 +3431,19 @@ impl Construction {
     /// or the list is undefined.
     pub fn elements(&self, id: Id) -> Option<expr::List<'_>> {
         expr::list(self, id)
+    }
+
+    /// Identifies the stored elements of a defined list for drawing caches.
+    pub fn list_value_revision(&self, id: Id) -> Option<[u64; 2]> {
+        if !matches!(self.value(id), Value::List { .. }) {
+            return None;
+        }
+        match self.def(id) {
+            Def::Expr(_) => expr::list_value_revision(self, id).map(|revision| [1, revision]),
+            Def::Chart(_) => self.chart(id).map(|chart| [2, chart.revision()]),
+            Def::Prove(_) => self.proof(id).map(|proof| [1, proof.revision]),
+            _ => None,
+        }
     }
 
     /// The tree of the expression object `id`, owned, so that it can be added
@@ -6026,6 +6042,7 @@ mod tests {
             layer: 4,
             show_label: false,
             line_thickness: 6,
+            ..Default::default()
         };
         c.set_drawing_style(b, style);
         script::exec(&mut c, "$textProperties(t, true, 20, 1, 4, 5, world, 2, 3)").unwrap();

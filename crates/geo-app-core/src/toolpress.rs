@@ -176,10 +176,28 @@ impl App {
     pub fn accepts_tool_hit(&self, id: Id) -> bool {
         let c = self.wb.construction();
         if self.tool.tool() == Tool::Locus {
-            let possible = if self.tool.picks().is_empty() {
-                c.kind(id) == Kind::Point && !c.def(id).is_free()
-            } else {
-                c.path_state(id).is_some() || c.has_slider_bounds(id)
+            let point = c.kind(id) == Kind::Point && !c.def(id).is_free();
+            let on_path = |id| {
+                matches!(
+                    c.def(id),
+                    geo_kernel::Def::Path(
+                        geo_kernel::algo::path::PathDef::On { .. }
+                            | geo_kernel::algo::path::PathDef::OnParam { .. }
+                    )
+                )
+            };
+            let driver = on_path(id) || c.has_slider_bounds(id);
+            let possible = match self
+                .tool
+                .picks()
+                .first()
+                .and_then(|pick| c.id(pick.label()))
+            {
+                Some(first) if on_path(first) || c.has_slider_bounds(first) => {
+                    point && !on_path(id)
+                }
+                Some(_) => driver,
+                None => point || driver,
             };
             if !possible {
                 return false;

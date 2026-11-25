@@ -377,7 +377,7 @@ impl Writer<'_> {
                 self.xml.val("pointStyle", &point_style.to_string())?;
             }
         }
-        if object_kind == Kind::Text {
+        if matches!(object_kind, Kind::Text | Kind::InputBox) {
             match saved.and_then(|style| style.rounding) {
                 Some(Rounding::Decimals(digits)) => {
                     self.xml.val("decimals", &digits.to_string())?;

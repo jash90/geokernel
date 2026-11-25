@@ -203,6 +203,8 @@ pub struct App {
     pub label_rects: RefCell<Vec<(Id, Rect)>>,
     /// The painted bodies of text objects, in the area's coordinates.
     pub text_rects: RefCell<Vec<(Id, Rect)>>,
+    /// Reused storage for this frame's visible InputBox rectangles.
+    pub input_box_rects: Vec<(Id, Rect)>,
 }
 
 impl App {
@@ -273,6 +275,7 @@ impl App {
             was_typing: false,
             label_rects: RefCell::new(Vec::new()),
             text_rects: RefCell::new(Vec::new()),
+            input_box_rects: Vec::new(),
         }
     }
 

@@ -65,6 +65,7 @@ fn stroke_shapes(
             label_offset: &|_| None,
             label_rects: None,
             text_rects: None,
+            input_box_rects: None,
         };
         draw::paint(&ui.painter_at(rect), rect, wb.construction(), t, &scene);
     });

@@ -452,6 +452,7 @@ pub struct ProveDef {
 /// which moving points never does.
 #[derive(Clone, Debug)]
 pub struct ProofData {
+    pub(crate) revision: u64,
     pub(crate) value: Value,
     pub(crate) slots: Vec<Slot>,
     outcome: Outcome,
@@ -501,6 +502,7 @@ impl ProveDef {
             (value, Vec::new())
         };
         ProofData {
+            revision: crate::expr::new_list_value_revision(),
             value,
             slots,
             outcome,

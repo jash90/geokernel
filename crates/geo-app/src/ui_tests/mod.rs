@@ -1219,3 +1219,146 @@ fn canvas_remaining_locus_tool_uses_the_dependent_point_then_its_driver() {
     assert!(c.locus(c.id("locus1").unwrap()).unwrap().defined);
     assert_eq!(h.state().wb.undo_depth(), (1, 0));
 }
+
+#[test]
+fn input_box_commits_on_tab_and_canvas_click() {
+    for tab in [true, false] {
+        let mut h = harness("a = Slider(0, 8, 0.5)\nb = 2 a\nfield = $inputBox(a, _)\n$inputBoxStyle(_6669656c64, 124, 88, 12)");
+        let c = h.state().wb.construction();
+        let [x, y, ..] = c.input_box_rect(c.id("field").unwrap());
+        click(
+            &mut h,
+            at(
+                ALGEBRA_WIDTH + SPLITTER + x as f32 + 10.0,
+                TOOLBAR_HEIGHT + y as f32 + 13.0,
+            ),
+        );
+        h.input_mut().events.push(Event::Text("3.5".into()));
+        h.step();
+        assert_eq!(
+            h.state()
+                .input_box_edit
+                .as_ref()
+                .map(|edit| edit.1.as_str()),
+            Some("3.5")
+        );
+        if tab {
+            h.key_press(egui::Key::Tab);
+            h.run();
+        } else {
+            click(&mut h, world(3.0, -2.0));
+        }
+        let c = h.state().wb.construction();
+        assert_eq!(
+            c.value(c.id("a").unwrap()),
+            Value::Number(3.5),
+            "Tab: {tab}"
+        );
+        assert_eq!(c.value(c.id("b").unwrap()), Value::Number(7.0));
+        assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    }
+}
+
+#[test]
+fn canvas_text_tool_follows_the_selected_point() {
+    let mut h = harness("A = (2, 1)");
+    h.state_mut().select_tool(Tool::Text);
+    click(&mut h, world(2.0, 1.0));
+    h.input_mut().events.push(Event::Text("Label".into()));
+    h.step();
+    h.get_by_label("OK").click();
+    h.run();
+    let a = h.state().wb.construction().id("A").unwrap();
+    assert!(h.state_mut().wb.move_point(a, 3.0, 2.0));
+    let c = h.state().wb.construction();
+    assert_eq!(
+        c.text_position(c.id("text1").unwrap()),
+        Some(geo_kernel::kernel::text::TextPosition::Point(a))
+    );
+}
+
+#[test]
+fn canvas_locus_tool_accepts_the_driver_first() {
+    let mut h = harness("A = (0, 0)\nk = Circle(A, 4)\nP = Point(k)\nQ = Midpoint(A, P)");
+    h.state_mut().select_tool(Tool::Locus);
+    for label in ["P", "Q"] {
+        let (x, y) = point(&h, label);
+        click(&mut h, world(x, y));
+    }
+    let c = h.state().wb.construction();
+    assert!(
+        c.locus(c.id("locus1").expect("driver-first locus"))
+            .unwrap()
+            .defined
+    );
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+}
+
+#[test]
+fn canvas_create_list_filters_polygon_vertices_and_sides() {
+    let mut h = harness("A = (0, 0)\nB = (2, 0)\nC = (0, 2)\nD = (3, 2)\npoly = Polygon(A, B, C)");
+    h.state_mut().select_tool(Tool::CreateList);
+    drag(&mut h, world(-0.5, 2.5), world(3.5, -0.5));
+    let c = h.state().wb.construction();
+    let list = c.elements(c.id("l1").unwrap()).unwrap();
+    assert_eq!(list.len(), 2);
+    assert_eq!(list.object(0), c.id("poly"));
+    assert_eq!(list.object(1), c.id("D"));
+}
+
+#[test]
+fn canvas_pen_keeps_motion_before_a_same_frame_release() {
+    let mut h = harness("");
+    h.state_mut().select_tool(Tool::PenStroke);
+    let start = world(0.0, 0.0);
+    let bend = world(1.0, 1.0);
+    let end = world(2.0, 0.0);
+    moved(&mut h, start);
+    let pointer = |pos, pressed| Event::PointerButton {
+        pos,
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Modifiers::NONE,
+    };
+    h.input_mut().events.extend([
+        pointer(start, true),
+        Event::PointerMoved(bend),
+        Event::PointerMoved(end),
+        pointer(end, false),
+    ]);
+    h.step();
+    let c = h.state().wb.construction();
+    let stroke = c.stroke(c.id("stroke1").expect("stroke")).unwrap();
+    assert!(stroke.defined_points().any(|p| p.y > 0.5));
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+}
+
+#[test]
+fn input_box_tab_reaches_an_idle_box_and_uses_its_caption() {
+    let mut h = harness("a = 0\nb = 0\nfirst = $inputBox(a, _)\nsecond = $inputBox(b, _45646974207365636f6e64)\n$inputBoxStyle(_6669727374, 124, 88, 12)\n$inputBoxStyle(_7365636f6e64, 124, 128, 12)");
+    h.get_by_role_and_label(egui::Role::TextInput, "Edit second");
+    let c = h.state().wb.construction();
+    let [x, y, ..] = c.input_box_rect(c.id("first").unwrap());
+    click(
+        &mut h,
+        at(
+            ALGEBRA_WIDTH + SPLITTER + x as f32 + 10.0,
+            TOOLBAR_HEIGHT + y as f32 + 13.0,
+        ),
+    );
+    h.key_press(egui::Key::Tab);
+    h.run();
+    assert_eq!(
+        h.state()
+            .input_box_edit
+            .as_ref()
+            .map(|edit| edit.0.as_str()),
+        Some("second")
+    );
+    h.input_mut().events.push(Event::Text("4".into()));
+    h.step();
+    h.key_press(egui::Key::Enter);
+    h.run();
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Number(4.0));
+}

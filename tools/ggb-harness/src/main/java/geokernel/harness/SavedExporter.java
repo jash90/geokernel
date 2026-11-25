@@ -359,8 +359,20 @@ public final class SavedExporter {
                 case "head_style" ->
                         ((GeoVector) geo).setHeadStyle(VectorHeadStyle.values()[integer(value)]);
                 case "draw_arrows" -> ((GeoLocus) geo).drawAsArrows((Boolean) value);
-                case "decimals" -> ((GeoText) geo).setPrintDecimals(integer(value), true);
-                case "figures" -> ((GeoText) geo).setPrintFigures(integer(value), true);
+                case "decimals" -> {
+                    if (geo instanceof GeoInputBox box) {
+                        box.setPrintDecimals(integer(value), true);
+                    } else {
+                        ((GeoText) geo).setPrintDecimals(integer(value), true);
+                    }
+                }
+                case "figures" -> {
+                    if (geo instanceof GeoInputBox box) {
+                        box.setPrintFigures(integer(value), true);
+                    } else {
+                        ((GeoText) geo).setPrintFigures(integer(value), true);
+                    }
+                }
                 case "arc_size" -> ((GeoAngle) geo).setArcSize(integer(value));
                 case "emphasize_right_angle" -> ((GeoAngle) geo).setEmphasizeRightAngle((Boolean) value);
                 case "checkbox_fixed" -> ((GeoBoolean) geo).setCheckboxFixed((Boolean) value);

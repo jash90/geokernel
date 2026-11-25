@@ -7,14 +7,13 @@
 //! - a function: its definition and those of the functions it reads (a
 //!   fingerprint that names other objects by label, so it survives a
 //!   rebuild that renumbers them), then the values of every object it
-//!   depends on, directly or not (`Construction::reads`), the elements of
-//!   the lists, the matrices of the conics and the parameters of the arcs
+//!   depends on, directly or not (`Construction::reads`), list revisions,
+//!   the matrices of the conics and the parameters of the arcs
 //!   and sectors among them included.
 //!
 //! Comparing a key with what the construction holds now allocates nothing;
 //! a new key is made only when they differ.
 
-use geo_kernel::expr::Element;
 use geo_kernel::kernel::{Construction, Id, Value};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hasher;
@@ -195,30 +194,21 @@ fn feed(c: &Construction, id: Id, out: &mut dyn FnMut(u64)) {
             }
             None => feed_value(&c.value(id), out),
         },
-        Value::List { len } => match c.elements(id) {
-            Some(list) => {
-                out(15 + ((len as u64) << 8));
-                feed_list(list, out);
-            }
-            None => out(15),
-        },
-        Value::Text => feed_text(c.text(id).unwrap_or_default(), out),
-        v => feed_value(&v, out),
-    }
-}
-
-/// The elements of a list, nested lists in brackets of tags.
-fn feed_list(list: geo_kernel::expr::List<'_>, out: &mut dyn FnMut(u64)) {
-    for e in list.iter() {
-        match e {
-            Element::Value(_, v) => feed_value(&v, out),
-            Element::Text(text) => feed_text(text, out),
-            Element::List(inner) => {
-                out(16 + ((inner.len() as u64) << 8));
-                feed_list(inner, out);
-                out(17);
+        Value::List { len } => {
+            out(15 + ((len as u64) << 8));
+            match c.list_value_revision(id) {
+                Some([source, revision]) => {
+                    out(source);
+                    out(revision);
+                }
+                None => {
+                    out(0);
+                    out(FRESH.fetch_add(1, Ordering::Relaxed));
+                }
             }
         }
+        Value::Text => feed_text(c.text(id).unwrap_or_default(), out),
+        v => feed_value(&v, out),
     }
 }
 
@@ -262,4 +252,33 @@ fn feed_value(v: &Value, out: &mut dyn FnMut(u64)) {
         // is never the same until it is fed here.
         _ => all(14, &[FRESH.fetch_add(1, Ordering::Relaxed) as f64]),
     }
+}
+
+#[test]
+fn curve_cache_keys_do_not_expand_list_dependencies() {
+    let mut c = geo_kernel::script::load(
+        "a = 257\nL = Sequence((k, 0), k, 1, a)\nn = Length(L)\ng = Curve(t, n*t, t, -2, 2)",
+    )
+    .unwrap();
+    let closure = Closure::of(&c, c.id("g").unwrap());
+    let Data::Function(before) = closure.data(&c) else {
+        panic!("function data")
+    };
+    assert!(before.len() < 32);
+    assert!(closure.same(&c, &before));
+    c.set_number(c.id("a").unwrap(), 256.0).unwrap();
+    assert!(!closure.same(&c, &before));
+}
+
+#[test]
+fn curve_cache_keys_for_proof_lists_stay_stable() {
+    let c = geo_kernel::script::load(
+        "A = (0, 0)\nB = (1, 0)\nC = (0, 1)\nb = AreCollinear(A, B, C)\nL = ProveDetails(b)\nn = Length(L)\ng = Curve(t, n*t, t, -2, 2)",
+    ).unwrap();
+    assert!(matches!(c.value(c.id("L").unwrap()), Value::List { .. }));
+    let closure = Closure::of(&c, c.id("g").unwrap());
+    let Data::Function(bits) = closure.data(&c) else {
+        panic!("function data")
+    };
+    assert!(closure.same(&c, &bits));
 }
