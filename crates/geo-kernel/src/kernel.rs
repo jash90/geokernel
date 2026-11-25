@@ -1468,6 +1468,11 @@ pub struct DrawingStyle {
     pub sector_outline_only: bool,
 }
 
+impl DrawingStyle {
+    /// Standard stroke thickness for objects drawn in the graphics view.
+    pub const GRAPHICS_THICKNESS: u8 = 5;
+}
+
 impl Default for DrawingStyle {
     fn default() -> Self {
         Self {
@@ -1950,9 +1955,22 @@ impl Construction {
     pub fn drawing_style(&self, id: Id) -> DrawingStyle {
         self.drawing_styles.get(&id).copied().unwrap_or_else(|| {
             let mut style = DrawingStyle::default();
-            if self.exists(id) && self.kind(id) == Kind::PieChart {
-                style.show_label = false;
-                style.line_thickness = 0;
+            if self.exists(id) {
+                match self.kind(id) {
+                    Kind::PieChart => {
+                        style.show_label = false;
+                        style.line_thickness = 0;
+                    }
+                    Kind::Point
+                    | Kind::Number
+                    | Kind::Boolean
+                    | Kind::Text
+                    | Kind::Button
+                    | Kind::InputBox
+                    | Kind::Image => {}
+                    Kind::Function if matches!(self.def(id), Def::Chart(_)) => {}
+                    _ => style.line_thickness = DrawingStyle::GRAPHICS_THICKNESS,
+                }
             }
             style
         })

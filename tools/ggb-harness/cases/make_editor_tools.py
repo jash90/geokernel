@@ -48,6 +48,13 @@ cases = [
          [("mouse_down", 1, 1.01), ("mouse_move", 2, 2.01), ("mouse_move", 3, 3.01),
           ("mouse_up", 3, 3.01)], function=True),
 ]
+cases += [
+    case("imported_line_thickness", 0,
+         ["A = (2, 1)", "B = (4, 1)", "l = Line(A, B)", "m = Line(A, (3, 2))"], [],
+         thicknesses={"m": 10}, labels=["l", "m"], style=True, regression=True),
+    case("label_then_cas_undo", 28, point_script[:1], click(2, 1),
+         cas_then_undo="1 + 2", regression=True),
+]
 directory = Path(__file__).with_name("editor_tools")
 directory.mkdir(exist_ok=True)
 directory.joinpath("inputs.json").write_text(json.dumps({"cases": cases}, indent=2) + "\n")

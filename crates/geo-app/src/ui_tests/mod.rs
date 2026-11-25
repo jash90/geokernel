@@ -1845,3 +1845,39 @@ fn freehand_function_interpolates_the_reference_diagonal_as_one_step() {
     assert!(h.state_mut().undo());
     assert!(labels(&h).is_empty());
 }
+
+#[test]
+fn round_one_imported_line_thickness_uses_the_reference_baseline() {
+    use crate::draw::{line_width, CURVE_WIDTH};
+
+    let mut wb = Workbench::default();
+    wb.load_bytes(
+        br#"<geogebra><construction>
+          <expression label="l" exp="y = 1"/>
+          <element type="line" label="l"><coords x="0" y="1" z="-1"/>
+            <lineStyle thickness="5" type="0"/></element>
+          <expression label="m" exp="y = x - 1"/>
+          <element type="line" label="m"><coords x="-1" y="1" z="1"/>
+            <lineStyle thickness="10" type="0"/></element>
+        </construction></geogebra>"#,
+        "line widths",
+    )
+    .unwrap();
+    let widths = |wb: &Workbench| {
+        let c = wb.construction();
+        ["l", "m"].map(|label| line_width(c, c.id(label).unwrap(), CURVE_WIDTH))
+    };
+    assert_eq!(widths(&wb), [CURVE_WIDTH, 2.0 * CURVE_WIDTH]);
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&wb.snapshot_text())
+        .unwrap()
+        .is_empty());
+    assert_eq!(widths(&restored), widths(&wb));
+    let native = Workbench::from_script("l: y = 1\nm: y = x - 1").unwrap();
+    assert_eq!(widths(&native), [CURVE_WIDTH; 2]);
+    let archive = native.export_ggb(None).unwrap();
+    let mut round_trip = Workbench::default();
+    round_trip.load_bytes(&archive, "native export").unwrap();
+    assert_eq!(widths(&round_trip), widths(&native));
+}

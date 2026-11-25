@@ -153,7 +153,7 @@ impl Workbench {
         if !self.cas.submit(&self.construction, index, input) {
             return false;
         }
-        self.undo.record(before);
+        self.record_undo(before);
         true
     }
 
@@ -164,7 +164,7 @@ impl Workbench {
         if !self.cas.delete(index) {
             return false;
         }
-        self.undo.record(before);
+        self.record_undo(before);
         true
     }
 
@@ -489,7 +489,7 @@ impl Workbench {
     pub fn end_tool_use(&mut self) {
         if let Some(t) = self.tool_use.take() {
             if t.changed {
-                self.undo.record(self.state(t.snapshot));
+                self.record_undo(self.state(t.snapshot));
             }
         }
     }
@@ -631,7 +631,7 @@ impl Workbench {
                         Some(t) if in_tool => t.changed = true,
                         _ => {
                             let state = self.state(snapshot);
-                            self.undo.record(state);
+                            self.record_undo(state);
                         }
                     }
                     self.version += 1;
@@ -972,7 +972,7 @@ impl Workbench {
             Some(g) if !g.committed => {
                 let snapshot = self.copy(&g.snapshot);
                 let state = self.state(snapshot);
-                self.undo.record(state);
+                self.record_undo(state);
                 if let Some(g) = &mut self.gesture {
                     g.committed = true;
                 }
@@ -980,7 +980,7 @@ impl Workbench {
             Some(_) => {}
             None => {
                 let before = self.state(before(self));
-                self.undo.record(before);
+                self.record_undo(before);
             }
         }
     }
@@ -1026,7 +1026,7 @@ impl Workbench {
         let _ = self.outside_tool_use(|w| {
             // An object the open tool use placed went with it.
             if w.construction.id(&label).is_some() {
-                w.undo.record(w.state(w.copy(&w.log)));
+                w.record_undo(w.state(w.copy(&w.log)));
                 if !w.log.hidden.remove(&label) {
                     w.log.hidden.insert(label);
                 }
@@ -1091,6 +1091,11 @@ impl Workbench {
         if let Some(before) = self.style_before.take() {
             self.undo.record(before);
         }
+    }
+
+    fn record_undo(&mut self, before: UndoState) {
+        self.finish_style_edits();
+        self.undo.record(before);
     }
 
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> bool {

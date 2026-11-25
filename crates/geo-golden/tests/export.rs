@@ -8,9 +8,12 @@ use geo_golden::repo_root;
 use geo_kernel::algo::path::PathDef;
 use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
 use geo_kernel::kernel::text::TextPosition;
+use geo_kernel::kernel::DrawingStyle;
+use geo_kernel::script::saved::Property;
 use geo_kernel::{Construction, Def, Id, Kind};
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::Write as _;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -501,18 +504,7 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
                     write(&exports, &name, &bytes);
                     write(&sources, &name, &zipped(source));
                     let mut stripped = Workbench::default();
-                    // Strip the saved canvas placements and increments along with
-                    // the style data kept outside the journal.
-                    let plain_snapshot = wb
-                        .snapshot_text()
-                        .lines()
-                        .filter(|line| {
-                            !line.starts_with("$sliderStyle(")
-                                && !line.starts_with("$checkboxStyle(")
-                                && !line.starts_with("$inputBoxStyle(")
-                        })
-                        .collect::<Vec<_>>()
-                        .join("\n");
+                    let plain_snapshot = without_saved_canvas_styles(&wb, view);
                     let rejected = stripped.restore_text(&plain_snapshot).unwrap();
                     assert!(rejected.is_empty(), "{name}: {rejected:?}");
                     let bytes = stripped
@@ -755,6 +747,44 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
         WITNESSES.len(),
         gave_up.len()
     );
+}
+
+/// Build the witness control with the same explicit thickness and label
+/// defaults as the original stripped archives. The source and full export
+/// still carry their real presentation and are compared property by property.
+fn without_saved_canvas_styles(wb: &Workbench, view: Option<FileView>) -> String {
+    let c = wb.construction();
+    let presentation = wb.export_presentation(view);
+    let mut script = String::new();
+    for line in wb.snapshot_text().lines().filter(|line| {
+        !line.starts_with("$sliderStyle(")
+            && !line.starts_with("$checkboxStyle(")
+            && !line.starts_with("$inputBoxStyle(")
+            && !line.starts_with("$drawingStyle(")
+    }) {
+        writeln!(script, "{line}").unwrap();
+    }
+    for (label, id) in labelled(c) {
+        let mut style = c.drawing_style(id);
+        let chart = c.chart(id).is_some();
+        let slider = matches!(c.def(id), Def::Number(_))
+            && presentation
+                .object_styles
+                .get(label)
+                .is_some_and(|saved| saved.slider.is_some());
+        if !chart && !slider {
+            style.line_thickness = DrawingStyle::default().line_thickness;
+            if !matches!(c.def(id), Def::Boolean(_) | Def::InputBox(_)) {
+                style.show_label = DrawingStyle::default().show_label;
+            }
+        }
+        let property = Property::DrawingStyle {
+            label: label.into(),
+            style,
+        };
+        writeln!(script, "{property}").unwrap();
+    }
+    script
 }
 
 fn proof_path() -> PathBuf {

@@ -329,6 +329,53 @@
         }
       ],
       "function": true
+    },
+    {
+      "name": "tool_imported_line_thickness",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (2, 1)",
+        "B = (4, 1)",
+        "l = Line(A, B)",
+        "m = Line(A, (3, 2))"
+      ],
+      "events": [],
+      "thicknesses": {
+        "m": 10
+      },
+      "labels": [
+        "l",
+        "m"
+      ],
+      "style": true,
+      "regression": true
+    },
+    {
+      "name": "tool_label_then_cas_undo",
+      "tool_mode": 28,
+      "initial_script": [
+        "A = (2, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        }
+      ],
+      "cas_then_undo": "1 + 2",
+      "regression": true
     }
   ]
 }

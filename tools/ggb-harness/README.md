@@ -169,9 +169,10 @@ For a document opened from a file the test snapshots three archives: the
 source file, the export of its import, and the export of the same document
 without its saved styles. The first two must agree in every property of every
 object. The third gives what the reader makes of an object without the saved
-tag: `WITNESSES` in the test names, per kind, the objects of the style
-fixtures that may prove a property, and a property is proven by the first of
-them whose source value differs from that. The test compares the result with
+tag. This control archive restores the original baseline for label visibility
+and thickness, which the journal now mirrors for editing. `WITNESSES` names
+the fixture objects checked for each kind. The first object whose source
+value differs from the control proves the property. The test compares the result with
 `crates/geo-golden/tests/fixtures/export-proof.json` and fails when the file
 is stale; `GEOKERNEL_EXPORT_BLESS=1` rewrites it. A normal `cargo test` reads
 that file and derives the `export` column of `docs/kinds.csv` from it.

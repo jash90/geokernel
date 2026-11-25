@@ -20,7 +20,9 @@ import org.geogebra.common.jre.headless.DialogManagerNoGui;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.MyImageCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
+import org.geogebra.common.kernel.Kernel;
 import org.geogebra.common.kernel.ModeSetter;
+import org.geogebra.common.kernel.geos.GeoCasCell;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoImage;
@@ -108,11 +110,17 @@ public final class EditorTools {
     public static void main(String[] args) throws Exception {
         var inputs = (Map<?, ?>) Json.parse(Files.readString(Path.of(args[0])));
         var cases = new ArrayList<Map<String, Object>>();
+        var regressions = new ArrayList<Map<String, Object>>();
         var image = Path.of(args[0]).resolveSibling("fixture.png");
         for (Object entry : (List<?>) inputs.get("cases")) {
-            cases.add(record((Map<?, ?>) entry, image));
+            var spec = (Map<?, ?>) entry;
+            var destination = Boolean.TRUE.equals(spec.get("regression")) ? regressions : cases;
+            destination.add(record(spec, image));
         }
-        Files.writeString(Path.of(args[1]), Json.write(Map.of("scenarios", cases)));
+        var output = new LinkedHashMap<String, Object>();
+        output.put("scenarios", cases);
+        output.put("regressions", regressions);
+        Files.writeString(Path.of(args[1]), Json.write(output));
     }
 
     private static Map<String, Object> record(Map<?, ?> spec, Path fixture) throws Exception {
@@ -134,6 +142,12 @@ public final class EditorTools {
                 source.updateRepaint();
             } else {
                 kernel.getAlgebraProcessor().processAlgebraCommand(line.toString(), false);
+            }
+        }
+        if (spec.get("thicknesses") instanceof Map<?, ?> thicknesses) {
+            for (var entry : thicknesses.entrySet()) {
+                kernel.lookupLabel(entry.getKey().toString())
+                        .setLineThickness(((Number) entry.getValue()).intValue());
             }
         }
         var con = kernel.getConstruction();
@@ -227,8 +241,33 @@ public final class EditorTools {
         for (String key : List.of("tool_mode", "initial_script", "events")) {
             output.put(key, spec.get(key));
         }
+        if (spec.get("cas_then_undo") instanceof String input) {
+            output.put("cas_then_undo", input);
+            String oldXml = app.getXML();
+            var cell = new GeoCasCell(con);
+            cell.setInput(input);
+            cell.setProcessingInformation("", input, "");
+            cell.setEvalCommand("Evaluate");
+            kernel.getAlgebraProcessor().processCasCell(cell, true, oldXml);
+            kernel.storeUndoInfo();
+            expected.put("after_cas", labelAndCasState(kernel));
+            view.setMode(EuclidianConstants.MODE_MOVE, ModeSetter.TOOLBAR);
+            var history = new ArrayList<Map<String, Object>>();
+            for (int i = 0; i < 2; i++) {
+                kernel.undo();
+                history.add(labelAndCasState(kernel));
+            }
+            expected.put("undo_history", history);
+        }
         output.put("expected", expected);
         return output;
+    }
+
+    private static Map<String, Object> labelAndCasState(Kernel kernel) {
+        var state = new LinkedHashMap<String, Object>();
+        state.put("label_shown", kernel.lookupLabel("A").isLabelVisible());
+        state.put("has_cas_row", kernel.getConstruction().getCasCell(0) != null);
+        return state;
     }
 
     private static TestEvent pointer(EuclidianView view, Map<?, ?> event) {

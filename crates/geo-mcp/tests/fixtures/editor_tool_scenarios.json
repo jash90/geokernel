@@ -397,5 +397,83 @@
         ]
       }
     }
+  ],
+  "regressions": [
+    {
+      "name": "tool_imported_line_thickness",
+      "source": "Classic Java editor-tools probe, GeoGebra 112919f2d450ec7430a5cd3b65dba226fdc43b74",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (2, 1)",
+        "B = (4, 1)",
+        "l = Line(A, B)",
+        "m = Line(A, (3, 2))"
+      ],
+      "events": [],
+      "expected": {
+        "tool_mode_after": 0,
+        "undo_steps_added": 0,
+        "editor_styles": {
+          "l": {
+            "show_label": false,
+            "color": [
+              28,
+              28,
+              31
+            ],
+            "layer": 0,
+            "line_thickness": 5
+          },
+          "m": {
+            "show_label": false,
+            "color": [
+              28,
+              28,
+              31
+            ],
+            "layer": 0,
+            "line_thickness": 10
+          }
+        },
+        "created_labels": []
+      }
+    },
+    {
+      "name": "tool_label_then_cas_undo",
+      "source": "Classic Java editor-tools probe, GeoGebra 112919f2d450ec7430a5cd3b65dba226fdc43b74",
+      "tool_mode": 28,
+      "initial_script": [
+        "A = (2, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        }
+      ],
+      "cas_then_undo": "1 + 2",
+      "expected": {
+        "tool_mode_after": 28,
+        "undo_steps_added": 0,
+        "created_labels": [],
+        "after_cas": { "label_shown": false, "has_cas_row": true },
+        "undo_history": [
+          { "label_shown": true, "has_cas_row": false },
+          { "label_shown": true, "has_cas_row": false }
+        ]
+      }
+    }
   ]
 }

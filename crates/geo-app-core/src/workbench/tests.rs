@@ -2694,3 +2694,45 @@ fn image_tool_rejects_excessive_raster_dimensions_without_creating_anchors() {
     assert!(wb.construction().is_empty());
     assert_eq!(wb.undo_depth(), (0, 0));
 }
+
+#[test]
+fn round_one_style_undo_precedes_changes_outside_the_tool() {
+    let mut wb = Workbench::from_script("A = (2, 1)").unwrap();
+    let a = wb.construction().id("A").unwrap();
+    let state = |wb: &Workbench| {
+        let c = wb.construction();
+        (
+            c.drawing_style(c.id("A").unwrap()).show_label,
+            wb.cas_rows().len(),
+            match c.value(c.id("A").unwrap()) {
+                Value::Point { x, y } => (x, y),
+                value => panic!("A: {value:?}"),
+            },
+        )
+    };
+
+    wb.toggle_label_in_mode(a);
+    assert!(wb.submit_cas(0, "1 + 2"));
+    wb.finish_style_edits();
+    assert!(wb.undo());
+    assert_eq!(state(&wb), (false, 0, (2.0, 1.0)));
+    assert!(wb.undo());
+    assert_eq!(state(&wb), (true, 0, (2.0, 1.0)));
+    assert!(wb.redo());
+    assert!(wb.redo());
+    assert_eq!(state(&wb), (false, 1, (2.0, 1.0)));
+
+    wb.toggle_label_in_mode(a);
+    assert!(wb.delete_cas(0));
+    assert!(wb.undo());
+    assert_eq!(state(&wb), (true, 1, (2.0, 1.0)));
+    assert!(wb.undo());
+    assert_eq!(state(&wb), (false, 1, (2.0, 1.0)));
+
+    wb.toggle_label_in_mode(a);
+    assert!(wb.move_point(a, 3.0, 4.0));
+    assert!(wb.undo());
+    assert_eq!(state(&wb), (true, 1, (2.0, 1.0)));
+    assert!(wb.undo());
+    assert_eq!(state(&wb), (false, 1, (2.0, 1.0)));
+}

@@ -19,7 +19,7 @@ use eframe::egui::epaint::{CircleShape, PathShape, TessellationOptions, Tessella
 use eframe::egui::{vec2, Align2, Color32, FontId, Mesh, Painter, Pos2, Rect, Shape, Stroke};
 use geo_app_core::geom;
 use geo_kernel::algo::vector;
-use geo_kernel::kernel::{Construction, Id, Kind, Value};
+use geo_kernel::kernel::{Construction, DrawingStyle, Id, Kind, Value};
 use geo_kernel::{ConicType, LocusPoint};
 use std::borrow::Cow;
 use std::cell::RefCell;
@@ -34,7 +34,8 @@ const DEPENDENT_POINT_RADIUS: f32 = 4.0;
 pub const CURVE_WIDTH: f32 = 2.5;
 
 pub(crate) fn line_width(c: &Construction, id: Id, default: f32) -> f32 {
-    default * f32::from(c.drawing_style(id).line_thickness) / 3.0
+    let thickness = f32::from(c.drawing_style(id).line_thickness);
+    default * (thickness / f32::from(DrawingStyle::GRAPHICS_THICKNESS))
 }
 /// The chords each cubic piece of a pen stroke is drawn with.
 const STROKE_STEPS: usize = 16;
