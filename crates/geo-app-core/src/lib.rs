@@ -12,6 +12,7 @@ pub mod arc;
 pub mod camera;
 pub mod cas;
 pub mod describe;
+pub mod editor;
 pub mod errors;
 pub mod geom;
 pub mod gesture;

@@ -2659,3 +2659,38 @@ fn moved_spreadsheet_point_round_trips_through_the_archive() {
     wb.load_bytes(&bytes, "Spreadsheet").unwrap();
     assert_eq!(wb.spreadsheet_display(a1), "(3, 4)");
 }
+
+#[test]
+fn label_tool_changes_only_label_visibility_and_replays_it() {
+    let mut wb = Workbench::from_script("A = (1, 2)").unwrap();
+    let a = wb.construction().id("A").unwrap();
+    assert!(wb.construction().drawing_style(a).show_label);
+    wb.toggle_label(a);
+    assert!(!wb.construction().drawing_style(a).show_label);
+    assert!(wb.is_visible(a));
+    assert!(wb.undo());
+    assert!(wb.construction().drawing_style(a).show_label);
+    assert!(wb.redo());
+    assert!(!wb.construction().drawing_style(a).show_label);
+}
+
+#[test]
+fn image_tool_rejects_excessive_raster_dimensions_without_creating_anchors() {
+    let mut wb = Workbench::from_script("").unwrap();
+    let request = crate::editor::ImageRequest {
+        anchor: None,
+        at: (0.0, 0.0),
+        scale: 50.0,
+        xmax: 10.0,
+        ymax: 10.0,
+    };
+    // A PNG declares a canvas 8192 by 8192 in IHDR, before any pixel data.
+    let mut png =
+        include_bytes!("../../../../tools/ggb-harness/cases/editor_tools/fixture.png").to_vec();
+    png[16..20].copy_from_slice(&8192_u32.to_be_bytes());
+    png[20..24].copy_from_slice(&8192_u32.to_be_bytes());
+    let error = wb.insert_image(&request, png).unwrap_err();
+    assert!(error.contains("limit"), "{error}");
+    assert!(wb.construction().is_empty());
+    assert_eq!(wb.undo_depth(), (0, 0));
+}

@@ -31,6 +31,7 @@ fn open(app: &mut App, ctx: &egui::Context, path: &Path) {
             app.cancel_cas_edit();
             app.spreadsheet_editor = None;
             app.input_box_edit = None;
+            app.inspector = None;
             app.input_box_rects.clear();
             ctx.memory_mut(|memory| {
                 if let Some(id) = memory.focused() {
@@ -85,7 +86,10 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
         app.input_box_edit = None;
         app.gesture.stop();
     }
-    if app.tool.asking().is_some() || app.tool.control_request().is_some() {
+    if app.tool.asking().is_some()
+        || app.tool.control_request().is_some()
+        || app.image_request.is_some()
+    {
         return;
     }
     if typing {
@@ -218,6 +222,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     number_dialog(app, &ctx);
     control_dialog(app, &ctx);
     save_dialog(app, &ctx);
+    image_dialog(app, &ctx);
+    function_inspector(app, &ctx);
 }
 
 fn save_dialog(app: &mut App, ctx: &egui::Context) {
@@ -261,6 +267,113 @@ fn save_dialog(app: &mut App, ctx: &egui::Context) {
     }
     if save || cancel || response.should_close() {
         app.save_path = None;
+    }
+}
+
+fn image_dialog(app: &mut App, ctx: &egui::Context) {
+    if app.image_request.is_none() {
+        return;
+    }
+    let response = egui::Modal::new(egui::Id::unique("open-image")).show(ctx, |ui| {
+        ui.heading(crate::tools::Tool::Image.caption());
+        let caption = ui.label("Ścieżka do obrazu PNG, JPEG lub GIF");
+        let field = ui
+            .add(egui::TextEdit::singleline(&mut app.image_path).desired_width(320.0))
+            .labelled_by(caption.id);
+        if !ui.memory(|memory| memory.focused().is_some()) {
+            field.request_focus();
+        }
+        let submit = ui.input(|input| input.key_pressed(egui::Key::Enter));
+        ui.horizontal(|ui| {
+            let ready = !app.image_path.trim().is_empty();
+            let open = ui.add_enabled(ready, egui::Button::new("Otwórz")).clicked();
+            let cancel = ui.button(text::label(Label::Cancel)).clicked();
+            (ready && (submit || open), cancel)
+        })
+        .inner
+    });
+    let (open, cancel) = response.inner;
+    if open {
+        let result =
+            read_image(Path::new(app.image_path.trim())).and_then(|bytes| app.finish_image(bytes));
+        if let Err(error) = result {
+            app.select_tool(crate::tools::Tool::Move);
+            app.load_error = Some(format!("Nie można wstawić obrazu: {error}"));
+        }
+    } else if cancel || response.should_close() {
+        app.select_tool(crate::tools::Tool::Move);
+    }
+}
+
+fn read_image(path: &Path) -> Result<Vec<u8>, String> {
+    use geo_kernel::kernel::image::MAX_ASSET_BYTES;
+    use std::io::Read as _;
+    let file = std::fs::File::open(path).map_err(|error| error.to_string())?;
+    if !file
+        .metadata()
+        .map_err(|error| error.to_string())?
+        .is_file()
+    {
+        return Err("expected a regular image file".into());
+    }
+    let file = std::fs::File::open(path).map_err(|error| error.to_string())?;
+    let mut bytes = Vec::new();
+    file.take(MAX_ASSET_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|error| error.to_string())?;
+    if bytes.len() as u64 > MAX_ASSET_BYTES {
+        return Err("image asset is too large".into());
+    }
+    Ok(bytes)
+}
+
+fn function_inspector(app: &mut App, ctx: &egui::Context) {
+    let Some(inspector) = &mut app.inspector else {
+        return;
+    };
+    let mut open = true;
+    egui::Window::new(crate::tools::Tool::FunctionInspector.caption())
+        .open(&mut open)
+        .show(ctx, |ui| {
+            ui.strong(&inspector.label);
+            ui.horizontal(|ui| {
+                for (caption, value) in ["Od", "Do", "Krok"]
+                    .into_iter()
+                    .zip(&mut inspector.interval)
+                {
+                    let label = ui.label(caption);
+                    ui.add(egui::DragValue::new(value).speed(0.01))
+                        .labelled_by(label.id);
+                }
+            });
+            let [min, max, step] = inspector.interval;
+            let rows = inspector.rows(&app.wb, min, max, step);
+            if rows.len() == geo_app_core::editor::MAX_INSPECTOR_ROWS {
+                ui.label(format!("Wyświetlono maksymalnie {} wierszy.", rows.len()));
+            }
+            egui::ScrollArea::vertical()
+                .max_height(260.0)
+                .show(ui, |ui| {
+                    egui::Grid::new("function-values")
+                        .striped(true)
+                        .show(ui, |ui| {
+                            ui.strong("x");
+                            ui.strong("f(x)");
+                            ui.end_row();
+                            for (x, y) in rows {
+                                ui.label(x.to_string());
+                                ui.label(if y.is_nan() {
+                                    "—".into()
+                                } else {
+                                    y.to_string()
+                                });
+                                ui.end_row();
+                            }
+                        });
+                });
+        });
+    if !open {
+        app.inspector = None;
     }
 }
 

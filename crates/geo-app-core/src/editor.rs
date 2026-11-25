@@ -1,0 +1,152 @@
+//! Editor actions shared between the window and the workbench.
+
+use crate::app::App;
+use crate::interact::ViewTransform;
+use crate::tools::Tool;
+use crate::workbench::Workbench;
+use geo_kernel::{Id, Kind, Value};
+
+pub const MAX_INSPECTOR_ROWS: usize = 256;
+
+#[derive(Clone, Debug)]
+pub struct Inspector {
+    pub label: String,
+    pub interval: [f64; 3],
+}
+
+impl Inspector {
+    pub fn rows(&self, wb: &Workbench, min: f64, max: f64, step: f64) -> Vec<(f64, f64)> {
+        let c = wb.construction();
+        let Some(id) = c.id(&self.label).filter(|&id| c.kind(id) == Kind::Function) else {
+            return Vec::new();
+        };
+        if !(min.is_finite() && max.is_finite() && step.is_finite() && min <= max && step > 0.0) {
+            return Vec::new();
+        }
+        (0..MAX_INSPECTOR_ROWS)
+            .map(|index| min + index as f64 * step)
+            .take_while(|&x| x <= max)
+            .map(|x| (x, c.function_value(id, x).unwrap_or(f64::NAN)))
+            .collect()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ImageRequest {
+    pub anchor: Option<String>,
+    pub at: (f64, f64),
+    pub scale: f64,
+    pub xmax: f64,
+    pub ymax: f64,
+}
+
+impl App {
+    pub fn editor_click(&mut self, hit: Option<Id>, view: &ViewTransform, pos: (f64, f64)) -> bool {
+        let c = self.wb.construction();
+        let hit = hit.filter(|id| id.index() < c.len());
+        match self.tool.tool() {
+            Tool::ShowHideLabel => {
+                if let Some(id) = hit {
+                    self.wb.toggle_label_in_mode(id);
+                }
+            }
+            Tool::CopyVisualStyle => {
+                if let Some(id) = hit {
+                    match self.style_source.as_deref().and_then(|label| c.id(label)) {
+                        Some(source) if source == id => {
+                            self.style_source = None;
+                            self.wb.selected = None;
+                            self.wb.finish_style_edits();
+                        }
+                        Some(source) => self.wb.copy_drawing_style(source, id),
+                        None => {
+                            self.style_source = Some(c.label(id).to_owned());
+                            if let Some(target) = self.wb.selected.filter(|&target| {
+                                target != id
+                                    && target.index() < c.len()
+                                    && c.kind(target) == c.kind(id)
+                            }) {
+                                self.wb.copy_drawing_style(id, target);
+                                self.wb.selected = None;
+                            } else {
+                                self.wb.selected = Some(id);
+                            }
+                        }
+                    }
+                }
+            }
+            Tool::FunctionInspector => {
+                if let Some(id) = hit.filter(|&id| c.kind(id) == Kind::Function) {
+                    let center = view.screen_to_world(pos.0, pos.1).0;
+                    let step =
+                        crate::ticks::numbering_step(view.xscale(), self.metrics.numbering_px)
+                            * 0.25;
+                    let inspector = Inspector {
+                        label: c.label(id).to_owned(),
+                        interval: [center - 4.0 * step, center + 4.0 * step, step],
+                    };
+                    self.select_tool(Tool::Move);
+                    self.inspector = Some(inspector);
+                }
+            }
+            Tool::Image => {
+                if self.image_request.is_none() {
+                    let anchor = hit
+                        .filter(|&id| c.kind(id) == Kind::Point)
+                        .map(|id| c.label(id).to_owned());
+                    let v = view.view();
+                    self.image_request = Some(ImageRequest {
+                        anchor,
+                        at: view.screen_to_world(pos.0, pos.1),
+                        scale: view.xscale(),
+                        xmax: v.xmax,
+                        ymax: v.ymax,
+                    });
+                    self.image_path.clear();
+                }
+            }
+            _ => return false,
+        }
+        true
+    }
+
+    pub fn finish_image(&mut self, bytes: Vec<u8>) -> Result<(), String> {
+        let request = self.image_request.as_ref().ok_or("no image placement")?;
+        let id = self.wb.insert_image(request, bytes)?;
+        self.select_tool(Tool::Move);
+        self.wb.selected = Some(id);
+        Ok(())
+    }
+
+    pub fn rotation_press(
+        &mut self,
+        hit: Option<Id>,
+        at: (f64, f64),
+    ) -> Option<crate::interact::Drag> {
+        let id = hit?;
+        let c = self.wb.construction();
+        let center = self
+            .rotation_center
+            .as_deref()
+            .and_then(|label| c.id(label));
+        match center {
+            Some(center) if center == id => {
+                self.rotation_center = None;
+                self.wb.selected = None;
+                None
+            }
+            Some(center) => {
+                let Value::Point { x, y } = c.value(center) else {
+                    return None;
+                };
+                crate::interact::Drag::rotation(c, id, center, (x, y), at)
+            }
+            None if c.kind(id) == Kind::Point => {
+                self.rotation_center = Some(c.label(id).to_owned());
+                self.wb.selected = Some(id);
+                None
+            }
+            None => None,
+        }
+    }
+}

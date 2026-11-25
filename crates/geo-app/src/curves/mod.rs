@@ -359,6 +359,7 @@ struct Plotted {
     /// when it is the same one, and otherwise placed by its ratio.
     affine: [f64; 4],
     pixels_per_point: f32,
+    width: f32,
     /// The polylines, plotted `margin` points around the area.
     paths: Vec<Vec<Pos2>>,
     /// The polylines tessellated where `mesh_at + p` puts them (the area's
@@ -655,9 +656,10 @@ impl Curves {
         color: Color32,
     ) -> Option<Arc<Drawn>> {
         entry.seen = self.now;
-        if entry.color != color {
+        let width = crate::draw::line_width(c, id, crate::draw::CURVE_WIDTH);
+        if entry.color != color || entry.plotted.width != width {
             entry.color = color;
-            entry.plotted = Arc::new(self.recolored(&entry.plotted, color));
+            entry.plotted = Arc::new(self.restyled(&entry.plotted, color, width));
             entry.shown = None;
         }
         let pending = self.pending(&entry.plotted);
@@ -772,9 +774,13 @@ impl Curves {
                 origin,
                 scale,
             };
-            let kept = (&*p.mesh, &*p.runs, p.points_of_four);
+            let kept = (
+                &*p.mesh,
+                &*p.runs,
+                p.points_of_four && p.width == crate::draw::CURVE_WIDTH,
+            );
             let scaled = placed_stroke(kept, &p.paths, at, area, |pieces| {
-                self.tessellate(pieces.into_iter(), entry.color).0
+                self.tessellate(pieces.into_iter(), entry.color, p.width).0
             });
             (Arc::new(scaled), TSTransform::IDENTITY)
         };
@@ -956,12 +962,14 @@ impl Curves {
         for &q in paths.iter().flatten().chain(&point).chain(&dot) {
             bounds.extend_with(q);
         }
-        let (mesh, points_of_four) = self.tessellate(at_origin(&paths, self.origin), color);
+        let width = crate::draw::line_width(c, id, crate::draw::CURVE_WIDTH);
+        let (mesh, points_of_four) = self.tessellate(at_origin(&paths, self.origin), color, width);
         let mesh = Arc::new(mesh);
         Plotted {
             frame: self.frame,
             affine: self.affine,
             pixels_per_point: self.pixels_per_point,
+            width,
             paths,
             runs: runs(&mesh),
             points_of_four,
@@ -977,15 +985,16 @@ impl Curves {
         }
     }
 
-    /// The same plot in another colour.
-    fn recolored(&self, p: &Plotted, color: Color32) -> Plotted {
+    /// The same plot with a different stroke.
+    fn restyled(&self, p: &Plotted, color: Color32, width: f32) -> Plotted {
         // Tessellated at this frame's density, which may lay the stroke out
         // differently: its own runs.
-        let (mesh, points_of_four) = self.tessellate(at_origin(&p.paths, p.mesh_at), color);
+        let (mesh, points_of_four) = self.tessellate(at_origin(&p.paths, p.mesh_at), color, width);
         Plotted {
             frame: p.frame,
             affine: p.affine,
             pixels_per_point: p.pixels_per_point,
+            width,
             paths: p.paths.clone(),
             runs: runs(&mesh),
             mesh: Arc::new(mesh),
@@ -1003,9 +1012,14 @@ impl Curves {
 
     /// The stroke of `paths` in `color`, and whether [`placed_runs`] can
     /// scale it (see [`stroke_mesh`]).
-    fn tessellate(&self, paths: impl Iterator<Item = Vec<Pos2>>, color: Color32) -> (Mesh, bool) {
+    fn tessellate(
+        &self,
+        paths: impl Iterator<Item = Vec<Pos2>>,
+        color: Color32,
+        width: f32,
+    ) -> (Mesh, bool) {
         count(&TESSELLATED);
-        let stroke = Stroke::new(crate::draw::CURVE_WIDTH, color);
+        let stroke = Stroke::new(width, color);
         let mut tess = Tessellator::new(self.pixels_per_point, self.options, [1, 1], Vec::new());
         stroke_mesh(&mut tess, paths, stroke)
     }

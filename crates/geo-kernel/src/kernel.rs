@@ -1460,7 +1460,10 @@ impl DirtySet {
 pub struct DrawingStyle {
     pub layer: u8,
     pub show_label: bool,
+    /// An edit should override the label flag of the original file.
+    pub label_edited: bool,
     pub line_thickness: u8,
+    pub color: Option<[u8; 3]>,
     /// A saved sector with no opacity or fill pattern has no interior hit.
     pub sector_outline_only: bool,
 }
@@ -1470,7 +1473,9 @@ impl Default for DrawingStyle {
         Self {
             layer: 0,
             show_label: true,
+            label_edited: false,
             line_thickness: 3,
+            color: None,
             sector_outline_only: false,
         }
     }

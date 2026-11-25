@@ -23,6 +23,7 @@ use geo_mcp::protocol::Server;
 use serde_json::{json, Value};
 
 const FIXTURE: &str = include_str!("fixtures/pointer_scenarios.json");
+const EDITOR_FIXTURE: &str = include_str!("fixtures/editor_tool_scenarios.json");
 
 /// The graphics view of the observations, and where the standard view puts
 /// the world origin in it.
@@ -32,6 +33,17 @@ const SCALE: f64 = 50.0;
 
 /// The landed scenarios, by group.
 const LANDED: &[(u8, &[&str])] = &[
+    (
+        19,
+        &[
+            "tool_label_visibility",
+            "tool_copy_visual_style",
+            "tool_image_fixture",
+            "tool_function_inspector",
+            "tool_freehand_shape",
+            "tool_freehand_function",
+        ],
+    ),
     (16, &["tool_input_box_places_empty_widget"]),
     (17, &["tool_create_list_from_rectangle"]),
     (
@@ -181,6 +193,9 @@ const LANDED: &[(u8, &[&str])] = &[
 /// outcome is asserted, and the observed one with `rules` set to
 /// `reference` where that switch exists.
 const OURS: &[(&str, bool)] = &[
+    // Classic's rotate drag has no checkpoint in this recording. The
+    // workbench treats it as one geometry gesture, including its undo.
+    ("tool_move_rotate", false),
     // A press on a polygon's side drags the polygon
     // (`hit::SIDE_TAKES_THE_POLYGON`).
     ("press_on_polygon_edge_does_nothing", true),
@@ -375,6 +390,13 @@ fn tool_name(mode: i64) -> Option<&'static str> {
         22 => "circumcircular_arc",
         23 => "circumcircular_sector",
         24 => "semicircle",
+        26 => "image",
+        28 => "show_hide_label",
+        35 => "copy_visual_style",
+        39 => "move_rotate",
+        68 => "function_inspector",
+        73 => "freehand_shape",
+        74 => "freehand_function",
         37 => "vector_from_point",
         49 => "area",
         50 => "slope",
@@ -698,6 +720,10 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
         "input",
         json!({"frames": frames, "settle": true}),
     )?;
+    if expected.get("image_anchor").is_some() {
+        insert_fixture_image(&mut w)?;
+    }
+    compare_editor(expected, &w.server.session.headless().app, &mut diffs);
     let after = w.state();
     let undo_added = undo_depth(&after) - depth0;
     Ok(Outcome {
@@ -707,6 +733,116 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
         undo_added,
         diffs,
     })
+}
+
+/// Supply a deterministic PNG to the open file prompt created by the click.
+fn insert_fixture_image(w: &mut Window) -> Result<(), String> {
+    use std::io::Write as _;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    static NEXT: AtomicUsize = AtomicUsize::new(0);
+    let number = NEXT.fetch_add(1, Ordering::Relaxed);
+    let path = std::env::temp_dir().join(format!(
+        "geokernel-replay-{}-{number}.png",
+        std::process::id()
+    ));
+    let mut file = std::fs::File::create_new(&path).map_err(|error| error.to_string())?;
+    let bytes = include_bytes!("../../../tools/ggb-harness/cases/editor_tools/fixture.png");
+    let result = file
+        .write_all(bytes)
+        .map_err(|error| error.to_string())
+        .and_then(|()| {
+            call(
+                &mut w.server,
+                "input",
+                json!({
+                    "frames": [
+                        {"dt": 0.016, "events": [{"type": "text", "text": path.to_string_lossy()}]},
+                        {"dt": 0.016, "events": [{"type": "key", "key": "Enter"}]}
+                    ],
+                    "settle": true
+                }),
+            )
+        });
+    let _ = std::fs::remove_file(path);
+    result.map(|_| ())
+}
+
+fn compare_editor(expected: &Value, app: &geo_app_core::app::App, diffs: &mut Vec<String>) {
+    let c = app.wb.construction();
+    if let Some(points) = expected["editor_points"].as_object() {
+        for (label, xy) in points {
+            let want = (num(&xy[0]), num(&xy[1]));
+            let got = c.id(label).map(|id| c.value(id));
+            if !matches!(got, Some(geo_kernel::Value::Point { x, y }) if same(x, want.0) && same(y, want.1))
+            {
+                diffs.push(format!("{label}: {got:?} instead of {want:?}"));
+            }
+        }
+    }
+    if let Some(styles) = expected["editor_styles"].as_object() {
+        for (label, wanted) in styles {
+            let Some(id) = c.id(label) else {
+                diffs.push(format!("missing style target {label}"));
+                continue;
+            };
+            let actual = c.drawing_style(id);
+            let rgb = app.wb.palette().color(id);
+            let values = json!({
+                "show_label": actual.show_label,
+                "line_thickness": actual.line_thickness,
+                "layer": actual.layer,
+                "color": [rgb.r, rgb.g, rgb.b]
+            });
+            for (field, value) in wanted.as_object().unwrap() {
+                if &values[field] != value {
+                    diffs.push(format!(
+                        "{label} {field}: {} instead of {value}",
+                        values[field]
+                    ));
+                }
+            }
+        }
+    }
+    if let Some(samples) = expected["freehand_samples"].as_array() {
+        for sample in samples {
+            let x = num(&sample[0]);
+            let got = c.id("f").and_then(|id| c.function_value(id, x));
+            if !got.is_some_and(|y| same(y, num(&sample[1]))) {
+                diffs.push(format!("f({x}) is {got:?} instead of {}", sample[1]));
+            }
+        }
+    }
+    if let Some(inspector) = expected["inspector"].as_object() {
+        if let Some(got) = &app.inspector {
+            let [min, max, step] = got.interval;
+            let rows = got.rows(&app.wb, min, max, step);
+            let want = inspector["rows"].as_array().unwrap();
+            if inspector["label"] != got.label
+                || rows.len() != want.len()
+                || rows
+                    .iter()
+                    .zip(want)
+                    .any(|(&(x, y), pair)| !same(x, num(&pair[0])) || !same(y, num(&pair[1])))
+            {
+                diffs.push(format!(
+                    "inspector on {}: {rows:?} instead of {want:?}",
+                    got.label
+                ));
+            }
+        } else {
+            diffs.push("inspector is closed".into());
+        }
+    }
+    if let Some(image) = expected["image_anchor"].as_array() {
+        let got = c
+            .images()
+            .next()
+            .and_then(|(id, _)| c.image_quad(id, SCALE))
+            .map(|quad| quad[3]);
+        if !got.is_some_and(|[x, y]| same(x, num(&image[0])) && same(y, num(&image[1]))) {
+            diffs.push(format!("image anchor {got:?} instead of {image:?}"));
+        }
+    }
 }
 
 /// The differences of `out` from `expected` (the observed outcome, or ours
@@ -1033,7 +1169,7 @@ fn compare_objects(st: &Value, want: &Value, when: &str, diffs: &mut Vec<String>
 
 /// Our outcome, in the fixture's format, for a scenario the owner keeps
 /// our way.
-fn ours_expected(name: &str) -> Value {
+fn ours_expected(name: &str, observed: &Value) -> Value {
     match name {
         // The press at (3, 1.01) is captured to the crossing (3, 1); the
         // polygon follows the pointer to (4.2, 0.21) by its free vertices
@@ -1065,6 +1201,12 @@ fn ours_expected(name: &str) -> Value {
             "view": {"xZero": 513, "yZero": 436.75, "scale": 75},
             "undo_steps_added": 1
         }),
+        "tool_move_rotate" => {
+            let mut expected = observed.clone();
+            assert_eq!(expected["undo_steps_added"], 0);
+            expected["undo_steps_added"] = json!(1);
+            expected
+        }
         other => panic!("no outcome of ours for {other}"),
     }
 }
@@ -1072,6 +1214,14 @@ fn ours_expected(name: &str) -> Value {
 #[test]
 fn the_observed_pointer_scenarios_replay() {
     let fixture: Value = serde_json::from_str(FIXTURE).unwrap();
+    let editor: Value = serde_json::from_str(EDITOR_FIXTURE).unwrap();
+    let scenarios = || {
+        fixture["scenarios"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .chain(editor["scenarios"].as_array().unwrap())
+    };
     let mut table = Vec::new();
     let mut failed = Vec::new();
     let (mut replayed, mut ours) = (0, 0);
@@ -1093,7 +1243,7 @@ fn the_observed_pointer_scenarios_replay() {
         }
         diffs
     };
-    for s in fixture["scenarios"].as_array().unwrap() {
+    for s in scenarios() {
         let name = s["name"].as_str().unwrap();
         assert!(
             s["source"].as_str().is_some(),
@@ -1124,7 +1274,7 @@ fn the_observed_pointer_scenarios_replay() {
             }
             Some(Part::Ours { has_switch }) => {
                 ours += 1;
-                let mine = ours_expected(name);
+                let mine = ours_expected(name, expected);
                 let mut diffs = both(s, "ours", &|out| compare(&mine, out, true));
                 if has_switch {
                     diffs.extend(
@@ -1155,12 +1305,7 @@ fn the_observed_pointer_scenarios_replay() {
         table.join("\n")
     );
     // Every listed scenario is in the fixture, once.
-    let names: Vec<&str> = fixture["scenarios"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|s| s["name"].as_str().unwrap())
-        .collect();
+    let names: Vec<&str> = scenarios().map(|s| s["name"].as_str().unwrap()).collect();
     let listed = LANDED
         .iter()
         .flat_map(|(_, n)| n.iter())
@@ -1172,7 +1317,7 @@ fn the_observed_pointer_scenarios_replay() {
         count += 1;
     }
     assert_eq!(count, names.len());
-    assert_eq!((replayed, ours), (98, 3), "scenarios replayed");
+    assert_eq!((replayed, ours), (104, 4), "scenarios replayed");
     assert_eq!(
         skipped.into_iter().collect::<Vec<_>>(),
         [(5, 1), (6, 1), (8, 1)],

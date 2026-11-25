@@ -35,6 +35,9 @@ pub fn color(c: &Construction, id: Id) -> Rgba {
 }
 
 fn color_with(c: &Construction, id: Id, side: impl Fn(Id, Id) -> bool) -> Rgba {
+    if let Some([r, g, b]) = c.drawing_style(id).color {
+        return Rgba::from_rgb(r, g, b);
+    }
     let def = c.def(id);
     if def.kind() == Kind::Angle {
         return palette::ANGLE;

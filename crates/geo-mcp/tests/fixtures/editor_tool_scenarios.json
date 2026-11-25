@@ -1,0 +1,401 @@
+{
+  "scenarios": [
+    {
+      "name": "tool_label_visibility",
+      "source": "Classic Java editor-tools probe, GeoGebra 112919f2d450ec7430a5cd3b65dba226fdc43b74",
+      "tool_mode": 28,
+      "initial_script": [
+        "A = (2, 1)",
+        "B = (4, 1)",
+        "C = (6, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            1.01
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            1.01
+          ]
+        },
+        { "t": 240, "type": "select_tool", "mode": 0 }
+      ],
+      "expected": {
+        "tool_mode_after": 0,
+        "undo_steps_added": 1,
+        "editor_styles": {
+          "A": { "show_label": false },
+          "B": { "show_label": false },
+          "C": { "show_label": true }
+        },
+        "created_labels": []
+      }
+    },
+    {
+      "name": "tool_copy_visual_style",
+      "source": "Classic Java editor-tools probe, GeoGebra 112919f2d450ec7430a5cd3b65dba226fdc43b74",
+      "tool_mode": 35,
+      "initial_script": [
+        "A = (2, 1)",
+        "B = (4, 1)",
+        "C = (6, 1)",
+        "$drawingStyle(_41, 2, false, 7, rgb285aa0)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            1.01
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            1.01
+          ]
+        },
+        {
+          "t": 240,
+          "type": "mouse_down",
+          "pos": [
+            6,
+            1.01
+          ]
+        },
+        {
+          "t": 300,
+          "type": "mouse_up",
+          "pos": [
+            6,
+            1.01
+          ]
+        },
+        {
+          "t": 360,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 420,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        }
+      ],
+      "expected": {
+        "tool_mode_after": 35,
+        "undo_steps_added": 1,
+        "editor_styles": {
+          "B": {
+            "show_label": false,
+            "color": [
+              40,
+              90,
+              160
+            ],
+            "layer": 2,
+            "line_thickness": 7
+          },
+          "C": {
+            "show_label": false,
+            "color": [
+              40,
+              90,
+              160
+            ],
+            "layer": 2,
+            "line_thickness": 7
+          }
+        },
+        "created_labels": []
+      }
+    },
+    {
+      "name": "tool_move_rotate",
+      "source": "Classic Java editor-tools probe, GeoGebra 112919f2d450ec7430a5cd3b65dba226fdc43b74",
+      "tool_mode": 39,
+      "initial_script": [
+        "A = (2, 1)",
+        "B = (4, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            1.01
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_move",
+          "pos": [
+            3,
+            2.01
+          ]
+        },
+        {
+          "t": 240,
+          "type": "mouse_move",
+          "pos": [
+            2,
+            3.01
+          ]
+        },
+        {
+          "t": 300,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            3.01
+          ]
+        }
+      ],
+      "expected": {
+        "tool_mode_after": 39,
+        "undo_steps_added": 0,
+        "editor_points": {
+          "B": [2.0099998750023436, 2.99997500046874]
+        },
+        "created_labels": []
+      }
+    },
+    {
+      "name": "tool_image_fixture",
+      "source": "Classic Java editor-tools probe, GeoGebra 112919f2d450ec7430a5cd3b65dba226fdc43b74",
+      "tool_mode": 26,
+      "initial_script": [
+        "A = (2, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        }
+      ],
+      "expected": {
+        "tool_mode_after": 0,
+        "image_anchor": [2.0, 1.0]
+      }
+    },
+    {
+      "name": "tool_function_inspector",
+      "source": "Classic Java editor-tools probe, GeoGebra 112919f2d450ec7430a5cd3b65dba226fdc43b74",
+      "tool_mode": 68,
+      "initial_script": [
+        "f(x) = x^2"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            1.01
+          ]
+        }
+      ],
+      "expected": {
+        "tool_mode_after": 0,
+        "undo_steps_added": 0,
+        "inspector": {
+          "label": "f",
+          "rows": [
+            [0.0, 0.0],
+            [0.25, 0.0625],
+            [0.5, 0.25],
+            [0.75, 0.5625],
+            [1.0, 1.0],
+            [1.25, 1.5625],
+            [1.5, 2.25],
+            [1.75, 3.0625],
+            [2.0, 4.0]
+          ]
+        },
+        "created_labels": []
+      }
+    },
+    {
+      "name": "tool_freehand_shape",
+      "source": "Classic Java editor-tools probe, GeoGebra 112919f2d450ec7430a5cd3b65dba226fdc43b74",
+      "tool_mode": 73,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_move",
+          "pos": [1.1, 0.91]
+        },
+        {
+          "t": 120,
+          "type": "mouse_move",
+          "pos": [1.2, 0.81]
+        },
+        {
+          "t": 180,
+          "type": "mouse_up",
+          "pos": [1.2, 0.81]
+        }
+      ],
+      "expected": {
+        "tool_mode_after": 73,
+        "undo_steps_added": 1,
+        "editor_points": {
+          "A": [1.0, 1.01],
+          "B": [1.2, 0.8100000000000012]
+        },
+        "created_labels": [
+          "A",
+          "B",
+          "f"
+        ]
+      }
+    },
+    {
+      "name": "tool_freehand_function",
+      "source": "Classic Java editor-tools probe, GeoGebra 112919f2d450ec7430a5cd3b65dba226fdc43b74",
+      "tool_mode": 74,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_move",
+          "pos": [
+            2,
+            2.01
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_move",
+          "pos": [
+            3,
+            3.01
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            3.01
+          ]
+        }
+      ],
+      "expected": {
+        "tool_mode_after": 74,
+        "undo_steps_added": 1,
+        "freehand_samples": [
+          [1.0, 1.01],
+          [2.0, 2.01],
+          [2.5, 2.51]
+        ],
+        "created_labels": [
+          "f"
+        ]
+      }
+    }
+  ]
+}

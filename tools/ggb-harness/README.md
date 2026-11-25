@@ -443,3 +443,21 @@ the entries of `crates/geo-import/known-import-gaps.toml` were checked: for
 `conic-diameter-009.xml` and `d` it prints `1.7888543819998317`, the value the
 importer gives, not the `0.8944271909999159` that GeoGebra computed before saving.
 
+
+### Classic editor tools
+
+```sh
+python3 -I tools/ggb-harness/cases/make_editor_tools.py
+GEOGEBRA_SRC=<checkout> tools/ggb-harness/linux-x86_64.sh editor-tools
+```
+
+The probe compiles against the existing harness classpath and the reference
+test fixtures. It writes `crates/geo-mcp/tests/fixtures/editor_tool_scenarios.json`
+and leaves the construction golden corpus alone. It observes the controller's
+pointer sequences, modes, construction changes and undo history. The inspector
+boundary records the selected function and its initial nine table rows. The
+image chooser boundary supplies the generated PNG from the input fixture and
+forwards the hit point to the reference image placement helper. The headless
+probe does not run either native dialog, so the image observation checks the
+anchor and return to Move. The Rust replay opens the same PNG through its file
+prompt and the UI test checks undo and redo.

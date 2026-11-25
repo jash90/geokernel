@@ -187,6 +187,13 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
         | Tool::CreateList
         | Tool::Text
         | Tool::PenStroke
+        | Tool::FreehandShape
+        | Tool::FreehandFunction
+        | Tool::FunctionInspector
+        | Tool::Image
+        | Tool::MoveRotate
+        | Tool::ShowHideLabel
+        | Tool::CopyVisualStyle
         | Tool::MoveView
         | Tool::ZoomIn
         | Tool::ZoomOut
@@ -478,6 +485,13 @@ pub(super) fn build(
         | Tool::CreateList
         | Tool::Text
         | Tool::PenStroke
+        | Tool::FreehandShape
+        | Tool::FreehandFunction
+        | Tool::FunctionInspector
+        | Tool::Image
+        | Tool::MoveRotate
+        | Tool::ShowHideLabel
+        | Tool::CopyVisualStyle
         | Tool::MoveView
         | Tool::ZoomIn
         | Tool::ZoomOut
@@ -580,7 +594,12 @@ pub(super) fn hint(tool: Tool, picks: &[Kind]) -> Hint {
         (Tool::CreateList, _) => Hint::SelectListMembers,
         (Tool::Locus, 0) => Hint::LocusPoint,
         (Tool::Locus, _) => Hint::LocusDriver,
-        (Tool::PenStroke, _) => Hint::DrawStroke,
+        (Tool::PenStroke | Tool::FreehandShape | Tool::FreehandFunction, _) => Hint::DrawStroke,
+        (Tool::FunctionInspector, _) => Hint::InspectFunction,
+        (Tool::MoveRotate, _) => Hint::RotateByDragging,
+        (Tool::Image, _) => Hint::PlaceImage,
+        (Tool::ShowHideLabel, _) => Hint::ToggleLabel,
+        (Tool::CopyVisualStyle, _) => Hint::CopyStyle,
         (Tool::VectorFromPoint, 0) => Hint::PointOrVector,
         (Tool::VectorFromPoint, _) if first == Some(Kind::Point) => Hint::Vector,
         (Tool::VectorFromPoint, _) => Hint::Point,

@@ -1,0 +1,334 @@
+{
+  "cases": [
+    {
+      "name": "tool_label_visibility",
+      "tool_mode": 28,
+      "initial_script": [
+        "A = (2, 1)",
+        "B = (4, 1)",
+        "C = (6, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            1.01
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            1.01
+          ]
+        },
+        {
+          "t": 240,
+          "type": "select_tool",
+          "mode": 0
+        }
+      ],
+      "labels": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "name": "tool_copy_visual_style",
+      "tool_mode": 35,
+      "initial_script": [
+        "A = (2, 1)",
+        "B = (4, 1)",
+        "C = (6, 1)",
+        "$drawingStyle(_41, 2, false, 7, rgb285aa0)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            1.01
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            1.01
+          ]
+        },
+        {
+          "t": 240,
+          "type": "mouse_down",
+          "pos": [
+            6,
+            1.01
+          ]
+        },
+        {
+          "t": 300,
+          "type": "mouse_up",
+          "pos": [
+            6,
+            1.01
+          ]
+        },
+        {
+          "t": 360,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 420,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        }
+      ],
+      "labels": [
+        "B",
+        "C"
+      ],
+      "style": true
+    },
+    {
+      "name": "tool_move_rotate",
+      "tool_mode": 39,
+      "initial_script": [
+        "A = (2, 1)",
+        "B = (4, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            1.01
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_move",
+          "pos": [
+            3,
+            2.01
+          ]
+        },
+        {
+          "t": 240,
+          "type": "mouse_move",
+          "pos": [
+            2,
+            3.01
+          ]
+        },
+        {
+          "t": 300,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            3.01
+          ]
+        }
+      ],
+      "points": [
+        "B"
+      ]
+    },
+    {
+      "name": "tool_image_fixture",
+      "tool_mode": 26,
+      "initial_script": [
+        "A = (2, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        }
+      ],
+      "image": true
+    },
+    {
+      "name": "tool_function_inspector",
+      "tool_mode": 68,
+      "initial_script": [
+        "f(x) = x^2"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            1.01
+          ]
+        }
+      ],
+      "inspector": true
+    },
+    {
+      "name": "tool_freehand_shape",
+      "tool_mode": 73,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_move",
+          "pos": [
+            1.1,
+            0.91
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_move",
+          "pos": [
+            1.2,
+            0.81
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_up",
+          "pos": [
+            1.2,
+            0.81
+          ]
+        }
+      ],
+      "points": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "name": "tool_freehand_function",
+      "tool_mode": 74,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_move",
+          "pos": [
+            2,
+            2.01
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_move",
+          "pos": [
+            3,
+            3.01
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            3.01
+          ]
+        }
+      ],
+      "function": true
+    }
+  ]
+}

@@ -255,8 +255,14 @@ impl fmt::Display for Property {
                     style.show_label,
                     style.line_thickness
                 )?;
+                if let Some([r, g, b]) = style.color {
+                    write!(f, ", rgb{r:02x}{g:02x}{b:02x}")?;
+                }
                 if style.sector_outline_only {
                     f.write_str(", outline")?;
+                }
+                if style.label_edited {
+                    f.write_str(", editedLabel")?;
                 }
                 f.write_str(")")
             }
@@ -428,14 +434,36 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
                     input: decode_text(input)?,
                 })
             }
-            ("$drawingStyle", [label, layer, shown, thickness, rest @ ..])
-                if rest.is_empty() || rest == ["outline"] =>
-            {
+            ("$drawingStyle", [label, layer, shown, thickness, rest @ ..]) => {
+                let (rest, label_edited) = match rest {
+                    [fields @ .., "editedLabel"] => (fields, true),
+                    _ => (rest, false),
+                };
+                let (rest, sector_outline_only) = match rest {
+                    [fields @ .., "outline"] => (fields, true),
+                    _ => (rest, false),
+                };
+                let color = match rest {
+                    [] => None,
+                    [rgb] => {
+                        let rgb = rgb
+                            .strip_prefix("rgb")
+                            .filter(|rgb| rgb.len() == 6)
+                            .ok_or("invalid drawing color")?;
+                        let value =
+                            u32::from_str_radix(rgb, 16).map_err(|_| "invalid drawing color")?;
+                        let [_, r, g, b] = value.to_be_bytes();
+                        Some([r, g, b])
+                    }
+                    _ => return Err("invalid drawing style".into()),
+                };
                 let style = DrawingStyle {
                     layer: layer.parse().map_err(|_| "invalid drawing layer")?,
                     show_label: shown.parse().map_err(|_| "invalid label visibility")?,
+                    label_edited,
                     line_thickness: thickness.parse().map_err(|_| "invalid line thickness")?,
-                    sector_outline_only: !rest.is_empty(),
+                    color,
+                    sector_outline_only,
                 };
                 Ok(Property::DrawingStyle {
                     label: decode_text(label)?,

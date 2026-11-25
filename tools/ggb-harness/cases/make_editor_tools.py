@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+"""Pointer inputs for the Classic editor-tool probe."""
+
+import json
+import struct
+import zlib
+from pathlib import Path
+
+
+def click(x, y):
+    return [("mouse_down", x, y + 0.01), ("mouse_up", x, y + 0.01)]
+
+
+def case(name, mode, script, events, **observations):
+    event_list = []
+    for index, (kind, *args) in enumerate(events):
+        event = {"t": index * 60, "type": kind}
+        if kind == "select_tool":
+            event["mode"] = args[0]
+        else:
+            event["pos"] = args
+        event_list.append(event)
+    return {
+        "name": "tool_" + name,
+        "tool_mode": mode,
+        "initial_script": script,
+        "events": event_list,
+        **observations,
+    }
+
+
+point_script = ["A = (2, 1)", "B = (4, 1)", "C = (6, 1)"]
+cases = [
+    case("label_visibility", 28, point_script,
+         click(2, 1) + click(4, 1) + [("select_tool", 0)], labels=["A", "B", "C"]),
+    case("copy_visual_style", 35, point_script + ["$drawingStyle(_41, 2, false, 7, rgb285aa0)"],
+         click(2, 1) + click(4, 1) + click(6, 1) + click(2, 1),
+         labels=["B", "C"], style=True),
+    case("move_rotate", 39, point_script[:2],
+         click(2, 1) + [("mouse_down", 4, 1.01), ("mouse_move", 3, 2.01), ("mouse_move", 2, 3.01),
+                         ("mouse_up", 2, 3.01)], points=["B"]),
+    case("image_fixture", 26, point_script[:1], click(2, 1), image=True),
+    case("function_inspector", 68, ["f(x) = x^2"], click(1, 1), inspector=True),
+    case("freehand_shape", 73, [],
+         [("mouse_down", 1, 1.01), ("mouse_move", 1.1, 0.91), ("mouse_move", 1.2, 0.81),
+          ("mouse_up", 1.2, 0.81)], points=["A", "B"]),
+    case("freehand_function", 74, [],
+         [("mouse_down", 1, 1.01), ("mouse_move", 2, 2.01), ("mouse_move", 3, 3.01),
+          ("mouse_up", 3, 3.01)], function=True),
+]
+directory = Path(__file__).with_name("editor_tools")
+directory.mkdir(exist_ok=True)
+directory.joinpath("inputs.json").write_text(json.dumps({"cases": cases}, indent=2) + "\n")
+
+
+def chunk(kind, payload):
+    return struct.pack(">I", len(payload)) + kind + payload + struct.pack(">I", zlib.crc32(kind + payload))
+
+
+directory.joinpath("fixture.png").write_bytes(
+    b"\x89PNG\r\n\x1a\n"
+    + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 6, 0, 0, 0))
+    + chunk(b"IDAT", zlib.compress(b"\x00\x00\x00\x00\xff"))
+    + chunk(b"IEND", b"")
+)

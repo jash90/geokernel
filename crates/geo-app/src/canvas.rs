@@ -334,28 +334,28 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let mut input_box_click = None;
     // A tool that builds from picks takes them when the button goes down
     // (spec E1); the delete and show/hide tools act on a click.
-    let press_tool = !matches!(
-        tool,
-        Tool::Move
-            | Tool::MoveView
-            | Tool::ZoomIn
-            | Tool::ZoomOut
-            | Tool::Delete
-            | Tool::ShowHide
-            | Tool::Slider
-            | Tool::Checkbox
-            | Tool::InputBox
-            | Tool::CreateList
-            | Tool::Text
-            | Tool::PenStroke
-    );
+    let press_tool = !tool.is_direct();
     // The show/hide tool shows hidden objects faintly and lets them be picked.
     let show_all = tool == Tool::ShowHide;
     let t = cam.transform(w, h);
-    if tool == Tool::PenStroke {
+    if tool.draws_stroke() {
         let strokes = ui.input(|i| feed_pen(&mut app.pen_samples, &t, &i.events, owns, to_local));
         for samples in strokes {
-            finish_pen_stroke(app, samples);
+            if tool == Tool::PenStroke {
+                finish_pen_stroke(app, samples);
+            } else {
+                match app
+                    .wb
+                    .recognize_stroke(&samples, &t, tool == Tool::FreehandFunction)
+                {
+                    Ok(Some(id)) => app.wb.selected = Some(id),
+                    Ok(None) => {}
+                    Err(error) => {
+                        app.wb.cancel_tool_use();
+                        app.tool_error = Some(geo_app_core::errors::polish(&error));
+                    }
+                }
+            }
         }
     }
     // How far a pointer reaches (`App.getCapturingThreshold` by the
@@ -459,6 +459,17 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // The move tool selects what a press takes hold of when the button goes
     // down (`handleMousePressedForMoveMode`), whether it then drags or not;
     // a press on a label takes the label and selects nothing.
+    let earlier_rotation = app.press_rotation;
+    if tool == Tool::MoveRotate && !modifiers_pan {
+        if let Some(pos) = fed.owned {
+            let ((sx, sy), pt) = at_press(app, pos);
+            let c = app.wb.construction();
+            let hit = hit::pick(c, &pt, (sx, sy), &press_reach, None, |id| {
+                shown(app, id) && (app.rotation_center.is_some() || c.kind(id) == Kind::Point)
+            });
+            app.press_rotation = app.rotation_press(hit, pt.screen_to_world(sx, sy));
+        }
+    }
     let mut fixed_checkbox = None;
     if let (true, Some(pos)) = (move_tool, fed.owned) {
         let (local, pt) = at_press(app, pos);
@@ -527,7 +538,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let intents = gesture.end_frame(|origin| {
         let ((sx, sy), pt) = at_press(app, origin.egui());
         let c = app.wb.construction();
-        if tool == Tool::PenStroke {
+        if tool.draws_stroke() {
             return Grab::Nothing;
         }
         if tool == Tool::CreateList {
@@ -560,6 +571,18 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
         if modifiers_pan || tool == Tool::MoveView {
             return Grab::Pan;
+        }
+        if tool == Tool::MoveRotate {
+            grabbed = if fed.early_release.is_some() && fed.owned.is_some() {
+                earlier_rotation
+            } else {
+                app.press_rotation
+            };
+            return if grabbed.is_some() {
+                Grab::Point
+            } else {
+                Grab::Nothing
+            };
         }
         if move_tool {
             let slider = if fed.early_release.is_some() && fed.owned.is_some() {
@@ -630,6 +653,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
     });
     app.gesture = gesture;
+    if fed.released {
+        app.press_rotation = None;
+    }
     // A refused drag of a dependent point says why, once per press (the
     // owner's rule, `interact::REFUSED_DRAG_NOTICE`).
     if let Some(id) = refused.filter(|_| app.rules.refused_drag_notice) {
@@ -674,6 +700,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             Step::Translate { dx, dy } => {
                 let points = interact::free_input_points(app.wb.construction(), drag.id());
                 app.wb.translate(&points, (dx, dy));
+            }
+            Step::Rotate { center, angle } => {
+                app.wb.rotate(drag.id(), center, angle);
             }
             Step::Label { x, y } => app.wb.set_label_offset(drag.id(), (x, y)),
             Step::Text(movement) => app.wb.move_text(drag.id(), movement),
@@ -784,7 +813,11 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             // rule; the reference stores it when the tool is left).
             Tool::ZoomIn => zoom_click(app, &mut cam, ZOOM_TOOL, local, w, h),
             Tool::ZoomOut => zoom_click(app, &mut cam, 1.0 / ZOOM_TOOL, local, w, h),
-            Tool::MoveView | Tool::PenStroke => {}
+            Tool::MoveView
+            | Tool::MoveRotate
+            | Tool::PenStroke
+            | Tool::FreehandShape
+            | Tool::FreehandFunction => {}
             Tool::Text => {
                 if app.tool.control_request().is_none() {
                     app.control_fields = Default::default();
@@ -849,7 +882,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                     slider.map_or_else(|| target(app, &pt, local), |drag| Target::Object(drag.id()))
                 } else {
                     let c = app.wb.construction();
-                    let accept = |id| shown(app, id);
+                    let accept = |id| {
+                        shown(app, id)
+                            && (tool != Tool::FunctionInspector || app.accepts_tool_hit(id))
+                    };
                     let text = app.text_at(local, None, accept);
                     match hit::pick_with_text(c, &pt, local, &press_reach, None, text, accept) {
                         Some(id) => Target::Object(id),
@@ -1385,6 +1421,9 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
         app.style_bar = false;
         return;
     }
+    if app.editor_click(hit, t, pos) {
+        return;
+    }
     // A new point takes the position captured to the grid
     // (`transformCoords` in `updateNewPoint`).
     let world = app
@@ -1405,7 +1444,7 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     app.apply_outcome(outcome);
 }
 
-const MAX_PEN_SAMPLES: usize = 512;
+use geo_app_core::tools::freehand::MAX_STROKE_SAMPLES as MAX_PEN_SAMPLES;
 
 fn add_pen_sample(samples: &mut Vec<(f64, f64)>, t: &ViewTransform, (x, y): (f64, f64)) {
     if samples.len() == MAX_PEN_SAMPLES {

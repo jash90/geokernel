@@ -202,6 +202,10 @@ pub enum Hold {
         start: (f64, f64),
         offset: (f64, f64),
     },
+    Rotation {
+        center: (f64, f64),
+        angle: f64,
+    },
     /// The object's label: its offset in pixels is the one it had (`old`)
     /// plus the pointer's motion from the press (`start`, in pixels)
     /// (`MoveMode.LABEL`, `moveLabel`). No undo step, no selection.
@@ -245,6 +249,10 @@ pub enum Step {
     Translate {
         dx: f64,
         dy: f64,
+    },
+    Rotate {
+        center: (f64, f64),
+        angle: f64,
     },
     /// Set the held object's label offset to `(x, y)` pixels.
     Label {
@@ -292,7 +300,41 @@ fn text_drag_origin(c: &Construction, id: Id) -> Option<TextMove> {
     })
 }
 
+/// Limit the number of free parents a rotate gesture can update in one move.
+const MAX_ROTATION_INPUTS: usize = 256;
+
+pub(crate) fn rotation_points(c: &Construction, id: Id) -> Option<Vec<Id>> {
+    if free_point(c, id) {
+        return Some(vec![id]);
+    }
+    if c.inputs(id).take(MAX_ROTATION_INPUTS + 1).count() > MAX_ROTATION_INPUTS
+        || !moves_by_input_points(c, id)
+    {
+        return None;
+    }
+    Some(free_input_points(c, id))
+}
+
 impl Drag {
+    pub fn rotation(
+        c: &Construction,
+        id: Id,
+        center_id: Id,
+        center: (f64, f64),
+        at: (f64, f64),
+    ) -> Option<Drag> {
+        let points = rotation_points(c, id)?;
+        if points.iter().all(|&point| point == center_id) {
+            return None;
+        }
+        Some(Drag {
+            id,
+            hold: Hold::Rotation {
+                center,
+                angle: (at.1 - center.1).atan2(at.0 - center.0),
+            },
+        })
+    }
     /// Starts dragging `id`, when the move tool can drag it. `press` is the
     /// world position of the press, captured to the grid with no offset
     /// (`wrapMousePressed` calls `transformCoords` first; the offset is reset
@@ -423,6 +465,16 @@ impl Drag {
                 Step::SliderPosition { x, y }
             }
 
+            Hold::Rotation { center, angle } => {
+                let (x, y) = t.screen_to_world(sx, sy);
+                let next = (y - center.1).atan2(x - center.0);
+                let delta = next - *angle;
+                *angle = next;
+                Step::Rotate {
+                    center: *center,
+                    angle: delta,
+                }
+            }
             Hold::Point => {
                 let (x, y) = snap.apply(t.screen_to_world(sx, sy));
                 Step::Point { x, y }
@@ -706,4 +758,22 @@ mod tests {
             Step::Label { x: 45.0, y: 28.0 }
         );
     }
+}
+
+#[cfg(test)]
+#[test]
+fn a_rotate_drag_rejects_objects_with_too_many_inputs() {
+    use std::fmt::Write as _;
+    let mut lines = String::from("C = (0, 0)\n");
+    let mut vertices = Vec::new();
+    for i in 0..=MAX_ROTATION_INPUTS {
+        let label = format!("P{i}");
+        writeln!(lines, "{label} = ({i}, {})", i % 7).unwrap();
+        vertices.push(label);
+    }
+    writeln!(lines, "poly = PolyLine({})", vertices.join(", ")).unwrap();
+    let c = geo_kernel::script::load(&lines).unwrap();
+    let poly = c.id("poly").unwrap();
+    assert!(movable(&c, poly));
+    assert!(Drag::rotation(&c, poly, c.id("C").unwrap(), (0.0, 0.0), (1.0, 3.0)).is_none());
 }

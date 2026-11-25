@@ -141,32 +141,33 @@ fn frame_counts_are_unchanged() {
     // centre of the drawing (D11), so the keyboard's scene, whose window
     // moves, fits one more grid line than the corner-keeping one did.
     // The slider toolbar group adds six shapes, 146 vertices and 621
-    // indices to each scene.
+    // indices to each scene. The move group's dropdown indicator adds one
+    // shape, six vertices and 21 indices.
     let expected: &[(&str, Counts)] = &[
         (
             "idle",
             Counts {
-                shapes: 530,
-                vertices: 12414,
-                indices: 50991,
+                shapes: 531,
+                vertices: 12420,
+                indices: 51012,
                 immediate_repaints: 0,
             },
         ),
         (
             "hover",
             Counts {
-                shapes: 532,
-                vertices: 12554,
-                indices: 51708,
+                shapes: 533,
+                vertices: 12560,
+                indices: 51729,
                 immediate_repaints: 1,
             },
         ),
         (
             "drag",
             Counts {
-                shapes: 533,
-                vertices: 12734,
-                indices: 52467,
+                shapes: 534,
+                vertices: 12740,
+                indices: 52488,
                 immediate_repaints: 1,
             },
         ),
@@ -176,18 +177,18 @@ fn frame_counts_are_unchanged() {
             // the construction.
             "segment preview",
             Counts {
-                shapes: 536,
-                vertices: 12638,
-                indices: 51591,
+                shapes: 537,
+                vertices: 12644,
+                indices: 51612,
                 immediate_repaints: 1,
             },
         ),
         (
             "keyboard",
             Counts {
-                shapes: 564,
-                vertices: 14554,
-                indices: 60741,
+                shapes: 565,
+                vertices: 14560,
+                indices: 60762,
                 immediate_repaints: 0,
             },
         ),
