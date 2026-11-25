@@ -456,6 +456,84 @@ pub const MAX_CANVAS_LIST_ITEMS: usize = 256;
 /// The number of entries all lists together may contribute to one graphics pass.
 pub const MAX_FRAME_CANVAS_LIST_ITEMS: usize = 4096;
 
+/// A member of the graphics traversal. A named member keeps its own
+/// drawable, while an anonymous member is painted by the list.
+pub struct CanvasMember<'a> {
+    pub object: Option<Id>,
+    pub value: Value,
+    slot: &'a Slot,
+}
+
+impl CanvasMember<'_> {
+    pub fn conic(&self, c: &Construction) -> Option<ConicData> {
+        self.slot.conic(c)
+    }
+
+    /// Endpoints that cover the view for a line or ray, or the actual
+    /// endpoints of a segment or vector.
+    pub fn straight_endpoints(&self, view: crate::svg::View) -> Option<[(f64, f64); 2]> {
+        let (mx, my) = (0.5 * (view.xmin + view.xmax), 0.5 * (view.ymin + view.ymax));
+        let reach = (view.xmax - view.xmin).hypot(view.ymax - view.ymin);
+        let ends = match self.value {
+            Value::Line { .. } => {
+                let (a, b, k) = self.value.unit_line()?;
+                let d = a * mx + b * my + k;
+                let (fx, fy) = (mx - a * d, my - b * d);
+                [
+                    (fx - reach * b, fy + reach * a),
+                    (fx + reach * b, fy - reach * a),
+                ]
+            }
+            Value::Ray { x, y, a, b, .. } => {
+                let far = (reach + (x - mx).hypot(y - my)) / a.hypot(b);
+                [(x, y), (x + far * b, y - far * a)]
+            }
+            Value::Segment { x1, y1, x2, y2 } => [(x1, y1), (x2, y2)],
+            Value::Vector { x, y } => [(0.0, 0.0), (x, y)],
+            _ => return None,
+        };
+        ends.iter()
+            .all(|&(x, y)| x.is_finite() && y.is_finite())
+            .then_some(ends)
+    }
+
+    /// Finite extents of anonymous members that contribute to camera fit.
+    pub fn bounds(&self, c: &Construction) -> Option<[(f64, f64); 2]> {
+        if self.object.is_some() {
+            return None;
+        }
+        match self.value {
+            Value::Point { x, y } => Some([(x, y); 2]),
+            Value::Segment { x1, y1, x2, y2 } => Some([(x1, y1), (x2, y2)]),
+            Value::Vector { x, y } => Some([(0.0, 0.0), (x, y)]),
+            Value::Ray { x, y, .. } => Some([(x, y); 2]),
+            Value::Circle { cx, cy, r } => Some([(cx - r, cy - r), (cx + r, cy + r)]),
+            Value::Conic {
+                ty: crate::ConicType::SinglePoint,
+            } => {
+                let [x, y] = self.conic(c)?.midpoint;
+                Some([(x, y); 2])
+            }
+            Value::Conic {
+                ty: crate::ConicType::Circle | crate::ConicType::Ellipse,
+            } => {
+                let conic = self.conic(c)?;
+                let [x, y] = conic.midpoint;
+                let [a, b] = conic.half_axes;
+                let [[ux, uy], [vx, vy]] = conic.eigenvec;
+                let (dx, dy) = ((a * ux).hypot(b * vx), (a * uy).hypot(b * vy));
+                Some([(x - dx, y - dy), (x + dx, y + dy)])
+            }
+            _ => None,
+        }
+    }
+}
+
+/// Anonymous circles and conics can require many points for their outlines.
+/// Charge them to limit the work to four curves per list and eight per
+/// desktop frame, using the same per-list prefix for painting and picking.
+const CANVAS_CURVED_COST: usize = 64;
+
 pub(super) fn canvas_drawable_slots(slots: &[Slot]) -> bool {
     slots.iter().all(|slot| canvas_drawable_kind(slot.kind))
 }
@@ -587,7 +665,7 @@ impl<'a> List<'a> {
     pub fn canvas_members(
         self,
         frame_remaining: &mut usize,
-        mut visit: impl FnMut(Option<Id>, Value) -> std::ops::ControlFlow<()>,
+        mut visit: impl FnMut(CanvasMember<'a>) -> std::ops::ControlFlow<()>,
     ) {
         let limit = (*frame_remaining).min(MAX_CANVAS_LIST_ITEMS);
         let mut remaining = limit;
@@ -619,16 +697,29 @@ impl<'a> List<'a> {
     fn visit_canvas_members(
         self,
         remaining: &mut usize,
-        visit: &mut impl FnMut(Option<Id>, Value) -> std::ops::ControlFlow<()>,
+        visit: &mut impl FnMut(CanvasMember<'a>) -> std::ops::ControlFlow<()>,
     ) -> std::ops::ControlFlow<()> {
         use std::ops::ControlFlow;
         for i in 0..self.len() {
             if *remaining == 0 {
                 break;
             }
-            *remaining -= 1;
-            let member = self.get(i).unwrap();
-            match member {
+            let slot = &self.slots[self.start as usize + i];
+            let object = slot.object_id();
+            let cost = if matches!(slot.kind, Kind::Circle | Kind::Conic)
+                && slot.is_defined()
+                && object.is_none()
+            {
+                CANVAS_CURVED_COST
+            } else {
+                1
+            };
+            let Some(left) = remaining.checked_sub(cost) else {
+                *remaining = 0;
+                break;
+            };
+            *remaining = left;
+            match self.get(i).unwrap() {
                 Element::List(list) => list.visit_canvas_members(remaining, visit)?,
                 Element::Value(
                     Kind::Point
@@ -641,7 +732,11 @@ impl<'a> List<'a> {
                     | Kind::Arc
                     | Kind::Sector,
                     value,
-                ) if value.is_defined() => visit(self.object(i), value)?,
+                ) if value.is_defined() => visit(CanvasMember {
+                    object,
+                    value,
+                    slot,
+                })?,
                 _ => {}
             }
         }
@@ -789,7 +884,7 @@ fn canvas_list_scan_has_shared_and_per_list_limits() {
     let mut remaining = 300;
     let mut visited = 0;
     for _ in 0..2 {
-        list.canvas_members(&mut remaining, |_, _| {
+        list.canvas_members(&mut remaining, |_| {
             visited += 1;
             std::ops::ControlFlow::Continue(())
         });
@@ -797,7 +892,7 @@ fn canvas_list_scan_has_shared_and_per_list_limits() {
     assert_eq!(remaining, 0);
     assert_eq!(visited, 300);
     let mut remaining = 300;
-    list.canvas_members(&mut remaining, |_, _| std::ops::ControlFlow::Continue(()));
+    list.canvas_members(&mut remaining, |_| std::ops::ControlFlow::Continue(()));
     assert_eq!(remaining, 300 - MAX_CANVAS_LIST_ITEMS);
 }
 
@@ -808,7 +903,7 @@ fn uncached_canvas_list_charges_eligibility_and_visits_to_the_same_allowance() {
     let list = List::new(&slots, 1);
     for (mut left, expected_visits) in [(1, 0), (2, 1)] {
         let mut visits = 0;
-        list.canvas_members(&mut left, |_, _| {
+        list.canvas_members(&mut left, |_| {
             visits += 1;
             std::ops::ControlFlow::Break(())
         });
@@ -828,7 +923,7 @@ fn canvas_list_checks_eligibility_beyond_the_drawn_prefix() {
         let mut remaining = 4096;
         c.elements(c.id(label).unwrap())
             .unwrap()
-            .canvas_members(&mut remaining, |_, _| {
+            .canvas_members(&mut remaining, |_| {
                 panic!("{label} is not drawable");
             });
     }

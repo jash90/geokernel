@@ -1309,7 +1309,12 @@ fn the_export_column_follows_the_journal_rule_and_the_recorded_proof() {
     let matrix = geo_golden::table::Table::parse(&table, "docs/kinds.csv").unwrap();
     let mut errors = Vec::new();
     for row in matrix.records() {
-        let kind = row["kernel_kind"];
+        let kind = match row["kind"] {
+            // View settings round-trip in `archive_preserves_view_kernel_settings_and_application_edits`.
+            "Axis" => continue,
+            "Formula" => "Text",
+            _ => row["kernel_kind"],
+        };
         let Some(&own_data) = independent.get(kind) else {
             if row["export"] != "no" {
                 errors.push(format!("{kind}: no defined example is exported"));

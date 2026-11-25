@@ -1,0 +1,29 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "canvas-listpoints-001",
+      "group": "canvas",
+      "script": [
+        "L = {(1, 2), (-1, 2)}"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": -1.0, "y": 2.0 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

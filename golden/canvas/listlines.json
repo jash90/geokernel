@@ -1,0 +1,38 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "canvas-listlines-001",
+      "group": "canvas",
+      "script": [
+        "g: y = 1",
+        "base = {g}",
+        "L = Dilate(base, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "base": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 }
+            ]
+          },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": -4.0 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

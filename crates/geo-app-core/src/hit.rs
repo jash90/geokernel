@@ -199,65 +199,34 @@ pub fn hit_with_list_budget(
         Value::List { .. } => {
             use std::ops::ControlFlow;
             let mut result = None;
-            c.elements(id)?
-                .canvas_members(list_items_left, |object, value| {
-                    let found = if let Some(object) = object {
-                        hit(c, object, tr, p, t, reach)
-                    } else {
-                        match value {
-                            Value::Point { x, y } => {
-                                boundary(point_hit(to_screen(x, y), p, t + reach.point_min))
-                            }
-                            Value::Vector { x, y } => boundary(segment_meets_square(
-                                to_screen(0.0, 0.0),
-                                to_screen(x, y),
-                                p,
-                                t,
-                            )),
-                            _ => None,
+            c.elements(id)?.canvas_members(list_items_left, |member| {
+                let found = if let Some(object) = member.object {
+                    hit(c, object, tr, p, t, reach)
+                } else {
+                    boundary(match member.value {
+                        Value::Vector { x, y } => {
+                            segment_meets_square(to_screen(0.0, 0.0), to_screen(x, y), p, t)
                         }
-                    };
-                    if found.is_some() {
-                        result = found;
-                        ControlFlow::Break(())
-                    } else {
-                        ControlFlow::Continue(())
-                    }
-                });
+                        Value::Conic { .. } => member
+                            .conic(c)
+                            .is_some_and(|d| conic_meets_square(&d, tr, p, t + CURVE_STROKE / 2.0)),
+                        value => primitive_meets_square(value, tr, p, t, reach),
+                    })
+                };
+                if found.is_some() {
+                    result = found;
+                    ControlFlow::Break(())
+                } else {
+                    ControlFlow::Continue(())
+                }
+            });
             result
         }
-        Value::Point { x, y } => {
-            // `DrawPoint.hit`: r = max(pointSize, threshold + 12); the
-            // window's points are never larger than that.
-            let s = to_screen(x, y);
-            let r = t + reach.point_min;
-            boundary(point_hit(s, p, r))
-        }
-        v @ Value::Line { .. } => {
-            let (a, b, k) = v.unit_line()?;
-            // Two points of the line, a unit apart, on the screen.
-            let (x0, y0) = (-a * k, -b * k);
-            let s0 = to_screen(x0, y0);
-            let s1 = to_screen(x0 - b, y0 + a);
-            boundary(line_meets_square(s0, s1, p, t))
-        }
-        Value::Segment { x1, y1, x2, y2 } => boundary(segment_meets_square(
-            to_screen(x1, y1),
-            to_screen(x2, y2),
-            p,
-            t,
-        )),
-        Value::Ray { x, y, a, b, .. } => {
-            let len = a.hypot(b);
-            if len == 0.0 {
-                return None;
-            }
-            // A point far along the ray stands in for infinity: far on
-            // the coarser axis, so it clears the area on both.
-            let far = 1e7 / tr.xscale().min(tr.yscale()).max(1e-9);
-            let end = to_screen(x + far * b / len, y - far * a / len);
-            boundary(segment_meets_square(to_screen(x, y), end, p, t))
-        }
+        value @ (Value::Point { .. }
+        | Value::Line { .. }
+        | Value::Segment { .. }
+        | Value::Ray { .. }
+        | Value::Circle { .. }) => boundary(primitive_meets_square(value, tr, p, t, reach)),
         Value::Vector { x, y } => {
             let (x0, y0) = vector::start(c, id)?;
             boundary(segment_meets_square(
@@ -266,22 +235,6 @@ pub fn hit_with_list_budget(
                 p,
                 t,
             ))
-        }
-        Value::Circle { cx, cy, r } => {
-            // The stroked outline (`DrawConic.hit`): the ring between the
-            // radii r - w/2 and r + w/2 meets the square when the square's
-            // nearest point is inside the outer circle and its farthest
-            // corner outside the inner one.
-            let s = to_screen(cx, cy);
-            // With the scales apart the drawn shape is an ellipse; the
-            // ring test keeps one radius, the geometric mean of the scales
-            // (exact whenever they are equal).
-            let rad = r * (tr.xscale() * tr.yscale()).sqrt();
-            let (dx, dy) = ((s.0 - p.0).abs(), (s.1 - p.1).abs());
-            let near = (dx - t).max(0.0).hypot((dy - t).max(0.0));
-            let far = (dx + t).hypot(dy + t);
-            let w = 0.5 * CURVE_STROKE;
-            boundary(near <= rad + w && far >= rad - w)
         }
         // Degenerate parts may have drawable rays despite an infinite measure.
         Value::Arc { .. } | Value::Sector { .. } | Value::Undefined => {
@@ -421,6 +374,66 @@ pub fn hit_with_list_budget(
             }))
         }
         _ => None,
+    }
+}
+
+fn primitive_meets_square(
+    value: Value,
+    tr: &ViewTransform,
+    p: (f64, f64),
+    t: f64,
+    reach: &Reach,
+) -> bool {
+    let to_screen = |x, y| tr.world_to_screen(x, y);
+    match value {
+        Value::Point { x, y } => {
+            // `DrawPoint.hit`: r = max(pointSize, threshold + 12); the
+            // window's points are never larger than that.
+            let s = to_screen(x, y);
+            let r = t + reach.point_min;
+            point_hit(s, p, r)
+        }
+        v @ Value::Line { .. } => {
+            let Some((a, b, k)) = v.unit_line() else {
+                return false;
+            };
+            // Two points of the line, a unit apart, on the screen.
+            let (x0, y0) = (-a * k, -b * k);
+            let s0 = to_screen(x0, y0);
+            let s1 = to_screen(x0 - b, y0 + a);
+            line_meets_square(s0, s1, p, t)
+        }
+        Value::Segment { x1, y1, x2, y2 } => {
+            segment_meets_square(to_screen(x1, y1), to_screen(x2, y2), p, t)
+        }
+        Value::Ray { x, y, a, b, .. } => {
+            let len = a.hypot(b);
+            if len == 0.0 {
+                return false;
+            }
+            // A point far along the ray stands in for infinity: far on
+            // the coarser axis, so it clears the area on both.
+            let far = 1e7 / tr.xscale().min(tr.yscale()).max(1e-9);
+            let end = to_screen(x + far * b / len, y - far * a / len);
+            segment_meets_square(to_screen(x, y), end, p, t)
+        }
+        Value::Circle { cx, cy, r } => {
+            // The stroked outline (`DrawConic.hit`): the ring between the
+            // radii r - w/2 and r + w/2 meets the square when the square's
+            // nearest point is inside the outer circle and its farthest
+            // corner outside the inner one.
+            let s = to_screen(cx, cy);
+            // With the scales apart the drawn shape is an ellipse; the
+            // ring test keeps one radius, the geometric mean of the scales
+            // (exact whenever they are equal).
+            let rad = r * (tr.xscale() * tr.yscale()).sqrt();
+            let (dx, dy) = ((s.0 - p.0).abs(), (s.1 - p.1).abs());
+            let near = (dx - t).max(0.0).hypot((dy - t).max(0.0));
+            let far = (dx + t).hypot(dy + t);
+            let w = 0.5 * CURVE_STROKE;
+            near <= rad + w && far >= rad - w
+        }
+        _ => false,
     }
 }
 

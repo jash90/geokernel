@@ -1,0 +1,77 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "canvas-listconicmembers-001",
+      "group": "canvas",
+      "script": [
+        "A = (-1, 0)",
+        "B = (1, 0)",
+        "C = (2, 0)",
+        "q = Ellipse(A, B, C)",
+        "base = {q}",
+        "L = Dilate(base, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "q": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [48.0, 64.0, -192.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 1.7320508075688772],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "base": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "conic",
+                "defined": true,
+                "conic_type": "ellipse",
+                "matrix": [48.0, 64.0, -192.0, 0.0, -0.0, -0.0],
+                "midpoint": [0.0, 0.0],
+                "half_axes": [2.0, 1.7320508075688772],
+                "eigenvectors": [
+                  [1.0, 0.0],
+                  [-0.0, 1.0]
+                ]
+              }
+            ]
+          },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "conic",
+                "defined": true,
+                "conic_type": "ellipse",
+                "matrix": [12.0, 16.0, -192.0, 0.0, 0.0, 0.0],
+                "midpoint": [0.0, 0.0],
+                "half_axes": [4.0, 3.4641016151377544],
+                "eigenvectors": [
+                  [1.0, 0.0],
+                  [-0.0, 1.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

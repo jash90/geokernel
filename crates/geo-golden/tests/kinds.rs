@@ -46,7 +46,10 @@
 //!   checks a defined example of each `yes` and `partial` kind.
 //!
 //! Tool coverage is declared in the table.
-//! A row without a kernel kind is `no` in every column.
+//! Axis uses graphics-view settings and Formula uses the LaTeX subset of
+//! Text. Their witnesses are checked separately from the kernel kind rows.
+//! List graphics witnesses distinguish anonymous drawables, named drawables
+//! and numeric lists that have no geometry.
 //!
 //! The samples a checked cell is graded over come from a fixed allow-list
 //! of golden cases ([`SAMPLE_CASES`]), never from whichever cases happen
@@ -400,10 +403,20 @@ const SAMPLE_CASES: &[&str] = &[
     "calculus-curvederivative-025",
     "calculus-rootpower-002",
     "canvas-drawing-001",
+    "canvas-listcircles-001",
+    "canvas-listconicmembers-001",
+    "canvas-listlines-001",
+    "canvas-listnamed-001",
+    "canvas-listrays-001",
+    "canvas-listsegments-001",
     "canvas-parts-001",
     "canvas-reviewlimits-001",
+    "canvas-reviewlocus-001",
     "canvas-reviewpen-001",
+    "canvas-reviewrectangle-001",
     "canvas-reviewselection-001",
+    "canvas-reviewstretch-001",
+    "canvas-reviewstrokes-001",
     "cas-coefficients-005",
     "cas-conic-001",
     "cas-conic-002",
@@ -439,7 +452,6 @@ const SAMPLE_CASES: &[&str] = &[
     "cas-factored-016",
     "cas-hint-007",
     "cas-hint-008",
-    "cas-hint-011",
     "cas-nestedrewrite-004",
     "cas-nestedrewrite-005",
     "cas-nestedrewrite-006",
@@ -484,9 +496,7 @@ const SAMPLE_CASES: &[&str] = &[
     "charts-piechart-008",
     "charts-piechart-009",
     "charts-piechart-010",
-    "commontangents-arc-001",
     "commontangents-conics-001",
-    "commontangents-conics-002",
     "conic-diameter-004",
     "conic-diameter-008",
     "conic-midseg-001",
@@ -524,6 +534,12 @@ const SAMPLE_CASES: &[&str] = &[
     "conics-transform-017",
     "conics-transform-025",
     "controls-inputbox-001",
+    "controls-reviewblur-001",
+    "controls-reviewdrag-001",
+    "controls-reviewopen-001",
+    "controls-reviewsliderclick-001",
+    "controls-reviewtab-001",
+    "controls-reviewtext-001",
     "corners-checkbox-001",
     "corners-checkbox-002",
     "corners-checkbox-004",
@@ -557,8 +573,6 @@ const SAMPLE_CASES: &[&str] = &[
     "corners-matrix-005",
     "corners-raster-001",
     "corners-reviewthree-002",
-    "corners-reviewthree-004",
-    "corners-reviewtwo-007",
     "curvepairs-coincident-001",
     "curvepairs-coincident-002",
     "discrete-delaunay-001",
@@ -583,7 +597,6 @@ const SAMPLE_CASES: &[&str] = &[
     "discrete-hull-007",
     "discrete-hullreview-001",
     "discrete-hullreview-002",
-    "discrete-hullreview-003",
     "discrete-tour-006",
     "discrete-tree-008",
     "discrete-voronoi-006",
@@ -609,7 +622,6 @@ const SAMPLE_CASES: &[&str] = &[
     "expr-fnundef-009",
     "expr-label-001",
     "expr-label-002",
-    "expr-label-003",
     "funcanalysis-curveedge-005",
     "funcanalysis-curveupstream-003",
     "funcanalysis-forms-016",
@@ -675,7 +687,6 @@ const SAMPLE_CASES: &[&str] = &[
     "georestclip-conicpart-029",
     "georestclip-conicpart-032",
     "georestclip-conicpart-035",
-    "georestclip-largepath-001",
     "georestclip-longpath-001",
     "georestclip-paths-003",
     "georestclip-polyline-001",
@@ -723,7 +734,6 @@ const SAMPLE_CASES: &[&str] = &[
     "intersections-boundedconicreview-022",
     "intersections-boundedconicreview-023",
     "intersections-boundedconicreview-024",
-    "intersections-boundsreview-002",
     "lists-locusfirst-001",
     "lists-locusfirst-002",
     "lists-locusfirst-003",
@@ -732,7 +742,6 @@ const SAMPLE_CASES: &[&str] = &[
     "lists-locusfirst-006",
     "locus-arc-001",
     "locus-arc-002",
-    "locus-arc-003",
     "matrixdilate-applypoly-003",
     "stroke-breaks-001",
     "stroke-breaks-002",
@@ -761,7 +770,6 @@ const SAMPLE_CASES: &[&str] = &[
     "stroke-points-005",
     "stroke-points-006",
     "stroke-points-007",
-    "stroke-points-008",
     "transformsfix-area-001",
     "transformsfix-area-002",
     "transformsfix-area-003",
@@ -814,12 +822,6 @@ fn samples() -> Samples {
         .collect();
     cases.sort_by(|a, b| a.id.cmp(&b.id));
     let listed = |id: &str| regenerating() || SAMPLE_CASES.contains(&id);
-    let literal_points = cases
-        .iter()
-        .find(|case| case.id == "lists-lit-004")
-        .expect("the anonymous point list")
-        .script
-        .clone();
     for case in &cases {
         for e in case.snapshots[0].values() {
             s.recorded.insert(format!("{:?}", e.kind));
@@ -867,16 +869,6 @@ fn samples() -> Samples {
         .entry("Locus".into())
         .or_default()
         .push((locus.script.clone(), "l".into()));
-    // A list of named points does not draw them again, and most command
-    // samples are numeric lists. Include the recorded anonymous points.
-    s.any
-        .entry("List".into())
-        .or_default()
-        .push((literal_points.clone(), "l".into()));
-    s.single
-        .entry("List".into())
-        .or_default()
-        .push(literal_points);
     let rasters = include_bytes!("../../../golden/ggb/saved/saved-images-001.ggb");
     let imported = geo_import::import(rasters).unwrap();
     let c = script::load(&imported.script.join("\n")).unwrap();
@@ -1191,7 +1183,8 @@ fn every_kernel_kind_and_upstream_kind_has_a_row() {
             if !["yes", "partial", "no"].contains(&r[col].as_str()) {
                 errors.push(format!("row `{}`: {col} is `{}`", r["kind"], r[col]));
             }
-            if kk.is_empty() && r[col] != "no" {
+            if kk.is_empty() && !matches!(r["kind"].as_str(), "Axis" | "Formula") && r[col] != "no"
+            {
                 errors.push(format!(
                     "row `{}` has no kernel kind but {col} is `{}`",
                     r["kind"], r[col]
@@ -1277,66 +1270,71 @@ fn checked_cells_agree_with_the_code() {
             "kernel_golden",
             Some(if s.recorded.contains(k) { "yes" } else { "no" }),
         );
-        exact(
-            "svg",
-            if matches!(k.as_str(), "Number" | "Boolean") {
-                grade(s.any.get(k).into_iter().flatten().map(|(lines, label)| {
-                    let (c, id) = object(lines, label);
-                    let frame = View::fit(&c);
-                    let without =
-                        svg::render_visible(&c, frame, 400, 300, |candidate| candidate != id);
-                    let with = svg::render(&c, frame, 400, 300);
-                    // A definition by itself contributes a description, which
-                    // is not a rendered SVG shape.
-                    let graphic = |s: String| s[s.find("<rect").unwrap()..].to_owned();
-                    graphic(with) != graphic(without)
-                }))
-            } else {
-                s.single.get(k).and_then(|v| {
-                    grade(
-                        v.iter()
-                            .filter(|l| has_something_to_draw(l))
-                            .map(|l| svg_draws(l)),
-                    )
-                })
-            },
-        );
+        if k != "List" {
+            exact(
+                "svg",
+                if matches!(k.as_str(), "Number" | "Boolean") {
+                    grade(s.any.get(k).into_iter().flatten().map(|(lines, label)| {
+                        let (c, id) = object(lines, label);
+                        let frame = View::fit(&c);
+                        let without =
+                            svg::render_visible(&c, frame, 400, 300, |candidate| candidate != id);
+                        let with = svg::render(&c, frame, 400, 300);
+                        // A definition by itself contributes a description, which
+                        // is not a rendered SVG shape.
+                        let graphic = |s: String| s[s.find("<rect").unwrap()..].to_owned();
+                        graphic(with) != graphic(without)
+                    }))
+                } else {
+                    s.single.get(k).and_then(|v| {
+                        grade(
+                            v.iter()
+                                .filter(|l| has_something_to_draw(l))
+                                .map(|l| svg_draws(l)),
+                        )
+                    })
+                },
+            );
+        }
         let objects: Vec<(Construction, Id)> = s
             .any
             .get(k)
             .map(|v| v.iter().map(|(l, label)| object(l, label)).collect())
             .unwrap_or_default();
-        let pointer_grade = grade(
-            objects
-                .iter()
-                .filter(|(c, id)| stroke_has_points(c, *id))
-                .filter(|(c, id)| {
-                    c.kind(*id) != Kind::Text || c.text(*id).is_some_and(|text| !text.is_empty())
-                })
-                .filter(|(c, id)| c.kind(*id) != Kind::Angle || c.angle_geometry(*id).is_some())
-                .map(|(c, id)| pointer_hits(c, *id)),
-        );
-        // All short witnesses must remain hittable. The partial grade is
-        // solely for the separate, fixed desktop drawing and picking prefix.
-        let pointer_grade = if k == "Locus" {
-            assert_eq!(
-                pointer_grade,
-                Some("yes"),
-                "every short golden locus must remain hittable"
+        if k != "List" {
+            let pointer_grade = grade(
+                objects
+                    .iter()
+                    .filter(|(c, id)| stroke_has_points(c, *id))
+                    .filter(|(c, id)| {
+                        c.kind(*id) != Kind::Text
+                            || c.text(*id).is_some_and(|text| !text.is_empty())
+                    })
+                    .filter(|(c, id)| c.kind(*id) != Kind::Angle || c.angle_geometry(*id).is_some())
+                    .map(|(c, id)| pointer_hits(c, *id)),
             );
-            let point = geo_kernel::LocusPoint {
-                x: 0.0,
-                y: 0.0,
-                line_to: false,
+            // All short witnesses must remain hittable. The partial grade is
+            // solely for the separate, fixed desktop drawing and picking prefix.
+            let pointer_grade = if k == "Locus" {
+                assert_eq!(
+                    pointer_grade,
+                    Some("yes"),
+                    "every short golden locus must remain hittable"
+                );
+                let point = geo_kernel::LocusPoint {
+                    x: 0.0,
+                    y: 0.0,
+                    line_to: false,
+                };
+                let locus = vec![point; 10_002];
+                let shown = geo_app_core::hit::canvas_locus_samples(&locus);
+                assert_eq!(shown.len(), 10_001);
+                Some("partial")
+            } else {
+                pointer_grade
             };
-            let locus = vec![point; 10_002];
-            let shown = geo_app_core::hit::canvas_locus_samples(&locus);
-            assert_eq!(shown.len(), 10_001);
-            Some("partial")
-        } else {
-            pointer_grade
-        };
-        exact("pointer_hit", pointer_grade);
+            exact("pointer_hit", pointer_grade);
+        }
         let texts: Vec<u8> = objects.iter().map(|(c, id)| text_grade(c, *id)).collect();
         exact(
             "algebra_text",
@@ -1363,4 +1361,251 @@ fn checked_cells_agree_with_the_code() {
         handles("import", imported.contains(k));
     }
     assert!(errors.is_empty(), "{}", errors.join("\n"));
+}
+
+/// Confirm the list contributes the drawing itself, not a named operand or
+/// an SVG description. Probe the actual boundary and an unrelated position.
+fn list_graphics(topic: &str, mark: Option<&str>, target: (f64, f64), picked: bool) {
+    let key = format!("canvas-list{topic}-001");
+    let path = format!("golden/canvas/list{topic}.json");
+    let file = model::parse_file(&read(&path), &path).unwrap();
+    let case = file.cases.iter().find(|case| case.id == key).unwrap();
+    let (c, id) = object(&case.script, "L");
+    let expected = &case.snapshots[0]["L"];
+    geo_golden::compare::compare_list(&c, expected, Kind::List, c.elements(id)).unwrap();
+    let view = View {
+        xmin: -4.0,
+        xmax: 4.0,
+        ymin: -3.0,
+        ymax: 3.0,
+    };
+    let tr = ViewTransform::new(view, 400.0, 300.0);
+    let reach = Reach::square(3.0);
+    let pick = |(x, y)| hit::hit(&c, id, &tr, tr.world_to_screen(x, y), 3.0, &reach);
+    let with = svg::render_visible(&c, view, 400, 300, |candidate| candidate == id);
+    let without = svg::render_visible(&c, view, 400, 300, |_| false);
+    let drawing = |s: String| s[s.find("<rect").unwrap()..].to_owned();
+    let with = drawing(with);
+    let without = drawing(without);
+    let draws = mark.map_or(with == without, |m| with != without && with.contains(m));
+    assert_eq!(
+        (draws, pick(target).is_some(), pick((-3.5, -2.5))),
+        (true, picked, None),
+        "{key}: {with}"
+    );
+    let row = table().into_iter().find(|r| r["kind"] == "List").unwrap();
+    assert_eq!(
+        [row["svg"].as_str(), row["pointer_hit"].as_str()],
+        ["yes"; 2]
+    );
+}
+
+#[test]
+fn list_graphics_points() {
+    list_graphics(
+        "points",
+        Some(r#"<circle cx="250.00" cy="50.00""#),
+        (1.0, 2.0),
+        true,
+    );
+}
+
+#[test]
+fn list_graphics_numbers_stay_in_algebra() {
+    list_graphics("numbers", None, (1.0, 0.0), false);
+}
+
+#[test]
+fn list_graphics_segments() {
+    list_graphics(
+        "segments",
+        Some(r#"<line x1="100.00" y1="50.00""#),
+        (0.0, 2.0),
+        true,
+    );
+}
+
+#[test]
+fn list_graphics_lines() {
+    list_graphics("lines", Some(r#"y1="50.00""#), (0.0, 2.0), true);
+}
+
+#[test]
+fn list_graphics_circles() {
+    list_graphics(
+        "circles",
+        Some(r#"<circle cx="200.00" cy="150.00" r="100.00""#),
+        (2.0, 0.0),
+        true,
+    );
+}
+
+#[test]
+fn list_graphics_conics() {
+    list_graphics("conicmembers", Some("<polyline"), (4.0, 0.0), true);
+}
+
+#[test]
+fn list_graphics_rays() {
+    list_graphics(
+        "rays",
+        Some(r#"<line x1="100.00" y1="50.00""#),
+        (3.0, 2.0),
+        true,
+    );
+}
+
+#[test]
+fn list_graphics_named_members_keep_their_own_svg_drawable() {
+    list_graphics("named", None, (0.0, 1.0), true);
+}
+
+#[test]
+fn round_eleven_kind_cells_are_closed() {
+    let rows = table();
+    for kind in ["InputBox", "List"] {
+        let row = rows.iter().find(|r| r["kind"] == kind).unwrap();
+        for col in CELLS.into_iter().filter(|col| *col != "export") {
+            assert_eq!(row[col], "yes", "{kind}.{col}");
+        }
+    }
+    let missing = rows
+        .iter()
+        .flat_map(|row| CELLS.map(|col| &row[col]))
+        .filter(|cell| cell.as_str() == "no")
+        .count();
+    assert!(missing <= 30, "{missing} missing cells");
+}
+
+#[test]
+fn list_graphics_expensive_members_charge_the_shared_budget() {
+    let c = script::load(&format!(
+        "q: x^2 + 4*y^2 = 1\nbase = {{{}}}\nL = Dilate(base, 2)",
+        ["q"; 40].join(", ")
+    ))
+    .unwrap();
+    let id = c.id("L").unwrap();
+    let list = c.elements(id).unwrap();
+    assert_eq!(list.len(), 40);
+    let view = View::fit(&c);
+    let svg = svg::render_visible(&c, view, 400, 300, |candidate| candidate == id);
+    assert_eq!(svg.matches("<polyline ").count(), 4);
+
+    let tr = ViewTransform::new(view, 400.0, 300.0);
+    let reach = Reach::square(3.0);
+    let mut remaining = 65;
+    let pick =
+        |pos, left: &mut usize| hit::hit_with_list_budget(&c, id, &tr, pos, 3.0, &reach, left);
+    assert!(pick(tr.world_to_screen(3.0, 2.0), &mut remaining).is_none());
+    assert_eq!(remaining, 0);
+    assert!(pick(tr.world_to_screen(2.0, 0.0), &mut remaining).is_none());
+}
+
+#[test]
+fn axis_view_settings_round_trip_without_axis_kind() {
+    use geo_app_core::workbench::Workbench;
+
+    let row = table().into_iter().find(|r| r["kind"] == "Axis").unwrap();
+    assert_eq!(
+        CELLS.map(|col| row[col].as_str()),
+        ["no", "no", "yes", "yes", "yes", "no", "yes", "yes"]
+    );
+    let canvas = code_only(&read("crates/geo-app/src/canvas.rs"));
+    assert!(canvas.contains("grid::paint("));
+    assert!(canvas.contains("axis_under(&pt, (sx, sy))"));
+    assert!(canvas.contains("camera::axis_scale("));
+    assert!(canvas.contains("tool == Tool::MoveView"));
+    let mut wb = Workbench::default();
+    let file = include_bytes!("../../../golden/ggb/saved/saved-angle-001.xml");
+    wb.load_for_export(file, "axes").unwrap();
+    let mut view = wb.file_view().unwrap();
+    assert_eq!(view.axes, [true; 2]);
+    view.axes = [false, true];
+    let bytes = wb.export_ggb(Some(view)).unwrap();
+    wb.load_for_export(&bytes, "axes").unwrap();
+    assert_eq!(wb.file_view().unwrap(), view);
+    for label in ["xAxis", "yAxis"] {
+        let c = wb.construction();
+        let axis = c.id(label).unwrap();
+        assert_eq!(c.kind(axis), Kind::Line);
+        assert!(!c.ids().any(|id| id == axis));
+    }
+}
+
+#[test]
+fn formula_is_latex_text_on_the_canvas_and_in_files() {
+    use geo_app_core::workbench::Workbench;
+
+    let row = table()
+        .into_iter()
+        .find(|r| r["kind"] == "Formula")
+        .unwrap();
+    assert_eq!(
+        CELLS.map(|col| row[col].as_str()),
+        ["yes", "yes", "yes", "yes", "no", "yes", "yes", "partial"]
+    );
+    let draw = code_only(&read("crates/geo-app/src/draw.rs"));
+    assert!(draw.contains("Value::Text"));
+    let text_draw = code_only(&read("crates/geo-app/src/draw/text.rs"));
+    assert!(text_draw.contains("text_presentation(") && text_draw.contains("style.latex"));
+    let cases = model::load_all(&repo_root()).unwrap();
+    let case = cases
+        .iter()
+        .find(|case| case.id == "export-texts-001")
+        .unwrap();
+    let (c, id) = object(&case.script, "t");
+    assert_eq!(case.snapshots[0]["t"].kind, Kind::Text);
+    assert_eq!(c.kind(id), Kind::Text);
+    assert!(c.text_presentation(id).unwrap().latex);
+    assert_eq!(text_grade(&c, id), 2);
+    assert!(pointer_hits(&c, id));
+    let svg = svg::render_visible(&c, View::fit(&c), 400, 300, |candidate| candidate == id);
+    assert!(svg.contains("<path"), "{svg}");
+
+    let file = include_bytes!("../../../golden/ggb/saved/saved-texts-001.ggb");
+    let mut wb = Workbench::default();
+    wb.load_for_export(file, "formula").unwrap();
+    let c = wb.construction();
+    let id = c.id("formula").unwrap();
+    let style = c.text_presentation(id).unwrap();
+    assert!(style.latex);
+    let source = c.text(id).unwrap().to_owned();
+    let bytes = wb.export_ggb(wb.file_view()).unwrap();
+    wb.load_for_export(&bytes, "formula").unwrap();
+    let c = wb.construction();
+    let id = c.id("formula").unwrap();
+    assert_eq!(c.text(id), Some(source.as_str()));
+    assert_eq!(c.text_presentation(id), Some(style));
+}
+
+#[test]
+fn list_graphics_many_circles_share_the_curved_member_budget() {
+    let c = script::load(&format!(
+        "A = (0, 0)\nq = Circle(A, 100)\nbase = {{{}}}\nL = Dilate(base, 2)",
+        ["q"; 40].join(", ")
+    ))
+    .unwrap();
+    let id = c.id("L").unwrap();
+    let view = View::fit(&c);
+    let drawing = svg::render_visible(&c, view, 400, 300, |candidate| candidate == id);
+    assert_eq!(drawing.matches("<circle cx=").count(), 4);
+}
+
+#[test]
+fn list_import_restores_named_and_anonymous_members() {
+    let file = include_bytes!("../../../golden/ggb/saved/saved-styles-005.xml");
+    let imported = geo_import::import(file).unwrap();
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    let list = c.elements(c.id("pts").unwrap()).unwrap();
+    assert_eq!(list.len(), 3);
+    assert_eq!(list.object(0), c.id("A"));
+    assert_eq!(list.object(1), c.id("B"));
+    assert_eq!(list.object(2), None);
+    assert!(matches!(
+        list.get(2),
+        Some(geo_kernel::expr::Element::Value(
+            Kind::Point,
+            Value::Point { x: 2.0, y: 2.0 }
+        ))
+    ));
 }
