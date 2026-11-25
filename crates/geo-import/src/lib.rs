@@ -82,6 +82,7 @@ pub struct Imported {
     /// Lines of the script language, in construction order.
     pub script: Vec<String>,
     pub cas_rows: Vec<SavedCasRow>,
+    pub cas_visible: Option<bool>,
     /// Raster sources for replay without serializing or decoding them again.
     pub image_assets: Vec<geo_kernel::script::saved::Property>,
     /// Saved object presentation used when writing a construction.
@@ -164,8 +165,6 @@ pub enum ImportError {
     TooManyEntries(usize),
     /// The construction has more than [`xml::MAX_ITEMS`] items.
     TooManyItems,
-    /// The CAS table has more than the supported number of rows.
-    TooManyCasRows,
     /// Tags nest deeper than [`xml::MAX_DEPTH`].
     TooDeep,
     /// A command lists more than [`xml::MAX_ARGUMENTS`] inputs or outputs.
@@ -203,7 +202,6 @@ impl fmt::Display for ImportError {
             ImportError::TooDeep => {
                 write!(f, "the tags nest deeper than {} levels", xml::MAX_DEPTH)
             }
-            ImportError::TooManyCasRows => write!(f, "too many CAS rows"),
             ImportError::TooManyItems => {
                 write!(f, "the construction has more than {} items", xml::MAX_ITEMS)
             }

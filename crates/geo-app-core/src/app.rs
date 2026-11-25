@@ -132,6 +132,7 @@ pub struct App {
     pub input_error: Option<String>,
     pub tool_error: Option<String>,
     pub load_error: Option<String>,
+    pub save_error: Option<String>,
     /// Path being edited in the Save As dialog.
     pub save_path: Option<String>,
     /// Path of the document opened into this window.
@@ -215,7 +216,7 @@ impl App {
 
     pub fn new(wb: Workbench, load_error: Option<String>) -> Self {
         let decor = Decor::for_document(&wb);
-        let show_cas = !wb.cas_rows().is_empty();
+        let show_cas = wb.cas_visible_on_open();
         App {
             wb,
             show_cas,
@@ -234,6 +235,7 @@ impl App {
             input_error: None,
             tool_error: None,
             load_error,
+            save_error: None,
             save_path: None,
             source_path: None,
             decor,
@@ -361,7 +363,11 @@ impl App {
             self.reset_tool();
             return true;
         }
-        self.wb.undo()
+        if self.wb.undo() {
+            self.cancel_cas_edit();
+            return true;
+        }
+        false
     }
 
     /// Redo; a tool use in progress ends unfinished first.
@@ -370,7 +376,11 @@ impl App {
             return false;
         }
         self.reset_tool();
-        self.wb.redo()
+        if self.wb.redo() {
+            self.cancel_cas_edit();
+            return true;
+        }
+        false
     }
 
     /// Whether undo has something to do: a step, or a tool use to take back.

@@ -3,6 +3,7 @@
 
 use geo_import::SavedCasRow;
 use geo_kernel::{CasRow, Construction};
+use std::sync::Arc;
 
 pub use geo_import::{MAX_CAS_INPUT_BYTES as MAX_INPUT_BYTES, MAX_CAS_ROWS as MAX_ROWS};
 
@@ -13,14 +14,21 @@ const MAX_CASCADE_BYTES: usize = 256 * 1024;
 pub struct Entry {
     pub input: String,
     pub output: CasRow,
+    pub unevaluated: bool,
     pub(crate) saved: Option<SavedCasRow>,
 }
 
-#[derive(Default)]
-pub(crate) struct Table(Vec<Entry>);
+impl Entry {
+    fn is_comment(&self) -> bool {
+        self.saved.as_ref().is_some_and(|saved| saved.as_text)
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Table(Arc<Vec<Arc<Entry>>>);
 
 impl Table {
-    pub(crate) fn rows(&self) -> &[Entry] {
+    pub(crate) fn rows(&self) -> &[Arc<Entry>] {
         &self.0
     }
 
@@ -32,56 +40,83 @@ impl Table {
         {
             return false;
         }
-        let mut remaining = MAX_CASCADE_BYTES;
-        let mut next = Vec::new();
-        let previous = &self.0[..index];
-        let input =
-            substitute(source, index, b'#', |r| previous.get(r)).unwrap_or_else(|| source.into());
-        for input in std::iter::once(input.as_str()).chain(
-            self.0
-                .iter()
-                .skip(index + 1)
-                .map(|entry| entry.input.as_str()),
-        ) {
-            let stack = index + next.len();
-            let get = |r: usize| {
-                if r < index {
-                    previous.get(r)
-                } else {
-                    next.get(r - index)
+        let mut remaining = Some(MAX_CASCADE_BYTES);
+        let input = if source.contains('#') {
+            substitute(
+                source,
+                index,
+                b'#',
+                |r| self.0.get(r).map(Arc::as_ref),
+                &mut remaining,
+            )
+            .unwrap_or_else(|| source.into())
+        } else {
+            source.into()
+        };
+        let end = self.0.len().min(MAX_ROWS).max(index + 1);
+        let mut next: Vec<Option<Arc<Entry>>> = Vec::with_capacity(end - index);
+        for row in index..end {
+            let old = self.0.get(row).map(Arc::as_ref);
+            let source = if row == index {
+                input.as_str()
+            } else {
+                let old = old.expect("committed row");
+                if old.unevaluated
+                    || old.is_comment()
+                    || !tokens(&old.input, row, b'$').any(|token| {
+                        token.target.is_some_and(|r| {
+                            r >= index && next.get(r - index).is_some_and(Option::is_some)
+                        })
+                    })
+                {
+                    next.push(None);
+                    continue;
                 }
+                &old.input
             };
-            let resolved = substitute(input, stack, b'$', get);
-            let cost = input.len() + resolved.as_ref().map_or(0, String::len);
-            let Some(left) = remaining.checked_sub(cost) else {
-                return false;
+            let get = |r: usize| {
+                if r >= index {
+                    if let Some(Some(updated)) = next.get(r - index) {
+                        return Some(updated.as_ref());
+                    }
+                }
+                self.0.get(r).map(Arc::as_ref)
             };
-            remaining = left;
-            next.push(Entry {
-                input: input.into(),
-                output: evaluate(c, resolved),
-                saved: None,
-            });
+            let (output, saved) = if let Some(comment) = old.filter(|old| old.is_comment()) {
+                let mut saved = comment.saved.clone().expect("imported comment");
+                saved.input = source.into();
+                (comment_output(source), Some(saved))
+            } else {
+                let resolved = substitute(source, row, b'$', get, &mut remaining);
+                if remaining.is_none() {
+                    return false;
+                }
+                let output = evaluate(c, resolved.as_deref());
+                let saved = old
+                    .filter(|old| old.input == source && old.output == output && !old.unevaluated)
+                    .and_then(|old| old.saved.clone());
+                (output, saved)
+            };
+            next.push(Some(Arc::new(Entry {
+                input: source.into(),
+                output,
+                saved,
+                unevaluated: false,
+            })));
         }
-        for (old, new) in self
-            .0
-            .iter_mut()
-            .skip(index + 1)
-            .zip(next.iter_mut().skip(1))
-        {
-            if old
-                .saved
-                .as_ref()
-                .is_some_and(|saved| saved.as_text || saved.output.is_none())
-            {
-                std::mem::swap(&mut new.output, &mut old.output);
-                new.saved = old.saved.take();
-            } else if new.output == old.output {
-                new.saved = old.saved.take();
+        if remaining.is_none() {
+            return false;
+        }
+        let rows = Arc::make_mut(&mut self.0);
+        for (position, entry) in (index..).zip(next) {
+            if let Some(entry) = entry {
+                if position == rows.len() {
+                    rows.push(entry);
+                } else {
+                    rows[position] = entry;
+                }
             }
         }
-        self.0.truncate(index);
-        self.0.extend(next);
         true
     }
 
@@ -89,18 +124,25 @@ impl Table {
         if index >= self.0.len() {
             return false;
         }
-        let mut numbers: Vec<Option<usize>> = Vec::with_capacity(self.0.len());
+        let rows = Arc::make_mut(&mut self.0);
+        let mut numbers: Vec<Option<usize>> = Vec::with_capacity(rows.len().min(MAX_ROWS));
         let mut surviving = 0;
         let mut row = 0;
-        self.0.retain_mut(|entry| {
-            let keep = if row < index {
-                true
-            } else if row == index {
+        rows.retain_mut(|entry| {
+            let keep = if row == index {
                 false
+            } else if row < index
+                || entry.unevaluated
+                || entry.is_comment()
+                || !entry.input.contains('$')
+            {
+                true
             } else {
                 renumber(entry, row, surviving, &numbers)
             };
-            numbers.push(keep.then_some(surviving));
+            if row < MAX_ROWS {
+                numbers.push(keep.then_some(surviving));
+            }
             surviving += usize::from(keep);
             row += 1;
             keep
@@ -109,46 +151,90 @@ impl Table {
     }
 
     pub(crate) fn from_file(c: &Construction, rows: Vec<SavedCasRow>) -> Self {
-        let mut table = Vec::with_capacity(rows.len());
-        // Import bounds the file by row count and by the bytes of each
-        // attribute. Opening a file restores every row within those limits.
+        let mut table: Vec<Arc<Entry>> = Vec::with_capacity(rows.len());
         for row in rows {
-            let output = if row.as_text || row.output.is_none() {
-                CasRow {
-                    text: String::new(),
-                    latex: String::new(),
-                    exact: None,
-                }
-            } else if row.output_options.error {
-                CasRow {
-                    text: row
-                        .output
-                        .as_deref()
-                        .unwrap_or("?")
-                        .chars()
-                        .take(MAX_OUTPUT_BYTES / 4)
-                        .collect(),
-                    latex: String::new(),
-                    exact: None,
-                }
+            let index = table.len();
+            let options = &row.input_options;
+            let unevaluated = index >= MAX_ROWS
+                || row.input.len() > MAX_INPUT_BYTES
+                || [
+                    &options.prefix,
+                    &options.eval,
+                    &options.postfix,
+                    &options.command,
+                    &row.output,
+                ]
+                .into_iter()
+                .flatten()
+                .any(|value| value.len() > MAX_INPUT_BYTES);
+            let output = if row.as_text {
+                comment_output(&row.input)
+            } else if unevaluated || row.output_options.error || row.output_options.native {
+                saved_output(&row, unevaluated)
+            } else if row.output.is_some() {
+                let resolved = substitute(
+                    &row.input,
+                    index,
+                    b'$',
+                    |r| table.get(r).map(Arc::as_ref),
+                    &mut Some(MAX_CASCADE_BYTES),
+                );
+                evaluate(c, resolved.as_deref())
             } else {
-                let resolved = substitute(&row.input, table.len(), b'$', |r| table.get(r));
-                evaluate(c, resolved)
+                blank_output()
             };
-            table.push(Entry {
+            table.push(Arc::new(Entry {
                 input: row.input.clone(),
                 output,
                 saved: Some(row),
-            });
+                unevaluated,
+            }));
         }
-        Self(table)
+        Self(Arc::new(table))
     }
 }
 
-fn renumber(entry: &mut Entry, row: usize, surviving: usize, numbers: &[Option<usize>]) -> bool {
-    if !entry.input.contains('$') || entry.saved.as_ref().is_some_and(|saved| saved.as_text) {
-        return true;
+fn blank_output() -> CasRow {
+    CasRow {
+        text: String::new(),
+        latex: String::new(),
+        exact: None,
     }
+}
+
+fn comment_output(source: &str) -> CasRow {
+    let mut output = blank_output();
+    if source.len() <= MAX_OUTPUT_BYTES.saturating_sub(7) {
+        output.latex = format!(r"\text{{{source}}}");
+    }
+    output
+}
+
+fn saved_output(row: &SavedCasRow, unevaluated: bool) -> CasRow {
+    let Some(saved) = row.output.as_deref() else {
+        return blank_output();
+    };
+    let mut output = blank_output();
+    output.text = saved.into();
+    if saved.len() <= MAX_OUTPUT_BYTES.saturating_sub(9) && !row.output_options.error {
+        // Plain integers need no CAS call or LaTeX escaping.
+        let digits = saved.strip_prefix('-').unwrap_or(saved);
+        if !digits.is_empty() && digits.bytes().all(|b| b.is_ascii_digit()) {
+            output.latex = format!(r"\mathbf{{{saved}}}");
+        }
+        if !unevaluated {
+            output.exact = Some(saved.into());
+        }
+    }
+    output
+}
+
+fn renumber(
+    entry: &mut Arc<Entry>,
+    row: usize,
+    surviving: usize,
+    numbers: &[Option<usize>],
+) -> bool {
     let rewrite_input = |source: &str| {
         rewrite(
             source,
@@ -173,6 +259,7 @@ fn renumber(entry: &mut Entry, row: usize, surviving: usize, numbers: &[Option<u
         return false;
     };
     if entry.input != input {
+        let entry = Arc::make_mut(entry);
         if let Some(saved) = &mut entry.saved {
             saved.input.clone_from(&input);
             for part in [
@@ -196,11 +283,11 @@ fn undefined() -> CasRow {
     }
 }
 
-fn evaluate(c: &Construction, source: Option<String>) -> CasRow {
+fn evaluate(c: &Construction, source: Option<&str>) -> CasRow {
     let Some(source) = source else {
         return undefined();
     };
-    let result = c.evaluate_cas_row(&source);
+    let result = c.evaluate_cas_row(source);
     if result.latex.len() > MAX_OUTPUT_BYTES
         || result.text.len() > MAX_OUTPUT_BYTES
         || result
@@ -218,30 +305,60 @@ fn substitute<'a>(
     row: usize,
     delimiter: u8,
     get: impl Fn(usize) -> Option<&'a Entry>,
+    remaining: &mut Option<usize>,
 ) -> Option<String> {
-    rewrite(source, row, delimiter, |reference, _, _, use_input| {
-        let entry = get(reference?)?;
-        let value = if use_input {
+    let mut result = String::new();
+    let mut rest = 0;
+    for token in tokens(source, row, delimiter) {
+        let entry = get(token.target?)?;
+        if entry.unevaluated || entry.is_comment() {
+            return None;
+        }
+        let value = if token.use_input {
             &entry.input
         } else {
             entry.output.exact.as_ref()?
         };
-        Some(format!("({value})"))
-    })
+        let parentheses = delimiter == b'$' || !value.trim().parse::<f64>().is_ok_and(|n| n >= 0.0);
+        let literal = &source[rest..token.start];
+        let bytes = literal.len() + value.len() + 2 * usize::from(parentheses);
+        charge(remaining, result.len(), bytes)?;
+        result.push_str(literal);
+        if parentheses {
+            result.push('(');
+        }
+        result.push_str(value);
+        if parentheses {
+            result.push(')');
+        }
+        rest = token.end;
+    }
+    charge(remaining, result.len(), source.len() - rest)?;
+    result.push_str(&source[rest..]);
+    Some(result)
 }
 
-/// A bare marker reads the previous row. A repeated marker after the row
-/// number selects its input. Only committed predecessors can be referenced.
-fn rewrite(
-    source: &str,
-    row: usize,
-    delimiter: u8,
-    mut resolve: impl FnMut(Option<usize>, &str, bool, bool) -> Option<String>,
-) -> Option<String> {
+fn charge(remaining: &mut Option<usize>, written: usize, bytes: usize) -> Option<()> {
+    if written + bytes > MAX_INPUT_BYTES {
+        return None;
+    }
+    *remaining = remaining.and_then(|left| left.checked_sub(bytes));
+    remaining.map(|_| ())
+}
+
+struct Reference {
+    start: usize,
+    end: usize,
+    target: Option<usize>,
+    explicit: bool,
+    use_input: bool,
+}
+
+fn tokens(source: &str, row: usize, delimiter: u8) -> impl Iterator<Item = Reference> + '_ {
     let bytes = source.as_bytes();
     let mut rest = 0;
-    let mut result = String::with_capacity(source.len());
-    while let Some(offset) = bytes[rest..].iter().position(|&b| b == delimiter) {
+    std::iter::from_fn(move || {
+        let offset = bytes[rest..].iter().position(|&b| b == delimiter)?;
         let start = rest + offset;
         let digits = start + 1;
         let end = digits
@@ -257,16 +374,41 @@ fn rewrite(
         };
         let reference = target
             .and_then(|number| number.checked_sub(1))
-            .filter(|&i| i < row);
+            .filter(|&i| if delimiter == b'#' { i != row } else { i < row });
         let use_input = bytes.get(end) == Some(&delimiter);
-        let token_end = end + usize::from(use_input);
-        let expansion = resolve(reference, &source[start..token_end], explicit, use_input)?;
-        if result.len() + offset + expansion.len() > MAX_INPUT_BYTES {
+        rest = end + usize::from(use_input);
+        Some(Reference {
+            start,
+            end: rest,
+            target: reference,
+            explicit,
+            use_input,
+        })
+    })
+}
+
+fn rewrite(
+    source: &str,
+    row: usize,
+    delimiter: u8,
+    mut resolve: impl FnMut(Option<usize>, &str, bool, bool) -> Option<String>,
+) -> Option<String> {
+    let mut rest = 0;
+    let mut result = String::new();
+    for token in tokens(source, row, delimiter) {
+        let literal = &source[rest..token.start];
+        let expansion = resolve(
+            token.target,
+            &source[token.start..token.end],
+            token.explicit,
+            token.use_input,
+        )?;
+        if result.len() + literal.len() + expansion.len() > MAX_INPUT_BYTES {
             return None;
         }
-        result.push_str(&source[rest..start]);
+        result.push_str(literal);
         result.push_str(&expansion);
-        rest = token_end;
+        rest = token.end;
     }
     if result.len() + source.len() - rest > MAX_INPUT_BYTES {
         return None;
@@ -285,11 +427,11 @@ pub struct Editor {
 
 impl crate::app::App {
     pub fn edit_cas_row(&mut self, row: usize) {
-        let draft = self
-            .wb
-            .cas_rows()
-            .get(row)
-            .map_or(String::new(), |row| row.input.clone());
+        let entry = self.wb.cas_rows().get(row);
+        if row >= MAX_ROWS || entry.is_some_and(|entry| entry.input.len() > MAX_INPUT_BYTES) {
+            return;
+        }
+        let draft = entry.map_or_else(String::new, |entry| entry.input.clone());
         self.input_cursor = draft.chars().count();
         self.cursor_request = Some(self.input_cursor);
         self.cas_editor = Some(Editor {
@@ -304,11 +446,26 @@ impl crate::app::App {
         let Some(editor) = &mut self.cas_editor else {
             return;
         };
-        if editor.draft.trim().is_empty() {
-            editor.focus = true;
-            return;
-        }
-        if !self.wb.submit_cas(editor.row, &editor.draft) {
+        let previous = if editor.draft.trim().is_empty() {
+            let Some(index) = editor.row.checked_sub(1).filter(|&index| {
+                self.wb
+                    .cas_rows()
+                    .get(index)
+                    .is_some_and(|row| row.output.exact.is_some())
+            }) else {
+                editor.focus = true;
+                return;
+            };
+            format!("${}", index + 1)
+        } else {
+            String::new()
+        };
+        let source = if previous.is_empty() {
+            &editor.draft
+        } else {
+            &previous
+        };
+        if !self.wb.submit_cas(editor.row, source) {
             editor.refused = true;
             editor.focus = true;
             return;
@@ -319,7 +476,7 @@ impl crate::app::App {
         let advance = next < MAX_ROWS
             && rows
                 .get(next)
-                .is_none_or(|entry| entry.output.text.is_empty());
+                .is_none_or(|entry| entry.output.text.is_empty() && !entry.unevaluated);
         self.edit_cas_row(if advance { next } else { row });
     }
 

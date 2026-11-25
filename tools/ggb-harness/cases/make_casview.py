@@ -17,9 +17,9 @@ def delete(row):
     return {"action": "delete", "row": row}
 
 
-def case(number, *actions, script=()):
+def case(number, *actions, script=(), topic="rows"):
     return {
-        "id": f"casview-rows-{number:03}",
+        "id": f"casview-{topic}-{number:03}",
         "group": "casview",
         "script": list(script),
         "steps": [{"action": "initial"}],
@@ -36,6 +36,39 @@ cases = [
     case(5, evaluate(1, "f(x) = 1 + Simplify(g)"), script=("g: 2x + 3y = 6",)),
     case(6, evaluate(1, "{" + ", ".join(str(i) for i in range(1, 101)) + "}")),
 ]
+def closing(number, *actions):
+    return case(number, *actions, topic="closing")
+
+
+def event(action, row=1, **fields):
+    return {"action": action, "row": row, **fields}
+
+
+def saved(source, output=None, comment=False):
+    text = '<useAsText><FontStyle value="0"/></useAsText>'  if comment else ""
+    if output is not None:
+        text += f'<outputCell><expression value="{output}" native="true"/></outputCell>'
+    return (f'<cascell><cellPair>{text if comment else ""}<inputCell><expression value="{source}"/></inputCell>'
+            f'{text if not comment else ""}</cellPair></cascell>')
+
+
+cases.extend([
+    closing(1, evaluate(1, "a := 2"), evaluate(2, "a + 1")),
+    closing(2, evaluate(1, "a = 2"), evaluate(2, "a + 1")),
+    closing(3, evaluate(1, "2"), edit(1, "7"), event("undo"),
+            event("redo"), delete(1), event("undo")),
+    closing(4, evaluate(1, "7"), event("enter", 2)),
+    closing(5, evaluate(1, "3"), evaluate(2, "7"), event("static_edit", input="#2+1")),
+    closing(6, event("load", xml=saved("5!", "120") + saved("2", comment=True)),
+            evaluate(3, "$2 + 1"), edit(1, "4")),
+    closing(7, evaluate(1, "1" + " " * 4095 + "+2")),
+    closing(8, evaluate(1, "1" + " " * 4095), evaluate(2, "$1$+$1$+$1$+$1$"),
+            edit(1, "2" + " " * 4095)),
+    closing(9, event("load", xml=saved("1" + " " * 16384, "1"))),
+    closing(10, evaluate(1, "7"), event("visibility", visible=False),
+            event("visibility", visible=True)),
+    closing(11, event("load", xml=saved("7", "7"), repeat=1001)),
+])
 Path(__file__).with_name("casview.json").write_text(
     json.dumps({"cases": cases}, indent=2) + "\n", encoding="utf-8"
 )

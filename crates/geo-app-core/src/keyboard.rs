@@ -170,7 +170,9 @@ pub fn press(app: &mut App, key: Key) {
         if app.cas_editor.is_none() {
             app.edit_cas_row(app.wb.cas_rows().len().min(crate::cas::MAX_ROWS - 1));
         }
-        let editor = app.cas_editor.as_mut().expect("CAS editor");
+        let Some(editor) = app.cas_editor.as_mut() else {
+            return;
+        };
         let mut cursor = app.input_cursor;
         let mut draft = editor.draft.clone();
         let submit = apply(&mut draft, &mut cursor, key, app.keyboard.shift);

@@ -38,7 +38,7 @@ use crate::export::{
     DynamicColor, Fill, LineStyle, ObjectStyle, Rounding, SegmentEnd, SliderAnimation, SliderFlags,
     SliderLayout,
 };
-use crate::{ImportError, SavedCasRow, Settings, MAX_CAS_INPUT_BYTES, MAX_CAS_ROWS};
+use crate::{ImportError, SavedCasRow, Settings};
 use geo_kernel::kernel::control::ControlScript;
 use geo_kernel::kernel::image::{ImageCorner, ImageStyle};
 use geo_kernel::kernel::text::TextPosition;
@@ -158,6 +158,7 @@ pub enum Item {
 pub struct Document {
     pub items: Vec<Item>,
     pub cas_rows: Vec<SavedCasRow>,
+    pub cas_visible: Option<bool>,
     pub settings: Settings,
     pub view: Option<crate::export::View>,
     /// How many `<construction>` tags the file has. GeoGebra's reader appends
@@ -625,14 +626,20 @@ fn push(doc: &mut Document, item: Item) -> Result<(), ImportError> {
 }
 
 fn cas_attr(e: &BytesStart, name: &str) -> Result<Option<String>, ImportError> {
-    let value = attr(e, name)?;
-    if value
-        .as_ref()
-        .is_some_and(|s| s.len() > MAX_CAS_INPUT_BYTES)
-    {
-        return Err(ImportError::AttributeTooLong);
+    // CAS expressions are bounded by the document size here. Their
+    // evaluation limits belong to the workbench.
+    for attribute in e.attributes().with_checks(false) {
+        let attribute = attribute.map_err(bad)?;
+        if attribute.key.as_ref() == name {
+            return Ok(Some(
+                attribute
+                    .normalized_value(XmlVersion::Implicit1_0)
+                    .map_err(bad)?
+                    .into_owned(),
+            ));
+        }
     }
-    Ok(value)
+    Ok(None)
 }
 
 /// Parse the cell pair without letting its expressions enter the object list.
@@ -647,13 +654,13 @@ fn read_cas_expression(
         row.input_options.eval = cas_attr(e, "eval")?;
         row.input_options.postfix = cas_attr(e, "postfix")?;
         row.input_options.command = cas_attr(e, "evalCmd")?;
-        row.input_options.point_list = attr(e, "pointList")?.as_deref() == Some("true");
+        row.input_options.point_list = cas_attr(e, "pointList")?.as_deref() == Some("true");
     } else {
         row.output = cas_attr(e, "value")?;
         row.output_options.command = cas_attr(e, "evalCommand")?;
         row.output_options.comment = cas_attr(e, "evalComment")?;
-        row.output_options.error = attr(e, "error")?.as_deref() == Some("true");
-        row.output_options.native = attr(e, "native")?.as_deref() == Some("true");
+        row.output_options.error = cas_attr(e, "error")?.as_deref() == Some("true");
+        row.output_options.native = cas_attr(e, "native")?.as_deref() == Some("true");
     }
     Ok(())
 }
@@ -668,6 +675,9 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
     let mut element: Option<Element> = None;
     let mut in_kernel = false;
     let mut in_gui = false;
+    let mut perspective_depth = None;
+    let mut perspective_seen = false;
+    let mut views_depth = None;
     let mut view = None;
     let mut depth = 0usize;
     let mut cas_depth = None;
@@ -709,9 +719,6 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
             }
             match name.as_str() {
                 "cellPair" if in_construction && command.is_none() && element.is_none() => {
-                    if doc.cas_rows.len() == MAX_CAS_ROWS {
-                        return Err(ImportError::TooManyCasRows);
-                    }
                     if doc.weight == MAX_ITEMS {
                         return Err(ImportError::TooManyItems);
                     }
@@ -732,6 +739,23 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 }
                 "kernel" if !in_construction => in_kernel = !empty,
                 "gui" if !in_construction => in_gui = !empty,
+                "perspective" if in_gui && !empty => {
+                    if !perspective_seen || attr(e, "id")?.as_deref() == Some("tmp") {
+                        perspective_seen = true;
+                        doc.cas_visible = None;
+                        perspective_depth = Some(depth);
+                    }
+                }
+                "views" if !empty && perspective_depth == depth.checked_sub(1) => {
+                    views_depth = Some(depth);
+                }
+                "view"
+                    if views_depth == depth.checked_sub(usize::from(!empty))
+                        && views_depth.is_some()
+                        && attr(e, "id")?.as_deref() == Some("8") =>
+                {
+                    doc.cas_visible = Some(attr(e, "visible")?.as_deref() != Some("false"));
+                }
                 "font" if in_gui && !in_construction => {
                     doc.gui_font_size = attr(e, "size")?
                         .and_then(|s| s.parse::<u32>().ok())
@@ -1139,6 +1163,8 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 _ if cas_depth.is_some() => {}
                 "construction" => in_construction = false,
                 "kernel" => in_kernel = false,
+                "views" if views_depth == Some(depth + 1) => views_depth = None,
+                "perspective" if perspective_depth == Some(depth + 1) => perspective_depth = None,
                 "gui" => in_gui = false,
                 "euclidianView" => {
                     if let Some(view) = view.take().filter(|v| !v.second) {

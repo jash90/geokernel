@@ -2,8 +2,8 @@
 
 use crate::{latex::FormulaCache, theme, App};
 use eframe::egui::{
-    self, pos2, vec2, Align2, Button, FontId, Key, Rect, Role, ScrollArea, Stroke, TextEdit, Ui,
-    WidgetInfo,
+    self, pos2, vec2, Align2, Button, FontId, Key, Rect, Role, ScrollArea, Sense, Stroke,
+    StrokeKind, TextEdit, Ui, WidgetInfo,
 };
 use geo_app_core::cas::{MAX_INPUT_BYTES, MAX_ROWS};
 use geo_app_core::text::{label, Label};
@@ -21,11 +21,13 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
     let bounds = ui.max_rect();
     ui.painter().rect_filled(bounds, 0.0, theme::WHITE);
     ui.heading(label(Label::CasView));
+    crate::app::file_notices(app, ui);
     if app.cas_editor.as_ref().is_some_and(|editor| editor.refused) {
         ui.colored_label(theme::ERROR, label(Label::CasLimit));
     }
 
-    let count = (app.wb.cas_rows().len() + 1).min(MAX_ROWS);
+    let rows = app.wb.cas_rows().len();
+    let count = rows + usize::from(rows < MAX_ROWS);
     let mut action = None;
     let formulas = FormulaCache::new(ui.painter());
     ui.spacing_mut().item_spacing.y = 0.0;
@@ -114,7 +116,7 @@ fn draw_row(app: &mut App, ui: &mut Ui, formulas: &FormulaCache, row: usize) -> 
             .scope_builder(egui::UiBuilder::new().max_rect(field), |ui| {
                 TextEdit::singleline(&mut editor.draft)
                     .id(id)
-                    .char_limit(MAX_INPUT_BYTES / 4)
+                    .char_limit(MAX_INPUT_BYTES)
                     .desired_width(field.width())
                     .show(ui)
             })
@@ -138,34 +140,72 @@ fn draw_row(app: &mut App, ui: &mut Ui, formulas: &FormulaCache, row: usize) -> 
             .char_indices()
             .nth(160)
             .map_or(preview, |(end, _)| &preview[..end]);
-        let button = ui.put(field, Button::new(preview).truncate().frame(false));
+        let editable =
+            row < MAX_ROWS && entry.is_none_or(|entry| entry.input.len() <= MAX_INPUT_BYTES);
+        let button = ui
+            .add_enabled_ui(editable, |ui| {
+                ui.put(field, Button::new(preview).truncate().frame(false))
+            })
+            .inner;
         button.widget_info(|| WidgetInfo::labeled(Role::Button, true, &row_name));
         if button.clicked() {
             action = Some(Action::Edit(row));
         }
     }
     if let Some(entry) = entry {
-        let delete_rect = Rect::from_min_size(
-            pos2(rect.right() - 28.0, field.top()),
-            vec2(24.0, field.height()),
-        );
-        let delete_label = format!("{} {}", label(Label::DeleteCasRow), row + 1);
-        let delete = ui
-            .put(delete_rect, Button::new("×").frame(false))
-            .on_hover_text(&delete_label);
-        delete.widget_info(|| WidgetInfo::labeled(Role::Button, true, &delete_label));
-        if delete.clicked() {
-            action = Some(Action::Delete(row));
-        }
-        let area = Rect::from_min_max(
+        let mut area = Rect::from_min_max(
             pos2(field.left(), field.bottom() + 2.0),
             pos2(rect.right() - 8.0, rect.bottom() - 2.0),
         );
-        if entry.output.latex.is_empty() {
-            if !entry.output.text.is_empty() {
-                ui.put(area, egui::Label::new(&entry.output.text).truncate());
-            }
+        if entry.unevaluated {
+            area.max.y -= 16.0;
+            ui.painter().text(
+                pos2(area.left(), area.bottom()),
+                Align2::LEFT_TOP,
+                label(Label::CasUnevaluated),
+                FontId::proportional(12.0),
+                theme::MUTED,
+            );
+        }
+        let output = &entry.output.text;
+        let visible_output = if output.len() > geo_app_core::cas::MAX_OUTPUT_BYTES {
+            output
+                .char_indices()
+                .nth(256)
+                .map_or(output.as_str(), |(end, _)| &output[..end])
         } else {
+            output.as_str()
+        };
+        if !output.is_empty() || entry.unevaluated {
+            let result = ui.interact(
+                area,
+                ui.make_persistent_id("result"),
+                Sense::focusable_noninteractive(),
+            );
+            result.widget_info(|| {
+                let prefix = format!("{} {}", label(Label::CasResult), row + 1);
+                let name = if entry.unevaluated {
+                    format!(
+                        "{prefix}: {visible_output}. {}",
+                        label(Label::CasUnevaluated)
+                    )
+                } else {
+                    format!("{prefix}: {visible_output}")
+                };
+                WidgetInfo::labeled(Role::Group, true, name)
+            });
+            if result.has_focus() {
+                ui.painter().rect_stroke(
+                    area,
+                    2.0,
+                    ui.visuals().selection.stroke,
+                    StrokeKind::Inside,
+                );
+            }
+        }
+        if !output.is_empty() && entry.output.latex.is_empty() {
+            ui.put(area, egui::Label::new(visible_output).truncate());
+        } else if !output.is_empty() {
             let formula = formulas.get(
                 ui.painter(),
                 &entry.output.latex,
@@ -188,6 +228,18 @@ fn draw_row(app: &mut App, ui: &mut Ui, formulas: &FormulaCache, row: usize) -> 
                 });
             }
         }
+        let delete_rect = Rect::from_min_size(
+            pos2(rect.right() - 28.0, field.top()),
+            vec2(24.0, field.height()),
+        );
+        let delete_label = format!("{} {}", label(Label::DeleteCasRow), row + 1);
+        let delete = ui
+            .put(delete_rect, Button::new("×").frame(false))
+            .on_hover_text(&delete_label);
+        delete.widget_info(|| WidgetInfo::labeled(Role::Button, true, &delete_label));
+        if delete.clicked() {
+            action = Some(Action::Delete(row));
+        }
     }
     action
 }
@@ -197,6 +249,65 @@ mod tests {
     use super::*;
     use crate::headless::{self, Headless, Profile, DT};
     use crate::Workbench;
+
+    #[test]
+    fn desktop_editor_accepts_a_full_input() {
+        let mut window = Headless::new(
+            Workbench::default(),
+            None,
+            Profile::Desktop,
+            (1000.0, 480.0),
+            1.0,
+        );
+        window.app.show_cas = true;
+        window.app.edit_cas_row(0);
+        window.frame(DT, Vec::new());
+        let expression = format!("1{}+2", " ".repeat(MAX_INPUT_BYTES - 3));
+        window.frame(DT, vec![egui::Event::Text(expression.clone())]);
+        window.frame(
+            DT,
+            vec![headless::key(Key::Enter, true, egui::Modifiers::NONE)],
+        );
+        assert_eq!(window.app.wb.cas_rows()[0].input, expression);
+        assert_eq!(window.app.wb.cas_rows()[0].output.text, "3");
+    }
+
+    #[test]
+    fn result_is_labelled_and_follows_the_input_in_tab_order() {
+        let ctx = egui::Context::default();
+        ctx.enable_accesskit();
+        let mut wb = Workbench::default();
+        assert!(wb.submit_cas(0, "2/3 * 5/7"));
+        let mut app = App::new(wb, None);
+        app.edit_cas_row(0);
+        let frame = |app: &mut App, events| {
+            let screen = Rect::from_min_size(egui::Pos2::ZERO, vec2(400.0, 350.0));
+            let mut output = ctx.run_ui(headless::raw_input(screen, DT, DT as f32, events), |ui| {
+                show(app, ui)
+            });
+            output.textures_delta.clear();
+            output.platform_output.accesskit_update.unwrap()
+        };
+        let tree = frame(&mut app, Vec::new());
+        let node = |name: &str| {
+            tree.nodes
+                .iter()
+                .find(|(_, node)| node.label() == Some(name))
+                .unwrap_or_else(|| panic!("missing node {name}"))
+                .0
+        };
+        let input = node("Wiersz 1");
+        let result = node("Wynik wiersza CAS 1: 10 / 21");
+        let delete = node("Usuń wiersz 1");
+        assert_eq!(tree.focus, input);
+        let tab = || vec![headless::key(Key::Tab, true, egui::Modifiers::NONE)];
+        assert_eq!(frame(&mut app, tab()).focus, result);
+        frame(
+            &mut app,
+            vec![headless::key(Key::Tab, false, egui::Modifiers::NONE)],
+        );
+        assert_eq!(frame(&mut app, tab()).focus, delete);
+    }
 
     #[test]
     fn enter_keeps_the_next_editor_in_view() {

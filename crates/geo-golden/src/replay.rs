@@ -302,10 +302,47 @@ fn replay_cas_view(document: &mut Workbench, out: &mut CaseOutcome, actions: &[C
     for (i, step) in actions.iter().enumerate() {
         let row = step.row - 1;
         let applied = match step.action {
-            CasAction::Evaluate | CasAction::Edit => {
+            CasAction::Evaluate | CasAction::Edit | CasAction::StaticEdit => {
                 document.submit_cas(row, step.input.as_deref().expect("validated CAS input"))
             }
             CasAction::Delete => document.delete_cas(row),
+            CasAction::Undo => document.undo(),
+            CasAction::Redo => document.redo(),
+            CasAction::Enter => {
+                let mut app = geo_app_core::app::App::new(std::mem::take(document), None);
+                app.edit_cas_row(row);
+                app.submit_cas_input();
+                *document = app.wb;
+                document.cas_rows().len() > row
+            }
+            CasAction::Load => {
+                let cells = step
+                    .xml
+                    .as_deref()
+                    .unwrap()
+                    .repeat(step.repeat.unwrap_or(1));
+                let xml = format!("<geogebra><construction>{cells}</construction></geogebra>");
+                document.load_bytes(xml.as_bytes(), "CAS recording").is_ok()
+            }
+            CasAction::Visibility => {
+                let tag = step.view_xml.as_deref().unwrap();
+                let xml = format!(
+                    "<geogebra><gui><perspectives><perspective id=\"tmp\"><views>\
+                    {tag}</views></perspective></perspectives></gui><construction/></geogebra>"
+                );
+                let mut saved = Workbench::default();
+                saved.load_bytes(xml.as_bytes(), "CAS perspective").unwrap();
+                let app = geo_app_core::app::App::new(saved, None);
+                if app.show_cas != step.visible.unwrap() {
+                    out.mismatches.push(failure(
+                        i,
+                        "visible",
+                        &step.visible.unwrap().to_string(),
+                        app.show_cas.to_string(),
+                    ));
+                }
+                true
+            }
         };
         if !applied {
             out.mismatches.push(failure(
@@ -341,7 +378,11 @@ fn replay_cas_view(document: &mut Workbench, out: &mut CaseOutcome, actions: &[C
                 }
             }
             if let Some(expected) = expected.number {
-                let actual = actual.output.exact.as_deref().and_then(cas_number);
+                let actual = if actual.unevaluated {
+                    cas_number(&actual.output.text)
+                } else {
+                    actual.output.exact.as_deref().and_then(cas_number)
+                };
                 if !actual.is_some_and(|actual| numbers_agree(expected, actual)) {
                     out.mismatches.push(failure(
                         i,

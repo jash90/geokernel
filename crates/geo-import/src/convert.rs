@@ -364,6 +364,7 @@ pub(crate) fn convert_with_assets(
     let mut out = c.out;
     out.settings = doc.settings;
     out.cas_rows = doc.cas_rows;
+    out.cas_visible = doc.cas_visible;
     out.view = doc.view;
     if out.settings.continuous {
         out.notes.push(

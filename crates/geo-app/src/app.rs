@@ -21,7 +21,8 @@ pub fn open(app: &mut App, path: &Path) {
     match crate::cli::load_into(&mut app.wb, path) {
         Ok(()) => {
             app.load_error = None;
-            app.show_cas = !app.wb.cas_rows().is_empty();
+            app.show_cas = app.wb.cas_visible_on_open();
+            app.save_error = None;
             app.cancel_cas_edit();
             app.source_path = Some(path.into());
             if app.wb.file_view().is_some() {
@@ -33,6 +34,28 @@ pub fn open(app: &mut App, path: &Path) {
             app.view_request = Some(ViewRequest::Initial);
         }
         Err(e) => app.load_error = Some(e),
+    }
+}
+
+pub(crate) fn file_notices(app: &mut App, ui: &mut Ui) {
+    for (notice, prefix) in [
+        (&mut app.save_error, None),
+        (&mut app.load_error, Some(Label::OpenFailed)),
+    ] {
+        if let Some(message) = notice.as_deref() {
+            let close = ui
+                .horizontal_wrapped(|ui| {
+                    let display = prefix.map_or(std::borrow::Cow::Borrowed(message), |prefix| {
+                        format!("{}: {message}", text::label(prefix)).into()
+                    });
+                    ui.colored_label(theme::ERROR, display);
+                    ui.small_button(text::label(Label::Close)).clicked()
+                })
+                .inner;
+            if close {
+                *notice = None;
+            }
+        }
     }
 }
 
@@ -209,9 +232,10 @@ fn save_dialog(app: &mut App, ctx: &egui::Context) {
     });
     let (save, cancel) = response.inner;
     if save {
+        app.save_error = None;
         let path = ggb_path(Path::new(path.trim()));
         if let Err(error) = save_to(app, &path) {
-            app.load_error = Some(format!(
+            app.save_error = Some(format!(
                 "{} ({})\n{error}",
                 text::label(Label::SaveFailed),
                 path.display()
@@ -274,12 +298,21 @@ fn save_to(app: &App, path: &Path) -> Result<(), String> {
             grid: app.decor.grid,
         }
     });
-    let bytes = app.wb.export_ggb(view).map_err(|e| e.to_string())?;
+    let bytes = app
+        .wb
+        .export_ggb_with_cas_visibility(view, app.show_cas)
+        .map_err(|e| e.to_string())?;
     let mut file = std::fs::OpenOptions::new()
         .write(true)
         .create_new(true)
         .open(path)
-        .map_err(|e| e.to_string())?;
+        .map_err(|error| {
+            if error.kind() == std::io::ErrorKind::AlreadyExists {
+                text::label(Label::SaveDestinationExists).into()
+            } else {
+                error.to_string()
+            }
+        })?;
     if let Err(error) = file.write_all(&bytes) {
         drop(file);
         let _ = std::fs::remove_file(path);
@@ -402,6 +435,61 @@ fn control_dialog(app: &mut App, ctx: &egui::Context) {
 #[cfg(test)]
 mod export_path_tests {
     use super::*;
+
+    #[test]
+    fn failed_save_as_is_visible_from_cas() {
+        use egui::accesskit::{Action, ActionRequest, TreeId};
+
+        let ctx = egui::Context::default();
+        ctx.enable_accesskit();
+        let mut app = App::new(crate::Workbench::default(), None);
+        app.show_cas = true;
+        let path = std::env::temp_dir().join(format!("geokernel-save-{}.ggb", std::process::id()));
+        std::fs::write(&path, "original").unwrap();
+        app.save_path = Some(path.to_string_lossy().into_owned());
+        let frame = |app: &mut App, events| {
+            let screen = Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1000.0, 500.0));
+            let mut output = ctx.run_ui(
+                crate::headless::raw_input(screen, 0.0, 0.016, events),
+                |ui| show(app, ui),
+            );
+            output.textures_delta.clear();
+            output.platform_output.accesskit_update.unwrap()
+        };
+        frame(&mut app, Vec::new());
+        let tree = frame(&mut app, Vec::new());
+        let save = tree
+            .nodes
+            .iter()
+            .find(|(_, n)| n.label() == Some(text::label(Label::SaveFile)))
+            .unwrap_or_else(|| {
+                panic!(
+                    "Save button: {:?}",
+                    tree.nodes
+                        .iter()
+                        .filter_map(|(_, n)| n.label().or_else(|| n.value()))
+                        .collect::<Vec<_>>()
+                )
+            })
+            .0;
+        frame(
+            &mut app,
+            vec![egui::Event::AccessKitActionRequest(ActionRequest {
+                action: Action::Click,
+                target_tree: TreeId::ROOT,
+                target_node: save,
+                data: None,
+            })],
+        );
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "original");
+        std::fs::remove_file(path).unwrap();
+        assert!(app.save_path.is_none());
+        let tree = frame(&mut app, Vec::new());
+        assert!(tree.nodes.iter().any(|(_, n)| n
+            .value()
+            .is_some_and(|label| label.starts_with(text::label(Label::SaveFailed))
+                && label.contains(text::label(Label::SaveDestinationExists)))));
+    }
 
     #[test]
     fn save_as_defaults_next_to_the_source_and_keeps_a_dotted_name() {

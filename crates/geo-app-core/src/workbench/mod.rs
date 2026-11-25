@@ -68,6 +68,8 @@ struct ToolUse {
 #[derive(Clone, Debug)]
 struct UndoState {
     log: Log,
+    cas: crate::cas::Table,
+    cas_only: bool,
     camera: Option<Camera>,
     view_only: bool,
 }
@@ -83,6 +85,7 @@ pub struct Workbench {
     file_object_styles: BTreeMap<String, geo_import::export::ObjectStyle>,
     file_slider_animation: BTreeMap<String, geo_import::export::SliderAnimation>,
     file_view: Option<geo_import::export::View>,
+    file_cas_visible: Option<bool>,
     version: u64,
     /// Counts the times the construction was rebuilt or replaced. Object ids
     /// are only valid within one such period.
@@ -136,18 +139,30 @@ impl Workbench {
         Ok(w)
     }
 
-    pub fn cas_rows(&self) -> &[crate::cas::Entry] {
+    pub fn cas_rows(&self) -> &[std::sync::Arc<crate::cas::Entry>] {
         self.cas.rows()
     }
 
     /// Submits a CAS row at a zero-based index, including the next empty row.
     pub fn submit_cas(&mut self, index: usize, input: &str) -> bool {
-        self.cas.submit(&self.construction, index, input)
+        let mut before = self.state(self.copy(&self.log));
+        before.cas_only = true;
+        if !self.cas.submit(&self.construction, index, input) {
+            return false;
+        }
+        self.undo.record(before);
+        true
     }
 
     /// Deletes a CAS row and its dependents.
     pub fn delete_cas(&mut self, index: usize) -> bool {
-        self.cas.delete(index)
+        let mut before = self.state(self.copy(&self.log));
+        before.cas_only = true;
+        if !self.cas.delete(index) {
+            return false;
+        }
+        self.undo.record(before);
+        true
     }
 
     pub fn construction(&self) -> &Construction {
@@ -215,6 +230,8 @@ impl Workbench {
     fn state(&self, log: Log) -> UndoState {
         UndoState {
             log,
+            cas: self.cas.clone(),
+            cas_only: false,
             camera: self.camera,
             view_only: false,
         }
@@ -300,6 +317,7 @@ impl Workbench {
         self.file_object_styles.clear();
         self.file_slider_animation.clear();
         self.file_view = None;
+        self.file_cas_visible = None;
         self.selected = None;
         self.undo.clear();
         self.gesture = None;
@@ -761,6 +779,7 @@ impl Workbench {
         // A view-only step holds the very journal the document has, so the
         // state kept for redo is view-only too: it never replays either.
         current.view_only = self.undo.undo_is_view_only(|s| s.view_only);
+        current.cas_only = self.undo.undo_is_view_only(|s| s.cas_only);
         let Some(prev) = self.undo.undo(current) else {
             return false;
         };
@@ -778,11 +797,12 @@ impl Workbench {
     /// document has, so it needs none — and the camera it names is handed
     /// to the window. On error the document stays as it was.
     fn step_back(&mut self, next: UndoState) -> Result<(), String> {
-        if next.view_only {
+        if next.view_only || next.cas_only {
             self.notice = None;
         } else {
             self.restore_state(next.log, true)?;
         }
+        self.cas = next.cas;
         self.restored_view = next.camera.filter(|c| Some(*c) != self.camera);
         Ok(())
     }
@@ -797,6 +817,7 @@ impl Workbench {
         let mut current = self.state(self.copy(&self.log));
         // As in `undo`: the way back over a view-only step is view-only.
         current.view_only = self.undo.redo_is_view_only(|s| s.view_only);
+        current.cas_only = self.undo.redo_is_view_only(|s| s.cas_only);
         let Some(next) = self.undo.redo(current) else {
             return false;
         };

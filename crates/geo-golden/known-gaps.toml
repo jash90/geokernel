@@ -2877,3 +2877,23 @@ undefined = true
 id = "cascell-closing-004"
 reason = 'Kernel-only CAS rows refuse NSolutions with a starting value (text ?, LaTeX \mathbf{?}). The reference prints {1.41} and \mathbf{ \left\{ 1.41 \right\} }. See crates/geo-kernel/src/expr/cas/row.rs:131.'
 mismatches = ["0:output", "0:latex"]
+
+[[gap]]
+id = "casview-closing-001"
+reason = "The reference prints a:=2 and binds a, so the next row gives 3. The single-row evaluator prints ? and leaves a + 1 symbolic. CAS assignment state and its construction twins are outside the row API."
+mismatches = ["0:1.output", "0:1.latex", "1:1.output", "1:1.latex", "1:2.output", "1:2.latex", "1:2.number"]
+
+[[gap]]
+id = "casview-closing-007"
+reason = "The reference collapses 4,095 spaces to one. The desktop keeps the typed string and agrees on the result 3."
+mismatches = ["0:1.input"]
+
+[[gap]]
+id = "casview-closing-008"
+reason = "The reference trims the 4,096-byte row to one digit and keeps the repeated input-reference result 4 through an edit. Preserving the padding makes the expanded row exceed 16 KiB and print ?."
+mismatches = ["0:1.input", "1:1.input", "1:2.output", "1:2.latex", "1:2.number", "2:1.input", "2:2.output", "2:2.latex", "2:2.number"]
+
+[[gap]]
+id = "casview-closing-009"
+reason = "The reference collapses the saved input to one digit and a single trailing space. The importer preserves all 16,385 bytes and marks the row unevaluated with the same saved output 1."
+mismatches = ["0:1.input"]

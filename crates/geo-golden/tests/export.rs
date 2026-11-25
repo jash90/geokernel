@@ -2208,10 +2208,10 @@ fn cas_export_witness() -> Value {
         )
         .unwrap();
     let dir = Scratch::new("cas");
-    for (name, wb) in [("authored", authored), ("imported", imported)] {
+    for (name, wb, visible) in [("authored", authored, true), ("imported", imported, false)] {
         fs::write(
             dir.0.join(format!("{name}.ggb")),
-            wb.export_ggb(None).unwrap(),
+            wb.export_ggb_with_cas_visibility(None, visible).unwrap(),
         )
         .unwrap();
     }

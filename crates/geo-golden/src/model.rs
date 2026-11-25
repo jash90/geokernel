@@ -48,6 +48,10 @@ pub struct CasViewStep {
     /// One-based CAS table row number.
     pub row: usize,
     pub input: Option<String>,
+    pub xml: Option<String>,
+    pub repeat: Option<usize>,
+    pub visible: Option<bool>,
+    pub view_xml: Option<String>,
     pub rows: Vec<CasViewRow>,
 }
 
@@ -57,6 +61,12 @@ pub enum CasAction {
     Evaluate,
     Edit,
     Delete,
+    Undo,
+    Redo,
+    Enter,
+    StaticEdit,
+    Load,
+    Visibility,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1313,12 +1323,24 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 CasAction::Evaluate => {
                     has_input && step.row == count + 1 && step.rows.len() == count + 1
                 }
-                CasAction::Edit => has_input && step.row <= count && step.rows.len() == count,
+                CasAction::Edit | CasAction::StaticEdit => {
+                    has_input && step.row <= count && step.rows.len() == count
+                }
                 CasAction::Delete => {
                     step.input.is_none() && step.row <= count && step.rows.len() < count
                 }
+                CasAction::Undo | CasAction::Redo => step.input.is_none(),
+                CasAction::Enter => {
+                    step.input.is_none() && step.row == count + 1 && step.rows.len() == count + 1
+                }
+                CasAction::Load => {
+                    step.xml.is_some() && (1..=2000).contains(&step.repeat.unwrap_or(1))
+                }
+                CasAction::Visibility => {
+                    step.visible.is_some() && step.view_xml.is_some() && step.rows.len() == count
+                }
             };
-            if !valid || step.row == 0 || step.rows.len() > geo_app_core::cas::MAX_ROWS {
+            if !valid || step.row == 0 {
                 return Err(format!(
                     "invalid CAS view action {:?} for row {}",
                     step.action, step.row

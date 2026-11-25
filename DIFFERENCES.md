@@ -311,9 +311,10 @@ is needed within the stated bounds.
 
 | Setting | GeoGebra | This project |
 | --- | --- | --- |
-| CAS rows | A dedicated CAS session evaluates assignments and supports the view's evaluation modes. | The CAS panel uses the construction's one-row evaluator with preceding-row references. Unsupported expressions, including assignments with `:=`, display `?`. |
-| Work limits | The CAS backend sets its own evaluation limits. | The table admits up to 1,000 rows and 16 KiB per row input. It stops a single edit cascade at 256 KiB of source and expanded input, and displays `?` for results larger than 4 KiB per representation. |
-| File presentation | A saved CAS cell can carry editing modes and comment styling. | The reader retains cell input and output and their expression attributes. Comment typography and tool-specific editing modes are outside the panel's current support. |
+| CAS assignments (`casview-closing-001`) | `a := 2` prints `a:=2`, binds `a` and makes the later `a + 1` evaluate to `3`. The equation `a = 2` leaves `a` unbound. | The stateless single-row evaluator prints `?` for `a := 2` and leaves `a + 1` symbolic. The equation agrees (`casview-closing-002`). |
+| CAS whitespace (`casview-closing-007`, `-008`, `-009`) | The cell rewrites or trims runs of spaces in the recorded inputs. | The editor and importer keep the exact input. |
+| CAS work limits (`casview-closing-008`, `-009`, `-011`) | The reference normalizes the padded row to one digit. Four references to that input print `4`, which it retains after the row changes. It opens the 16 KiB-plus row and the 1,001-row file without an evaluation warning. | The padded input is preserved, so the expanded row exceeds 16 KiB and prints `?`. An edit whose expanded copies would exceed 256 KiB is refused atomically. Files retain rows and saved outputs under the document-wide XML and item limits. Inputs beyond 16 KiB or rows past 1,000 open with a warning, and do not take part in evaluation or renumbering. Newly computed results above 4 KiB per representation display `?`. |
+| CAS file presentation | A saved CAS cell can carry editing modes and comment styling. | The reader retains cell input and output and their expression attributes. Comment typography and tool-specific editing modes are outside the panel's current support. Native saved integer results have math formatting. Other native results are shown as saved text, with a bounded display preview for long results. |
 
 ## Numerical function analysis
 
