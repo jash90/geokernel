@@ -19,3 +19,75 @@ fn refuses_a_row_above_the_input_limit_before_trimming() {
     input.push(' ');
     assert_eq!(c.evaluate_cas_row(&input).text, "?");
 }
+
+#[cfg(not(feature = "giac"))]
+#[test]
+fn typed_decimals_keep_an_exact_result() {
+    let c = Construction::new();
+    assert_eq!(
+        c.evaluate_cas_row("1.234").exact.as_deref(),
+        Some("617/500")
+    );
+}
+
+#[cfg(not(feature = "giac"))]
+#[test]
+fn evaluates_recorded_exact_row_regressions() {
+    let mut failures = Vec::new();
+    for (script, input, expected, latex) in [
+        ("a = 1/3", "3*a", "1", r"\mathbf{1}"),
+        ("a = 1/3\nb = a + 0", "3*b", "1", r"\mathbf{1}"),
+        ("", "1.234", "617 / 500", r"\mathbf{\frac{617}{500}}"),
+        (
+            "",
+            "{1.234, 2}",
+            "{617 / 500, 2}",
+            r"\mathbf{ \left\{ \frac{617}{500}, 2 \right\} }",
+        ),
+        ("", "Solve(x^2/x = 0)", "{}", r"\mathbf{\left\{ \right\}}"),
+        (
+            "",
+            "Solve(x = sqrt(4))",
+            "{x = 2}",
+            r"\mathbf{ \left\{ x = 2 \right\} }",
+        ),
+        (
+            "",
+            "Solve(x^2/x = sqrt(0))",
+            "{}",
+            r"\mathbf{\left\{ \right\}}",
+        ),
+        (
+            "",
+            "Solve(y = 1)",
+            "{y = 1}",
+            r"\mathbf{ \left\{ y = 1 \right\} }",
+        ),
+        ("", "x² - 1", "x² - 1", r"\mathbf{x^{2} - 1}"),
+        ("", "5!", "120", r"\mathbf{120}"),
+        ("", "abs(-3)", "3", r"\mathbf{3}"),
+        ("", "abs(x)", "abs(x)", r"\mathbf{\left|x\right|}"),
+        (
+            "",
+            "Factor(x^3-x)",
+            "x (x + 1) (x - 1)",
+            r"\mathbf{x \; \left(x + 1 \right) \; \left(x - 1 \right)}",
+        ),
+        ("g: x + y = 0", "g", "x + y = 0", r"\mathbf{x + y = 0}"),
+        (
+            "g: x + y = 0.5",
+            "g",
+            "x + y = 1 / 2",
+            r"\mathbf{x + y = \frac{1}{2}}",
+        ),
+    ] {
+        let c = geo_kernel::script::load(script).unwrap();
+        let result = c.evaluate_cas_row(input);
+        if (result.text.as_str(), result.latex.as_str()) != (expected, latex) {
+            failures.push(format!(
+                "{script}: {input}: got {result:?}; expected {expected}, {latex}"
+            ));
+        }
+    }
+    assert!(failures.is_empty(), "{}", failures.join("\n"));
+}

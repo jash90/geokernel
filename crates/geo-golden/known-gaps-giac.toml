@@ -1672,3 +1672,7 @@ agrees = true
 [[gap]]
 id = "cas-curve-024"
 agrees = true
+
+[[gap]]
+id = "cascell-closing-004"
+agrees = true

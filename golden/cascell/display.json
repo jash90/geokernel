@@ -1,0 +1,75 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cascell-display-001",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Factor(x^3-x)", "output": "x (x + 1) (x - 1)", "latex": "\\mathbf{x \\; \\left(x + 1 \\right) \\; \\left(x - 1 \\right)}" }
+    },
+    {
+      "id": "cascell-display-002",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Factor(x^4-x^2)", "output": "x² (x + 1) (x - 1)", "latex": "\\mathbf{x^{2} \\; \\left(x + 1 \\right) \\; \\left(x - 1 \\right)}" }
+    },
+    {
+      "id": "cascell-display-003",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Factor((x-2)*(x+1)*(x+3))", "output": "(x + 1) (x - 2) (x + 3)", "latex": "\\mathbf{\\left(x + 1 \\right) \\; \\left(x - 2 \\right) \\; \\left(x + 3 \\right)}" }
+    },
+    {
+      "id": "cascell-display-004",
+      "group": "cascell",
+      "script": [
+        "g: x + y = 0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.0 }
+        }
+      ],
+      "cascell": { "input": "g", "output": "x + y = 0", "latex": "\\mathbf{x + y = 0}" }
+    },
+    {
+      "id": "cascell-display-005",
+      "group": "cascell",
+      "script": [
+        "g: x + y = 0.5"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -0.5 }
+        }
+      ],
+      "cascell": { "input": "g", "output": "x + y = 1 / 2", "latex": "\\mathbf{x + y = \\frac{1}{2}}" }
+    }
+  ]
+}
