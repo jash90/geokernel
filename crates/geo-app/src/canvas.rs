@@ -13,6 +13,7 @@ use crate::theme;
 use crate::tools::{Pick, Tool};
 use crate::view::{self, Camera};
 use eframe::egui::{self, pos2, vec2, Rect, Sense, Stroke, Ui};
+use geo_app_core::app::InputBoxEdit;
 use geo_app_core::camera;
 use geo_app_core::text::{self, Label};
 use geo_kernel::kernel::{Id, Kind, Value};
@@ -993,7 +994,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         &mut list_items_left,
     );
     let input_boxes = input_boxes.into_inner();
-    input_box_editor(app, ui, rect, &input_boxes, input_box_click);
+    input_box_editor(app, ui, rect, &input_boxes, input_box_click, &starts);
     app.input_box_rects = input_boxes;
     if app.pen_samples.len() >= 2 {
         let samples = app
@@ -1635,12 +1636,13 @@ fn input_box_editor(
     canvas: Rect,
     painted_input_boxes: &[(Id, geo_app_core::geom::Rect)],
     clicked: Option<Option<Id>>,
+    presses: &[Option<egui::Pos2>; STARTS],
 ) {
     use geo_kernel::kernel::control::MAX_INPUT_BOX_CHARS;
     let mut draft = app.input_box_edit.take();
     if app.tool.tool() != Tool::Move {
-        if let Some((label, text, _)) = draft {
-            commit_input_box(app, &label, &text);
+        if let Some(edit) = draft.filter(|edit| edit.changed) {
+            commit_input_box(app, &edit.label, &edit.text);
         }
         return;
     }
@@ -1648,7 +1650,7 @@ fn input_box_editor(
     let c = app.wb.construction();
     let active = draft
         .as_ref()
-        .and_then(|(label, _, _)| c.id(label))
+        .and_then(|edit| c.id(&edit.label))
         .filter(|&id| editable_input_box(c, id).is_some());
     let unpainted = active
         .filter(|id| !painted_input_boxes.iter().any(|(painted, _)| painted == id))
@@ -1670,7 +1672,7 @@ fn input_box_editor(
         }
         let field = ui.scope_id().with(("canvas_input_box", id.index()));
         if Some(id) == active {
-            let (label, mut text, focus) = draft.take().unwrap();
+            let mut edit = draft.take().unwrap();
             let rect = rect.egui();
             let put = |ui: &mut Ui, text: &mut String| {
                 ui.put(
@@ -1695,7 +1697,7 @@ fn input_box_editor(
                 })
             });
             let widget = if visible {
-                let widget = put(ui, &mut text);
+                let widget = put(ui, &mut edit.text);
                 widget.widget_info(|| {
                     egui::WidgetInfo::labeled(egui::Role::TextInput, true, input_box_name(c, id))
                 });
@@ -1703,7 +1705,7 @@ fn input_box_editor(
             } else {
                 ui.scope(|ui| {
                     ui.set_opacity(0.0);
-                    put(ui, &mut text)
+                    put(ui, &mut edit.text)
                 })
                 .inner
             };
@@ -1712,28 +1714,34 @@ fn input_box_editor(
                     options.input_options.surrender_focus_on = previous;
                 });
             }
-            if focus && visible {
+            edit.changed |= widget.changed();
+            if edit.request_focus && visible {
                 widget.request_focus();
                 let mut state = egui::TextEdit::load_state(ui.ctx(), field).unwrap_or_default();
                 state
                     .cursor
-                    .set_char_range(Some(egui::text::CCursorRange::select_all_str(&text)));
+                    .set_char_range(Some(egui::text::CCursorRange::select_all_str(&edit.text)));
                 egui::TextEdit::store_state(ui.ctx(), field, state);
             }
+            // An outside press ends the edit even when the gesture turns
+            // into a drag. The widget has already read the frame's text.
+            let pressed_elsewhere = presses.iter().flatten().any(|&pos| !rect.contains(pos));
             if !visible
+                || pressed_elsewhere
                 || clicked.is_some_and(|hit| hit != Some(id))
                 || widget.lost_focus()
                 || widget.clicked_elsewhere()
                 || tab
                 || (widget.has_focus() && enter)
             {
-                submitted = Some((label, text));
+                submitted = edit.changed.then_some(edit);
                 if !tab {
                     widget.surrender_focus();
                 }
                 ui.ctx().request_repaint();
             } else {
-                app.input_box_edit = Some((label, text, false));
+                edit.request_focus = false;
+                app.input_box_edit = Some(edit);
             }
         } else {
             let widget = ui.interact(rect.egui(), field, egui::Sense::focusable_noninteractive());
@@ -1746,17 +1754,18 @@ fn input_box_editor(
         }
     }
 
-    if let Some((label, text)) = submitted {
-        commit_input_box(app, &label, &text);
+    if let Some(edit) = submitted {
+        commit_input_box(app, &edit.label, &edit.text);
     }
     if app.input_box_edit.is_none() {
         if let Some(id) = next.or(focused) {
             let c = app.wb.construction();
-            app.input_box_edit = Some((
-                c.label(id).to_owned(),
-                c.input_box_text(id).into_owned(),
-                true,
-            ));
+            app.input_box_edit = Some(InputBoxEdit {
+                label: c.label(id).to_owned(),
+                text: c.input_box_text(id).into_owned(),
+                request_focus: true,
+                changed: false,
+            });
             ui.ctx().request_repaint();
         }
     }

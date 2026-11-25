@@ -397,6 +397,7 @@ five original desktop replay event sequences are outside these probes.
 | --- | --- |
 | `controls-reviewopen-001` and `saved-input-box-001` | Loading the saved file replaces the field instance and loads `a = 3.5`. |
 | `controls-reviewblur-001` | Submitting `3.5` through the box updates `a` to 3.5 and `b` to 7. |
+| `controls-reviewdrag-001` | Moving the linked slider from 2 to 5 changes the box text from 2 to 5 and the dependent number from 4 to 10. |
 | `controls-reviewtab-001` | The headless keyboard order is first, second, third. |
 | `canvas-reviewstrokes-001` | Two pointer gestures preserve both paths in one stroke object, with a y range from -2 to 0.8333333333333334. The golden construction case separately records both PenStroke commands. |
 | `canvas-reviewchart-001` | All 17 copies and the 257-member plot hit at the first dot. |

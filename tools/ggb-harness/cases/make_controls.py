@@ -20,4 +20,7 @@ cases.case("reviewtab", [
     "a = 0", "b = 0", "c = 0",
     "first = $inputBox(a, _)", "second = $inputBox(b, _)", "third = $inputBox(c, _)",
 ], [setn("c", 3.5)])
+cases.case("reviewdrag", [
+    "a = Slider(0, 8, 0.5)", "b = 2*a", "field = $inputBox(a, _)",
+], [setn("a", 2.0), setn("a", 5.0)])
 cases.write()

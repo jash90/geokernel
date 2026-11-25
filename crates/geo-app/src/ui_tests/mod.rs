@@ -1022,7 +1022,7 @@ fn input_box_accepting_an_unchanged_angle_keeps_its_value() {
     );
 
     click(&mut h, pos);
-    assert_eq!(h.state().input_box_edit.as_ref().unwrap().1, "33.33°");
+    assert_eq!(h.state().input_box_edit.as_ref().unwrap().text, "33.33°");
     h.key_press(egui::Key::Enter);
     h.run();
     assert_eq!(h.state().wb.construction().value(angle), original);
@@ -1104,13 +1104,19 @@ fn input_box_canvas_edits_a_boolean_and_a_text_literal() {
             ),
         );
         assert_eq!(
-            h.state().input_box_edit.as_ref().map(|e| e.0.as_str()),
+            h.state()
+                .input_box_edit
+                .as_ref()
+                .map(|edit| edit.label.as_str()),
             Some(label),
         );
         h.input_mut().events.push(Event::Text(data.into()));
         h.step();
         assert_eq!(
-            h.state().input_box_edit.as_ref().map(|e| e.1.as_str()),
+            h.state()
+                .input_box_edit
+                .as_ref()
+                .map(|edit| edit.text.as_str()),
             Some(data)
         );
         h.key_press(egui::Key::Enter);
@@ -1239,7 +1245,7 @@ fn input_box_commits_on_tab_and_canvas_click() {
             h.state()
                 .input_box_edit
                 .as_ref()
-                .map(|edit| edit.1.as_str()),
+                .map(|edit| edit.text.as_str()),
             Some("3.5")
         );
         if tab {
@@ -1352,7 +1358,7 @@ fn input_box_tab_reaches_an_idle_box_and_uses_its_caption() {
         h.state()
             .input_box_edit
             .as_ref()
-            .map(|edit| edit.0.as_str()),
+            .map(|edit| edit.label.as_str()),
         Some("second")
     );
     h.input_mut().events.push(Event::Text("4".into()));
@@ -1383,7 +1389,7 @@ fn closing_input_box_draft_stays_with_its_worksheet() {
     click_canvas_input_box(&mut h, "field");
     h.input_mut().events.push(Event::Text("5.5".into()));
     h.step();
-    assert_eq!(h.state().input_box_edit.as_ref().unwrap().1, "5.5");
+    assert_eq!(h.state().input_box_edit.as_ref().unwrap().text, "5.5");
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../golden/ggb/saved/saved-input-box-001.xml");
     #[derive(Debug)]
@@ -1463,7 +1469,7 @@ fn closing_input_box_tab_visits_three_editors_in_order() {
             h.state()
                 .input_box_edit
                 .as_ref()
-                .map(|edit| edit.0.as_str()),
+                .map(|edit| edit.label.as_str()),
             Some(expected)
         );
     }
@@ -1530,4 +1536,47 @@ fn closing_settled_canvas_skips_the_bounds_pass() {
         crate::canvas::BOUNDS_PASSES.with(std::cell::Cell::get),
         before
     );
+}
+
+#[test]
+fn closing_input_box_blurs_on_a_slider_drag_press() {
+    let mut h = harness(
+        "a = Slider(0, 8, 0.5)\na = 2\nb = 2 a\nfield = $inputBox(a, _)\n\
+         $inputBoxStyle(_6669656c64, 124, 88, 12)",
+    );
+    click_canvas_input_box(&mut h, "field");
+    assert_eq!(h.state().input_box_edit.as_ref().unwrap().text, "2");
+
+    let from = at(ALGEBRA_WIDTH + SPLITTER + 80.0, TOOLBAR_HEIGHT + 50.0);
+    let to = from + egui::vec2(75.0, 0.0);
+    moved(&mut h, from);
+    button(&mut h, from, true);
+    assert!(h.state().input_box_edit.is_none());
+    for i in 1..=4 {
+        moved(&mut h, from.lerp(to, i as f32 / 4.0));
+    }
+    button(&mut h, to, false);
+    click(&mut h, world(3.0, -2.0));
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Number(5.0));
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Number(10.0));
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+}
+
+#[test]
+fn closing_input_box_untouched_draft_keeps_a_new_link_value() {
+    let mut h = harness(
+        "a = Slider(0, 8, 0.5)\na = 2\nb = 2 a\nfield = $inputBox(a, _)\n\
+         $inputBoxStyle(_6669656c64, 124, 88, 12)",
+    );
+    click_canvas_input_box(&mut h, "field");
+    assert_eq!(h.state().input_box_edit.as_ref().unwrap().text, "2");
+    let a = h.state().wb.construction().id("a").unwrap();
+    assert!(h.state_mut().wb.set_number(a, 5.0));
+
+    click(&mut h, world(3.0, -2.0));
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(a), Value::Number(5.0));
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Number(10.0));
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
 }
