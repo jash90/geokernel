@@ -742,6 +742,17 @@ case("propertydialog", ["A = (2, 1)", "B = (4, 1)", "C = (2, 3)",
          {"action": "slider_bounds", "label": "a", "min": "0", "max": "4"},
      ])
 
+# Slider edits override the increment supplied to the command.
+case("property-slider-step", ["a = Slider(0,10,1)"],
+     [st("a", animation={"step": "2"}),
+      st("a", line=[0, 4])])
+
+# The element keeps its chosen algebra form and the reference's default head.
+case("property-equation", ["A = (2, 1)", "B = (4, 1)",
+                           "k = Circle(A, B)", "v = Vector(A, B)"],
+     [{"action": "conic_style", "label": "k", "form": "PARAMETRIC"},
+      st("A", label_offset=[60, 45]), st("v", head_style=0)])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

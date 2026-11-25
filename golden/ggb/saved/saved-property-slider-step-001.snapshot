@@ -1,0 +1,10 @@
+{
+  "schema": 2,
+  "id": "saved-property-slider-step-001",
+  "script": [
+    "a = Slider(0,10,1)"
+  ],
+  "objects": {
+    "a": { "type": "number", "defined": true, "value": 0.0 }
+  }
+}

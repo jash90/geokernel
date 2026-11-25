@@ -1686,9 +1686,8 @@ fn open_properties_stays_in_the_thousand_object_frame_budget() {
     assert!(open.texts <= idle.texts + 40, "{open:?}");
     assert!(open.vertices <= idle.vertices + 6000, "{open:?}");
     assert!(open.allocs <= idle.allocs + 220, "{open:?}");
-    // Egui joins the foreground dialog and drawing layer at the end of the
-    // pass, growing the combined clipped-shape buffer once.
-    assert!(open.bytes <= 1_140_000, "idle {idle:?}; open {open:?}");
+    // The dialog shares the original idle byte allowance.
+    assert!(open.bytes <= 565_000, "idle {idle:?}; open {open:?}");
     assert!(!open.immediate, "{open:?}");
     let started = std::time::Instant::now();
     w.frames(60);
@@ -1697,4 +1696,23 @@ fn open_properties_stays_in_the_thousand_object_frame_budget() {
     if !cfg!(debug_assertions) {
         assert!(ms <= 4.0, "properties: {ms:.3} ms (budget 4 ms)");
     }
+}
+
+#[test]
+fn selected_translucent_function_reuses_the_stroke_mesh() {
+    let mut w = Window::with("f(x) = x^2", String::new());
+    let f = w.app.wb.construction().id("f").unwrap();
+    w.app.wb.selected = Some(f);
+    w.app
+        .wb
+        .edit_property(
+            &["f".to_owned()],
+            geo_app_core::properties::Field::LineOpacity,
+            "50",
+            None,
+        )
+        .unwrap();
+    w.settled(5);
+    let idle = curve_step(&mut w, Vec::new());
+    assert_eq!(idle.tessellated, 0, "{idle:?}");
 }

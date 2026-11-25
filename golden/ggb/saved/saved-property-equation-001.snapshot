@@ -1,0 +1,16 @@
+{
+  "schema": 2,
+  "id": "saved-property-equation-001",
+  "script": [
+    "A = (2, 1)",
+    "B = (4, 1)",
+    "k = Circle(A, B)",
+    "v = Vector(A, B)"
+  ],
+  "objects": {
+    "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+    "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+    "k": { "type": "circle", "defined": true, "cx": 2.0, "cy": 1.0, "r": 2.0 },
+    "v": { "type": "vector", "defined": true, "x": 2.0, "y": 0.0 }
+  }
+}
