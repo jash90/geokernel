@@ -201,9 +201,11 @@ case "$cmd" in
       (
         if [ "${GGB_HARNESS_CAS:-0}" != 1 ]; then
           case "${file##*/}" in
-            cas.json | casview.json | odesymbolic.json) enable_giac ;;
+            cas.json|casview.json|odesymbolic.json|locusequation.json|envelope.json|curvepairs.json|prove.json)
+              enable_giac ;;
           esac
         fi
+        if [ "${file##*/}" = prove.json ]; then java_opts+=("-DggbHarness.prover=1"); fi
         java "${java_opts[@]}" -cp "$build/classes:$(classpath)" \
           geokernel.harness.GgbExporter "$file" "$repo/golden/ggb" "$sample" "$zipstep"
       )

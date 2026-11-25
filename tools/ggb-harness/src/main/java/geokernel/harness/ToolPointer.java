@@ -16,7 +16,6 @@ import org.geogebra.common.jre.headless.DialogManagerNoGui;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.kernel.geos.GeoElement;
-import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoText;
 import org.geogebra.common.kernel.kernelND.GeoPointND;
 import org.geogebra.common.kernel.kernelND.GeoSegmentND;
@@ -72,7 +71,8 @@ public final class ToolPointer {
         for (String key : List.of("name", "tool_mode", "initial_script", "events")) {
             result.put(key, input.get(key));
         }
-        var initial = snapshot(app);
+        var observe = (List<?>) input.get("observe");
+        var initial = snapshot(app, observe);
         result.put("initial", initial);
         var frames = new ArrayList<Object>();
         boolean dragging = false;
@@ -113,24 +113,31 @@ public final class ToolPointer {
             if ("mouse_up".equals(type) || "key".equals(type)) {
                 var frame = new LinkedHashMap<String, Object>();
                 frame.put("t", event.get("t"));
-                frame.put("objects", snapshot(app));
+                frame.put("objects", snapshot(app, observe));
                 frames.add(frame);
             }
         }
         result.put("frames", frames);
         result.put("dialogs", app.dialogs);
         var undo = new ArrayList<Object>();
-        for (int i = 0; i < 4 && !snapshot(app).equals(initial); i++) {
+        for (int i = 0; i < 4 && !snapshot(app, observe).equals(initial); i++) {
             app.getKernel().undo();
-            undo.add(snapshot(app));
+            undo.add(snapshot(app, observe));
         }
         result.put("undo", undo);
         return result;
     }
 
-    private static Map<String, Object> snapshot(PointerApp app) {
+    private static Map<String, Object> snapshot(PointerApp app, List<?> observe) {
         var result = new LinkedHashMap<String, Object>();
-        for (GeoElement geo : app.getKernel().getConstruction().getGeoSetConstructionOrder()) {
+        var objects = app.getKernel().getConstruction().getGeoSetConstructionOrder();
+        if (observe != null) {
+            result.put("$object_count", objects.size());
+        }
+        for (GeoElement geo : objects) {
+            if (observe != null && !observe.contains(geo.getLabelSimple())) {
+                continue;
+            }
             var state = new LinkedHashMap<>(Session.describe(geo, Session.typeOf(geo)));
             if (geo instanceof GeoPointND point) {
                 state.put("on_path", point.isPointOnPath());
@@ -202,12 +209,13 @@ public final class ToolPointer {
 
         void submitNumber(String answer) {
             if (start != null) {
-                var length = new GeoNumeric(getKernel().getConstruction(), Double.parseDouble(answer));
+                var length = getKernel().getAlgebraProcessor().evaluateToNumeric(answer, true);
                 DialogManager.doSegmentFixed(getKernel(), start, length);
                 start = null;
             } else if (points != null) {
-                double radians = Math.toRadians(Double.parseDouble(answer));
-                var angle = new GeoNumeric(getKernel().getConstruction(), radians);
+                // The desktop fixture gives bare angles in degrees.
+                String expression = answer.matches("[+-]?[0-9]+(\\.[0-9]+)?") ? answer + "°" : answer;
+                var angle = getKernel().getAlgebraProcessor().evaluateToNumeric(expression, true);
                 DialogManager.doAngleFixed(getKernel(), segments, points, angle, false,
                         getActiveEuclidianView().getEuclidianController());
                 points = null;
