@@ -1624,6 +1624,171 @@
       ]
     },
     {
+      "name": "tool_roots_tangent_circle",
+      "tool_mode": 76,
+      "initial_script": [
+        "O = (0, 2)",
+        "k = Circle(O, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            3.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            3.99
+          ]
+        }
+      ],
+      "initial": {
+        "O": { "type": "point", "defined": true, "x": 0.0, "y": 2.0, "on_path": false, "in_region": false },
+        "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 2.0, "r": 2.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "O": { "type": "point", "defined": true, "x": 0.0, "y": 2.0, "on_path": false, "in_region": false },
+            "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 2.0, "r": 2.0 },
+            "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 2.0, "on_path": false, "in_region": false },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 2.0, "r": 2.0 }
+        }
+      ]
+    },
+    {
+      "name": "tool_roots_disjoint_circle",
+      "tool_mode": 76,
+      "initial_script": [
+        "O = (0, 3)",
+        "k = Circle(O, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            4.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            4.99
+          ]
+        }
+      ],
+      "initial": {
+        "O": { "type": "point", "defined": true, "x": 0.0, "y": 3.0, "on_path": false, "in_region": false },
+        "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 3.0, "r": 2.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "O": { "type": "point", "defined": true, "x": 0.0, "y": 3.0, "on_path": false, "in_region": false },
+            "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 3.0, "r": 2.0 },
+            "A": { "type": "point", "defined": false, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 3.0, "on_path": false, "in_region": false },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 3.0, "r": 2.0 }
+        }
+      ]
+    },
+    {
+      "name": "tool_extremum_hyperbola",
+      "tool_mode": 75,
+      "initial_script": [
+        "h: x^2/4 - y^2/9 = 1"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [2.1, 0.99]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [2.1, 0.99]
+        }
+      ],
+      "initial": {
+        "h": {
+          "type": "conic",
+          "defined": true,
+          "conic_type": "hyperbola",
+          "matrix": [1.0, -0.4444444444444444, -4.0, 0.0, 0.0, 0.0],
+          "midpoint": [-0.0, -0.0],
+          "half_axes": [2.0, 3.0],
+          "eigenvectors": [
+            [1.0, 0.0],
+            [-0.0, 1.0]
+          ]
+        }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "h": {
+              "type": "conic",
+              "defined": true,
+              "conic_type": "hyperbola",
+              "matrix": [1.0, -0.4444444444444444, -4.0, 0.0, 0.0, 0.0],
+              "midpoint": [-0.0, -0.0],
+              "half_axes": [2.0, 3.0],
+              "eigenvectors": [
+                [1.0, 0.0],
+                [-0.0, 1.0]
+              ]
+            },
+            "A": { "type": "point", "defined": true, "x": -2.0, "y": -0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "h": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -0.4444444444444444, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [2.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "tool_point_on_large_polygon",
       "tool_mode": 501,
       "initial_script": [

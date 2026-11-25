@@ -2582,6 +2582,21 @@ pub fn multi_output_count(c: &Construction, rhs: &str) -> Option<Result<usize, S
     parse_multi(c, rhs.trim()).map(|r| r.map(|defs| defs.len()))
 }
 
+/// Which slots would receive a label in a multi-output command at creation.
+/// When all outputs are undefined, the first slot still gets a label.
+pub fn initial_output_slots(c: &Construction, rhs: &str) -> Option<Vec<bool>> {
+    let defs = parse_multi(c, rhs.trim())?.ok()?;
+    let mut slots = defs
+        .iter()
+        .map(|def| probe(c, def))
+        .collect::<Result<Vec<_>, _>>()
+        .ok()?;
+    if let Some((first, rest)) = slots.split_first_mut() {
+        *first |= rest.iter().all(|defined| !defined);
+    }
+    Some(slots)
+}
+
 fn conic_clip(c: &Construction, rhs: &str) -> Option<crate::algo::polygon_clip::ClipDef> {
     let (func @ ("IntersectPath" | "IntersectionPaths" | "IntersectRegion"), args) =
         split_call(rhs)?

@@ -601,16 +601,32 @@ impl App {
                 let (_, rhs) = lines[0]
                     .split_once(" = ")
                     .expect("tool recipe is an assignment");
-                if let Some(Ok(count)) = geo_kernel::script::multi_output_count(c, rhs) {
-                    if count > 1 {
-                        let names = crate::labels::free_point_labels(is_taken)
-                            .take(count)
-                            .collect::<Vec<_>>();
-                        if label_probes.get() > ANALYSIS_LABEL_WORK {
-                            return Outcome::Ignored;
-                        }
-                        lines[0] = format!("{{{}}} = {rhs}", names.join(", "));
+                let slots = if hit
+                    .as_ref()
+                    .is_some_and(|(_, kind)| matches!(kind, Kind::Circle | Kind::Conic))
+                {
+                    geo_kernel::script::initial_output_slots(c, rhs)
+                } else {
+                    geo_kernel::script::multi_output_count(c, rhs)
+                        .and_then(Result::ok)
+                        .map(|count| vec![true; count])
+                };
+                if let Some(slots) = slots.filter(|slots| slots.len() > 1) {
+                    let mut free_labels = crate::labels::free_point_labels(is_taken);
+                    let names = slots
+                        .into_iter()
+                        .map(|named| {
+                            if named {
+                                free_labels.next().expect("point labels")
+                            } else {
+                                String::new()
+                            }
+                        })
+                        .collect::<Vec<_>>();
+                    if label_probes.get() > ANALYSIS_LABEL_WORK {
+                        return Outcome::Ignored;
                     }
+                    lines[0] = format!("{{{}}} = {rhs}", names.join(", "));
                 }
             }
         }

@@ -780,6 +780,83 @@
       ]
     },
     {
+      "name": "tool_roots_tangent_circle",
+      "tool_mode": 76,
+      "initial_script": [
+        "O = (0, 2)",
+        "k = Circle(O, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            3.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            3.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_roots_disjoint_circle",
+      "tool_mode": 76,
+      "initial_script": [
+        "O = (0, 3)",
+        "k = Circle(O, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            4.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            4.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_extremum_hyperbola",
+      "tool_mode": 75,
+      "initial_script": [
+        "h: x^2/4 - y^2/9 = 1"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2.1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2.1,
+            0.99
+          ]
+        }
+      ]
+    },
+    {
       "name": "tool_point_on_large_polygon",
       "tool_mode": 501,
       "initial_script": [
