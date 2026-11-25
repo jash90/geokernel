@@ -351,6 +351,89 @@
         }
       ],
       "cascell": "g"
+    },
+    {
+      "id": "cascell-lastround-001",
+      "group": "cascell",
+      "script": [
+        "a = abs(1/3)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "3*a"
+    },
+    {
+      "id": "cascell-lastround-002",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Solve(1/(1/x) = 0)"
+    },
+    {
+      "id": "cascell-lastround-003",
+      "group": "cascell",
+      "script": [
+        "a = -1"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "a!"
+    },
+    {
+      "id": "cascell-lastround-004",
+      "group": "cascell",
+      "script": [
+        "g: y = 1"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Solve(g)"
+    },
+    {
+      "id": "cascell-lastround-006",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "0<(0<(0<(0<(0<(0<(0<(0<(0<(0<(0<(x)<1)<1)<1)<1)<1)<1)<1)<1)<1)<1)<1"
+    },
+    {
+      "id": "cascell-lastround-007",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "1E40000 + 1E40000"
+    },
+    {
+      "id": "cascell-lastround-008",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Solve(x = 1E10000)"
     }
   ]
 }

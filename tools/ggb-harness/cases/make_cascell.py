@@ -47,6 +47,13 @@ cases = [
     case("display", 3, "Factor((x-2)*(x+1)*(x+3))"),
     case("display", 4, "g", "g: x + y = 0"),
     case("display", 5, "g", "g: x + y = 0.5"),
+    case("lastround", 1, "3*a", "a = abs(1/3)"),
+    case("lastround", 2, "Solve(1/(1/x) = 0)"),
+    case("lastround", 3, "a!", "a = -1"),
+    case("lastround", 4, "Solve(g)", "g: y = 1"),
+    case("lastround", 6, "0<(" * 11 + "x" + ")<1" * 11),
+    case("lastround", 7, "1E40000 + 1E40000"),
+    case("lastround", 8, "Solve(x = 1E10000)"),
 ]
 Path(__file__).with_name("cascell.json").write_text(
     json.dumps({"cases": cases}, indent=2) + "\n", encoding="utf-8"

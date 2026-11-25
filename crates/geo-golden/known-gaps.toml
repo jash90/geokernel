@@ -2877,3 +2877,8 @@ undefined = true
 id = "cascell-closing-004"
 reason = 'Kernel-only CAS rows refuse NSolutions with a starting value (text ?, LaTeX \mathbf{?}). The reference prints {1.41} and \mathbf{ \left\{ 1.41 \right\} }. See crates/geo-kernel/src/expr/cas/row.rs:131.'
 mismatches = ["0:output", "0:latex"]
+
+[[gap]]
+id = "cascell-lastround-006"
+reason = 'The CAS row reader has no chained comparison syntax (crates/geo-kernel/src/expr/cas/syntax.rs:50). The kernel prints ? and \mathbf{?}. GeoGebra prints false and \mathbf{false}.'
+mismatches = ["0:output", "0:latex"]
