@@ -17,7 +17,7 @@ use geo_kernel::kernel::text::{TextOverrides, TextPosition};
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use geo_kernel::script::text::Properties as TextProperties;
 use geo_kernel::script::{find_top_level, BoundaryOutputs};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::OnceLock;
 
 /// What the algebra list shows for one object.
@@ -990,6 +990,16 @@ impl Workbench {
             .find(|g| g[0] != label && g.iter().any(|l| l == label))
             .and_then(|g| c.id(&g[0]))
             .filter(|&p| c.kind(p) == Kind::Polygon)
+    }
+
+    /// Selected sides and generated vertices owned by a selected polygon.
+    pub fn selected_polygon_outputs(
+        &self,
+        selected: &BTreeSet<Id>,
+        work_left: &mut usize,
+    ) -> Option<BTreeSet<Id>> {
+        self.log
+            .selected_polygon_outputs(self.construction(), selected, work_left)
     }
 
     pub fn is_visible(&self, id: Id) -> bool {

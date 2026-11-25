@@ -447,6 +447,24 @@ pub struct List<'a> {
     slots: &'a [Slot],
     start: u32,
     len: u32,
+    canvas_drawable: Option<bool>,
+}
+
+/// The number of entries a list can contribute to a canvas traversal.
+pub const MAX_CANVAS_LIST_ITEMS: usize = 256;
+
+/// The number of entries all lists together may contribute to one graphics pass.
+pub const MAX_FRAME_CANVAS_LIST_ITEMS: usize = 4096;
+
+pub(super) fn canvas_drawable_slots(slots: &[Slot]) -> bool {
+    slots.iter().all(|slot| canvas_drawable_kind(slot.kind))
+}
+
+fn canvas_drawable_kind(kind: Kind) -> bool {
+    !matches!(
+        kind,
+        Kind::Number | Kind::Boolean | Kind::InputBox | Kind::Button
+    )
 }
 
 /// One element of a [`List`].
@@ -522,8 +540,18 @@ impl<'a> List<'a> {
         Self::from_run(slots, 0, len)
     }
 
+    pub(super) fn with_canvas_drawable(mut self, drawable: bool) -> Self {
+        self.canvas_drawable = Some(drawable);
+        self
+    }
+
     pub(super) fn from_run(slots: &'a [Slot], start: u32, len: u32) -> List<'a> {
-        List { slots, start, len }
+        List {
+            slots,
+            start,
+            len,
+            canvas_drawable: None,
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -547,19 +575,81 @@ impl<'a> List<'a> {
         }
         let slot = &self.slots[self.start as usize + k];
         Some(match slot.run() {
-            Some((start, len)) => Element::List(List {
-                slots: self.slots,
-                start,
-                len,
-            }),
+            Some((start, len)) => Element::List(List::from_run(self.slots, start, len)),
             None => slot
                 .text_value()
                 .map_or_else(|| Element::Value(slot.kind, slot.shown()), Element::Text),
         })
     }
 
+    /// Visits members eligible for graphics, with one allowance shared by
+    /// the entire list tree. Named elements have their own drawables.
+    pub fn canvas_members(
+        self,
+        frame_remaining: &mut usize,
+        mut visit: impl FnMut(Option<Id>, Value) -> std::ops::ControlFlow<()>,
+    ) {
+        let limit = (*frame_remaining).min(MAX_CANVAS_LIST_ITEMS);
+        let mut remaining = limit;
+        if self
+            .canvas_drawable
+            .unwrap_or_else(|| self.probe_canvas_drawable(&mut remaining))
+        {
+            let _ = self.visit_canvas_members(&mut remaining, &mut visit);
+        }
+        *frame_remaining -= limit - remaining;
+    }
+
+    fn probe_canvas_drawable(self, remaining: &mut usize) -> bool {
+        for index in 0..self.len() {
+            if *remaining == 0 {
+                return false;
+            }
+            *remaining -= 1;
+            let element = self.get(index).unwrap();
+            match element {
+                Element::Value(kind, _) if !canvas_drawable_kind(kind) => return false,
+                Element::List(nested) if !nested.probe_canvas_drawable(remaining) => return false,
+                _ => {}
+            }
+        }
+        true
+    }
+
+    fn visit_canvas_members(
+        self,
+        remaining: &mut usize,
+        visit: &mut impl FnMut(Option<Id>, Value) -> std::ops::ControlFlow<()>,
+    ) -> std::ops::ControlFlow<()> {
+        use std::ops::ControlFlow;
+        for i in 0..self.len() {
+            if *remaining == 0 {
+                break;
+            }
+            *remaining -= 1;
+            let member = self.get(i).unwrap();
+            match member {
+                Element::List(list) => list.visit_canvas_members(remaining, visit)?,
+                Element::Value(
+                    Kind::Point
+                    | Kind::Vector
+                    | Kind::Segment
+                    | Kind::Line
+                    | Kind::Ray
+                    | Kind::Circle
+                    | Kind::Conic
+                    | Kind::Arc
+                    | Kind::Sector,
+                    value,
+                ) if value.is_defined() => visit(self.object(i), value)?,
+                _ => {}
+            }
+        }
+        ControlFlow::Continue(())
+    }
+
     /// The original object when the element is a named geometry object.
-    pub(crate) fn object(&self, k: usize) -> Option<Id> {
+    pub fn object(&self, k: usize) -> Option<Id> {
         (k < self.len())
             .then(|| self.slots[self.start as usize + k].object_id())
             .flatten()
@@ -688,5 +778,58 @@ mod dilation_tests {
         let list = c.elements(c.id("l").unwrap()).unwrap();
         let record = list.slots[0].conic(&c).unwrap();
         assert!(record.same(&c.conic(c.id("q").unwrap()).unwrap()));
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_list_scan_has_shared_and_per_list_limits() {
+    let c = crate::script::load("l = Sequence((k, 0), k, 1, 3000)").unwrap();
+    let list = c.elements(c.id("l").unwrap()).unwrap();
+    let mut remaining = 300;
+    let mut visited = 0;
+    for _ in 0..2 {
+        list.canvas_members(&mut remaining, |_, _| {
+            visited += 1;
+            std::ops::ControlFlow::Continue(())
+        });
+    }
+    assert_eq!(remaining, 0);
+    assert_eq!(visited, 300);
+    let mut remaining = 300;
+    list.canvas_members(&mut remaining, |_, _| std::ops::ControlFlow::Continue(()));
+    assert_eq!(remaining, 300 - MAX_CANVAS_LIST_ITEMS);
+}
+
+#[cfg(test)]
+#[test]
+fn uncached_canvas_list_charges_eligibility_and_visits_to_the_same_allowance() {
+    let slots = [Slot::coords(Kind::Point, 0.0, 0.0)];
+    let list = List::new(&slots, 1);
+    for (mut left, expected_visits) in [(1, 0), (2, 1)] {
+        let mut visits = 0;
+        list.canvas_members(&mut left, |_, _| {
+            visits += 1;
+            std::ops::ControlFlow::Break(())
+        });
+        assert_eq!(left, 0);
+        assert_eq!(visits, expected_visits);
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_list_checks_eligibility_beyond_the_drawn_prefix() {
+    let c = crate::script::load(
+        "L = Append(Sequence((k, 0), k, 1, 256), 7)\nM = Join({7}, Sequence((k, 0), k, 1, 256))",
+    )
+    .unwrap();
+    for label in ["L", "M"] {
+        let mut remaining = 4096;
+        c.elements(c.id(label).unwrap())
+            .unwrap()
+            .canvas_members(&mut remaining, |_, _| {
+                panic!("{label} is not drawable");
+            });
     }
 }

@@ -1428,6 +1428,62 @@ fn a_thousand_cas_rows_only_render_the_visible_range() {
 }
 
 #[test]
+fn a_thousand_canvas_input_boxes_fit_the_frame_budget() {
+    use geo_kernel::kernel::control::InputBoxStyle;
+    use geo_kernel::script::saved::Property;
+    use std::fmt::Write;
+
+    let mut script = "a = 3\nSetVisibleInView(a, 1, false)\n".to_owned();
+    let mut hidden = String::new();
+    for i in 0..1000 {
+        let label = format!("field{i}");
+        writeln!(script, "{label} = $inputBox(a, _)").unwrap();
+        writeln!(
+            script,
+            "{}",
+            Property::InputBoxStyle {
+                label: label.clone(),
+                style: InputBoxStyle {
+                    position: [12 + 28 * (i % 32), 24 + 23 * (i / 32)],
+                    length: 2,
+                },
+            }
+        )
+        .unwrap();
+        writeln!(hidden, "SetVisibleInView({label}, 1, false)").unwrap();
+    }
+    let mut visible = Window::with(&script, String::new());
+    let shown = visible.settled(2);
+    script.push_str(&hidden);
+    let before = Window::with(&script, String::new()).settled(2);
+    let mut elapsed = [0.0_f64; 21];
+    for ms in &mut elapsed {
+        let start = std::time::Instant::now();
+        visible.step(Vec::new());
+        *ms = start.elapsed().as_secs_f64() * 1000.0;
+    }
+    elapsed.sort_by(f64::total_cmp);
+    let median = elapsed[elapsed.len() / 2];
+    println!("input boxes: {median:.3} ms, hidden {before:?}, visible {shown:?}");
+    assert_eq!(shown.texts - before.texts, 2000, "{shown:?}");
+    assert!(
+        shown.vertices > before.vertices
+            && shown.vertices <= 60_000
+            && shown.shapes <= 4700
+            && shown.allocs <= 3500
+            && shown.bytes <= 1_500_000,
+        "{shown:?}"
+    );
+    assert_eq!(
+        (shown.rows_formatted, shown.rows_built, shown.colour_scans),
+        (0, 0, 0)
+    );
+    if !cfg!(debug_assertions) {
+        assert!(median <= 4.0, "input boxes: {median:.3} ms (budget 4 ms)");
+    }
+}
+
+#[test]
 fn a_thousand_spreadsheet_cells_fit_the_frame_budget() {
     let mut w = Window::with("FillCells(A1:J100, 1)", String::new());
     w.app.show_spreadsheet = true;
@@ -1444,6 +1500,63 @@ fn a_thousand_spreadsheet_cells_fit_the_frame_budget() {
     assert!(!counts.immediate, "{counts:?}");
     if !cfg!(debug_assertions) {
         assert!(mean_ms <= 4.0, "{mean_ms:.2} ms exceeds the 4 ms budget");
+    }
+}
+
+#[test]
+fn canvas_list_points_are_drawn_with_a_frame_limit() {
+    let mut w = Window::with("l = Sequence((k / 100, 1), k, 1, 3000)", String::new());
+    let drawn = w.settled(2);
+    let hidden = Window::with(
+        "l = Sequence((k / 100, 1), k, 1, 3000)\nSetVisibleInView(l, 1, false)",
+        String::new(),
+    )
+    .settled(2);
+    println!("list: hidden {hidden:?}, drawn {drawn:?}");
+    assert!(drawn.vertices > hidden.vertices, "{drawn:?}");
+    assert!(
+        drawn.vertices <= 60_000 && drawn.shapes <= 4700,
+        "{drawn:?}"
+    );
+}
+
+#[test]
+fn canvas_remaining_curve_and_region_drawings_fit_the_frame_budget() {
+    for (definition, name) in [
+        ("curve = Curve(t, t^2, t, -2, 2)", "curve"),
+        ("region(x,y) = y > x", "region"),
+    ] {
+        let (mut script, mid) = grid(83);
+        script.push_str(definition);
+        script.push('\n');
+        let mut window = Window::with(&script, mid.clone());
+        let visible = window.settled(2);
+        script.push_str(&format!("SetVisibleInView({name}, 1, false)"));
+        let hidden = Window::with(&script, mid).settled(2);
+        println!("{name}: hidden {hidden:?}, visible {visible:?}");
+        assert!(
+            visible.vertices > hidden.vertices,
+            "{name}: {visible:?} {hidden:?}"
+        );
+        assert!(
+            visible.vertices <= hidden.vertices + 5_000,
+            "{name}: {visible:?}"
+        );
+        assert!(visible.allocs <= hidden.allocs + 64, "{name}: {visible:?}");
+        if !cfg!(debug_assertions) {
+            let mut elapsed = [0.0_f64; 21];
+            for ms in &mut elapsed {
+                let start = std::time::Instant::now();
+                window.step(Vec::new());
+                *ms = start.elapsed().as_secs_f64() * 1000.0;
+            }
+            elapsed.sort_by(f64::total_cmp);
+            assert!(
+                elapsed[10] <= 4.0,
+                "{name}: {:.3} ms (budget 4 ms)",
+                elapsed[10]
+            );
+        }
     }
 }
 

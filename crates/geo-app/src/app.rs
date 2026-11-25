@@ -17,7 +17,7 @@ use std::io::Write;
 use std::path::Path;
 
 /// Opens a script or construction file into the window.
-pub fn open(app: &mut App, path: &Path) {
+fn open(app: &mut App, ctx: &egui::Context, path: &Path) {
     match crate::cli::load_into(&mut app.wb, path) {
         Ok(()) => {
             app.load_error = None;
@@ -30,6 +30,13 @@ pub fn open(app: &mut App, path: &Path) {
             app.save_error = None;
             app.cancel_cas_edit();
             app.spreadsheet_editor = None;
+            app.input_box_edit = None;
+            app.input_box_rects.clear();
+            ctx.memory_mut(|memory| {
+                if let Some(id) = memory.focused() {
+                    memory.surrender_focus(id);
+                }
+            });
             app.source_path = Some(path.into());
             if app.wb.file_view().is_some() {
                 app.decor = geo_app_core::app::Decor::for_document(&app.wb);
@@ -75,6 +82,7 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
     let typing = typing || was_typing;
     // egui ends any drag on Escape, whoever takes the key afterwards.
     if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+        app.input_box_edit = None;
         app.gesture.stop();
     }
     if app.tool.asking().is_some() || app.tool.control_request().is_some() {
@@ -159,7 +167,7 @@ fn region(app: &mut App, ui: &mut Ui, rect: Rect, salt: &str, f: impl FnOnce(&mu
 pub fn show(app: &mut App, ui: &mut Ui) {
     let ctx = ui.ctx().clone();
     if let Some(path) = ctx.input(|i| i.raw.dropped_files.first().map(|f| f.path().to_owned())) {
-        open(app, &path);
+        open(app, &ctx, &path);
     }
     shortcuts(app, &ctx);
     // A press in the graphics view puts the keyboard away.
@@ -395,6 +403,8 @@ fn control_dialog(app: &mut App, ctx: &egui::Context) {
     }
     let tool = app.tool.tool();
     let slider = tool == crate::tools::Tool::Slider;
+    let input_box = tool == crate::tools::Tool::InputBox;
+    let text = tool == crate::tools::Tool::Text;
     let mut confirm = false;
     let mut cancel = false;
     let mut numbers = None;
@@ -422,14 +432,41 @@ fn control_dialog(app: &mut App, ctx: &egui::Context) {
             if numbers.is_none() {
                 ui.colored_label(theme::ERROR, "Podaj rosnący zakres i dodatni krok.");
             }
+        } else if text {
+            let caption = ui.label("Treść");
+            let editor = ui
+                .add(
+                    egui::TextEdit::singleline(&mut app.control_fields[0])
+                        .char_limit(crate::tools::MAX_PLACED_TEXT_CHARS),
+                )
+                .labelled_by(caption.id);
+            if std::mem::take(&mut app.control_focus) {
+                editor.request_focus();
+            }
         } else {
             let caption = ui.label("Podpis");
-            ui.text_edit_singleline(&mut app.control_fields[0])
-                .labelled_by(caption.id);
+            let editor = egui::TextEdit::singleline(&mut app.control_fields[0]);
+            let editor = if input_box {
+                editor.char_limit(geo_kernel::kernel::control::MAX_INPUT_BOX_CHARS)
+            } else {
+                editor
+            };
+            ui.add(editor).labelled_by(caption.id);
+            if input_box {
+                let link = ui.label("Powiązany obiekt");
+                ui.add(
+                    egui::TextEdit::singleline(&mut app.control_fields[1])
+                        .char_limit(geo_kernel::kernel::control::MAX_INPUT_BOX_CHARS),
+                )
+                .labelled_by(link.id);
+            }
         }
         ui.horizontal(|ui| {
             cancel = ui.button("Anuluj").clicked();
-            let enabled = !slider || numbers.is_some();
+            let link = app.control_fields[1].trim();
+            let enabled = (!slider || numbers.is_some())
+                && (!input_box || link.is_empty() || app.wb.construction().id(link).is_some())
+                && (!text || !app.control_fields[0].trim().is_empty());
             confirm = ui.add_enabled(enabled, egui::Button::new("OK")).clicked()
                 || (enabled && ui.input(|i| i.key_pressed(egui::Key::Enter)));
         });
@@ -439,6 +476,15 @@ fn control_dialog(app: &mut App, ctx: &egui::Context) {
         let taken = |label: &str| c.id(label).is_some();
         let outcome = if let Some((min, max, step)) = numbers {
             app.tool.finish_slider(min, max, step, taken)
+        } else if text {
+            app.tool.finish_text(&app.control_fields[0], taken)
+        } else if input_box {
+            let link = app.control_fields[1].trim();
+            app.tool.finish_input_box(
+                &app.control_fields[0],
+                (!link.is_empty()).then_some(link),
+                taken,
+            )
         } else {
             app.tool.finish_checkbox(&app.control_fields[0], taken)
         };

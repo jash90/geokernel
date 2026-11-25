@@ -1969,6 +1969,12 @@
       "saved": "show",
       "without": null
     },
+    "decimals": {
+      "fixture": "saved-input-rounding-001",
+      "label": "fixedPlaces",
+      "saved": 4,
+      "without": -1
+    },
     "dynamic_caption": {
       "fixture": "saved-styles-007",
       "label": "field",
@@ -1986,6 +1992,12 @@
       ],
       "without": null
     },
+    "figures": {
+      "fixture": "saved-input-rounding-001",
+      "label": "significantDigits",
+      "saved": 5,
+      "without": -1
+    },
     "fixed": {
       "fixture": "saved-styles-007",
       "label": "field",
@@ -1997,6 +2009,24 @@
       "label": "field",
       "saved": true,
       "without": false
+    },
+    "input_length": {
+      "fixture": "saved-input-box-001",
+      "label": "field",
+      "saved": 12,
+      "without": 20
+    },
+    "label_offset": {
+      "fixture": "saved-input-box-001",
+      "label": "field",
+      "saved": [
+        124,
+        88
+      ],
+      "without": [
+        30,
+        30
+      ]
     },
     "layer": {
       "fixture": "saved-styles-007",
@@ -3913,7 +3943,7 @@
       "fixture": "saved-styles-002",
       "label": "d",
       "saved": 0.4300000071525574,
-      "without": 0.0
+      "without": 0.10000000149011612
     },
     "auxiliary": {
       "fixture": "saved-styles-002",

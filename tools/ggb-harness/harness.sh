@@ -213,6 +213,19 @@ case "$cmd" in
     java "${java_opts[@]}" -cp "$build/classes:$(classpath)" \
       geokernel.harness.SavedExporter "$here/saved/saved.json" "$repo/golden/ggb/saved" "$@"
     ;;
+  canvas-review)
+    # Compile only the review probes against the existing harness build.
+    probe="$(mktemp -d)"
+    trap 'rm -rf "$probe"' EXIT
+    cp="$build/classes:$(classpath)"
+    src="$here/src/main/java/geokernel/harness"
+    javac --release 17 -cp "$cp" -d "$probe" "$src/SavedExporter.java" "$src/CanvasReview.java"
+    java "${java_opts[@]}" -cp "$probe:$cp" geokernel.harness.SavedExporter \
+      "$here/saved/saved.json" "$repo/golden/ggb/saved" input-rounding canvas-sector
+    java "${java_opts[@]}" -cp "$probe:$cp" geokernel.harness.CanvasReview \
+      "$here/cases/canvas.json" "$here/cases/controls.json" \
+      "$repo/golden/ggb/saved/saved-input-box-001.xml"
+    ;;
   tpairs)
     commit="${GEOGEBRA_REV:-$(git -C "$ggb" rev-parse HEAD)}"
     java "${java_opts[@]}" -cp "$build/classes:$(classpath)" \

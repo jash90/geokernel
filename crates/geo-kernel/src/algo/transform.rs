@@ -563,12 +563,41 @@ impl TransformDef {
     pub(crate) fn map(&self, c: &Construction) -> Option<Map> {
         self.parts().2.map(c)
     }
+
+    pub(super) fn map_with_vertex_work(
+        &self,
+        c: &Construction,
+        work: &mut Option<&mut usize>,
+    ) -> Option<Option<Map>> {
+        self.parts().2.map_with_vertex_work(c, work)
+    }
 }
 
 impl TransformOf {
     /// The map of the plane this transformation is (see
     /// [`TransformDef::map`]).
     pub(crate) fn map(&self, c: &Construction) -> Option<Map> {
+        self.map_with_vertex_work(c, &mut None).flatten()
+    }
+
+    fn map_with_vertex_work(
+        &self,
+        c: &Construction,
+        work: &mut Option<&mut usize>,
+    ) -> Option<Option<Map>> {
+        let axis = match *self {
+            TransformOf::Shear { axis, .. } if c.kind(axis) == Kind::Vector => Some(axis),
+            TransformOf::StretchVector(axis) => Some(axis),
+            _ => None,
+        };
+        if let Some(axis) = axis {
+            return vector_matrix(c, axis, matches!(self, Self::Shear { .. }), work);
+        }
+
+        Some(self.map_without_vector_axis(c))
+    }
+
+    fn map_without_vector_axis(&self, c: &Construction) -> Option<Map> {
         match *self {
             TransformOf::MirrorPoint(center) => {
                 let (qx, qy) = c.point(center)?;
@@ -588,9 +617,6 @@ impl TransformOf {
                 let r = c.number(factor)?;
                 Some(Map::Dilate { r, sx, sy })
             }
-            TransformOf::Shear { axis, .. } if c.kind(axis) == Kind::Vector => {
-                vector_matrix(c, axis, true)
-            }
             TransformOf::Shear { axis, ratio } | TransformOf::Stretch { axis, ratio } => {
                 let (la, lb, lc) = c.raw_carrier(axis)?;
                 let (qx, qy) = if la.abs() > lb.abs() {
@@ -608,8 +634,7 @@ impl TransformOf {
                     matches!(self, Self::Shear { .. }),
                 )
             }
-            TransformOf::StretchVector(vector) => vector_matrix(c, vector, false),
-            TransformOf::Invert(_) => None,
+            TransformOf::StretchVector(_) | TransformOf::Invert(_) => None,
         }
     }
 }
@@ -654,13 +679,20 @@ pub(super) fn shear_start_parent(c: &Construction, def: &Def) -> Option<Id> {
 
 /// The vector branch of `AlgoShearOrStretch.compute`: the axis goes
 /// through the vector's start point, and its length is the factor.
-fn vector_matrix(c: &Construction, axis: Id, shear: bool) -> Option<Map> {
+fn vector_matrix(
+    c: &Construction,
+    axis: Id,
+    shear: bool,
+    work: &mut Option<&mut usize>,
+) -> Option<Option<Map>> {
     let Value::Vector { x, y } = c.value(axis) else {
-        return None;
+        return Some(None);
     };
-    let (sx, sy) = crate::algo::vector::start(c, axis)?;
-    let len = my_length(x, y);
-    matrix(-sx, -sy, -y / len, x / len, len, shear)
+    let start = super::vector::start_with_vertex_work(c, axis, work)?;
+    Some(start.and_then(|(sx, sy)| {
+        let len = my_length(x, y);
+        matrix(-sx, -sy, -y / len, x / len, len, shear)
+    }))
 }
 
 /// `AlgoShearOrStretch.compute` after moving the axis to the origin.

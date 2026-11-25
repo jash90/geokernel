@@ -215,7 +215,7 @@ pub(crate) use lex::{is_name_char, plain_number};
 mod list;
 pub(in crate::expr) use commands::text::TextOp;
 pub(crate) use list::{same_slots, Slot};
-pub use list::{Element, List};
+pub use list::{Element, List, MAX_CANVAS_LIST_ITEMS, MAX_FRAME_CANVAS_LIST_ITEMS};
 pub(crate) mod math;
 mod names;
 mod parse;
@@ -846,6 +846,8 @@ pub(crate) struct Entry {
     lists: bool,
     /// The elements of a list result (see [`list`]).
     items: Vec<Slot>,
+    list_canvas_drawable: bool,
+    list_value_revision: u64,
     /// Source of a literal list whose items a spreadsheet fill can copy.
     literal_list_source: Option<Box<str>>,
     root_transform: Option<TransformActive>,
@@ -1039,6 +1041,8 @@ impl Entry {
             inverts,
             lists,
             items: Vec::new(),
+            list_canvas_drawable: true,
+            list_value_revision: 0,
             literal_list_source: None,
             root_transform: None,
             nested_transforms: NestedTransforms::new(),
@@ -1882,6 +1886,8 @@ pub(crate) struct SavedResult {
     graph_rewrites: cas::graph::Rewrites,
     interval: Option<FunctionInterval>,
     items: Vec<Slot>,
+    list_canvas_drawable: bool,
+    list_value_revision: u64,
     coordinate_layout: Option<list::CoordinateLayout>,
     stuck: Vec<u32>,
     list_records: Option<ListRecords>,
@@ -1916,6 +1922,8 @@ impl SavedResult {
             graph_rewrites: e.graph_rewrites.clone(),
             interval: e.interval,
             items: e.items.clone(),
+            list_canvas_drawable: e.list_canvas_drawable,
+            list_value_revision: e.list_value_revision,
             coordinate_layout: e.coordinate_layout,
             stuck: stuck.clone(),
             list_records: list_records.as_deref().cloned(),
@@ -1931,6 +1939,8 @@ impl SavedResult {
         e.graph_rewrites = self.graph_rewrites;
         e.interval = self.interval;
         e.items = self.items;
+        e.list_canvas_drawable = self.list_canvas_drawable;
+        e.list_value_revision = self.list_value_revision;
         e.root_transform = self.root_transform;
         e.nested_transforms = self.nested_transforms;
         e.coordinate_layout = self.coordinate_layout;
@@ -2040,6 +2050,9 @@ fn update_lists(c: &mut Construction, d: ExprDef) -> ((Value, bool), bool) {
     e.nested_transforms.extend(transforms);
     let items_changed = !list::same_slots(&e.items, &items);
     if items_changed {
+        // The compact list is already bounded by the list evaluator.
+        e.list_canvas_drawable = list::canvas_drawable_slots(&items);
+        e.list_value_revision = new_list_value_revision();
         e.items.clear();
         e.items.extend_from_slice(&items);
     }
@@ -2195,7 +2208,24 @@ pub(crate) fn list(c: &Construction, id: Id) -> Option<List<'_>> {
     let Value::List { len } = c.value(id) else {
         return None;
     };
-    Some(List::new(list_slots(c, id)?, len))
+    let list = List::new(list_slots(c, id)?, len);
+    Some(match c.def(id) {
+        Def::Expr(d) => list.with_canvas_drawable(entry(c, d).list_canvas_drawable),
+        // List-producing charts store only point and segment slots.
+        Def::Chart(_) => list.with_canvas_drawable(true),
+        _ => list,
+    })
+}
+
+pub(crate) fn new_list_value_revision() -> u64 {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static REVISION: AtomicU64 = AtomicU64::new(1);
+    REVISION.fetch_add(1, Ordering::Relaxed)
+}
+
+pub(crate) fn list_value_revision(c: &Construction, id: Id) -> Option<u64> {
+    let Def::Expr(d) = c.def(id) else { return None };
+    Some(entry(c, d).list_value_revision)
 }
 
 fn list_slots(c: &Construction, id: Id) -> Option<&[Slot]> {

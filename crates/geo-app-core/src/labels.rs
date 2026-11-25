@@ -56,6 +56,9 @@ pub fn next_label(kind: Kind, is_taken: impl Fn(&str) -> bool) -> String {
     // upstream test of `PenStroke()`.
     let numbered = match kind {
         Kind::List => Some("l"),
+        Kind::InputBox => Some("InputBox"),
+        Kind::Text => Some("text"),
+        Kind::Locus => Some("locus"),
         Kind::PenStroke => Some("stroke"),
         _ => None,
     };

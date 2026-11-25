@@ -100,6 +100,11 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
                     Some(Kind::Polygon | Kind::Circle | Kind::Conic | Kind::Arc | Kind::Sector)
                 )
         }
+        Tool::Locus => match picks {
+            [] | [Kind::Point] => matches!(cand, Some(Kind::Point | Kind::Number)),
+            [Kind::Number] => cand == Some(Kind::Point),
+            _ => false,
+        },
         Tool::Slope => {
             n == 0
                 && matches!(
@@ -178,6 +183,10 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
         Tool::Move
         | Tool::Slider
         | Tool::Checkbox
+        | Tool::InputBox
+        | Tool::CreateList
+        | Tool::Text
+        | Tool::PenStroke
         | Tool::MoveView
         | Tool::ZoomIn
         | Tool::ZoomOut
@@ -209,6 +218,7 @@ pub(super) fn finish(tool: Tool, picks: &[Kind]) -> Option<Finish> {
         | Tool::Hyperbola => n == 3,
         Tool::Conic5 => n == 5,
         Tool::Area | Tool::Slope => n == 1,
+        Tool::Locus => n == 2,
         Tool::Compasses => matches!(
             picks,
             [Kind::Segment | Kind::Circle, Kind::Point] | [Kind::Point, _, Kind::Point]
@@ -315,6 +325,10 @@ pub(super) fn build(
     };
     let (rhs, name) = match tool {
         Tool::Point | Tool::VectorPolygon => return lines,
+        Tool::Locus => (
+            format!("Locus({})", point_first()),
+            Name::Fresh(Kind::Locus),
+        ),
         Tool::Intersect if kinds.contains(&Kind::Conic) => {
             let (line, conic) = if kinds[0] == Kind::Line {
                 (a(0), a(1))
@@ -460,6 +474,10 @@ pub(super) fn build(
         Tool::Move
         | Tool::Slider
         | Tool::Checkbox
+        | Tool::InputBox
+        | Tool::CreateList
+        | Tool::Text
+        | Tool::PenStroke
         | Tool::MoveView
         | Tool::ZoomIn
         | Tool::ZoomOut
@@ -559,6 +577,10 @@ pub(super) fn hint(tool: Tool, picks: &[Kind]) -> Hint {
         (Tool::VectorPolygon, _) => Hint::NextVertexOrClose,
         (Tool::Area, _) => Hint::AreaObject,
         (Tool::Slope, _) => Hint::SlopeObject,
+        (Tool::CreateList, _) => Hint::SelectListMembers,
+        (Tool::Locus, 0) => Hint::LocusPoint,
+        (Tool::Locus, _) => Hint::LocusDriver,
+        (Tool::PenStroke, _) => Hint::DrawStroke,
         (Tool::VectorFromPoint, 0) => Hint::PointOrVector,
         (Tool::VectorFromPoint, _) if first == Some(Kind::Point) => Hint::Vector,
         (Tool::VectorFromPoint, _) => Hint::Point,
@@ -587,7 +609,7 @@ pub(super) fn hint(tool: Tool, picks: &[Kind]) -> Hint {
         (Tool::Translate, _) => Hint::Vector,
         (Tool::ReflectCircle, 0) => Hint::Point,
         (Tool::ReflectCircle, _) => Hint::InversionCircle,
-        (Tool::Slider | Tool::Checkbox, _) => Hint::PlaceControl,
+        (Tool::Slider | Tool::Checkbox | Tool::InputBox | Tool::Text, _) => Hint::PlaceControl,
         (Tool::MoveView, _) => Hint::DragView,
         (Tool::ZoomIn, _) => Hint::ClickToZoomIn,
         (Tool::ZoomOut, _) => Hint::ClickToZoomOut,

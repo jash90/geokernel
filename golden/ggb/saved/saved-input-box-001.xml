@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0" version="5.4.936.0" app="classic" platform="a" xsi:noNamespaceSchemaLocation="https://www.geogebra.org/apps/xsd/ggb.xsd" xmlns="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<gui>
+	<window width="800" height="600"/>
+	<labelingStyle val="3"/>
+	<font size="12"/>
+</gui>
+<euclidianView>
+	<viewNumber viewNo="1"/>
+	<size width="800" height="600"/>
+	<coordSystem xZero="215" yZero="315" scale="50" yscale="50"/>
+	<evSettings axes="true" grid="false" gridIsBold="false" pointCapturing="3" rightAngleStyle="1" checkboxSize="26" gridType="3"/>
+	<bgColor r="255" g="255" b="255"/>
+	<axesColor r="28" g="28" b="31"/>
+	<gridColor r="180" g="179" b="186"/>
+	<lineStyle axes="1" grid="0"/>
+	<axis id="0" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+	<axis id="1" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+</euclidianView>
+<algebraView>
+	<mode val="1"/>
+</algebraView>
+<kernel>
+	<uses3D val="true"/>
+	<continuous val="false"/>
+	<usePathAndRegionParameters val="true"/>
+	<decimals val="2"/>
+	<angleUnit val="degree"/>
+	<algebraStyle val="0" spreadsheet="0"/>
+	<coordStyle val="0"/>
+</kernel>
+<tableview min="0" max="0" step="0"/>
+<scripting blocked="false" disabled="false"/>
+<construction title="" author="" date="">
+<element type="numeric" label="a">
+	<value val="3.5"/>
+	<slider min="0" max="8" absoluteScreenLocation="true" width="200" x="38" y="58" fixed="false" horizontal="true" showAlgebra="true"/>
+	<lineStyle thickness="10" type="0" typeHidden="1" opacity="100"/>
+	<show object="true" label="true"/>
+	<objColor r="28" g="28" b="31" alpha="0.10000000149011612"/>
+	<layer val="0"/>
+	<labelMode val="1"/>
+	<animation step="0.5" type="0" playing="false"/>
+</element>
+<expression label="b" exp="true"/>
+<element type="boolean" label="b">
+	<value val="true"/>
+	<show object="false" label="true"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<checkbox fixed="true"/>
+</element>
+<expression label="note" exp="&quot;x &lt; y&quot;"/>
+<element type="text" label="note">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="Textfield">
+	<input a0="a"/>
+	<output a0="field"/>
+</command>
+<element type="textfield" label="field">
+	<show object="true" label="true"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<bgColor r="255" g="255" b="255" alpha="255"/>
+	<layer val="0"/>
+	<labelOffset x="124" y="88"/>
+	<labelMode val="0"/>
+	<auxiliary val="true"/>
+	<caption val="Value"/>
+	<symbolic val="true"/>
+	<contentSerif val="true"/>
+	<length val="12"/>
+</element>
+<command name="Textfield">
+	<input a0="b"/>
+	<output a0="flag"/>
+</command>
+<element type="textfield" label="flag">
+	<show object="true" label="true"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<bgColor r="255" g="255" b="255" alpha="255"/>
+	<layer val="0"/>
+	<labelOffset x="124" y="128"/>
+	<labelMode val="0"/>
+	<auxiliary val="true"/>
+	<symbolic val="true"/>
+	<contentSerif val="true"/>
+	<length val="8"/>
+</element>
+<command name="Textfield">
+	<input a0="note"/>
+	<output a0="words"/>
+</command>
+<element type="textfield" label="words">
+	<show object="true" label="true"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<bgColor r="255" g="255" b="255" alpha="255"/>
+	<layer val="0"/>
+	<labelOffset x="124" y="168"/>
+	<labelMode val="0"/>
+	<auxiliary val="true"/>
+	<symbolic val="true"/>
+	<contentSerif val="true"/>
+</element>
+<command name="Textfield">
+	<input/>
+	<output a0="empty"/>
+</command>
+<element type="textfield" label="empty">
+	<show object="true" label="true"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<bgColor r="255" g="255" b="255" alpha="255"/>
+	<layer val="0"/>
+	<labelOffset x="124" y="208"/>
+	<labelMode val="0"/>
+	<auxiliary val="true"/>
+	<symbolic val="true"/>
+	<contentSerif val="true"/>
+	<tempUserInput eval=""/>
+</element>
+</construction>
+</geogebra>

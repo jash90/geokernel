@@ -583,6 +583,34 @@ style_case([
     [st("empty", tooltip_mode=2)],
 ], hidden=["run2", "empty"])
 
+# A placed input box linked to a slider, a Boolean and editable text.
+case("input-box", [
+    "a = Slider(0, 8, 0.5)", "b = true", 'note = "x < y"',
+    "field = InputBox(a)", "flag = InputBox(b)", "words = InputBox(note)",
+    "empty = InputBox()",
+], [
+    st("field", label_offset=[124, 88], input_length=12, caption="Value"),
+    st("flag", label_offset=[124, 128], input_length=8),
+    st("words", label_offset=[124, 168]),
+    st("empty", label_offset=[124, 208]),
+    {"action": "set_number", "label": "a", "value": 3.5},
+])
+
+case("input-rounding", [
+    "a = Slider(0, 8, 0.00001)", "fixedPlaces = InputBox(a)",
+    "significantDigits = InputBox(a)",
+], [
+    {"action": "set_number", "label": "a", "value": 1.23456},
+    st("fixedPlaces", decimals=4), st("significantDigits", figures=5),
+])
+
+case("canvas-sector", [
+    pt("A", 0, 0), pt("B", 2, 0), pt("C", 0, 2),
+    "s = CircularSector(A, B, C)", "shaded = CircularSector(A, B, C)",
+], [
+    st("s", alpha=0), st("shaded", alpha=0, fill=["HATCH", 45, 10]),
+])
+
 # Images.
 style_case(image_points, [
     styled("art", "control", color=None, dynamic_color=None, color_space=None,

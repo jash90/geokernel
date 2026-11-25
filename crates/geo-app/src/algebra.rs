@@ -612,16 +612,22 @@ fn paint_control(
         }
         Def::Button => field.add_enabled(false, egui::Button::new(caption)),
         Def::InputBox(target) => {
-            field.label(caption);
+            let field_label = field.label(if caption.is_empty() {
+                c.label(row.id)
+            } else {
+                caption
+            });
             match target.map(|id| (id, c.value(id))) {
                 Some((id, Value::Number(value))) if c.def(id).is_free() => {
                     let angle = c.kind(id) == Kind::Angle;
                     let mut number = if angle { value.to_degrees() } else { value };
-                    let response = field.add(egui::DragValue::new(&mut number).suffix(if angle {
-                        "°"
-                    } else {
-                        ""
-                    }));
+                    let response = field
+                        .add(egui::DragValue::new(&mut number).suffix(if angle {
+                            "°"
+                        } else {
+                            ""
+                        }))
+                        .labelled_by(field_label.id);
                     if response.drag_started() {
                         actions.number_drag = Some(true);
                     } else if response.drag_stopped() {
@@ -634,10 +640,12 @@ fn paint_control(
                     response
                 }
                 Some((id, _)) => field.label(geo_app_core::describe::object_text(c, id)),
-                None => field.add_enabled(
-                    false,
-                    egui::TextEdit::singleline(&mut String::new()).desired_width(84.0),
-                ),
+                None => field
+                    .add_enabled(
+                        false,
+                        egui::TextEdit::singleline(&mut String::new()).desired_width(84.0),
+                    )
+                    .labelled_by(field_label.id),
             }
         }
         _ => return false,

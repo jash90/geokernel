@@ -1,0 +1,14 @@
+{
+  "schema": 2,
+  "id": "saved-input-rounding-001",
+  "script": [
+    "a = Slider(0, 8, 0.00001)",
+    "fixedPlaces = InputBox(a)",
+    "significantDigits = InputBox(a)"
+  ],
+  "objects": {
+    "a": { "type": "number", "defined": true, "value": 1.23456 },
+    "fixedPlaces": { "type": "TextField", "defined": true },
+    "significantDigits": { "type": "TextField", "defined": true }
+  }
+}

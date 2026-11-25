@@ -1,0 +1,38 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "controls-reviewdrag-001",
+      "group": "controls",
+      "script": [
+        "a = Slider(0, 8, 0.5)",
+        "b = 2*a",
+        "field = $inputBox(a, _)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "a", "value": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "field": { "type": "input_box", "defined": true, "text": "0" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "field": { "type": "input_box", "defined": true, "text": "2" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 10.0 },
+          "field": { "type": "input_box", "defined": true, "text": "5" }
+        }
+      ]
+    }
+  ]
+}

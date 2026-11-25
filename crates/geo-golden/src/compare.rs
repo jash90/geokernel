@@ -178,6 +178,12 @@ pub fn compare_list(
                     got.implicit_at(c, k).ok_or("missing implicit curve data")?;
                 compare_implicit(w, matrix, user, &equation)
             }
+            Element::Value(kind @ (Kind::Polygon | Kind::PolyLine), value) => {
+                let vertices = got
+                    .object(k)
+                    .map_or_else(Vec::new, |id| c.vertices(id).collect());
+                compare_object(w, kind, &value, &vertices)
+            }
             Element::Value(kind, value) => compare(w, kind, &value),
         }
         .map_err(|why| format!("element {}: {why}", k + 1))?;
@@ -271,7 +277,7 @@ pub fn compare_construction_object(
         Kind::PenStroke => compare_stroke(expected, kind, &value, c.stroke(id)),
         Kind::Conic => compare_conic(expected, kind, &value, c.conic(id).as_ref()).0,
         Kind::List => compare_list(c, expected, kind, c.elements(id)),
-        Kind::Text | Kind::FunctionNVar | Kind::Curve | Kind::ImplicitCurve => {
+        Kind::Text | Kind::InputBox | Kind::FunctionNVar | Kind::Curve | Kind::ImplicitCurve => {
             compare_extra(c, id, expected)
         }
         Kind::PieChart if expected.kind == kind => {
@@ -294,6 +300,12 @@ pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Re
         return compare(expected, kind, &c.value(id));
     }
     match &expected.data {
+        Some(ExpectedData::Text(text)) if kind == Kind::InputBox => {
+            let actual = c.input_box_value_text(id);
+            if actual != text.as_str() {
+                return Err(format!("expected input box text {text:?}, got {actual:?}"));
+            }
+        }
         Some(ExpectedData::Text(text)) if c.text(id) == Some(text.as_str()) => (),
         Some(ExpectedData::Text(text)) => {
             return Err(format!("expected text {text:?}, got {:?}", c.text(id)));

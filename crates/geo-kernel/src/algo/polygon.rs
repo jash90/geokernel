@@ -324,14 +324,44 @@ impl Regular {
 }
 
 fn image_vertices(c: &Construction, poly: Id) -> Cow<'_, [Id]> {
+    image_vertices_with_work(c, poly, &mut None).expect("unmetered image vertices")
+}
+
+fn image_vertices_with_work<'a>(
+    c: &'a Construction,
+    poly: Id,
+    work: &mut Option<&mut usize>,
+) -> Option<Cow<'a, [Id]>> {
     // The image command adds its vertices as the polygon's first children.
-    let is_vertex = |&id: &Id| matches!(c.def(id), Def::Polygon(PolygonDef::ImageVertex { poly: owner, .. }) if owner == poly);
+    let is_vertex = |id| matches!(c.def(id), Def::Polygon(PolygonDef::ImageVertex { poly: owner, .. }) if owner == poly);
     if let Some(children) = c.children_slice(poly) {
-        let count = children.iter().copied().take_while(is_vertex).count();
-        Cow::Borrowed(&children[..count])
+        let mut count = 0;
+        for &id in children {
+            charge_vertex_work(work, 1)?;
+            if !is_vertex(id) {
+                break;
+            }
+            count += 1;
+        }
+        Some(Cow::Borrowed(&children[..count]))
     } else {
-        Cow::Owned(c.children(poly).take_while(is_vertex).collect())
+        let mut vertices = Vec::new();
+        for id in c.children(poly) {
+            charge_vertex_work(work, 1)?;
+            if !is_vertex(id) {
+                break;
+            }
+            vertices.push(id);
+        }
+        Some(Cow::Owned(vertices))
     }
+}
+
+fn charge_vertex_work(work: &mut Option<&mut usize>, units: usize) -> Option<()> {
+    if let Some(left) = work {
+        **left = left.checked_sub(units)?;
+    }
+    Some(())
 }
 
 /// Whether the command rebuilds an image from its named vertices.
@@ -365,14 +395,28 @@ enum Shape<'a> {
 
 impl<'a> Shape<'a> {
     fn of(c: &'a Construction, id: Id) -> Shape<'a> {
-        let Some(id) = c.conditional_source(id) else {
-            return Shape::Empty;
-        };
-        let image = image_vertices(c, id);
-        if !image.is_empty() {
-            return Shape::Points(image);
+        Self::prepare(c, id, &mut None, 0).expect("unmetered shape")
+    }
+
+    fn prepare(
+        c: &'a Construction,
+        id: Id,
+        work: &mut Option<&mut usize>,
+        depth: usize,
+    ) -> Option<Shape<'a>> {
+        // A bounded query also bounds the depth of its shape setup and vertex mapping.
+        if work.is_some() && depth >= 64 {
+            return None;
         }
-        match c.def(id) {
+        charge_vertex_work(work, 1)?;
+        let Some(id) = c.conditional_source_with_vertex_work(id, work)? else {
+            return Some(Shape::Empty);
+        };
+        let image = image_vertices_with_work(c, id, work)?;
+        if !image.is_empty() {
+            return Some(Shape::Points(image));
+        }
+        Some(match c.def(id) {
             Def::Chart(_) if c.kind(id) == Kind::PolyLine => c
                 .chart(id)
                 .map_or(Shape::Empty, |data| Shape::Chart(&data.vertices)),
@@ -380,7 +424,11 @@ impl<'a> Shape<'a> {
                 Shape::Points(Cow::Borrowed(c.list(list)))
             }
             Def::Polygon(PolygonDef::PolygonFromList(id) | PolygonDef::PolyLineFromList(id)) => {
-                point_list(c, id).map_or(Shape::Empty, Shape::List)
+                let Some(list) = c.elements(id) else {
+                    return Some(Shape::Empty);
+                };
+                charge_vertex_work(work, list.len())?;
+                checked_point_list(list).map_or(Shape::Empty, Shape::List)
             }
             Def::Polygon(PolygonDef::Regular { a, b, n }) => {
                 match Regular::new(c, a, b, vertex_count(n.value(c))) {
@@ -389,17 +437,24 @@ impl<'a> Shape<'a> {
                 }
             }
             Def::Polygon(PolygonDef::Clip(d)) if d.kind() == Kind::Polygon => {
-                d.vertices(c).map_or(Shape::Empty, Shape::Clipped)
+                let vertices = match work {
+                    Some(left) => d.cached_vertices_with_work(c, left)?,
+                    None => d.vertices(c),
+                };
+                vertices.map_or(Shape::Empty, Shape::Clipped)
             }
             Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
-                Shape::Moved(Box::new(Shape::of(c, source_of(&def))), def.map(c))
+                Shape::Moved(
+                    Box::new(Shape::prepare(c, source_of(&def), work, depth + 1)?),
+                    def.map_with_vertex_work(c, work)?,
+                )
             }
             Def::Vector(VectorDef::ApplyMatrix {
                 kind: Kind::Polygon | Kind::PolyLine,
                 src,
                 matrix,
             }) => Shape::Applied(
-                Box::new(Shape::of(c, src)),
+                Box::new(Shape::prepare(c, src, work, depth + 1)?),
                 c.elements(matrix).and_then(Matrix::read),
             ),
             Def::Vector(VectorDef::Translate {
@@ -411,9 +466,18 @@ impl<'a> Shape<'a> {
                     Value::Vector { x, y } => Some((x, y)),
                     _ => None,
                 };
-                Shape::Shifted(Box::new(Shape::of(c, src)), by)
+                Shape::Shifted(Box::new(Shape::prepare(c, src, work, depth + 1)?), by)
             }
             _ => Shape::Empty,
+        })
+    }
+
+    fn vertex_cost(&self) -> usize {
+        match self {
+            Self::Moved(inner, _) | Self::Shifted(inner, _) | Self::Applied(inner, _) => {
+                inner.vertex_cost() + 1
+            }
+            _ => 1,
         }
     }
 
@@ -468,7 +532,10 @@ impl<'a> Shape<'a> {
 }
 
 fn point_list(c: &Construction, id: Id) -> Option<List<'_>> {
-    let list = c.elements(id)?;
+    checked_point_list(c.elements(id)?)
+}
+
+fn checked_point_list(list: List<'_>) -> Option<List<'_>> {
     list.iter()
         .all(|element| matches!(element, Element::Value(Kind::Point, _)))
         .then_some(list)
@@ -504,6 +571,13 @@ pub struct Vertices<'a> {
 }
 
 impl<'a> Vertices<'a> {
+    pub(crate) fn with_work(c: &'a Construction, id: Id, work_left: &mut usize) -> Option<Self> {
+        let shape = Shape::prepare(c, id, &mut Some(work_left), 0)?;
+        let cost = shape.vertex_cost().checked_mul(shape.len())?;
+        *work_left = work_left.checked_sub(cost)?;
+        Some(Self { c, shape, next: 0 })
+    }
+
     pub(crate) fn of(c: &'a Construction, id: Id) -> Vertices<'a> {
         Vertices {
             c,
@@ -529,6 +603,25 @@ impl Iterator for Vertices<'_> {
         let left = self.shape.len().saturating_sub(self.next);
         (left, Some(left))
     }
+}
+
+#[cfg(test)]
+#[test]
+fn bounded_vertices_charge_list_validation_and_mapped_vertices() {
+    let c = crate::script::load(
+        "poly = PolyLine(Sequence((k, 0), k, 1, 6))\nv = (1, 2)\nshifted = Translate(poly, v)",
+    )
+    .unwrap();
+    let id = c.id("shifted").unwrap();
+    let expected = c.vertices(id).collect::<Vec<_>>();
+    assert_eq!(expected.len(), 6);
+
+    // Two shapes, one child probe, six checks, and twelve mapped vertex reads.
+    let mut budget = 21;
+    let vertices = c.vertices_with_work(id, &mut budget).unwrap();
+    assert_eq!(vertices.collect::<Vec<_>>(), expected);
+    assert_eq!(budget, 0);
+    assert!(c.vertices_with_work(id, &mut 20).is_none());
 }
 
 /// Whether `poly` counts as defined for the commands that read its

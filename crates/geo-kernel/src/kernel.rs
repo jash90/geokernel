@@ -1135,6 +1135,7 @@ pub struct Construction {
     /// The frozen points of the pen strokes.
     pub(crate) strokes: std::collections::BTreeMap<Id, algo::stroke::StrokeData>,
     slider_styles: std::collections::BTreeMap<Id, control::SliderStyle>,
+    input_box_styles: std::collections::BTreeMap<Id, control::InputBoxStyle>,
     checkbox_styles: std::collections::BTreeMap<Id, control::CheckboxStyle>,
     slider_labels: BTreeMap<Id, control::SliderLabel>,
     number_rounding: control::NumberRounding,
@@ -1460,6 +1461,8 @@ pub struct DrawingStyle {
     pub layer: u8,
     pub show_label: bool,
     pub line_thickness: u8,
+    /// A saved sector with no opacity or fill pattern has no interior hit.
+    pub sector_outline_only: bool,
 }
 
 impl Default for DrawingStyle {
@@ -1468,6 +1471,7 @@ impl Default for DrawingStyle {
             layer: 0,
             show_label: true,
             line_thickness: 3,
+            sector_outline_only: false,
         }
     }
 }
@@ -1987,6 +1991,17 @@ impl Construction {
         algo::polygon::Vertices::of(self, id)
     }
 
+    /// Polygon vertices for a bounded query. Charges for preparing the shape
+    /// and for reading every vertex, including mappings along transformed paths.
+    /// Returns `None` on exhaustion or when a clipped contour is not cached.
+    pub fn vertices_with_work(
+        &self,
+        id: Id,
+        work_left: &mut usize,
+    ) -> Option<algo::polygon::Vertices<'_>> {
+        algo::polygon::Vertices::with_work(self, id, work_left)
+    }
+
     /// How many ids the stored lists hold together.
     #[cfg(test)]
     pub(crate) fn stored_ids(&self) -> usize {
@@ -2219,6 +2234,7 @@ impl Construction {
         self.slider_styles.split_off(&Id(at.len));
         self.slider_default_slots.split_off(&Id(at.len));
         self.slider_labels.split_off(&Id(at.len));
+        self.input_box_styles.split_off(&Id(at.len));
         self.checkbox_styles.split_off(&Id(at.len));
         self.free_booleans
             .truncate(self.free_booleans.partition_point(|id| id.0 < at.len));
@@ -3561,6 +3577,19 @@ impl Construction {
     /// or the list is undefined.
     pub fn elements(&self, id: Id) -> Option<expr::List<'_>> {
         expr::list(self, id)
+    }
+
+    /// Identifies the stored elements of a defined list for drawing caches.
+    pub fn list_value_revision(&self, id: Id) -> Option<[u64; 2]> {
+        if !matches!(self.value(id), Value::List { .. }) {
+            return None;
+        }
+        match self.def(id) {
+            Def::Expr(_) => expr::list_value_revision(self, id).map(|revision| [1, revision]),
+            Def::Chart(_) => self.chart(id).map(|chart| [2, chart.revision()]),
+            Def::Prove(_) => self.proof(id).map(|proof| [1, proof.revision]),
+            _ => None,
+        }
     }
 
     /// The tree of the expression object `id`, owned, so that it can be added
@@ -5381,18 +5410,33 @@ impl Construction {
 
     /// The active source of a conditional object. Branches precede their
     /// result in the construction.
-    pub(crate) fn conditional_source(&self, mut id: Id) -> Option<Id> {
+    pub(crate) fn conditional_source(&self, id: Id) -> Option<Id> {
+        self.conditional_source_with_vertex_work(id, &mut None)
+            .flatten()
+    }
+
+    pub(crate) fn conditional_source_with_vertex_work(
+        &self,
+        mut id: Id,
+        work: &mut Option<&mut usize>,
+    ) -> Option<Option<Id>> {
         let end = expr::carrier_deadline();
         loop {
             let Some(Def::Conditional { args, .. }) = self.defs.get(id.0) else {
-                return Some(id);
+                return Some(Some(id));
             };
             if !self.values[id.0].is_defined() {
-                return None;
+                return Some(None);
             }
-            let branch = expr::conditional_branch(self, self.list(*args), end)?;
+            let args = self.list(*args);
+            if let Some(left) = work {
+                **left = left.checked_sub(args.len())?;
+            }
+            let Some(branch) = expr::conditional_branch(self, args, end) else {
+                return Some(None);
+            };
             if branch.0 >= id.0 {
-                return None;
+                return Some(None);
             }
             id = branch;
         }
@@ -5427,6 +5471,11 @@ impl Construction {
     /// The current numerical findings of a Relation command.
     pub fn relation_reports(&self, id: Id) -> Option<Vec<algo::predicate::RelationReport>> {
         expr::relation_reports(self, id)
+    }
+
+    /// Whether a function of two coordinates defines a filled plane region.
+    pub fn is_plane_inequality(&self, id: Id) -> bool {
+        expr::inequality::is_inequality(self, id)
     }
 
     /// Evaluates a two-variable function at the given coordinates.
@@ -6158,6 +6207,7 @@ mod tests {
             layer: 4,
             show_label: false,
             line_thickness: 6,
+            ..Default::default()
         };
         c.set_drawing_style(b, style);
         script::exec(&mut c, "$textProperties(t, true, 20, 1, 4, 5, world, 2, 3)").unwrap();

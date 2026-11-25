@@ -107,6 +107,14 @@ impl OwnerRules {
     };
 }
 
+/// An active edit of a linked canvas input box.
+pub struct InputBoxEdit {
+    pub label: String,
+    pub text: String,
+    pub request_focus: bool,
+    pub changed: bool,
+}
+
 pub struct App {
     pub wb: Workbench,
     pub show_cas: bool,
@@ -154,6 +162,10 @@ pub struct App {
     /// The text of the number dialog.
     pub number_text: String,
     pub control_fields: [String; 3],
+    pub control_focus: bool,
+    pub pen_samples: Vec<(f64, f64)>,
+    /// The label and current contents of the active canvas editor.
+    pub input_box_edit: Option<InputBoxEdit>,
     /// Where the regions were in the last frame.
     pub regions: Regions,
     /// The widgets over the graphics view in the last frame.
@@ -201,6 +213,8 @@ pub struct App {
     pub label_rects: RefCell<Vec<(Id, Rect)>>,
     /// The painted bodies of text objects, in the area's coordinates.
     pub text_rects: RefCell<Vec<(Id, Rect)>>,
+    /// Reused storage for this frame's visible InputBox rectangles.
+    pub input_box_rects: Vec<(Id, Rect)>,
 }
 
 impl App {
@@ -255,6 +269,9 @@ impl App {
             style_bar: false,
             number_text: String::new(),
             control_fields: Default::default(),
+            control_focus: false,
+            pen_samples: Vec::new(),
+            input_box_edit: None,
             regions: Regions::new(Rect::ZERO, false, &Metrics::desktop()),
             overlays: Overlays::new(),
             seen_rebuilds: 0,
@@ -274,6 +291,7 @@ impl App {
             was_typing: false,
             label_rects: RefCell::new(Vec::new()),
             text_rects: RefCell::new(Vec::new()),
+            input_box_rects: Vec::new(),
         }
     }
 
@@ -350,6 +368,7 @@ impl App {
     /// tool switch, a cancelled number dialog, a failed final step;
     /// `Kernel.restoreStateForInitNewMode`).
     pub fn reset_tool(&mut self) {
+        self.pen_samples.clear();
         self.tool.reset();
         self.tool_press = None;
         self.wb.cancel_tool_use();

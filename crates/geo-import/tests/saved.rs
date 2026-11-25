@@ -681,6 +681,9 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                 .chain(&[
                     "saved-controls-001",
                     "saved-controls-002",
+                    // The export oracle checks linked objects, widget style and rounding.
+                    "saved-input-box-001",
+                    "saved-input-rounding-001",
                     "saved-elements-001",
                     // images.rs checks the archive assets and quad snapshots.
                     "saved-images-001",
@@ -785,7 +788,9 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                 Vec::new()
             };
             let agrees = match kind {
-                Kind::ImplicitCurve => compare_construction_object(expected, &c, id),
+                Kind::ImplicitCurve | Kind::Arc | Kind::Sector => {
+                    compare_construction_object(expected, &c, id)
+                }
                 Kind::List => compare_list(&c, expected, kind, c.elements(id)),
                 _ => compare_object(expected, kind, &c.value(id), &vertices),
             };

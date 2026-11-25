@@ -113,7 +113,7 @@ pub fn curves_plot_cost() -> u64 {
 /// What plotting `id` counts against [`REPLOTS_PER_FRAME`].
 fn plot_cost(c: &Construction, id: Id) -> usize {
     match c.value(id) {
-        Value::Function | Value::ImplicitCurve => FUNCTION_COST,
+        Value::Function | Value::ImplicitCurve | Value::Curve { .. } => FUNCTION_COST,
         _ => 1,
     }
 }
@@ -590,7 +590,7 @@ impl Curves {
             Value::Conic { .. } => key::conic_data(&c.conic(id)?),
             Value::ImplicitCurve => Data::Implicit(c.implicit_revision(id)?),
 
-            Value::Function => {
+            Value::Function | Value::Curve { .. } => {
                 let closure = cache
                     .closures
                     .entry(id)
@@ -610,8 +610,13 @@ impl Curves {
         };
         match cache.entries.get_mut(label) {
             Some(entry) if entry.data == data => self.kept(c, id, entry, color),
+            Some(entry) if c.kind(id) == geo_kernel::Kind::Curve && !self.may_plot(c, id) => {
+                self.ctx.request_repaint();
+                entry.seen = self.now;
+                self.show(entry)
+            }
             Some(entry) => {
-                // Edited: plotted at once.
+                // Edited: plotted at once while the frame can draw it.
                 *entry = Entry {
                     data,
                     color,
@@ -874,6 +879,23 @@ impl Curves {
                 }
                 None => (Vec::new(), None, None, None, None, false),
             },
+            Value::Curve { .. } => {
+                let grown = self.frame.grown(margin);
+                let paths: Vec<Vec<Pos2>> = plot::cartesian(c, id, &grown)
+                    .into_iter()
+                    .map(|path| {
+                        path.into_iter()
+                            .map(|(x, y)| at((x - margin, y - margin)))
+                            .collect()
+                    })
+                    .collect();
+                let label = paths
+                    .iter()
+                    .flatten()
+                    .next()
+                    .map(|p| (f64::from(p.x), f64::from(p.y)));
+                (paths, None, None, label, None, false)
+            }
             Value::ImplicitCurve => {
                 // The element type is stated here: the label lookup below
                 // reads it before the tuple fixes it, and the search for a

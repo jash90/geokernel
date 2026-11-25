@@ -3,7 +3,7 @@
 use super::{object, split_call};
 use crate::kernel::control::{
     decode_bytes, decode_scripts, decode_text, encode_scripts, encode_text, CheckboxStyle,
-    ControlScript, NumberRounding, SliderLabel, SliderStyle,
+    ControlScript, InputBoxStyle, NumberRounding, SliderLabel, SliderStyle,
 };
 use crate::kernel::image::{RasterAsset, MAX_ASSET_BYTES};
 use crate::kernel::DrawingStyle;
@@ -51,6 +51,10 @@ pub enum Property {
         label: String,
         style: SliderStyle,
     },
+    InputBoxStyle {
+        label: String,
+        style: InputBoxStyle,
+    },
     CheckboxStyle {
         label: String,
         style: CheckboxStyle,
@@ -80,6 +84,7 @@ impl Property {
             | Self::SliderBounds { label, .. }
             | Self::SliderLabel { label, .. }
             | Self::SliderStyle { label, .. }
+            | Self::InputBoxStyle { label, .. }
             | Self::CheckboxStyle { label, .. }
             | Self::ObjectScripts { label, .. }
             | Self::SliderAnimation { label, .. } => Some(label),
@@ -152,6 +157,14 @@ impl Property {
                     return Err("slider style needs a free number".into());
                 }
                 c.set_slider_style(id, style.clone());
+                Ok(())
+            }
+            Self::InputBoxStyle { label, style } => {
+                let id = object(c, label)?;
+                if !matches!(c.def(id), crate::Def::InputBox(_)) {
+                    return Err("input box style needs an input box".into());
+                }
+                c.set_input_box_style(id, *style);
                 Ok(())
             }
             Self::CheckboxStyle { label, style } => {
@@ -233,14 +246,20 @@ impl fmt::Display for Property {
                 }
                 f.write_str(")")
             }
-            Self::DrawingStyle { label, style } => write!(
-                f,
-                "$drawingStyle({}, {}, {}, {})",
-                encode_text(label),
-                style.layer,
-                style.show_label,
-                style.line_thickness
-            ),
+            Self::DrawingStyle { label, style } => {
+                write!(
+                    f,
+                    "$drawingStyle({}, {}, {}, {}",
+                    encode_text(label),
+                    style.layer,
+                    style.show_label,
+                    style.line_thickness
+                )?;
+                if style.sector_outline_only {
+                    f.write_str(", outline")?;
+                }
+                f.write_str(")")
+            }
             Self::CellInput { label, input } => {
                 write!(f, "$cellInput({label}, {})", encode_text(input))
             }
@@ -314,6 +333,15 @@ impl fmt::Display for Property {
                         .map_or_else(|| field(style.step), encode_text),
                 )
             }
+            Self::InputBoxStyle { label, style } => {
+                let [x, y] = style.position;
+                write!(
+                    f,
+                    "$inputBoxStyle({}, {x}, {y}, {})",
+                    encode_text(label),
+                    style.length
+                )
+            }
             Self::CheckboxStyle { label, style } => {
                 let field = |v: Option<i32>| v.map_or_else(|| "_".into(), |v| v.to_string());
                 let (x, y) = style.position.map(|[x, y]| (x, y)).unzip();
@@ -379,6 +407,7 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
         && !line.starts_with("$sliderLabel(")
         && !line.starts_with("$sliderStyle(")
         && !line.starts_with("$checkboxStyle(")
+        && !line.starts_with("$inputBoxStyle(")
         && !line.starts_with("$objectScripts(")
         && !line.starts_with("$drawingStyle(")
         && !line.starts_with("$cellInput(")
@@ -399,11 +428,14 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
                     input: decode_text(input)?,
                 })
             }
-            ("$drawingStyle", [label, layer, shown, thickness]) => {
+            ("$drawingStyle", [label, layer, shown, thickness, rest @ ..])
+                if rest.is_empty() || rest == ["outline"] =>
+            {
                 let style = DrawingStyle {
                     layer: layer.parse().map_err(|_| "invalid drawing layer")?,
                     show_label: shown.parse().map_err(|_| "invalid label visibility")?,
                     line_thickness: thickness.parse().map_err(|_| "invalid line thickness")?,
+                    sector_outline_only: !rest.is_empty(),
                 };
                 Ok(Property::DrawingStyle {
                     label: decode_text(label)?,
@@ -468,6 +500,17 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
                         step_expression: (step.starts_with('_') && *step != "_")
                             .then(|| decode_text(step).map(Arc::from))
                             .transpose()?,
+                    },
+                })
+            }
+            ("$inputBoxStyle", [label, x, y, length]) => {
+                let integer =
+                    |field: &str| field.parse::<i32>().map_err(|_| "invalid input box style");
+                Ok(Property::InputBoxStyle {
+                    label: decode_text(label)?,
+                    style: InputBoxStyle {
+                        position: [integer(x)?, integer(y)?],
+                        length: integer(length)?,
                     },
                 })
             }

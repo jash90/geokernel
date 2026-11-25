@@ -63,6 +63,8 @@ pub struct Scene<'a> {
     pub label_rects: Option<&'a RefCell<Vec<(Id, geom::Rect)>>>,
     /// The bodies of visible texts, in canvas coordinates for picking.
     pub text_rects: Option<&'a RefCell<Vec<(Id, geom::Rect)>>>,
+    /// Visible InputBox widget positions in window coordinates.
+    pub input_box_rects: Option<&'a RefCell<Vec<(Id, geom::Rect)>>>,
 }
 
 /// How far outside the area, in pixels, an object's points may lie and
@@ -170,7 +172,21 @@ fn label(
     (id, text, (x as f32, y as f32), color, align)
 }
 
+#[cfg(test)]
 pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform, scene: &Scene) {
+    paint_with_list_budget(painter, rect, c, t, scene, &mut {
+        geo_app_core::view::MAX_DESKTOP_FRAME_LIST_ITEMS
+    });
+}
+
+pub fn paint_with_list_budget(
+    painter: &Painter,
+    rect: Rect,
+    c: &Construction,
+    t: &ViewTransform,
+    scene: &Scene,
+    list_items_left: &mut usize,
+) {
     if let Some(rects) = scene.label_rects {
         rects.borrow_mut().clear();
     }
@@ -179,6 +195,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     }
     let charts = charts::Frame::new(painter, rect, c, t, scene.generation);
     let mut curves = None;
+    let mut regions_left = 2;
     for layer in c.drawing_layers() {
         if c.images().len() != 0 {
             image::paint(painter, rect, c, t, Some(layer), scene.visible, scene.ghost);
@@ -190,7 +207,12 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             t,
             scene,
             layer,
-            (&mut curves, charts.as_ref()),
+            (
+                &mut curves,
+                charts.as_ref(),
+                list_items_left,
+                &mut regions_left,
+            ),
         );
     }
 }
@@ -202,9 +224,11 @@ fn paint_layer<'c>(
     t: &ViewTransform,
     scene: &Scene,
     layer: u8,
-    (curves, charts): (
+    (curves, charts, list_items_left, regions_left): (
         &mut Option<crate::curves::Curves>,
         Option<&charts::Frame<'_>>,
+        &mut usize,
+        &mut usize,
     ),
 ) {
     let (w, h) = (rect.width() as f64, rect.height() as f64);
@@ -263,6 +287,7 @@ fn paint_layer<'c>(
     let mut labels: Vec<Label<'c>> = Vec::new();
     // Curved outlines are tessellated and kept between frames.
     let is_curve = |id: Id| match c.value(id) {
+        Value::Curve { .. } => true,
         Value::Function => !matches!(c.def(id), geo_kernel::Def::Chart(_)),
         Value::Conic { .. } | Value::Arc { .. } | Value::Sector { .. } | Value::ImplicitCurve => {
             true
@@ -724,6 +749,67 @@ fn paint_layer<'c>(
                     ));
                 }
             }
+        } else if let Value::FunctionNVar = value {
+            if *regions_left > 0 && c.is_plane_inequality(id) {
+                *regions_left -= 1;
+                let frame = geo_kernel::plot::Frame::fit(v, w, h);
+                let place = |sx, sy| {
+                    let (x, y) = frame.screen_to_world(sx, sy);
+                    p(x, y)
+                };
+                let mut mesh = Mesh::default();
+                let fill = color(id).gamma_multiply(0.18);
+                for [x0, y0, x1, y1] in geo_kernel::plot::inequality::tiles(c, id, &frame) {
+                    mesh.add_colored_rect(Rect::from_min_max(place(x0, y0), place(x1, y1)), fill);
+                }
+                if !mesh.is_empty() {
+                    painter.add(mesh);
+                }
+            }
+        } else if let Value::List { .. } = value {
+            use std::ops::ControlFlow;
+            if let Some(list) = c.elements(id).filter(|_| *list_items_left > 0) {
+                list.canvas_members(list_items_left, |object, value| {
+                    if object.is_none() {
+                        match value {
+                            Value::Point { x, y } => {
+                                let pos = p(x, y);
+                                if rect.expand(DEPENDENT_POINT_RADIUS).contains(pos) {
+                                    point_shape(painter, pos, color(id), DEPENDENT_POINT_RADIUS);
+                                }
+                            }
+                            Value::Vector { x, y } => {
+                                painter.arrow(p(0.0, 0.0), p(x, y) - p(0.0, 0.0), curve(id));
+                            }
+                            _ => {}
+                        }
+                    }
+                    ControlFlow::Continue(())
+                });
+            }
+        } else if let Value::InputBox = value {
+            has_text |= !c.input_box_caption(id).is_empty();
+            let [x, y, width, height] = c.input_box_rect(id).map(|v| v as f32);
+            let widget = Rect::from_min_size(origin + vec2(x, y), vec2(width, height));
+            if rect.intersects(widget) {
+                if let Some(rects) = scene.input_box_rects {
+                    rects.borrow_mut().push((id, widget.core()));
+                }
+                painter.rect(
+                    widget,
+                    0.0,
+                    theme::WHITE,
+                    Stroke::new(1.0, theme::BORDER),
+                    eframe::egui::StrokeKind::Inside,
+                );
+                painter.with_clip_rect(widget.shrink(2.0)).text(
+                    widget.left_center() + vec2(6.0, 0.0),
+                    Align2::LEFT_CENTER,
+                    c.input_box_text(id),
+                    FontId::proportional(LABEL_FONT),
+                    color(id),
+                );
+            }
         } else if let Value::Bool(checked) = value {
             if let Some((x, y)) = c.checkbox_position(id) {
                 use geo_kernel::kernel::control::{
@@ -792,7 +878,10 @@ fn paint_layer<'c>(
         }
     }
     if has_text {
-        let texts = ids.iter().copied().filter(|&id| c.value(id) == Value::Text);
+        let texts = ids
+            .iter()
+            .copied()
+            .filter(|&id| matches!(c.value(id), Value::Text | Value::InputBox));
         text::paint(painter, rect, c, t, texts, color, scene);
     }
     let font = FontId::proportional(LABEL_FONT);
@@ -1046,7 +1135,7 @@ fn locus_mesh(
         }
         run.points.clear();
     };
-    for pt in points {
+    for pt in geo_app_core::hit::canvas_locus_samples(points) {
         let at = p(pt.x, pt.y);
         if !pt.line_to || !at.is_finite() {
             flush(&mut run);
@@ -1085,6 +1174,7 @@ mod tests {
                 label_offset: &|_| None,
                 label_rects: None,
                 text_rects: None,
+                input_box_rects: None,
             };
             paint(ui.painter(), rect, c, &t, &scene);
         });
@@ -1117,6 +1207,7 @@ mod tests {
                     label_offset: &|_| None,
                     label_rects: None,
                     text_rects: None,
+                    input_box_rects: None,
                 };
                 paint(ui.painter(), rect, c, &view, &scene);
             });
@@ -1221,6 +1312,7 @@ mod tests {
                     label_offset: &|_| None,
                     label_rects: None,
                     text_rects: Some(&text_rects),
+                    input_box_rects: None,
                 };
                 paint(ui.painter(), rect, wb.construction(), &t, &scene);
             });
@@ -1267,6 +1359,7 @@ mod tests {
                     label_offset: &|_| None,
                     label_rects: None,
                     text_rects: None,
+                    input_box_rects: None,
                 };
                 paint(ui.painter(), rect, wb.construction(), &t, &scene);
             });
@@ -1371,6 +1464,7 @@ mod tests {
                     label_offset: &|_| None,
                     label_rects: None,
                     text_rects: None,
+                    input_box_rects: None,
                 };
                 paint(ui.painter(), rect, wb.construction(), &t, &scene);
             }

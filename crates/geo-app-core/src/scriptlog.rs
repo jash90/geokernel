@@ -698,6 +698,44 @@ impl Log {
         })
     }
 
+    pub(crate) fn selected_polygon_outputs(
+        &self,
+        c: &Construction,
+        selected: &BTreeSet<Id>,
+        work_left: &mut usize,
+    ) -> Option<BTreeSet<Id>> {
+        let mut polygons: BTreeSet<_> = selected
+            .iter()
+            .copied()
+            .filter(|&id| c.kind(id) == Kind::Polygon)
+            .collect();
+        let mut outputs = BTreeSet::new();
+        if polygons.is_empty() {
+            return Some(outputs);
+        }
+        for op in self.ops.items_rev() {
+            *work_left = work_left.checked_sub(1)?;
+            let Op::Define(entry) = op else { continue };
+            let Some(polygon) = entry.labels.first().and_then(|label| c.id(label)) else {
+                continue;
+            };
+            if !polygons.remove(&polygon) {
+                continue;
+            }
+            *work_left = work_left.checked_sub(entry.labels.len() - 1)?;
+            outputs.extend(
+                entry.labels[1..]
+                    .iter()
+                    .filter_map(|label| c.id(label))
+                    .filter(|id| selected.contains(id)),
+            );
+            if polygons.is_empty() {
+                break;
+            }
+        }
+        Some(outputs)
+    }
+
     pub(crate) fn record_new_definition(
         &mut self,
         c: &mut Construction,

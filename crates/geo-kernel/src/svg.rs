@@ -39,6 +39,7 @@ impl View {
             ymax: f64::NEG_INFINITY,
         };
         let mut v = empty();
+        let mut list_items_left = crate::expr::MAX_FRAME_CANVAS_LIST_ITEMS;
         let mut texts = empty();
         let mut grow = |x: f64, y: f64| {
             if !(x.is_finite() && y.is_finite()) {
@@ -110,6 +111,18 @@ impl View {
                 Value::Polygon { .. } | Value::PolyLine { .. } => {
                     for (x, y) in c.vertices(id).flatten() {
                         grow(x, y);
+                    }
+                }
+                Value::List { .. } if list_items_left > 0 => {
+                    if let Some(list) = c.elements(id) {
+                        list.canvas_members(&mut list_items_left, |object, value| {
+                            if object.is_none() {
+                                if let Value::Point { x, y } = value {
+                                    grow(x, y);
+                                }
+                            }
+                            std::ops::ControlFlow::Continue(())
+                        });
                     }
                 }
                 Value::Vector { x, y } => {
@@ -241,6 +254,7 @@ pub fn render_visible_with_label_offsets(
             extras::image(&mut out, c, id, assets[&image.asset.id()], scale, screen);
         }
     }
+    let mut allowances = (crate::expr::MAX_FRAME_CANVAS_LIST_ITEMS, 8);
     for layer in c.drawing_layers() {
         let same_layer = |id| c.drawing_style(id).layer == layer;
         for &id in ids.iter().filter(|&&id| same_layer(id)) {
@@ -257,6 +271,7 @@ pub fn render_visible_with_label_offsets(
             (w, h),
             ids.iter().copied().filter(|&id| same_layer(id)),
             &label_offset,
+            &mut allowances,
         );
     }
     out.push_str("</svg>\n");
@@ -270,6 +285,7 @@ fn render_geometry(
     (w, h): (f64, f64),
     ids: impl Iterator<Item = Id>,
     label_offset: &impl Fn(Id) -> Option<(f64, f64)>,
+    (list_items_left, regions_left): &mut (usize, usize),
 ) {
     let frame = crate::plot::Frame::fit(view, w, h);
     let scale = frame.scale();
@@ -581,6 +597,87 @@ fn render_geometry(
                     }
                 }
             }
+            Value::Curve { .. } => {
+                for path in crate::plot::cartesian(c, id, &frame) {
+                    let mut points = String::new();
+                    for (x, y) in path {
+                        let _ = write!(points, "{x:.2},{y:.2} ");
+                    }
+                    let _ = writeln!(
+                        segments,
+                        r#"<polyline points="{}" fill="none"/>"#,
+                        points.trim_end()
+                    );
+                }
+            }
+            Value::FunctionNVar if *regions_left > 0 && c.is_plane_inequality(id) => {
+                *regions_left -= 1;
+                let tiles = crate::plot::inequality::tiles(c, id, &frame);
+                if !tiles.is_empty() {
+                    let _ = write!(polygons, r#"<path class="inequality" d=""#);
+                    for [left, top, right, bottom] in tiles {
+                        let _ = write!(
+                            polygons,
+                            "M{left:.2},{top:.2}H{right:.2}V{bottom:.2}H{left:.2}Z"
+                        );
+                    }
+                    let _ = writeln!(polygons, r#""/>"#);
+                }
+            }
+            Value::List { .. } => {
+                use std::ops::ControlFlow;
+                if let Some(list) = c.elements(id) {
+                    list.canvas_members(list_items_left, |object, value| {
+                        if object.is_none() {
+                            match value {
+                                Value::Point { x, y } => {
+                                    let (x, y) = (sx(x), sy(y));
+                                    let _ = writeln!(
+                                        points,
+                                        r#"<circle cx="{x:.2}" cy="{y:.2}" r="4"/>"#
+                                    );
+                                }
+                                Value::Vector { x, y } => {
+                                    let _ = writeln!(
+                                        segments,
+                                        r#"<line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>"#,
+                                        sx(0.0),
+                                        sy(0.0),
+                                        sx(x),
+                                        sy(y)
+                                    );
+                                }
+                                _ => {}
+                            }
+                        }
+                        ControlFlow::Continue(())
+                    });
+                }
+            }
+            Value::InputBox => {
+                let [x, y, width, height] = c.input_box_rect(id);
+                let box_position = c.input_box_style(id).position.map(f64::from);
+                let (label_x, y) = label_offset(id).unwrap_or((box_position[0], y));
+                let x = label_x + (x - box_position[0]);
+                let caption = escape(c.input_box_caption(id));
+                let text = escape(&c.input_box_text(id));
+                let _ = writeln!(
+                    controls,
+                    r##"<rect x="{x:.2}" y="{y:.2}" width="{width:.2}" height="{height:.2}" fill="#ffffff" stroke="#777777"/>"##,
+                );
+                let _ = writeln!(
+                    controls,
+                    r#"<svg x="{x:.2}" y="{y:.2}" width="{width:.2}" height="{height:.2}" overflow="hidden"><text x="6" y="20">{text}</text></svg>"#,
+                );
+                if !caption.is_empty() {
+                    let _ = writeln!(
+                        controls,
+                        r#"<text x="{:.2}" y="{:.2}">{caption}</text>"#,
+                        label_x,
+                        y + 20.0
+                    );
+                }
+            }
             Value::Text => {
                 let Some((source, style)) = c
                     .text(id)
@@ -652,12 +749,9 @@ fn render_geometry(
             | Value::Circle { .. }
             | Value::Number(_)
             | Value::FunctionNVar
-            | Value::List { .. }
             | Value::HomogeneousPoint { .. }
             | Value::NormalizedPointAtInfinity { .. }
-            | Value::Curve { .. }
             | Value::Button
-            | Value::InputBox
             | Value::Image
             | Value::PieChart
             | Value::Undefined => {}
@@ -980,4 +1074,74 @@ mod control_tests {
         assert!(svg.contains(">a = 2</text>"));
         assert!(!svg.contains(">k = 2</text>"));
     }
+}
+
+#[cfg(test)]
+#[test]
+fn input_box_svg_draws_at_saved_position_with_escaped_text() {
+    let c = crate::script::load("note = \"x < y\"\nfield = $inputBox(note, _)").unwrap();
+    let id = c.id("field").unwrap();
+    let svg = render_visible_with_label_offsets(
+        &c,
+        View::fit(&c),
+        400,
+        300,
+        |_| true,
+        |object| (object == id).then_some((48.0, 64.0)),
+    );
+    let x = 48.0 + c.input_box_rect(id)[0] - 30.0;
+    assert!(svg.contains(&format!("<rect x=\"{x:.2}\" y=\"64.00\"")));
+    assert!(svg.contains("<text x=\"48.00\" y=\"84.00\">field</text>"));
+    assert!(svg.contains(">x &lt; y</text>"));
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_list_svg_draws_anonymous_points_only() {
+    let c = crate::script::load("A = (0, 0)\nl = {A, (1, 2), (3, 4)}\nn = {1, 2}").unwrap();
+    let view = View::fit(&c);
+    let render =
+        |labels: &[&str]| render_visible(&c, view, 400, 300, |id| labels.contains(&c.label(id)));
+    assert_eq!(render(&["A", "l", "n"]).matches("<circle ").count(), 3);
+    assert_eq!(render(&["l"]).matches("<circle ").count(), 2);
+    assert_eq!(render(&["n"]).matches("<circle ").count(), 0);
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_remaining_svg_draws_a_cartesian_curve_and_a_boolean_region() {
+    let c =
+        crate::script::load("curve = Curve(t, t^2, t, -2, 2)\nregion(x,y) = y > x\nf(x,y) = x + y")
+            .unwrap();
+    let view = View::fit(&c);
+    let svg = |label: &str| render_visible(&c, view, 400, 300, |id| c.label(id) == label);
+    assert!(svg("curve").contains("<polyline"));
+    assert!(svg("region").contains("class=\"inequality\""));
+    assert!(!svg("f").contains("class=\"inequality\""));
+}
+
+#[test]
+fn canvas_svg_shares_region_and_list_limits_across_layers() {
+    use std::fmt::Write as _;
+
+    let mut script = String::new();
+    for i in 0..32 {
+        writeln!(script, "L{i} = Sequence((k/100, 0), k, 1, 256)").unwrap();
+    }
+    for i in 0..16 {
+        writeln!(script, "region{i}(x,y) = y > x + {}", i as f64 / 10.0).unwrap();
+    }
+    let mut c = crate::script::load(&script).unwrap();
+    for label in (16..32)
+        .map(|i| format!("L{i}"))
+        .chain((8..16).map(|i| format!("region{i}")))
+    {
+        let id = c.id(&label).unwrap();
+        let mut style = c.drawing_style(id);
+        style.layer = 1;
+        c.set_drawing_style(id, style);
+    }
+    let svg = render(&c, View::fit(&c), 800, 600);
+    assert_eq!(svg.matches("class=\"inequality\"").count(), 8);
+    assert_eq!(svg.matches("<circle ").count(), 4096);
 }

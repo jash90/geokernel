@@ -1,0 +1,41 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "controls-reviewtab-001",
+      "group": "controls",
+      "script": [
+        "a = 0",
+        "b = 0",
+        "c = 0",
+        "first = $inputBox(a, _)",
+        "second = $inputBox(b, _)",
+        "third = $inputBox(c, _)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "c", "value": 3.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "first": { "type": "input_box", "defined": true, "text": "0" },
+          "second": { "type": "input_box", "defined": true, "text": "0" },
+          "third": { "type": "input_box", "defined": true, "text": "0" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 3.5 },
+          "first": { "type": "input_box", "defined": true, "text": "0" },
+          "second": { "type": "input_box", "defined": true, "text": "0" },
+          "third": { "type": "input_box", "defined": true, "text": "3.5" }
+        }
+      ]
+    }
+  ]
+}

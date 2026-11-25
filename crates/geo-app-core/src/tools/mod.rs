@@ -61,6 +61,8 @@ pub enum Tool {
     Distance,
     Area,
     Slope,
+    Locus,
+    CreateList,
     ReflectLine,
     ReflectPoint,
     ReflectCircle,
@@ -69,6 +71,9 @@ pub enum Tool {
     Dilate,
     Slider,
     Checkbox,
+    InputBox,
+    Text,
+    PenStroke,
     MoveView,
     ZoomIn,
     ZoomOut,
@@ -114,7 +119,14 @@ pub const GROUPS: &[&[Tool]] = &[
         Tool::CircumcircularSector,
     ],
     &[Tool::Ellipse, Tool::Hyperbola, Tool::Parabola, Tool::Conic5],
-    &[Tool::Angle, Tool::Distance, Tool::Area, Tool::Slope],
+    &[
+        Tool::Angle,
+        Tool::Distance,
+        Tool::Area,
+        Tool::Slope,
+        Tool::CreateList,
+        Tool::Locus,
+    ],
     &[
         Tool::ReflectLine,
         Tool::ReflectPoint,
@@ -123,7 +135,13 @@ pub const GROUPS: &[&[Tool]] = &[
         Tool::Translate,
         Tool::Dilate,
     ],
-    &[Tool::Slider, Tool::Checkbox],
+    &[
+        Tool::Slider,
+        Tool::Checkbox,
+        Tool::InputBox,
+        Tool::Text,
+        Tool::PenStroke,
+    ],
     &[
         Tool::MoveView,
         Tool::ZoomIn,
@@ -161,6 +179,10 @@ impl Tool {
             Tool::Move
                 | Tool::Slider
                 | Tool::Checkbox
+                | Tool::InputBox
+                | Tool::CreateList
+                | Tool::Text
+                | Tool::PenStroke
                 | Tool::MoveView
                 | Tool::ZoomIn
                 | Tool::ZoomOut
@@ -169,6 +191,21 @@ impl Tool {
         )
     }
 }
+
+pub(crate) fn locus_pick_is_valid(
+    c: &geo_kernel::Construction,
+    first: Option<&Pick>,
+    id: geo_kernel::Id,
+) -> bool {
+    match first {
+        Some(first) => c
+            .id(first.label())
+            .is_some_and(|first| c.can_trace_locus(first, id) || c.can_trace_locus(id, first)),
+        None => (c.kind(id) == Kind::Point && !c.def(id).is_free()) || c.has_slider_bounds(id),
+    }
+}
+
+pub const MAX_PLACED_TEXT_CHARS: usize = 4096;
 
 /// One click's contribution to a tool: an object of the construction (a
 /// point placed by the click is added before it is picked).
@@ -309,6 +346,7 @@ pub struct ToolState {
     /// Set while the dialog for the number is open.
     asking: Option<NumberRequest>,
     control_at: Option<(f64, f64)>,
+    text_anchor: Option<String>,
 }
 
 impl ToolState {
@@ -318,6 +356,7 @@ impl ToolState {
             picks: Vec::new(),
             asking: None,
             control_at: None,
+            text_anchor: None,
         }
     }
 
@@ -347,8 +386,19 @@ impl ToolState {
     }
 
     pub fn begin_control(&mut self, at: (f64, f64)) {
-        if matches!(self.tool, Tool::Slider | Tool::Checkbox) && self.control_at.is_none() {
+        if matches!(
+            self.tool,
+            Tool::Slider | Tool::Checkbox | Tool::InputBox | Tool::Text
+        ) && self.control_at.is_none()
+        {
             self.control_at = Some(at);
+        }
+    }
+
+    pub fn begin_text(&mut self, at: (f64, f64), anchor: Option<&str>) {
+        if self.tool == Tool::Text && self.control_at.is_none() {
+            self.begin_control(at);
+            self.text_anchor = anchor.map(str::to_owned);
         }
     }
 
@@ -406,6 +456,68 @@ impl ToolState {
         Outcome::Run(vec![definition, style.to_string()])
     }
 
+    pub fn finish_input_box(
+        &mut self,
+        caption: &str,
+        linked: Option<&str>,
+        taken: impl Fn(&str) -> bool,
+    ) -> Outcome {
+        use geo_kernel::kernel::control::{bounded_input_box_text, encode_text, InputBoxStyle};
+        use geo_kernel::script::saved::Property;
+
+        if self.tool != Tool::InputBox {
+            return Outcome::Ignored;
+        }
+        let Some((x, y)) = self.control_at.take() else {
+            return Outcome::Ignored;
+        };
+        let label = next_label(Kind::InputBox, taken);
+        let caption = encode_text(bounded_input_box_text(caption));
+        let linked = linked.unwrap_or_default();
+        let definition = format!("{label} = $inputBox({linked}, {caption})");
+        let style = Property::InputBoxStyle {
+            label,
+            style: InputBoxStyle {
+                position: [x as i32, y as i32],
+                ..InputBoxStyle::default()
+            },
+        };
+        Outcome::Run(vec![definition, style.to_string()])
+    }
+
+    pub fn finish_text(&mut self, text: &str, taken: impl Fn(&str) -> bool) -> Outcome {
+        use geo_kernel::kernel::text::{TextOverrides, TextPosition};
+        use geo_kernel::script::text::{literal, Properties};
+
+        if self.tool != Tool::Text || text.trim().is_empty() {
+            return Outcome::Ignored;
+        }
+        let Some((x, y)) = self.control_at.take() else {
+            return Outcome::Ignored;
+        };
+        let label = next_label(Kind::Text, taken);
+        let text = text
+            .char_indices()
+            .nth(MAX_PLACED_TEXT_CHARS)
+            .map_or(text, |(at, _)| &text[..at]);
+        let anchor = self.text_anchor.take();
+        let properties = Properties {
+            label: &label,
+            overrides: TextOverrides {
+                position: Some(
+                    anchor
+                        .as_deref()
+                        .map_or(TextPosition::World { x, y }, TextPosition::Point),
+                ),
+                ..TextOverrides::default()
+            },
+        };
+        Outcome::Run(vec![
+            format!("{label} = {}", literal(text)),
+            properties.to_string(),
+        ])
+    }
+
     fn picked(&self, label: &str) -> bool {
         self.picks
             .iter()
@@ -453,6 +565,7 @@ impl ToolState {
         self.picks.clear();
         self.asking = None;
         self.control_at = None;
+        self.text_anchor = None;
     }
 
     /// Handles a click. `hit` is the existing object under the pointer that

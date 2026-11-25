@@ -281,7 +281,15 @@ impl Writer<'_> {
                     None
                 }
             });
-        if let Some((x, y)) = offset {
+        if object_kind == Kind::InputBox {
+            use geo_kernel::kernel::control::InputBoxStyle;
+            let input = c.input_box_style(id);
+            let [x, y] = input.position;
+            self.xml.pixels("labelOffset", x, y)?;
+            if input.length != InputBoxStyle::default().length {
+                self.xml.val("length", &input.length.to_string())?;
+            }
+        } else if let Some((x, y)) = offset {
             self.xml.pixels("labelOffset", x, y)?;
         }
         if !is_number {
@@ -369,7 +377,7 @@ impl Writer<'_> {
                 self.xml.val("pointStyle", &point_style.to_string())?;
             }
         }
-        if object_kind == Kind::Text {
+        if matches!(object_kind, Kind::Text | Kind::InputBox) {
             match saved.and_then(|style| style.rounding) {
                 Some(Rounding::Decimals(digits)) => {
                     self.xml.val("decimals", &digits.to_string())?;

@@ -1895,7 +1895,7 @@ impl<const M: bool> Ctx<'_, M> {
             if self.c.kind(id) == Kind::Point {
                 return Slot::point(self.c.stored_value(id)).with_object(id);
             }
-            if self.c.kind(id) == Kind::Angle {
+            if matches!(self.c.kind(id), Kind::Angle | Kind::Vector) {
                 return Slot::object(self.c, id);
             }
         }
