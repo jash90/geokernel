@@ -697,10 +697,7 @@ pub(crate) fn define_after_label(
                         .split(',')
                         .any(|arg| crate::expr::plain_number(arg.trim()).is_none())
                 });
-        let list_literal = c.kind(*id) == Kind::List
-            && rhs.starts_with('{')
-            && rhs.len() <= crate::spreadsheet::MAX_INPUT_BYTES;
-        if list_literal || c.def(*id).is_free() && (numeric_expression || coordinate_expression) {
+        if c.def(*id).is_free() && (numeric_expression || coordinate_expression) {
             c.remember_construction_source(*id, rhs);
         }
     }

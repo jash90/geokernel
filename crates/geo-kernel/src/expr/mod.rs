@@ -846,6 +846,8 @@ pub(crate) struct Entry {
     lists: bool,
     /// The elements of a list result (see [`list`]).
     items: Vec<Slot>,
+    /// Source of a literal list whose items a spreadsheet fill can copy.
+    literal_list_source: Option<Box<str>>,
     root_transform: Option<TransformActive>,
     nested_transforms: NestedTransforms,
     coordinate_layout: Option<list::CoordinateLayout>,
@@ -1037,6 +1039,7 @@ impl Entry {
             inverts,
             lists,
             items: Vec::new(),
+            literal_list_source: None,
             root_transform: None,
             nested_transforms: NestedTransforms::new(),
             coordinate_layout: None,
@@ -2712,7 +2715,23 @@ fn define_with_coordinates(
         Ty::Text => Kind::Text,
         Ty::Function => return Err("a function needs an argument".into()),
     };
-    add(c, name, parsed, kind)
+    let literal_list = matches!(parsed.nodes[parsed.root as usize], Node::List(..))
+        && rhs.starts_with('{')
+        && rhs.len() <= crate::spreadsheet::MAX_INPUT_BYTES;
+    let id = add(c, name, parsed, kind)?;
+    if literal_list {
+        if let Def::Expr(def) = c.def(id) {
+            c.exprs.entries[def.index as usize].literal_list_source = Some(rhs.into());
+        }
+    }
+    Ok(id)
+}
+
+pub(crate) fn literal_list_source(c: &Construction, id: Id) -> Option<&str> {
+    let Def::Expr(def) = c.def(id) else {
+        return None;
+    };
+    entry(c, def).literal_list_source.as_deref()
 }
 
 pub(crate) fn define_plane_inequality(

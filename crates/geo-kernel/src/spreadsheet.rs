@@ -663,10 +663,7 @@ fn plan_fill(
                 return Err("cannot fill a range with an empty list".into());
             }
             let columns = matrix_columns(list, &mut budget)?;
-            let source = c.construction_source(value).unwrap_or(source);
-            if source.len() > MAX_SOURCE_BYTES {
-                return Err(LIMIT.into());
-            }
+            let source = expr::literal_list_source(c, value).unwrap_or(source);
             let literals = script::split_list_literal(source);
             let rows = columns.and_then(|_| {
                 literals.as_ref().map(|items| {
