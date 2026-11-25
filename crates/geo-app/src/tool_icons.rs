@@ -26,6 +26,79 @@ pub fn paint(painter: &Painter, tool: Tool, c: Pos2, half: f32) {
     let dot = |x: f32, y: f32| ink.dot(x, y, 2.4, POINT);
     let new_dot = |x: f32, y: f32| ink.dot(x, y, 2.4, RESULT);
     match tool {
+        Tool::Relation => {
+            dot(-8.0, 6.0);
+            dot(8.0, -6.0);
+            ink.line((-5.0, -2.0), (5.0, -2.0));
+            ink.line((-5.0, 2.0), (5.0, 2.0));
+        }
+        Tool::RigidPolygon => {
+            ink.poly(&[(-9.0, 8.0), (-5.0, -8.0), (9.0, -4.0), (8.0, 8.0)], true);
+            red.line((-9.0, 8.0), (9.0, -4.0));
+            dot(-9.0, 8.0);
+            new_dot(-5.0, -8.0);
+        }
+        Tool::SegmentFixed => {
+            ink.line((-8.0, 3.0), (8.0, 3.0));
+            dot(-8.0, 3.0);
+            new_dot(8.0, 3.0);
+            ink.line((-8.0, -5.0), (8.0, -5.0));
+            ink.line((-8.0, -7.0), (-8.0, -3.0));
+            ink.line((8.0, -7.0), (8.0, -3.0));
+        }
+        Tool::AngleFixed => {
+            ink.poly(&[(-1.0, -9.0), (-8.0, 7.0), (10.0, 7.0)], false);
+            red.poly(&[(-5.0, 0.0), (-1.0, 2.0), (0.0, 7.0)], false);
+            new_dot(-1.0, -9.0);
+            dot(-8.0, 7.0);
+        }
+        Tool::Extremum => {
+            ink.poly(
+                &[
+                    (-9.0, -7.0),
+                    (-5.0, 2.0),
+                    (0.0, 6.0),
+                    (5.0, 2.0),
+                    (9.0, -7.0),
+                ],
+                false,
+            );
+            new_dot(0.0, 6.0);
+        }
+        Tool::Roots => {
+            ink.line((-11.0, 0.0), (11.0, 0.0));
+            ink.poly(
+                &[
+                    (-10.0, -8.0),
+                    (-5.0, 0.0),
+                    (0.0, 4.0),
+                    (5.0, 0.0),
+                    (10.0, -8.0),
+                ],
+                false,
+            );
+            new_dot(-5.0, 0.0);
+            new_dot(5.0, 0.0);
+        }
+        Tool::PointOnObject => {
+            ink.poly(
+                &[
+                    (-10.0, 7.0),
+                    (-5.0, -1.0),
+                    (0.0, -4.0),
+                    (6.0, -3.0),
+                    (10.0, 3.0),
+                ],
+                false,
+            );
+            new_dot(0.0, -4.0);
+        }
+        Tool::AttachDetach => {
+            ink.line((-10.0, 7.0), (10.0, 7.0));
+            dot(0.0, -7.0);
+            new_dot(0.0, 7.0);
+            red.poly(&[(-4.0, -1.0), (0.0, 2.0), (4.0, -1.0)], false);
+        }
         Tool::Move => {
             let arrow = [
                 (-6.0, -10.0),

@@ -216,6 +216,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         toolbar::show(app, ui)
     });
     number_dialog(app, &ctx);
+    relation_dialog(app, &ctx);
     control_dialog(app, &ctx);
     save_dialog(app, &ctx);
 }
@@ -345,6 +346,22 @@ fn save_to(app: &App, path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+fn relation_dialog(app: &mut App, ctx: &egui::Context) {
+    let Some(reports) = &app.relation_report else {
+        return;
+    };
+    let modal = egui::Modal::new(egui::Id::unique("relation_dialog")).show(ctx, |ui| {
+        ui.heading(crate::tools::Tool::Relation.caption());
+        for report in reports {
+            ui.label(text::relation_message(report.message));
+        }
+        ui.button("OK").clicked()
+    });
+    if modal.inner || modal.should_close() {
+        app.relation_report = None;
+    }
+}
+
 /// The dialog of a tool that needs a number.
 fn number_dialog(app: &mut App, ctx: &egui::Context) {
     let Some(request) = app.tool.asking() else {
@@ -364,9 +381,23 @@ fn number_dialog(app: &mut App, ctx: &egui::Context) {
         let field = field.labelled_by(prompt.id);
         if !field.has_focus() && !field.lost_focus() {
             field.request_focus();
+            if matches!(
+                app.tool.tool(),
+                crate::tools::Tool::AngleFixed | crate::tools::Tool::SegmentFixed
+            ) {
+                let mut editor = egui::TextEdit::load_state(ui.ctx(), field.id).unwrap_or_default();
+                editor
+                    .cursor
+                    .set_char_range(Some(egui::text::CCursorRange::select_all_str(
+                        &app.number_text,
+                    )));
+                editor.store(ui.ctx(), field.id);
+            }
         }
         let enter = field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
-        let parsed = parse_number(&app.number_text);
+        let parsed = app
+            .tool_number_value()
+            .filter(|&value| app.tool.valid_number(value));
         if parsed.is_none() {
             ui.colored_label(theme::ERROR, text::label(Label::NotANumber));
         }

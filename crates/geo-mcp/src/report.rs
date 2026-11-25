@@ -8,7 +8,7 @@ use geo_app::headless::{Headless, Profile, Repaint, Widget, WidgetKind};
 use geo_app_core::describe;
 use geo_app_core::tools::{Tool, GROUPS};
 use geo_kernel::algo::measure::MeasureDef;
-use geo_kernel::kernel::{Construction, Def, Id, Value};
+use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use serde_json::{json, Map, Value as Json};
 
 /// The name of a tool in the protocol: its Rust name in snake case
@@ -108,6 +108,8 @@ fn object(h: &Headless, id: Id) -> Json {
     let value = c.value(id);
     let free = c.def(id).is_free();
     let (shown, raw) = value_texts(c, id);
+    use geo_kernel::algo::path::PathDef;
+    let def = c.def(id);
     let mut o = json!({
         "name": label,
         "type": c.kind(id).to_string(),
@@ -122,6 +124,18 @@ fn object(h: &Headless, id: Id) -> Json {
         // How far the label was dragged from its place, in pixels.
         "label_offset": wb.label_offset(id).map_or([0.0, 0.0], |(x, y)| [x, y]),
     });
+    if c.kind(id) == Kind::Point {
+        o["on_path"] = json!(matches!(
+            def,
+            Def::Path(
+                PathDef::On { .. }
+                    | PathDef::OnParam { .. }
+                    | PathDef::FixedEndpoint { .. }
+                    | PathDef::RigidEndpoint { .. }
+            )
+        ));
+        o["in_region"] = json!(matches!(def, Def::Path(PathDef::InRegion { .. })));
+    }
     if let Some(raw) = raw {
         o["raw_value"] = json!(raw);
     }
@@ -277,6 +291,9 @@ pub fn state(h: &Headless, verbose: bool) -> Json {
             "picks": app.tool.picks().iter().map(|p| p.label()).collect::<Vec<_>>(),
             "hint": app.tool.hint(),
             "asking": asking,
+            "relation": app.relation_report.as_ref().map(|reports| reports.iter()
+                .map(|report| json!({"check": report.check, "outcome": report.outcome}))
+                .collect::<Vec<_>>()),
         },
         "camera": camera,
         "view": view,

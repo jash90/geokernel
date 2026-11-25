@@ -1,5 +1,5 @@
 {
- "about": "Observed pointer behaviour of the reference Classic app (web build, headless Chromium, 1280x800, standard view). UI observations, not kernel golden data. Positions are world coordinates in the standard view. The five initial tool scenarios are application regressions based on the reference controller and construction cases.",
+ "about": "Observed pointer behaviour of the reference Classic app (web build, headless Chromium, 1280x800, standard view). UI observations, not kernel golden data. Positions are world coordinates in the standard view. The five initial tool scenarios retain desktop expectations and have a separate Java controller recording.",
  "standard_view": {
   "xZero": 446,
   "yZero": 373.5,
@@ -13,7 +13,7 @@
  "scenarios": [
   {
    "name": "tool_text_places_literal",
-   "source": "Regression based on EuclidianController.text and canvas-drawing-001",
+   "source": "Same inputs recorded in tool_pointer_capture.json; desktop expectation",
    "tool_mode": 17,
    "initial_script": [],
    "events": [
@@ -26,7 +26,7 @@
   },
   {
    "name": "tool_pen_records_drag",
-   "source": "Regression based on EuclidianControllerTest.penTool and canvas-drawing-001",
+   "source": "Same inputs recorded in tool_pointer_capture.json; desktop expectation",
    "tool_mode": 62,
    "initial_script": [],
    "events": [
@@ -38,7 +38,7 @@
   },
   {
    "name": "tool_locus_uses_path_point",
-   "source": "Regression based on EuclidianController.locus and canvas-parts-001",
+   "source": "Same inputs recorded in tool_pointer_capture.json; desktop expectation",
    "tool_mode": 47,
    "initial_script": ["A = (0, 0)", "B = (2, 0)", "k = Circle(A, B)", "P = Point(k)", "Q = Midpoint(P, A)"],
    "events": [
@@ -51,7 +51,7 @@
   },
   {
    "name": "tool_create_list_from_rectangle",
-   "source": "Regression based on EuclidianController.createList and lists-canvas-001",
+   "source": "Same inputs recorded in tool_pointer_capture.json; desktop expectation",
    "tool_mode": 71,
    "initial_script": ["A = (0, 0)", "B = (2, 2)", "C = (5, 1)"],
    "events": [
@@ -66,7 +66,7 @@
   },
   {
    "name": "tool_input_box_places_empty_widget",
-   "source": "Regression based on EuclidianController.button and controls-inputbox-001",
+   "source": "Same inputs recorded in tool_pointer_capture.json; desktop expectation",
    "tool_mode": 61,
    "initial_script": [],
    "events": [

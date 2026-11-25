@@ -86,7 +86,11 @@ pub(crate) fn relation_reports(c: &Construction, id: Id) -> Option<Vec<RelationR
     let Node::Relation { objects, count, .. } = entry.nodes[entry.root as usize] else {
         return None;
     };
+    compare_objects(c, &objects[..usize::from(count)])
+}
+
+pub(crate) fn compare_objects(c: &Construction, objects: &[Id]) -> Option<Vec<RelationReport>> {
     let meter = Lists::new(Vec::new());
-    let reports = relation::numerical(c, &objects[..usize::from(count)], |n| !meter.charge(n));
+    let reports = relation::numerical(c, objects, |n| !meter.charge(n));
     (!meter.over()).then_some(reports)
 }

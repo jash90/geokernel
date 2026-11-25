@@ -157,6 +157,7 @@ final class Session {
      */
     private final Set<GeoElement> namedMultivariate = Collections.newSetFromMap(new IdentityHashMap<>());
     private final Set<GeoElement> solutionSets = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<GeoElement> circles = Collections.newSetFromMap(new IdentityHashMap<>());
     private final Set<GeoElement> conics = Collections.newSetFromMap(new IdentityHashMap<>());
     private final boolean trackBoundaryGrowth;
     private final boolean trackPointListGrowth;
@@ -823,6 +824,11 @@ final class Session {
                 || nativeCas && geo instanceof GeoFunctionNVar f && f.getFunctionVariables().length > 1
                         && definition.matches("(Expand|Factor|IFactor|Simplify|Numerator|Denominator)\\(.*")) {
             namedMultivariate.add(geo);
+        }
+        // An undefined circle command can retain finite half-axes and the
+        // generic conic type. Its declared output kind is still a circle.
+        if ("circle".equals(expected) && geo instanceof GeoConic && !(geo instanceof GeoConicPart)) {
+            circles.add(geo);
         }
         String actual = "conic".equals(expected) && geo instanceof GeoConic ? "conic" : schemaType(geo);
         if (COORDINATES.equals(expected)) {
@@ -1502,6 +1508,9 @@ final class Session {
         if (geo instanceof GeoFunctionNVar
                 && !(geo.getParentAlgorithm() instanceof AlgoLeftRightSide) && !namedMultivariate.contains(geo)) {
             return "function";
+        }
+        if (circles.contains(geo) && !geo.isDefined()) {
+            return "circle";
         }
         return conics.contains(geo) ? "conic" : typeOf(geo);
     }

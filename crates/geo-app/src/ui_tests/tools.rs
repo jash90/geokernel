@@ -14,7 +14,11 @@ fn every_tool_works_with_real_clicks() {
     let (f, k, u, empty) = ((0.0, -3.0), (4.0, 0.0), (-5.0, 3.5), (0.0, 2.0));
     let plan = |tool: Tool| -> Vec<(f64, f64)> {
         match tool {
-            Tool::Point => vec![empty],
+            Tool::Point | Tool::PointOnObject => vec![empty],
+            Tool::SegmentFixed => vec![a],
+            Tool::AngleFixed => vec![a, c],
+            Tool::Extremum => vec![(1.0, 1.0)],
+            Tool::Roots => vec![(0.0, -1.0)],
             Tool::Intersect => vec![f, k],
             Tool::Midpoint => vec![a, b],
             Tool::Perpendicular | Tool::Parallel | Tool::ReflectLine => vec![c, f],
@@ -37,7 +41,9 @@ fn every_tool_works_with_real_clicks() {
             Tool::VectorFromPoint => vec![u, c],
             Tool::ReflectPoint | Tool::Rotate | Tool::Dilate => vec![c, a],
             Tool::Translate => vec![c, u],
-            Tool::Polygon | Tool::Polyline | Tool::VectorPolygon => vec![a, b, c, a],
+            Tool::Polygon | Tool::Polyline | Tool::VectorPolygon | Tool::RigidPolygon => {
+                vec![a, b, c, a]
+            }
             Tool::RegularPolygon => vec![a, b],
             Tool::Locus => vec![(1.0, 0.0), (2.0, 0.0)],
             _ => vec![a, c],
@@ -47,6 +53,12 @@ fn every_tool_works_with_real_clicks() {
     let expected = |tool: Tool| -> (&str, Kind, &str) {
         match tool {
             Tool::Point => ("F", Kind::Point, "(0, 2)"),
+            Tool::PointOnObject => ("F", Kind::Point, "Point(yAxis)"),
+            Tool::RigidPolygon => ("t1", Kind::Polygon, "RigidPolygon(A, B, C)"),
+            Tool::SegmentFixed => ("g", Kind::Segment, "Segment(A, 2)"),
+            Tool::AngleFixed => ("α", Kind::Angle, "Angle(A, C, 0.7853981633974483)"),
+            Tool::Extremum => ("A", Kind::Point, "Extremum(f)"),
+            Tool::Roots => ("A", Kind::Point, "Root(f)"),
             Tool::Intersect => ("F_{1}", Kind::Point, "Intersect(f, k)"),
             Tool::Midpoint => ("F", Kind::Point, "Midpoint(A, B)"),
             Tool::Line => ("g", Kind::Line, "Line(A, C)"),
@@ -94,7 +106,9 @@ fn every_tool_works_with_real_clicks() {
     let mut failures = Vec::new();
     for tool in Tool::all().filter(|t| !t.is_direct()) {
         let scene = match tool {
-            Tool::VectorPolygon => "A = (-6, -3)\nB = (-2, -3)\nC = (-4, 1)\n",
+            Tool::Extremum => "f(x) = (x - 1)^2 + 1",
+            Tool::Roots => "f(x) = x^2 - 1",
+            Tool::VectorPolygon | Tool::RigidPolygon => "A = (-6, -3)\nB = (-2, -3)\nC = (-4, 1)\n",
             Tool::Locus => "A=(0,0)\nB=(2,0)\nk=Circle(A,B)\nP=Point(k)\nQ=Midpoint(P,A)",
             _ => TOOL_SCENE,
         };
@@ -118,6 +132,12 @@ fn every_tool_works_with_real_clicks() {
         let app = h.state();
         assert_eq!(app.wb.undo_depth(), (1, 0), "{tool:?}");
         let c = app.wb.construction();
+        if tool == Tool::PointOnObject {
+            assert_eq!(
+                c.id(label).map(|id| c.value(id)),
+                Some(geo_kernel::Value::Point { x: 0.0, y: 2.0 })
+            );
+        }
         let intersection_labels = [label, "F_{2}"];
         let expected_labels = if tool == Tool::Intersect {
             let added: Vec<_> = after

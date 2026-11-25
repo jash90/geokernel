@@ -14,6 +14,7 @@ use crate::tools::Tool;
 /// A label, button name or prompt of the window.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Label {
+    Length,
     Undo,
     Redo,
     Menu,
@@ -80,6 +81,7 @@ pub enum Label {
 /// The text of a window label.
 pub const fn label(key: Label) -> &'static str {
     match key {
+        Label::Length => "Długość",
         Label::Undo => "Cofnij",
         Label::Redo => "Ponów",
         Label::Menu => "Menu",
@@ -148,6 +150,14 @@ pub const fn tool_caption(tool: Tool) -> &'static str {
     match tool {
         Tool::Move => "Przesuń",
         Tool::Point => "Punkt",
+        Tool::Relation => "Porównaj obiekty",
+        Tool::RigidPolygon => "Wielokąt sztywny",
+        Tool::SegmentFixed => "Odcinek o zadanej długości",
+        Tool::AngleFixed => "Kąt o zadanej mierze",
+        Tool::Extremum => "Ekstremum",
+        Tool::Roots => "Miejsca zerowe",
+        Tool::PointOnObject => "Punkt na obiekcie",
+        Tool::AttachDetach => "Dołącz lub odłącz punkt",
         Tool::Intersect => "Przecięcie",
         Tool::Midpoint => "Środek",
         Tool::Line => "Prosta",
@@ -206,6 +216,9 @@ pub const fn tool_caption(tool: Tool) -> &'static str {
 /// What the next click of a tool should be (chosen in `tools::recipe`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Hint {
+    ExtremumObject,
+    RootsObject,
+    Attachment,
     DragPoint,
     ClickToPlacePoint,
     FirstObject,
@@ -274,9 +287,56 @@ pub enum Hint {
     PointOrVector,
 }
 
+/// Localizes the numerical findings shown by the Relation tool.
+pub fn relation_message(message: &str) -> &str {
+    match message {
+        "An input is undefined." => "Jeden z obiektów jest niezdefiniowany.",
+        "The arcs have different lengths." => "Łuki mają różne długości.",
+        "The arcs have the same length." => "Łuki mają tę samą długość.",
+        "The conics are disjoint." => "Krzywe stożkowe są rozłączne.",
+        "The conics intersect." => "Krzywe stożkowe przecinają się.",
+        "The conics touch." => "Krzywe stożkowe są styczne.",
+        "The line and conic are disjoint." => "Prosta i krzywa stożkowa są rozłączne.",
+        "The line crosses the conic twice." => "Prosta przecina krzywą stożkową w dwóch punktach.",
+        "The line is an asymptote of the conic." => "Prosta jest asymptotą krzywej stożkowej.",
+        "The line is tangent to the conic." => "Prosta jest styczna do krzywej stożkowej.",
+        "The line meets the conic once." => "Prosta ma jeden punkt wspólny z krzywą stożkową.",
+        "The lines are parallel." => "Proste są równoległe.",
+        "The lines are perpendicular." => "Proste są prostopadłe.",
+        "The lines share an intersection." => "Proste mają wspólny punkt.",
+        "The objects are equal." => "Obiekty są równe.",
+        "The objects differ." => "Obiekty różnią się.",
+        "The paths are disjoint." => "Ścieżki są rozłączne.",
+        "The paths intersect." => "Ścieżki przecinają się.",
+        "The point lies on the path." => "Punkt leży na ścieżce.",
+        "The point lies outside the path." => "Punkt leży poza ścieżką.",
+        "The points lie on one circle." => "Punkty leżą na jednym okręgu.",
+        "The points lie on one line." => "Punkty leżą na jednej prostej.",
+        "The polygons have different areas." => "Wielokąty mają różne pola.",
+        "The polygons have the same area." => "Wielokąty mają to samo pole.",
+        "The sectors have different areas." => "Wycinki mają różne pola.",
+        "The sectors have the same area." => "Wycinki mają to samo pole.",
+        "The segments are parallel." => "Odcinki są równoległe.",
+        "The segments are perpendicular." => "Odcinki są prostopadłe.",
+        "The segments have different lengths." => "Odcinki mają różne długości.",
+        "The segments have the same length." => "Odcinki mają tę samą długość.",
+        "The vectors are linearly dependent." => "Wektory są liniowo zależne.",
+        "The vectors are linearly independent." => "Wektory są liniowo niezależne.",
+        "There is no numerical comparison for these objects." => {
+            "Brak porównania liczbowego dla tych obiektów."
+        }
+        _ => message,
+    }
+}
+
 /// The text of a tool hint.
 pub const fn hint(key: Hint) -> &'static str {
     match key {
+        Hint::ExtremumObject => "Kliknij wykres funkcji lub krzywą stożkową",
+        Hint::RootsObject => "Kliknij wykres funkcji, prostą lub krzywą stożkową",
+        Hint::Attachment => {
+            "Wybierz punkt i obiekt, aby je połączyć, lub kliknij punkt, aby go odłączyć"
+        }
         Hint::DragPoint => "Przeciągnij punkt, aby go przesunąć",
         Hint::ClickToPlacePoint => "Kliknij, aby umieścić punkt",
         Hint::FirstObject => "Kliknij pierwszy obiekt",

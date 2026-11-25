@@ -493,33 +493,56 @@ pub fn start(c: &Construction, id: Id) -> Option<(f64, f64)> {
     start_with_vertex_work(c, id, &mut None).flatten()
 }
 
+pub(super) const START_WORK: usize = 4096;
+
+/// Reads the start point with a budget shared by the caller's hit query.
+pub fn start_with_work(c: &Construction, id: Id, work: &mut usize) -> Option<(f64, f64)> {
+    start_with_vertex_work(c, id, &mut Some(work)).flatten()
+}
+
+pub(super) fn path_start_parent(c: &Construction, id: Id) -> Option<Id> {
+    start_reference(c, id, &mut Some(&mut { START_WORK })).flatten()
+}
+
 /// The outer None reports budget exhaustion, the inner None an undefined start.
 pub(super) fn start_with_vertex_work(
     c: &Construction,
-    mut id: Id,
+    id: Id,
     work: &mut Option<&mut usize>,
 ) -> Option<Option<(f64, f64)>> {
+    if c.kind(id) != Kind::Vector {
+        return Some(None);
+    }
     let from = |p: Id| match c.value(p) {
         Value::Point { x, y } => Some((x, y)),
         Value::Ray { x, y, .. } => Some((x, y)),
         Value::Segment { x1, y1, .. } => Some((x1, y1)),
         _ => None,
     };
+    Some(match start_reference(c, id, work)? {
+        Some(id) => from(id),
+        None => Some((0.0, 0.0)),
+    })
+}
+
+/// Follows start references without reading the referenced point's value.
+fn start_reference(
+    c: &Construction,
+    mut id: Id,
+    work: &mut Option<&mut usize>,
+) -> Option<Option<Id>> {
     loop {
         if let Some(left) = work {
             **left = left.checked_sub(1)?;
-        }
-        if c.kind(id) != Kind::Vector {
-            return Some(None);
         }
         id = match c.def(id) {
             Def::Analysis(super::analysis::AnalysisDef::Curvature {
                 point,
                 output: super::analysis::CurvatureKind::Vector,
                 ..
-            }) => return Some(from(point)),
-            Def::Vector(VectorDef::Between(p, _)) => return Some(from(p)),
-            Def::Vector(VectorDef::TranslateTo { start, .. }) => return Some(from(start)),
+            }) => return Some(Some(point)),
+            Def::Vector(VectorDef::Between(p, _)) => return Some(Some(p)),
+            Def::Vector(VectorDef::TranslateTo { start, .. }) => return Some(Some(start)),
             Def::Vector(
                 VectorDef::Translate { src, .. }
                 | VectorDef::Same(src)
@@ -533,11 +556,11 @@ pub(super) fn start_with_vertex_work(
                 | VectorDef::UnitOrtho(l),
             ) => match (c.kind(l), c.def(l)) {
                 (Kind::Vector, _) => l,
-                (_, Def::Line(p, _)) => return Some(from(p)),
-                (Kind::Segment | Kind::Ray, _) => return Some(from(l)),
-                _ => return Some(Some((0.0, 0.0))),
+                (_, Def::Line(p, _)) => return Some(Some(p)),
+                (Kind::Segment | Kind::Ray, _) => return Some(Some(l)),
+                _ => return Some(None),
             },
-            _ => return Some(Some((0.0, 0.0))),
+            _ => return Some(None),
         };
     }
 }
@@ -1173,4 +1196,15 @@ mod tests {
         close(vec_of(&c, "d"), (3.0, -1.0));
         close(vec_of(&c, "dp"), (3.0, 4.0));
     }
+}
+
+#[cfg(test)]
+#[test]
+fn bounded_vector_start_charges_each_reference() {
+    let mut c = crate::script::load("A = (1, 2)\nB = (5, 4)\nu = Vector(A, B)").unwrap();
+    let u = c.id("u").unwrap();
+    let v = c.add("v", Def::Vector(VectorDef::Same(u))).unwrap();
+    let id = c.add("w", Def::Vector(VectorDef::Same(v))).unwrap();
+    assert_eq!(start_with_work(&c, id, &mut 3), Some((1.0, 2.0)));
+    assert_eq!(start_with_work(&c, id, &mut 2), None);
 }

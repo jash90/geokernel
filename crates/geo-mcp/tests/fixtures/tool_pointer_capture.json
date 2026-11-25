@@ -1,0 +1,2409 @@
+{
+  "upstream": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "scenarios": [
+    {
+      "name": "tool_relation_compares_points",
+      "tool_mode": 14,
+      "initial_script": [
+        "A = (1, 1)",
+        "B = (2, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            3.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            3.99
+          ]
+        },
+        {
+          "t": 400,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 460,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            0.99
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 460,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [
+        {
+          "kind": "relation",
+          "objects": [
+            "A",
+            "B"
+          ]
+        }
+      ],
+      "undo": []
+    },
+    {
+      "name": "tool_rigid_polygon_closes",
+      "tool_mode": 64,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            0.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            0.99
+          ]
+        },
+        {
+          "t": 400,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            3.99
+          ]
+        },
+        {
+          "t": 460,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            3.99
+          ]
+        },
+        {
+          "t": 600,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 660,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 460,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 660,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0, "on_path": true, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "on_path": false, "in_region": false },
+            "t1": {
+              "type": "polygon",
+              "defined": true,
+              "vertices": [
+                [1.0, 1.0],
+                [4.0, 1.0],
+                [1.0, 4.0]
+              ],
+              "area": 4.5,
+              "signed_area": 4.5
+            },
+            "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 4.0, "y2": 1.0 },
+            "a": { "type": "segment", "defined": true, "x1": 4.0, "y1": 1.0, "x2": 1.0, "y2": 4.0 },
+            "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 1.0, "y2": 1.0 }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {}
+      ]
+    },
+    {
+      "name": "tool_segment_fixed_creates_endpoint",
+      "tool_mode": 45,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        { "t": 200, "type": "text", "text": "4" },
+        { "t": 260, "type": "key", "key": "Enter" }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "on_path": true, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 }
+          }
+        }
+      ],
+      "dialogs": [
+        { "kind": "length", "point": "A" }
+      ],
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+        },
+        {}
+      ]
+    },
+    {
+      "name": "tool_angle_fixed_on_segment",
+      "tool_mode": 46,
+      "initial_script": [
+        "A = (2, 0)",
+        "B = (0, 0)",
+        "f = Segment(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        { "t": 200, "type": "text", "text": "90" },
+        { "t": 260, "type": "key", "key": "Enter" }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+        "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+            "B'": { "type": "point", "defined": true, "x": 2.0, "y": -2.0, "on_path": false, "in_region": false },
+            "α": { "type": "angle", "defined": true, "value": 1.5707963267948966 }
+          }
+        }
+      ],
+      "dialogs": [
+        { "kind": "angle" }
+      ],
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+          "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 }
+        }
+      ]
+    },
+    {
+      "name": "tool_extremum_picks_function",
+      "tool_mode": 75,
+      "initial_script": [
+        "f(x) = (x - 1)^2 + 1"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            3.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            3.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ],
+      "initial": {
+        "f": {
+          "type": "function",
+          "defined": true,
+          "samples": [
+            [-8.0, 82.0],
+            [-4.0, 26.0],
+            [-2.0, 10.0],
+            [-1.0, 5.0],
+            [-0.5, 3.25],
+            [0.0, 2.0],
+            [0.5, 1.25],
+            [1.0, 1.0],
+            [2.0, 2.0],
+            [4.0, 10.0],
+            [8.0, 50.0]
+          ]
+        }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "f": {
+              "type": "function",
+              "defined": true,
+              "samples": [
+                [-8.0, 82.0],
+                [-4.0, 26.0],
+                [-2.0, 10.0],
+                [-1.0, 5.0],
+                [-0.5, 3.25],
+                [0.0, 2.0],
+                [0.5, 1.25],
+                [1.0, 1.0],
+                [2.0, 2.0],
+                [4.0, 10.0],
+                [8.0, 50.0]
+              ]
+            }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "f": {
+              "type": "function",
+              "defined": true,
+              "samples": [
+                [-8.0, 82.0],
+                [-4.0, 26.0],
+                [-2.0, 10.0],
+                [-1.0, 5.0],
+                [-0.5, 3.25],
+                [0.0, 2.0],
+                [0.5, 1.25],
+                [1.0, 1.0],
+                [2.0, 2.0],
+                [4.0, 10.0],
+                [8.0, 50.0]
+              ]
+            },
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 82.0],
+              [-4.0, 26.0],
+              [-2.0, 10.0],
+              [-1.0, 5.0],
+              [-0.5, 3.25],
+              [0.0, 2.0],
+              [0.5, 1.25],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 10.0],
+              [8.0, 50.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tool_roots_picks_function",
+      "tool_mode": 76,
+      "initial_script": [
+        "f(x) = x^2 - 1"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            3.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            3.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            -1.01
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            -1.01
+          ]
+        }
+      ],
+      "initial": {
+        "f": {
+          "type": "function",
+          "defined": true,
+          "samples": [
+            [-8.0, 63.0],
+            [-4.0, 15.0],
+            [-2.0, 3.0],
+            [-1.0, 0.0],
+            [-0.5, -0.75],
+            [0.0, -1.0],
+            [0.5, -0.75],
+            [1.0, 0.0],
+            [2.0, 3.0],
+            [4.0, 15.0],
+            [8.0, 63.0]
+          ]
+        }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "f": {
+              "type": "function",
+              "defined": true,
+              "samples": [
+                [-8.0, 63.0],
+                [-4.0, 15.0],
+                [-2.0, 3.0],
+                [-1.0, 0.0],
+                [-0.5, -0.75],
+                [0.0, -1.0],
+                [0.5, -0.75],
+                [1.0, 0.0],
+                [2.0, 3.0],
+                [4.0, 15.0],
+                [8.0, 63.0]
+              ]
+            }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "f": {
+              "type": "function",
+              "defined": true,
+              "samples": [
+                [-8.0, 63.0],
+                [-4.0, 15.0],
+                [-2.0, 3.0],
+                [-1.0, 0.0],
+                [-0.5, -0.75],
+                [0.0, -1.0],
+                [0.5, -0.75],
+                [1.0, 0.0],
+                [2.0, 3.0],
+                [4.0, 15.0],
+                [8.0, 63.0]
+              ]
+            },
+            "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 63.0],
+              [-4.0, 15.0],
+              [-2.0, 3.0],
+              [-1.0, 0.0],
+              [-0.5, -0.75],
+              [0.0, -1.0],
+              [0.5, -0.75],
+              [1.0, 0.0],
+              [2.0, 3.0],
+              [4.0, 15.0],
+              [8.0, 63.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tool_point_on_object_places_in_polygon",
+      "tool_mode": 501,
+      "initial_script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (0, 4)",
+        "p = Polygon(A, B, C)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            -0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            -0.01
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
+        "p": {
+          "type": "polygon",
+          "defined": true,
+          "vertices": [
+            [0.0, 0.0],
+            [4.0, 0.0],
+            [0.0, 4.0]
+          ],
+          "area": 8.0,
+          "signed_area": 8.0
+        },
+        "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+        "a": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": 4.0 },
+        "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 4.0, "x2": 0.0, "y2": 0.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
+            "p": {
+              "type": "polygon",
+              "defined": true,
+              "vertices": [
+                [0.0, 0.0],
+                [4.0, 0.0],
+                [0.0, 4.0]
+              ],
+              "area": 8.0,
+              "signed_area": 8.0
+            },
+            "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+            "a": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": 4.0 },
+            "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 4.0, "x2": 0.0, "y2": 0.0 }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
+            "p": {
+              "type": "polygon",
+              "defined": true,
+              "vertices": [
+                [0.0, 0.0],
+                [4.0, 0.0],
+                [0.0, 4.0]
+              ],
+              "area": 8.0,
+              "signed_area": 8.0
+            },
+            "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+            "a": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": 4.0 },
+            "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 4.0, "x2": 0.0, "y2": 0.0 },
+            "D": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": true }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0, "on_path": false, "in_region": false },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, 4.0]
+            ],
+            "area": 8.0,
+            "signed_area": 8.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": 4.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 4.0, "x2": 0.0, "y2": 0.0 }
+        }
+      ]
+    },
+    {
+      "name": "tool_attach_detach_redefines_point",
+      "tool_mode": 67,
+      "initial_script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "f = Segment(A, B)",
+        "P = (2, 2)",
+        "M = Midpoint(A, P)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            3,
+            -0.01
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            -0.01
+          ]
+        },
+        {
+          "t": 400,
+          "type": "mouse_down",
+          "pos": [
+            3,
+            -0.01
+          ]
+        },
+        {
+          "t": 460,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            -0.01
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0, "on_path": false, "in_region": false },
+        "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+        "P": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
+        "M": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+            "P": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
+            "M": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+            "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0, "on_path": true, "in_region": false },
+            "M": { "type": "point", "defined": true, "x": 1.5, "y": 0.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 460,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+            "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0, "on_path": true, "in_region": false },
+            "M": { "type": "point", "defined": true, "x": 1.5, "y": 0.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0, "on_path": false, "in_region": false },
+          "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+        }
+      ]
+    },
+    {
+      "name": "tool_attach_detach_frees_path_point",
+      "tool_mode": 67,
+      "initial_script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "f = Segment(A, B)",
+        "P = Point(f, 0.75)",
+        "M = Midpoint(A, P)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            3,
+            -0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            -0.01
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0, "on_path": false, "in_region": false },
+        "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+        "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0, "on_path": true, "in_region": false },
+        "M": { "type": "point", "defined": true, "x": 1.5, "y": 0.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+            "P": { "type": "point", "defined": true, "x": 3.4, "y": 0.4, "on_path": false, "in_region": false },
+            "M": { "type": "point", "defined": true, "x": 1.7, "y": 0.2, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0, "on_path": false, "in_region": false },
+          "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0, "on_path": true, "in_region": false },
+          "M": { "type": "point", "defined": true, "x": 1.5, "y": 0.0, "on_path": false, "in_region": false }
+        }
+      ]
+    },
+    {
+      "name": "tool_point_on_x_axis",
+      "tool_mode": 501,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            -0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            -0.01
+          ]
+        }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": true, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {}
+      ]
+    },
+    {
+      "name": "tool_point_on_y_axis",
+      "tool_mode": 501,
+      "initial_script": [
+        "A = (-6, -3)",
+        "B = (-2, -3)",
+        "C = (-4, 1)",
+        "f = Line(A, B)",
+        "D = (4, -2)",
+        "E = (6, -2)",
+        "k = Circle(D, E)",
+        "G = (-7, 3)",
+        "H = (-3, 4)",
+        "u = Vector(G, H)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            1.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            1.99
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": -6.0, "y": -3.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": -2.0, "y": -3.0, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": -4.0, "y": 1.0, "on_path": false, "in_region": false },
+        "f": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 12.0 },
+        "D": { "type": "point", "defined": true, "x": 4.0, "y": -2.0, "on_path": false, "in_region": false },
+        "E": { "type": "point", "defined": true, "x": 6.0, "y": -2.0, "on_path": false, "in_region": false },
+        "k": { "type": "circle", "defined": true, "cx": 4.0, "cy": -2.0, "r": 2.0 },
+        "G": { "type": "point", "defined": true, "x": -7.0, "y": 3.0, "on_path": false, "in_region": false },
+        "H": { "type": "point", "defined": true, "x": -3.0, "y": 4.0, "on_path": false, "in_region": false },
+        "u": { "type": "vector", "defined": true, "x": 4.0, "y": 1.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": -6.0, "y": -3.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": -2.0, "y": -3.0, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": -4.0, "y": 1.0, "on_path": false, "in_region": false },
+            "f": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 12.0 },
+            "D": { "type": "point", "defined": true, "x": 4.0, "y": -2.0, "on_path": false, "in_region": false },
+            "E": { "type": "point", "defined": true, "x": 6.0, "y": -2.0, "on_path": false, "in_region": false },
+            "k": { "type": "circle", "defined": true, "cx": 4.0, "cy": -2.0, "r": 2.0 },
+            "G": { "type": "point", "defined": true, "x": -7.0, "y": 3.0, "on_path": false, "in_region": false },
+            "H": { "type": "point", "defined": true, "x": -3.0, "y": 4.0, "on_path": false, "in_region": false },
+            "u": { "type": "vector", "defined": true, "x": 4.0, "y": 1.0 },
+            "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0, "on_path": true, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": -3.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": -2.0, "y": -3.0, "on_path": false, "in_region": false },
+          "C": { "type": "point", "defined": true, "x": -4.0, "y": 1.0, "on_path": false, "in_region": false },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 12.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": -2.0, "on_path": false, "in_region": false },
+          "E": { "type": "point", "defined": true, "x": 6.0, "y": -2.0, "on_path": false, "in_region": false },
+          "k": { "type": "circle", "defined": true, "cx": 4.0, "cy": -2.0, "r": 2.0 },
+          "G": { "type": "point", "defined": true, "x": -7.0, "y": 3.0, "on_path": false, "in_region": false },
+          "H": { "type": "point", "defined": true, "x": -3.0, "y": 4.0, "on_path": false, "in_region": false },
+          "u": { "type": "vector", "defined": true, "x": 4.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "name": "tool_point_on_vector",
+      "tool_mode": 501,
+      "initial_script": [
+        "A = (0, 0)",
+        "B = (4, 2)",
+        "u = Vector(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            0.99
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0, "on_path": false, "in_region": false },
+        "u": { "type": "vector", "defined": true, "x": 4.0, "y": 2.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0, "on_path": false, "in_region": false },
+            "u": { "type": "vector", "defined": true, "x": 4.0, "y": 2.0 },
+            "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": true, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0, "on_path": false, "in_region": false },
+          "u": { "type": "vector", "defined": true, "x": 4.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "name": "tool_segment_fixed_starts_on_function",
+      "tool_mode": 45,
+      "initial_script": [
+        "f(x) = x^2"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        { "t": 200, "type": "text", "text": "4" },
+        { "t": 260, "type": "key", "key": "Enter" }
+      ],
+      "initial": {
+        "f": {
+          "type": "function",
+          "defined": true,
+          "samples": [
+            [-8.0, 64.0],
+            [-4.0, 16.0],
+            [-2.0, 4.0],
+            [-1.0, 1.0],
+            [-0.5, 0.25],
+            [0.0, 0.0],
+            [0.5, 0.25],
+            [1.0, 1.0],
+            [2.0, 4.0],
+            [4.0, 16.0],
+            [8.0, 64.0]
+          ]
+        }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "f": {
+              "type": "function",
+              "defined": true,
+              "samples": [
+                [-8.0, 64.0],
+                [-4.0, 16.0],
+                [-2.0, 4.0],
+                [-1.0, 1.0],
+                [-0.5, 0.25],
+                [0.0, 0.0],
+                [0.5, 0.25],
+                [1.0, 1.0],
+                [2.0, 4.0],
+                [4.0, 16.0],
+                [8.0, 64.0]
+              ]
+            },
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": true, "in_region": false }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "f": {
+              "type": "function",
+              "defined": true,
+              "samples": [
+                [-8.0, 64.0],
+                [-4.0, 16.0],
+                [-2.0, 4.0],
+                [-1.0, 1.0],
+                [-0.5, 0.25],
+                [0.0, 0.0],
+                [0.5, 0.25],
+                [1.0, 1.0],
+                [2.0, 4.0],
+                [4.0, 16.0],
+                [8.0, 64.0]
+              ]
+            },
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": true, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "on_path": true, "in_region": false },
+            "g": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 }
+          }
+        }
+      ],
+      "dialogs": [
+        { "kind": "length", "point": "A" }
+      ],
+      "undo": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": true, "in_region": false }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tool_angle_fixed_segment_after_point",
+      "tool_mode": 46,
+      "initial_script": [
+        "A = (2, 0)",
+        "B = (0, 0)",
+        "C = (1, 2)",
+        "f = Segment(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            1.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            1.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        { "t": 400, "type": "text", "text": "90" },
+        { "t": 460, "type": "key", "key": "Enter" }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0, "on_path": false, "in_region": false },
+        "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 }
+          }
+        },
+        {
+          "t": 460,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+            "B'": { "type": "point", "defined": true, "x": 2.0, "y": -2.0, "on_path": false, "in_region": false },
+            "α": { "type": "angle", "defined": true, "value": 1.5707963267948966 }
+          }
+        }
+      ],
+      "dialogs": [
+        { "kind": "angle" }
+      ],
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0, "on_path": false, "in_region": false },
+          "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 }
+        }
+      ]
+    },
+    {
+      "name": "tool_angle_fixed_negative",
+      "tool_mode": 46,
+      "initial_script": [
+        "A = (2, 0)",
+        "B = (0, 0)",
+        "f = Segment(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        { "t": 200, "type": "text", "text": "-90°" },
+        { "t": 260, "type": "key", "key": "Enter" }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+        "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+            "B'": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
+            "α": { "type": "angle", "defined": true, "value": 4.71238898038469 }
+          }
+        }
+      ],
+      "dialogs": [
+        { "kind": "angle" }
+      ],
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+          "f": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 }
+        }
+      ]
+    },
+    {
+      "name": "tool_segment_fixed_expression",
+      "tool_mode": 45,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        { "t": 200, "type": "text", "text": "1+2" },
+        { "t": 260, "type": "key", "key": "Enter" }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0, "on_path": true, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 4.0, "y2": 1.0 }
+          }
+        }
+      ],
+      "dialogs": [
+        { "kind": "length", "point": "A" }
+      ],
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+        },
+        {}
+      ]
+    },
+    {
+      "name": "tool_attach_detach_frees_fixed_endpoint",
+      "tool_mode": 67,
+      "initial_script": [
+        "A = (0, 0)",
+        "s = Segment(A, 3)",
+        "M = Midpoint(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            3,
+            -0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            -0.01
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0, "on_path": true, "in_region": false },
+        "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+        "M": { "type": "point", "defined": true, "x": 1.5, "y": 0.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 3.4, "y": 0.4, "on_path": false, "in_region": false },
+            "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.4, "y2": 0.4 },
+            "M": { "type": "point", "defined": true, "x": 1.7, "y": 0.2, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0, "on_path": true, "in_region": false },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 1.5, "y": 0.0, "on_path": false, "in_region": false }
+        }
+      ]
+    },
+    {
+      "name": "tool_relation_compares_text_and_point",
+      "tool_mode": 14,
+      "initial_script": [
+        "T = Text(\"hello\", (1, 1))",
+        "A = (2, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [1.2, 1.15]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [1.2, 1.15]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.99
+          ]
+        }
+      ],
+      "initial": {
+        "T": { "type": "text", "defined": true, "text": "hello" },
+        "A": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "T": { "type": "text", "defined": true, "text": "hello" },
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "T": { "type": "text", "defined": true, "text": "hello" },
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [
+        {
+          "kind": "relation",
+          "objects": [
+            "T",
+            "A"
+          ]
+        }
+      ],
+      "undo": []
+    },
+    {
+      "name": "tool_roots_picks_circle",
+      "tool_mode": 76,
+      "initial_script": [
+        "O = (0, 0)",
+        "k = Circle(O, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            1.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            1.99
+          ]
+        }
+      ],
+      "initial": {
+        "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+        "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+            "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 2.0, "y": -0.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 }
+        }
+      ]
+    },
+    {
+      "name": "tool_extremum_picks_circle",
+      "tool_mode": 75,
+      "initial_script": [
+        "O = (0, 0)",
+        "k = Circle(O, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            1.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            1.99
+          ]
+        }
+      ],
+      "initial": {
+        "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+        "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+            "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": 0.0, "y": -2.0, "on_path": false, "in_region": false },
+            "D": { "type": "point", "defined": true, "x": 0.0, "y": 2.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 }
+        }
+      ]
+    },
+    {
+      "name": "tool_roots_tangent_circle",
+      "tool_mode": 76,
+      "initial_script": [
+        "O = (0, 2)",
+        "k = Circle(O, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            3.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            3.99
+          ]
+        }
+      ],
+      "initial": {
+        "O": { "type": "point", "defined": true, "x": 0.0, "y": 2.0, "on_path": false, "in_region": false },
+        "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 2.0, "r": 2.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "O": { "type": "point", "defined": true, "x": 0.0, "y": 2.0, "on_path": false, "in_region": false },
+            "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 2.0, "r": 2.0 },
+            "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 2.0, "on_path": false, "in_region": false },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 2.0, "r": 2.0 }
+        }
+      ]
+    },
+    {
+      "name": "tool_roots_disjoint_circle",
+      "tool_mode": 76,
+      "initial_script": [
+        "O = (0, 3)",
+        "k = Circle(O, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            4.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            4.99
+          ]
+        }
+      ],
+      "initial": {
+        "O": { "type": "point", "defined": true, "x": 0.0, "y": 3.0, "on_path": false, "in_region": false },
+        "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 3.0, "r": 2.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "O": { "type": "point", "defined": true, "x": 0.0, "y": 3.0, "on_path": false, "in_region": false },
+            "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 3.0, "r": 2.0 },
+            "A": { "type": "point", "defined": false, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 3.0, "on_path": false, "in_region": false },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 3.0, "r": 2.0 }
+        }
+      ]
+    },
+    {
+      "name": "tool_extremum_hyperbola",
+      "tool_mode": 75,
+      "initial_script": [
+        "h: x^2/4 - y^2/9 = 1"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [2.1, 0.99]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [2.1, 0.99]
+        }
+      ],
+      "initial": {
+        "h": {
+          "type": "conic",
+          "defined": true,
+          "conic_type": "hyperbola",
+          "matrix": [1.0, -0.4444444444444444, -4.0, 0.0, 0.0, 0.0],
+          "midpoint": [-0.0, -0.0],
+          "half_axes": [2.0, 3.0],
+          "eigenvectors": [
+            [1.0, 0.0],
+            [-0.0, 1.0]
+          ]
+        }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "h": {
+              "type": "conic",
+              "defined": true,
+              "conic_type": "hyperbola",
+              "matrix": [1.0, -0.4444444444444444, -4.0, 0.0, 0.0, 0.0],
+              "midpoint": [-0.0, -0.0],
+              "half_axes": [2.0, 3.0],
+              "eigenvectors": [
+                [1.0, 0.0],
+                [-0.0, 1.0]
+              ]
+            },
+            "A": { "type": "point", "defined": true, "x": -2.0, "y": -0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "h": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -0.4444444444444444, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [2.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tool_point_on_large_polygon",
+      "tool_mode": 501,
+      "initial_script": [
+        "L = Sequence((k, k^2), k, 1, 4097)",
+        "p = Polygon(L)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ],
+      "initial": { "$object_count": 2 },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "$object_count": 3,
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": true }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        { "$object_count": 2 }
+      ]
+    },
+    {
+      "name": "tool_point_on_large_polyline",
+      "tool_mode": 501,
+      "initial_script": [
+        "L = Sequence((k, k^2), k, 1, 4097)",
+        "p = Polyline(L)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ],
+      "initial": { "$object_count": 2 },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "$object_count": 3,
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": true, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        { "$object_count": 2 }
+      ]
+    },
+    {
+      "name": "tool_rigid_copy_large_polygon",
+      "tool_mode": 64,
+      "initial_script": [
+        "L = Sequence((k, k^2), k, 1, 4097)",
+        "p = Polygon(L)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ],
+      "initial": { "$object_count": 2 },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "$object_count": 8197,
+            "A": { "type": "point", "defined": true, "x": 1.472, "y": 0.528, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 2.472, "y": 3.528, "on_path": true, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        { "$object_count": 2 }
+      ]
+    },
+    {
+      "name": "tool_relation_compares_large_polygon",
+      "tool_mode": 14,
+      "initial_script": [
+        "L = Sequence((k, k^2), k, 1, 4097)",
+        "p = Polygon(L)",
+        "A = (2, 4)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            3.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            3.99
+          ]
+        }
+      ],
+      "initial": {
+        "$object_count": 3,
+        "A": { "type": "point", "defined": true, "x": 2.0, "y": 4.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "$object_count": 3,
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 4.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "$object_count": 3,
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 4.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [
+        {
+          "kind": "relation",
+          "objects": [
+            "p",
+            "A"
+          ]
+        }
+      ],
+      "undo": []
+    },
+    {
+      "name": "tool_text_places_literal",
+      "tool_mode": 17,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        { "t": 180, "type": "text", "text": "Placed text" },
+        { "t": 220, "type": "key", "key": "Enter" }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 60,
+          "objects": {}
+        },
+        {
+          "t": 220,
+          "objects": {}
+        }
+      ],
+      "dialogs": [
+        { "kind": "text" }
+      ],
+      "undo": []
+    },
+    {
+      "name": "tool_pen_records_drag",
+      "tool_mode": 62,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            -0.01
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            1,
+            -1.01
+          ]
+        },
+        {
+          "t": 220,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            -1.01
+          ]
+        }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 220,
+          "objects": {
+            "stroke1": {
+              "type": "stroke",
+              "defined": true,
+              "points": [
+                [0.0, -0.01, 1],
+                [1.0, -1.01, 0]
+              ]
+            }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {}
+      ]
+    },
+    {
+      "name": "tool_locus_uses_path_point",
+      "tool_mode": 47,
+      "initial_script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "k = Circle(A, B)",
+        "P = Point(k)",
+        "Q = Midpoint(P, A)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            -0.01
+          ]
+        },
+        {
+          "t": 220,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            -0.01
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+        "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+        "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": true, "in_region": false },
+        "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+            "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+            "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": true, "in_region": false },
+            "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 220,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+            "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+            "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": true, "in_region": false },
+            "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0, "on_path": false, "in_region": false },
+            "loc1": {
+              "type": "locus",
+              "defined": true,
+              "points": [
+                [1.0, 0.0, false],
+                [-1.0, -1.000000006168997E-8, false],
+                [-0.9999999999999998, -2.000000000091526E-8, true],
+                [-0.9999999999999992, -3.999999987936583E-8, true],
+                [-0.9999999999999968, -8.000000008035612E-8, true],
+                [-0.9999999999999872, -1.6000000003824706E-7, true],
+                [-0.9999999999999488, -3.1999999995402533E-7, true],
+                [-0.9999999999997952, -6.399999997855533E-7, true],
+                [-0.9999999999991808, -1.279999999892469E-6, true],
+                [-0.9999999999967232, -2.560000000104465E-6, true],
+                [-0.9999999999868928, -5.120000000069688E-6, true],
+                [-0.9999999999475712, -1.0239999999882695E-5, true],
+                [-0.9999999997902848, -2.0479999998569182E-5, true],
+                [-0.9999999991611392, -4.0959999988425966E-5, true],
+                [-0.9999999966445569, -8.191999990845408E-5, true],
+                [-0.9999999865782272, -1.6383999926702987E-4, true],
+                [-0.9999999463129092, -3.276799941358908E-4, true],
+                [-0.9999997852516429, -6.55359953087288E-4, true],
+                [-0.9999991410066638, -0.0013107196246999512, true],
+                [-0.9999965640281309, -0.0026214369976013774, true],
+                [-0.9999862561361352, -0.005242855980835071, true],
+                [-0.9999450249223284, -0.010485567847472293, true],
+                [-0.9997801057338321, -0.020969982805130776, true],
+                [-0.9991205196423051, -0.04193074325230045, true],
+                [-0.9964836255406193, -0.08378773197445333, true],
+                [-0.9911720482276716, -0.13258193999245252, true],
+                [-0.9834726506341255, -0.1810567465042035, true],
+                [-0.9734039812831714, -0.22909537145492784, true],
+                [-0.9609902964811871, -0.27658208558943265, true],
+                [-0.9462615018821707, -0.32340248925402304, true],
+                [-0.9292530804424017, -0.369443787995288, true],
+                [-0.91000600693889, -0.41459506429181825, true],
+                [-0.8885666492575501, -0.45874754476423074, true],
+                [-0.8649866566889024, -0.501794862219767, true],
+                [-0.8393228355004081, -0.5436333119001768, true],
+                [-0.8116370120851955, -0.5841621013155649, true],
+                [-0.7819958840168636, -0.6232835930623266, true],
+                [-0.7504708593691853, -0.6609035400402062, true],
+                [-0.7171378846878028, -0.6969313125018157, true],
+                [-0.6820772620283474, -0.7312801163876351, true],
+                [-0.6453734555017534, -0.7638672024205033, true],
+                [-0.6071148877928173, -0.7946140654558758, true],
+                [-0.5673937271422046, -0.823446633607593, true],
+                [-0.5263056653050855, -0.8502954466935427, true],
+                [-0.4839496870213146, -0.8750958235713228, true],
+                [-0.44042783155252313, -0.897788017960778, true],
+                [-0.3958449468605995, -0.918317362378023, true],
+                [-0.35030843701976633, -0.936634399834198, true],
+                [-0.3039280034707573, -0.9526950029816884, true],
+                [-0.2568153807404382, -0.966460480420769, true],
+                [-0.2090840672635447, -0.9778976699105758, true],
+                [-0.16084905195501198, -0.9869790182598482, true],
+                [-0.11222653719160662, -0.9936826477049808, true],
+                [-0.06333365887022298, -0.9979924086154714, true],
+                [-0.014288204217247628, -0.9998979183997966, true],
+                [0.03479167197118595, -0.9993945865179826, true],
+                [0.08378773197445039, -0.9964836255406195, true],
+                [0.13258193999244983, -0.9911720482276719, true],
+                [0.18105674650420103, -0.9834726506341259, true],
+                [0.22909537145492562, -0.9734039812831718, true],
+                [0.2765820855894307, -0.9609902964811876, true],
+                [0.3234024892540213, -0.9462615018821714, true],
+                [0.3694437879952865, -0.9292530804424023, true],
+                [0.414595064291817, -0.9100060069388906, true],
+                [0.45874754476422974, -0.8885666492575507, true],
+                [0.5017948622197662, -0.8649866566889028, true],
+                [0.5436333119001763, -0.8393228355004084, true],
+                [0.5841621013155645, -0.8116370120851958, true],
+                [0.6232835930623264, -0.7819958840168638, true],
+                [0.6609035400402061, -0.7504708593691853, true],
+                [0.6969313125018158, -0.7171378846878027, true],
+                [0.7312801163876353, -0.6820772620283471, true],
+                [0.7638672024205038, -0.645373455501753, true],
+                [0.7946140654558763, -0.6071148877928166, true],
+                [0.8234466336075935, -0.5673937271422038, true],
+                [0.8502954466935434, -0.5263056653050844, true],
+                [0.8750958235713235, -0.48394968702131325, true],
+                [0.8977880179607788, -0.44042783155252163, true],
+                [0.9183173623780236, -0.39584494686059807, true],
+                [0.9366343998341986, -0.3503084370197649, true],
+                [0.9526950029816889, -0.3039280034707559, true],
+                [0.9664604804207695, -0.2568153807404368, true],
+                [0.9778976699105761, -0.20908406726354334, true],
+                [0.9869790182598485, -0.16084905195501067, true],
+                [0.9936826477049809, -0.11222653719160536, true],
+                [0.9979924086154716, -0.06333365887022177, true],
+                [0.9998979183997966, -0.01428820421724647, true],
+                [0.9993945865179825, 0.03479167197118705, true],
+                [0.9964836255406194, 0.08378773197445144, true],
+                [0.9911720482276718, 0.1325819399924508, true],
+                [0.9834726506341257, 0.18105674650420195, true],
+                [0.9734039812831717, 0.22909537145492648, true],
+                [0.9609902964811874, 0.2765820855894315, true],
+                [0.9462615018821712, 0.32340248925402204, true],
+                [0.9292530804424021, 0.36944378799528715, true],
+                [0.9100060069388903, 0.4145950642918175, true],
+                [0.8885666492575504, 0.45874754476423024, true],
+                [0.8649866566889025, 0.5017948622197667, true],
+                [0.8393228355004081, 0.5436333119001767, true],
+                [0.8116370120851955, 0.5841621013155649, true],
+                [0.7819958840168635, 0.6232835930623268, true],
+                [0.750470859369185, 0.6609035400402066, true],
+                [0.7171378846878023, 0.6969313125018163, true],
+                [0.6820772620283466, 0.7312801163876358, true],
+                [0.6453734555017525, 0.7638672024205041, true],
+                [0.6071148877928162, 0.7946140654558767, true],
+                [0.5673937271422033, 0.8234466336075938, true],
+                [0.5263056653050838, 0.8502954466935437, true],
+                [0.48394968702131275, 0.8750958235713238, true],
+                [0.440427831552521, 0.8977880179607791, true],
+                [0.3958449468605974, 0.9183173623780239, true],
+                [0.35030843701976416, 0.9366343998341988, true],
+                [0.3039280034707551, 0.9526950029816892, true],
+                [0.256815380740436, 0.9664604804207697, true],
+                [0.20908406726354242, 0.9778976699105764, true],
+                [0.16084905195500968, 0.9869790182598486, true],
+                [0.1122265371916043, 0.993682647704981, true],
+                [0.06333365887022066, 0.9979924086154717, true],
+                [0.014288204217245309, 0.9998979183997966, true],
+                [-0.03479167197118827, 0.9993945865179825, true],
+                [-0.0837877319744527, 0.9964836255406193, true],
+                [-0.13258193999245213, 0.9911720482276717, true],
+                [-0.1810567465042033, 0.9834726506341255, true],
+                [-0.22909537145492787, 0.9734039812831714, true],
+                [-0.2765820855894329, 0.960990296481187, true],
+                [-0.3234024892540235, 0.9462615018821706, true],
+                [-0.3694437879952886, 0.9292530804424015, true],
+                [-0.4145950642918191, 0.9100060069388897, true],
+                [-0.4587475447642318, 0.8885666492575496, true],
+                [-0.501794862219768, 0.8649866566889018, true],
+                [-0.5436333119001778, 0.8393228355004074, true],
+                [-0.5841621013155658, 0.8116370120851948, true],
+                [-0.6232835930623275, 0.7819958840168629, true],
+                [-0.6609035400402071, 0.7504708593691846, true],
+                [-0.6969313125018166, 0.717137884687802, true],
+                [-0.7312801163876359, 0.6820772620283465, true],
+                [-0.7638672024205041, 0.6453734555017525, true],
+                [-0.7946140654558764, 0.6071148877928164, true],
+                [-0.8234466336075936, 0.5673937271422037, true],
+                [-0.8502954466935433, 0.5263056653050845, true],
+                [-0.8750958235713233, 0.4839496870213136, true],
+                [-0.8977880179607786, 0.4404278315525221, true],
+                [-0.9183173623780233, 0.3958449468605987, true],
+                [-0.9366343998341983, 0.35030843701976566, true],
+                [-0.9526950029816886, 0.3039280034707568, true],
+                [-0.9664604804207692, 0.2568153807404379, true],
+                [-0.9778976699105758, 0.20908406726354467, true],
+                [-0.9869790182598482, 0.16084905195501215, true],
+                [-0.9936826477049807, 0.11222653719160702, true],
+                [-0.9979924086154714, 0.0633336588702236, true],
+                [-0.9998979183997966, 0.014288204217248478, true],
+                [-0.999997966170584, 0.002016842754294273, true],
+                [-0.9999998834215027, 4.828633149504625E-4, true],
+                [-0.9999999950629868, 9.936813657953406E-5, true],
+                [-0.9999999999938948, 3.4943375003581037E-6, true],
+                [-0.9999999999998759, 4.982812741419626E-7, true],
+                [-0.9999999999999923, 1.2377424564203443E-7, true],
+                [-0.9999999999999996, 3.01474886280699E-8, true],
+                [-1.0, 6.7407991525340904E-9, true],
+                [1.0, 0.0, false]
+              ]
+            }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": false, "in_region": false },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0, "on_path": true, "in_region": false },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0, "on_path": false, "in_region": false }
+        }
+      ]
+    },
+    {
+      "name": "tool_create_list_from_rectangle",
+      "tool_mode": 71,
+      "initial_script": [
+        "A = (0, 0)",
+        "B = (2, 2)",
+        "C = (5, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [-0.5, 2.49]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [2.5, -0.51]
+        },
+        {
+          "t": 220,
+          "type": "mouse_up",
+          "pos": [2.5, -0.51]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 220,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "undo": []
+    },
+    {
+      "name": "tool_input_box_places_empty_widget",
+      "tool_mode": 61,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [-6.44, 5.71]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [-6.44, 5.71]
+        },
+        { "t": 180, "type": "key", "key": "Enter" }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 60,
+          "objects": {}
+        },
+        {
+          "t": 180,
+          "objects": {}
+        }
+      ],
+      "dialogs": [
+        {
+          "kind": "input_box",
+          "pos": [
+            124,
+            88
+          ]
+        }
+      ],
+      "undo": []
+    }
+  ]
+}

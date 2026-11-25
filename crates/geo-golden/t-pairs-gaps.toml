@@ -6201,18 +6201,6 @@ reason = "values agree but `GeoFunction` of kind function has no the reference-s
 mismatches = ["f"]
 
 [[gap]]
-id = "commands/RedefineTest.java:297"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Point` needs a line, segment, ray, circle, conic, polygon, polyline, arc, sector or curve, and `f` is a function"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/RedefineTest.java:300"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `A`; the method's step `commands/RedefineTest.java:296` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/RedefineTest.java:305"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `ZoomIn`"
