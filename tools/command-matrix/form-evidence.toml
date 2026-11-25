@@ -5278,7 +5278,7 @@ cases = ["spreadsheet-fillcells-001", "spreadsheet-fillformuladestination-001"]
 [[form]]
 command = "FillCells"
 form = "range,list"
-cases = ["spreadsheet-fillcells-001", "spreadsheet-matrix-001", "spreadsheet-inlinefillrange-001", "spreadsheet-rangebudget-001"]
+cases = ["spreadsheet-fillcells-001", "spreadsheet-matrix-001", "spreadsheet-inlinefillrange-001", "spreadsheet-rangebudget-001", "spreadsheet-liverangefill-001", "spreadsheet-rangefillformula-001", "spreadsheet-rangefillnamedlist-001"]
 
 [[form]]
 command = "FillCells"

@@ -410,9 +410,23 @@ pub(crate) fn convert_with_assets(
                         .is_some_and(|typed| typed != (x, y)),
                     _ => false,
                 };
-                if stale {
-                    continue;
+                // The main document already reconstructed the cell and
+                // its style. The private entry supplies only editor text.
+                if !stale {
+                    let property = Property::CellInput {
+                        label: address.label(),
+                        input,
+                    };
+                    match property.apply(&mut c.kernel) {
+                        Ok(()) => c.out.script.push(property.to_string()),
+                        Err(reason) => c.out.skipped.push(Skipped {
+                            label: address.label(),
+                            kind: "cell".into(),
+                            reason,
+                        }),
+                    }
                 }
+                continue;
             }
         }
         let line = geo_kernel::spreadsheet::edit_line(address, &input);

@@ -5,7 +5,7 @@
 use crate::describe;
 use crate::history::History;
 use crate::interact::TextMove;
-use crate::labels::next_label;
+use crate::labels::{next_label, next_numbered};
 use crate::scriptlog::{exec_definition, normalize, Log, Setting};
 use crate::snap::check_decimal_fraction;
 use crate::style::{Palette, Sides};
@@ -16,7 +16,7 @@ pub use geo_import::export::View as FileView;
 use geo_kernel::kernel::text::{TextOverrides, TextPosition};
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use geo_kernel::script::text::Properties as TextProperties;
-use geo_kernel::script::{find_unquoted, BoundaryOutputs};
+use geo_kernel::script::{find_top_level, BoundaryOutputs};
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
@@ -389,19 +389,24 @@ impl Workbench {
     /// running the line on a scratch copy.
     fn with_label(&self, line: String) -> String {
         if line.is_empty()
-            || find_unquoted(&line, '=').is_some()
+            || find_top_level(&line, '=').is_some()
             || geo_kernel::script::is_construction_step_command(&line)
             || geo_kernel::spreadsheet::is_fill_line(&line)
         {
             return line;
         }
-        let kind = self.log.rebuild().ok().and_then(|(mut scratch, _)| {
+        let shape = self.log.rebuild().ok().and_then(|(mut scratch, _)| {
             let id = exec_definition(&mut scratch, &format!("Probe_ = {line}")).ok()??;
-            Some(scratch.kind(scratch.id("Probe_").unwrap_or(id)))
+            let id = scratch.id("Probe_").unwrap_or(id);
+            let matrix = scratch.elements(id).is_some_and(|list| list.is_matrix());
+            Some((scratch.kind(id), matrix))
         });
-        let label = next_label(kind.unwrap_or(Kind::Line), |l| {
-            self.construction.id(l).is_some()
-        });
+        let is_taken = |label: &str| self.construction.id(label).is_some();
+        let label = match shape {
+            Some((Kind::List, true)) => next_numbered("m", is_taken),
+            Some((kind, _)) => next_label(kind, is_taken),
+            None => next_label(Kind::Line, is_taken),
+        };
         format!("{label} = {line}")
     }
 

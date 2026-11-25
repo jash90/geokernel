@@ -1,0 +1,58 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-segmentreload-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "P = (0,0)",
+          "observe": [],
+          "cells": {},
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "Q = (3,4)",
+          "observe": [],
+          "cells": {},
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "=Segment(P,Q)",
+          "cells": { "A1": "5" },
+          "outputs": {}
+        },
+        {
+          "action": "reload",
+          "cells": { "A1": "5" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "7",
+          "cells": { "A1": "5", "B1": "7" },
+          "outputs": {}
+        },
+        {
+          "action": "reload",
+          "cells": { "A1": "5", "B1": "7" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

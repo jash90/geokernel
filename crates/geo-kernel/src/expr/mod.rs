@@ -1363,7 +1363,7 @@ pub(crate) fn spreadsheet_watch_only(
 ) -> Result<bool, String> {
     let e = entry(c, def);
     crate::spreadsheet::charge(remaining, e.nodes.len())?;
-    Ok(flexible_cell_read(e, parent, false))
+    Ok(flexible_cell_read(e, parent, true))
 }
 
 fn flexible_cell_read(e: &Entry, parent: Id, range: bool) -> bool {

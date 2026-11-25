@@ -105,16 +105,10 @@ impl Workbench {
     }
 
     pub fn spreadsheet_display(&self, address: geo_kernel::spreadsheet::Address) -> String {
-        if self.file_settings.angle_unit.as_deref() == Some("radiant") {
-            if let Some(id) = self.construction.spreadsheet_cell(address) {
-                if self.construction.kind(id) == Kind::Angle {
-                    if let geo_kernel::Value::Number(radians) = self.construction.value(id) {
-                        return self.construction.format_display_number(radians);
-                    }
-                }
-            }
-        }
-        self.construction.spreadsheet_display(address)
+        self.construction.spreadsheet_display_with_angle_unit(
+            address,
+            self.file_settings.angle_unit.as_deref() == Some("radiant"),
+        )
     }
 
     /// Presentation the document will write to a construction file.

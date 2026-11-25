@@ -114,6 +114,47 @@ cases.extend([
          edit("B2", "={90°}")),
 ])
 
+cases.extend([
+    case("clearrangemember", edit("A1", "2"), edit("A2", "3"),
+         edit("B1", "=Sum(A1:A2)"), edit("A1", ""), edit("A1", "7")),
+    case("liverangefill", edit("C1", "2"), command("FillCells(A1:A2,{C1})"),
+         edit("C1", "9")),
+    case("segmentreload", command("P = (0,0)"), command("Q = (3,4)"),
+         edit("A1", "=Segment(P,Q)"), {"action": "reload"},
+         edit("B1", "7"), {"action": "reload"}),
+    case("visibilityreload", edit("A1", "=(1,2)"),
+         {"action": "visibility", "cell": "A1"}, {"action": "reload"}),
+    case("circularedit", edit("A1", "2"), edit("B1", "=A1+1"),
+         edit("A1", "=A1+1")),
+    case("filldistinctbudget", command("FillCells(A1:B1,Sum(C1:C600))")),
+    case("filloverlapbudget", command("FillCells(B1:B2,Sum(C1:C600))")),
+    case("sliderassignment", command("A1=Slider(0,10)", "A1"),
+         command("A1=5", "A1")),
+    case("scientificinput", edit("A1", "1E3"), edit("B1", "=1E3"),
+         command("t = A1", "A1", "B1")),
+    case("barerange", edit("A1", "1"), edit("A2", "2"), edit("A3", "3"),
+         command("Sum(A1:A3)", "a"), command("{A1:A3}", "m1")),
+    case("radianlist", edit("A1", "={90°}")),
+])
+
+cases.extend([
+    case("visibilityshow", edit("A1", "=(1,2)"),
+         {"action": "show", "cell": "A1"}, {"action": "reload"}),
+    case("radianmodelist", {"action": "load", "input":
+         '<geogebra format="5.0"><kernel><angleUnit val="radiant"/></kernel>'
+         '<spreadsheetView><spreadsheetColumn id="0" width="70"/>'
+         '<layout showGrid="true"/></spreadsheetView><construction/></geogebra>'},
+         edit("A1", "={90°}")),
+])
+
+cases.extend([
+    case("rangefillformula", edit("C1", "2"),
+         command("FillCells(A1:A2,{C1+1})"), edit("C1", "9")),
+    case("rangefillnamedlist", edit("C1", "2"), edit("D1", "hello"),
+         command("l = {{C1,D1}}"), command("FillCells(A1:B2,l)"),
+         edit("C1", "9"), edit("D1", "world")),
+])
+
 Path(__file__).with_name("spreadsheet.json").write_text(
     json.dumps({"cases": cases}, indent=2) + "\n", encoding="utf-8"
 )

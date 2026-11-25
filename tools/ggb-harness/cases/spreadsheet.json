@@ -1236,6 +1236,421 @@
           "input": "={90\u00b0}"
         }
       ]
+    },
+    {
+      "id": "spreadsheet-clearrangemember-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "3"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=Sum(A1:A2)"
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": ""
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "7"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-liverangefill-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "C1",
+          "input": "2"
+        },
+        {
+          "action": "command",
+          "input": "FillCells(A1:A2,{C1})",
+          "observe": []
+        },
+        {
+          "action": "edit",
+          "cell": "C1",
+          "input": "9"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-segmentreload-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "P = (0,0)",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "Q = (3,4)",
+          "observe": []
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "=Segment(P,Q)"
+        },
+        {
+          "action": "reload"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "7"
+        },
+        {
+          "action": "reload"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-visibilityreload-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "=(1,2)"
+        },
+        {
+          "action": "visibility",
+          "cell": "A1"
+        },
+        {
+          "action": "reload"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-circularedit-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=A1+1"
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "=A1+1"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-filldistinctbudget-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "FillCells(A1:B1,Sum(C1:C600))",
+          "observe": []
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-filloverlapbudget-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "FillCells(B1:B2,Sum(C1:C600))",
+          "observe": []
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-sliderassignment-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "A1=Slider(0,10)",
+          "observe": [
+            "A1"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "A1=5",
+          "observe": [
+            "A1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-scientificinput-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "1E3"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=1E3"
+        },
+        {
+          "action": "command",
+          "input": "t = A1",
+          "observe": [
+            "A1",
+            "B1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-barerange-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "1"
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "A3",
+          "input": "3"
+        },
+        {
+          "action": "command",
+          "input": "Sum(A1:A3)",
+          "observe": [
+            "a"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "{A1:A3}",
+          "observe": [
+            "m1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-radianlist-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "={90\u00b0}"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-visibilityshow-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "=(1,2)"
+        },
+        {
+          "action": "show",
+          "cell": "A1"
+        },
+        {
+          "action": "reload"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-radianmodelist-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "load",
+          "input": "<geogebra format=\"5.0\"><kernel><angleUnit val=\"radiant\"/></kernel><spreadsheetView><spreadsheetColumn id=\"0\" width=\"70\"/><layout showGrid=\"true\"/></spreadsheetView><construction/></geogebra>"
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "={90\u00b0}"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-rangefillformula-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "C1",
+          "input": "2"
+        },
+        {
+          "action": "command",
+          "input": "FillCells(A1:A2,{C1+1})",
+          "observe": []
+        },
+        {
+          "action": "edit",
+          "cell": "C1",
+          "input": "9"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-rangefillnamedlist-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "C1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "D1",
+          "input": "hello"
+        },
+        {
+          "action": "command",
+          "input": "l = {{C1,D1}}",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "FillCells(A1:B2,l)",
+          "observe": []
+        },
+        {
+          "action": "edit",
+          "cell": "C1",
+          "input": "9"
+        },
+        {
+          "action": "edit",
+          "cell": "D1",
+          "input": "world"
+        }
+      ]
     }
   ]
 }

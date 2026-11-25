@@ -201,24 +201,44 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         check_label(name)?;
         return crate::spreadsheet::fill(c, command, &args, Some(name));
     }
+    if let Some((id, value)) = slider_assignment_value(c, name, rhs) {
+        c.assign_slider_number(id, value)
+            .map_err(|e| e.to_string())?;
+        return Ok(None);
+    }
     if !colon && crate::spreadsheet::needs_preparation(name, rhs) {
         let before = c.checkpoint();
         let cell = crate::spreadsheet::Address::parse(name).is_some();
         let result = crate::spreadsheet::prepare(c, rhs, Some(name)).and_then(|()| {
             if cell {
-                c.write_spreadsheet_cell(name, false, |c| define_assignment(c, name, rhs, false))
+                define_prepared_cell(c, name, rhs)
             } else {
-                execute_assignment(c, name, rhs, false)
+                let result = execute_assignment(c, name, rhs, false)?;
+                if let Some(id) = result {
+                    c.remember_construction_source(id, rhs);
+                }
+                Ok(result)
             }
         });
         if result.is_err() {
             c.discard_since(before);
-        } else if let Ok(Some(id)) = result {
-            c.remember_construction_source(id, rhs);
         }
         return result;
     }
     execute_assignment(c, name, rhs, colon)
+}
+
+pub(crate) fn define_prepared_cell(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+) -> Result<Option<Id>, String> {
+    let result =
+        c.write_spreadsheet_cell(name, false, |c| define_assignment(c, name, rhs, false))?;
+    if let Some(id) = result {
+        c.remember_construction_source(id, rhs);
+    }
+    Ok(result)
 }
 
 fn execute_assignment(
@@ -227,11 +247,6 @@ fn execute_assignment(
     rhs: &str,
     colon: bool,
 ) -> Result<Option<Id>, String> {
-    if let Some((id, value)) = slider_assignment_value(c, name, rhs) {
-        c.assign_slider_number(id, value)
-            .map_err(|e| e.to_string())?;
-        return Ok(None);
-    }
     if let Some(label) = definition_label(name) {
         if let Some(id) = c.resolve_label(label) {
             let original = c.label(id);
@@ -682,7 +697,10 @@ pub(crate) fn define_after_label(
                         .split(',')
                         .any(|arg| crate::expr::plain_number(arg.trim()).is_none())
                 });
-        if c.def(*id).is_free() && (numeric_expression || coordinate_expression) {
+        let list_literal = c.kind(*id) == Kind::List
+            && rhs.starts_with('{')
+            && rhs.len() <= crate::spreadsheet::MAX_INPUT_BYTES;
+        if list_literal || c.def(*id).is_free() && (numeric_expression || coordinate_expression) {
             c.remember_construction_source(*id, rhs);
         }
     }
@@ -1464,6 +1482,20 @@ pub fn split_comment(line: &str) -> (&str, Option<&str>) {
     (line, None)
 }
 
+/// The byte position of the first delimiter outside strings and argument groups.
+pub fn find_top_level(text: &str, delimiter: char) -> Option<usize> {
+    let mut depth = 0usize;
+    for (index, ch) in unquoted(text) {
+        match ch {
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' => depth = depth.saturating_sub(1),
+            ch if ch == delimiter && depth == 0 => return Some(index),
+            _ => {}
+        }
+    }
+    None
+}
+
 /// The byte position of the first matching character outside a string literal.
 pub fn find_unquoted(text: &str, ch: char) -> Option<usize> {
     unquoted(text).find_map(|(i, c)| (c == ch).then_some(i))
@@ -1545,6 +1577,18 @@ pub fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
     }
     let open = rhs.find('(')?;
     let inner = rhs[open + 1..].strip_suffix(')')?;
+    Some((rhs[..open].trim(), split_arguments(inner)?))
+}
+
+pub(crate) fn split_list_literal(source: &str) -> Option<Vec<&str>> {
+    let inner = source.strip_prefix('{')?.strip_suffix('}')?;
+    if inner.trim().is_empty() {
+        return Some(Vec::new());
+    }
+    split_arguments(inner)
+}
+
+fn split_arguments(inner: &str) -> Option<Vec<&str>> {
     let mut args = Vec::new();
     let mut start = 0;
     let mut depth = 0usize;
@@ -1563,7 +1607,7 @@ pub fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
         return None;
     }
     args.push(inner[start..].trim());
-    Some((rhs[..open].trim(), args))
+    Some(args)
 }
 
 /// Give unlabelled points and regions the same dependencies as named ones.

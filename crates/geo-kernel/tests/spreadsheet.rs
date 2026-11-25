@@ -1,3 +1,4 @@
+use geo_kernel::spreadsheet::Address;
 use geo_kernel::{script, Construction, Value};
 
 fn assert_number(c: &Construction, label: &str, expected: f64) {
@@ -212,4 +213,18 @@ fn spreadsheet_watch_classification_spends_the_deletion_budget() {
     assert!(remaining < 100);
     assert!(!c.spreadsheet_watch_only(w, b1, &mut remaining).unwrap());
     assert!(c.spreadsheet_watch_only(v, b1, &mut 0).is_err());
+}
+
+#[test]
+fn fill_counts_distinct_source_cells_across_shifted_formulas() {
+    let mut c = Construction::new();
+    let before = c.len();
+    let error = script::exec(&mut c, "FillCells(A1:B1,Sum(C1:C600))").unwrap_err();
+    assert_eq!(error, "spreadsheet limit exceeded");
+    assert_eq!(c.len(), before);
+    assert_eq!(c.spreadsheet_cells().count(), 0);
+
+    script::exec(&mut c, "FillCells(B1:B2,Sum(C1:C600))").unwrap();
+    assert_eq!(c.spreadsheet_display(Address::parse("B1").unwrap()), "0");
+    assert_eq!(c.spreadsheet_display(Address::parse("B2").unwrap()), "0");
 }

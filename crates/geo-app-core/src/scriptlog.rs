@@ -45,7 +45,7 @@ use geo_kernel::script::equation::{parse_style, Style as EquationStyle};
 use geo_kernel::script::saved::{self, mark_inline_arguments, Property, INLINE_ARGUMENTS};
 use geo_kernel::script::text::{parse_properties, Properties as TextProperties};
 use geo_kernel::script::{
-    boundary_slot_owner, find_unquoted, first_slot_owner, free_label_for, growth_owner,
+    boundary_slot_owner, find_top_level, first_slot_owner, free_label_for, growth_owner,
     restore_boundary_labels, split_comment, BoundaryOutputs,
 };
 use shared::Chain;
@@ -220,8 +220,8 @@ fn normalize_definition(input: &str) -> String {
     if geo_kernel::spreadsheet::is_fill_line(line) {
         return line.to_owned();
     }
-    let colon = find_unquoted(line, ':');
-    let eq = find_unquoted(line, '=');
+    let colon = find_top_level(line, ':');
+    let eq = find_top_level(line, '=');
     match (colon, eq) {
         (Some(c), None)
             if geo_kernel::spreadsheet::Address::parse(line[..c].trim()).is_some()

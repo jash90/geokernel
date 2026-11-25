@@ -501,6 +501,8 @@ input and an `observe` array of construction labels to track. A `drag`
 gives the source in `cell` and the destination in `target`. The `undo`
 and `redo` actions need no inputs. A `reload` saves and reopens the
 construction. A `degree_mode` selects degrees before entering cells.
+A `visibility` action hides the named cell and a `show` action shows it. Each
+subsequent step records the visibility of those cells under `visible`.
 A `load` opens the XML in `input` and records `view.show_grid` and
 `view.first_column_width` from its spreadsheet settings.
 
@@ -517,5 +519,6 @@ expressions and elements. The `<spreadsheetView>` stores the view
 settings. The exporter preserves grid editor inputs in a
 `geokernel_spreadsheet.xml` archive entry with
 `<spreadsheetView><cell label="A1" input="1.250"/></spreadsheetView>`.
-The importer also accepts this cell element inside the main file's
-spreadsheet view or construction.
+In the archive entry, this text is editor metadata for cells restored from
+the main construction. The importer also accepts a cell element inside
+the main file's spreadsheet view or construction.

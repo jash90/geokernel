@@ -45,6 +45,7 @@ pub struct SpreadsheetStep {
     pub cells: BTreeMap<String, String>,
     pub outputs: BTreeMap<String, Expected>,
     pub view: Option<SpreadsheetViewSnapshot>,
+    pub visible: Option<BTreeMap<String, bool>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -60,6 +61,8 @@ pub enum SpreadsheetAction {
     Command,
     Reload,
     DegreeMode,
+    Visibility,
+    Show,
     Load,
     Edit,
     Drag,
@@ -1350,11 +1353,16 @@ fn validate_case(case: &Case) -> Result<(), String> {
             geo_kernel::spreadsheet::Address::parse(label).is_some_and(|a| a.label() == label)
         };
         let mut observed = BTreeSet::new();
+        let mut observed_visibility = BTreeSet::new();
         for (index, step) in actions.iter().enumerate() {
             let cell = step.cell.as_deref().is_some_and(valid_address);
             let valid = match step.action {
                 SpreadsheetAction::Edit => {
                     cell && step.input.is_some() && step.observe.is_none() && step.target.is_none()
+                }
+                SpreadsheetAction::Visibility | SpreadsheetAction::Show => {
+                    observed_visibility.extend(step.cell.as_deref());
+                    cell && step.input.is_none() && step.observe.is_none() && step.target.is_none()
                 }
                 SpreadsheetAction::Command => {
                     step.cell.is_none()
@@ -1398,6 +1406,11 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 || (step.action == SpreadsheetAction::Load) != step.view.is_some()
                 || !step.cells.keys().all(|label| valid_address(label))
                 || !step.outputs.keys().eq(observed.iter().copied())
+                || !step
+                    .visible
+                    .iter()
+                    .flat_map(|visible| visible.keys())
+                    .eq(observed_visibility.iter().copied())
             {
                 return Err("invalid spreadsheet step".into());
             }

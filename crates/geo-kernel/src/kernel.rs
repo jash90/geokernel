@@ -2014,8 +2014,8 @@ impl Construction {
         self.children(id)
     }
 
-    /// Whether a graph edge only refreshes a spreadsheet lookup. The
-    /// caller's deletion traversal also pays for inspecting the formula.
+    /// Whether a graph edge only updates a spreadsheet lookup or range.
+    /// The deletion traversal also pays for inspecting the formula.
     pub fn spreadsheet_watch_only(
         &self,
         child: Id,

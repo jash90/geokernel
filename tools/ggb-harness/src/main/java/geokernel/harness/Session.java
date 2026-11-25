@@ -346,6 +346,7 @@ final class Session {
         kernel.initUndoInfo();
         List<Object> steps = new ArrayList<>();
         Set<String> observed = new TreeSet<>();
+        Set<String> observedVisibility = new TreeSet<>();
         try {
             for (Object entry : actions) {
                 Map<?, ?> action = (Map<?, ?>) entry;
@@ -376,6 +377,13 @@ final class Session {
                         }
                         app.storeUndoInfo();
                     }
+                    case "visibility", "show" -> {
+                        String label = (String) action.get("cell");
+                        GeoElement geo = kernel.lookupLabel(label);
+                        geo.setEuclidianVisible("show".equals(action.get("action")));
+                        geo.updateRepaint();
+                        observedVisibility.add(label);
+                    }
                     case "reload" -> reloadGgb();
                     case "degree_mode" -> kernel.setAngleUnit(Kernel.ANGLE_DEGREE);
                     case "load" -> {
@@ -404,6 +412,13 @@ final class Session {
                     settings.put("show_grid", view.showGrid());
                     settings.put("first_column_width", view.getColumnWidths().get(0));
                     step.put("view", settings);
+                }
+                if (!observedVisibility.isEmpty()) {
+                    Map<String, Boolean> visible = new LinkedHashMap<>();
+                    for (String label : observedVisibility) {
+                        visible.put(label, kernel.lookupLabel(label).isEuclidianVisible());
+                    }
+                    step.put("visible", visible);
                 }
                 step.put("cells", spreadsheetCells(kernel.getConstruction()));
                 step.put("outputs", outputs);

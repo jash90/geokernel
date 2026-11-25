@@ -343,6 +343,19 @@ fn replay_spreadsheet(
                     document.run_line(line)
                 }
             }
+            SpreadsheetAction::Visibility | SpreadsheetAction::Show => {
+                let label = step.cell.as_deref().unwrap();
+                document.construction().id(label).map_or_else(
+                    || Err(format!("missing cell {label}")),
+                    |id| {
+                        let show = step.action == SpreadsheetAction::Show;
+                        if document.is_visible(id) != show {
+                            document.toggle_visible(id);
+                        }
+                        Ok(())
+                    },
+                )
+            }
             SpreadsheetAction::Edit => document.edit_spreadsheet_cell(
                 address(step.cell.as_deref()),
                 step.input.as_deref().unwrap(),
@@ -392,6 +405,19 @@ fn replay_spreadsheet(
             }
         }
         let c = document.construction();
+        if let Some(visible) = &step.visible {
+            for (label, expected) in visible {
+                let shown = c.id(label).map(|id| document.is_visible(id));
+                if shown != Some(*expected) {
+                    out.mismatches.push(failure(
+                        i,
+                        label,
+                        &format!("visibility {expected}"),
+                        format!("visibility {shown:?}"),
+                    ));
+                }
+            }
+        }
         let cells: BTreeMap<_, _> = c
             .spreadsheet_cells()
             .map(|(address, _)| (address.label(), document.spreadsheet_display(address)))

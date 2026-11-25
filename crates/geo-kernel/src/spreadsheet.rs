@@ -5,6 +5,7 @@
 //! Cell coordinates and the scripting operations of the spreadsheet.
 
 use std::borrow::Cow;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{expr, script, Construction, Id, Kind, Value};
 
@@ -172,21 +173,34 @@ impl Construction {
     }
 
     pub fn spreadsheet_display(&self, address: Address) -> String {
-        self.spreadsheet_cell(address)
-            .map_or_else(String::new, |id| self.spreadsheet_value(id))
+        self.spreadsheet_display_with_angle_unit(address, false)
     }
 
-    fn spreadsheet_value(&self, id: Id) -> String {
+    pub fn spreadsheet_display_with_angle_unit(&self, address: Address, radians: bool) -> String {
+        self.spreadsheet_cell(address)
+            .map_or_else(String::new, |id| self.spreadsheet_value(id, radians))
+    }
+
+    fn spreadsheet_value(&self, id: Id, radians: bool) -> String {
         if let Some(list) = self.elements(id) {
             let mut budget = MAX_SOURCE_BYTES;
-            return list_source(self, list, &mut budget, true).unwrap_or_else(|_| "?".into());
+            let format = if radians {
+                Format::Radians
+            } else {
+                Format::Degrees
+            };
+            return list_source(self, list, &mut budget, format).unwrap_or_else(|_| "?".into());
         }
         if let Some(text) = self.text(id) {
             return text.into();
         }
         match self.value(id) {
             Value::Number(value) if self.kind(id) == Kind::Angle => {
-                format!("{}°", self.format_display_number(value.to_degrees()))
+                if radians {
+                    self.format_display_number(value)
+                } else {
+                    format!("{}°", self.format_display_number(value.to_degrees()))
+                }
             }
             Value::Segment { x1, y1, x2, y2 } => {
                 self.format_display_number(crate::algo::measure::segment_length(x1, y1, x2, y2))
@@ -211,7 +225,7 @@ impl Construction {
         }
         let source = if let Some(formula) = input.strip_prefix('=') {
             Cow::Borrowed(formula.trim())
-        } else if expr::plain_number(input.trim()).is_some()
+        } else if (!input.contains('E') && expr::plain_number(input.trim()).is_some())
             || (input.starts_with('"') && input.ends_with('"'))
         {
             Cow::Borrowed(input)
@@ -224,6 +238,8 @@ impl Construction {
         if let Err(error) = script::exec(self, &format!("{label} = {source}")) {
             if !input.starts_with('=')
                 || !(error.starts_with("unexpected ")
+                    || error.ends_with(": a replacement cannot read itself")
+                    || error.ends_with(": a replacement cannot introduce a dependency cycle")
                     || matches!(
                         error.as_str(),
                         "empty expression" | "expected `)`" | "expected `}`" | "expected `|`"
@@ -255,7 +271,7 @@ impl Construction {
         Some(
             source
                 .map(Cow::Borrowed)
-                .unwrap_or_else(|| Cow::Owned(self.spreadsheet_value(id))),
+                .unwrap_or_else(|| Cow::Owned(self.spreadsheet_value(id, false))),
         )
     }
 }
@@ -382,10 +398,12 @@ pub(crate) fn fill(
     if source.len() > MAX_SOURCE_BYTES || target.len() > MAX_SOURCE_BYTES {
         return Err(LIMIT.into());
     }
+    let mut visited = BTreeSet::new();
     let checkpoint = c.checkpoint();
-    let plan = plan_fill(c, command, target, source);
+    let plan = plan_fill(c, command, target, source, &mut visited);
     c.discard_since(checkpoint);
     let plan = plan?;
+    visit_cells(&mut visited, plan.iter().map(|&(address, _)| address))?;
     if let Some(label) = output {
         if c.id(label).is_some() || Address::parse(label).is_some() {
             return Err("a fill result needs a fresh non-cell label".into());
@@ -398,7 +416,7 @@ pub(crate) fn fill(
         let result = if matches!(command, "FillRow" | "FillColumn") {
             output
                 .map(|label| {
-                    prepare(c, source, Some(label))?;
+                    prepare_cells(c, source, Some(label), &mut visited, &mut BTreeSet::new())?;
                     let id = expr::define(c, label, source, false)?;
                     c.remember_construction_source(id, source);
                     Ok::<_, String>(id)
@@ -408,9 +426,18 @@ pub(crate) fn fill(
             None
         };
         let staged = c.checkpoint();
-        let order = stage_fill(c, &plan);
+        let mut inputs = BTreeSet::new();
+        let order = stage_fill(c, &plan, &mut visited, &mut inputs);
         c.discard_since(staged);
-        Ok::<_, String>((order?, result))
+        let order = order?;
+
+        // Keep the addresses discovered during staging. A changing coordinate
+        // must not start a fresh reservation pass halfway through the writes.
+        for (destination, _) in &plan {
+            inputs.remove(destination);
+        }
+        reserve_cells(c, inputs, None)?;
+        Ok::<_, String>((order, result))
     })();
     let (order, result) = match result {
         Ok(staged) => staged,
@@ -422,7 +449,7 @@ pub(crate) fn fill(
     for index in order {
         let (address, formula) = &plan[index];
         let label = address.label();
-        if let Some(id) = script::exec(c, &format!("{label} = {formula}"))? {
+        if let Some(id) = script::define_prepared_cell(c, &label, formula)? {
             c.request_hidden(id);
         }
     }
@@ -431,8 +458,13 @@ pub(crate) fn fill(
 
 /// Stage the new dependencies together so a multi-cell cycle is refused
 /// before changing any of the destinations. Parent cells are committed first.
-fn stage_fill(c: &mut Construction, plan: &[(Address, String)]) -> Result<Vec<usize>, String> {
-    let mut targets = std::collections::BTreeMap::new();
+fn stage_fill(
+    c: &mut Construction,
+    plan: &[(Address, String)],
+    visited: &mut BTreeSet<Address>,
+    inputs: &mut BTreeSet<Address>,
+) -> Result<Vec<usize>, String> {
+    let mut targets = BTreeMap::new();
     let mut slots = Vec::with_capacity(plan.len());
     for (address, _) in plan {
         let label = address.label();
@@ -446,7 +478,7 @@ fn stage_fill(c: &mut Construction, plan: &[(Address, String)]) -> Result<Vec<us
     let mut budget = MAX_CELLS_PER_OPERATION * 4;
     for (index, ((address, formula), &(slot, existing))) in plan.iter().zip(&slots).enumerate() {
         let label = address.label();
-        prepare(c, formula, Some(&label))?;
+        prepare_cells(c, formula, Some(&label), visited, inputs)?;
         let temp = format!("\0spreadsheet{}", c.len());
         let before = c.len();
         let id = script::define_after_label(c, &temp, formula)?
@@ -462,7 +494,14 @@ fn stage_fill(c: &mut Construction, plan: &[(Address, String)]) -> Result<Vec<us
         if c.len() - start > MAX_CELLS_PER_OPERATION * 4 {
             return Err(LIMIT.into());
         }
-        charge(&mut budget, c.reads(id).len())?;
+        let reads = c.reads(id);
+        charge(&mut budget, reads.len())?;
+        visit_cells(
+            visited,
+            reads
+                .iter()
+                .filter_map(|&parent| Address::parse(c.label(parent))),
+        )?;
         targets.insert(slot, (id, index));
     }
 
@@ -471,7 +510,7 @@ fn stage_fill(c: &mut Construction, plan: &[(Address, String)]) -> Result<Vec<us
         Open,
         Closed,
     }
-    let mut state = std::collections::BTreeMap::new();
+    let mut state = BTreeMap::new();
     let mut next = Vec::with_capacity(slots.len());
     for (slot, _) in slots {
         let mut pending = vec![(slot, false)];
@@ -509,6 +548,7 @@ fn plan_fill(
     command: &str,
     target: &str,
     source: &str,
+    visited: &mut BTreeSet<Address>,
 ) -> Result<Vec<(Address, String)>, String> {
     if command == "$spreadsheetDrag" {
         let (first, last) = target.split_once(':').ok_or("expected a drag range")?;
@@ -538,10 +578,19 @@ fn plan_fill(
     let temp = format!("\0spreadsheet{}", c.len());
     // The locus and other directly named objects are already in the graph.
     let value = match c.id(source) {
-        Some(id) => id,
+        Some(id) => {
+            visit_cells(visited, Address::parse(source))?;
+            id
+        }
         None => {
             let destination = range.map(|range| range.first.label());
-            prepare(c, source, destination.as_deref())?;
+            prepare_cells(
+                c,
+                source,
+                destination.as_deref(),
+                visited,
+                &mut BTreeSet::new(),
+            )?;
             script::define_after_label(c, &temp, source)?
                 .ok_or("a fill source must return a value")?
         }
@@ -578,7 +627,10 @@ fn plan_fill(
                 (0, offset)
             };
             let address = start.offset(columns, rows).ok_or(LIMIT)?;
-            plan.push((address, element_source(c, item, &mut budget, false)?));
+            plan.push((
+                address,
+                element_source(c, item, &mut budget, Format::Source)?,
+            ));
         }
         return Ok(plan);
     }
@@ -611,21 +663,53 @@ fn plan_fill(
                 return Err("cannot fill a range with an empty list".into());
             }
             let columns = matrix_columns(list, &mut budget)?;
+            let source = c.construction_source(value).unwrap_or(source);
+            if source.len() > MAX_SOURCE_BYTES {
+                return Err(LIMIT.into());
+            }
+            let literals = script::split_list_literal(source);
+            let rows = columns.and_then(|_| {
+                literals.as_ref().map(|items| {
+                    items
+                        .iter()
+                        .map(|item| script::split_list_literal(item))
+                        .collect::<Vec<_>>()
+                })
+            });
             for (index, address) in range.row_major().enumerate() {
-                let item = if columns.is_some() {
-                    let Some(expr::Element::List(row)) =
-                        list.get(usize::from(address.row - range.first.row) % list.len())
-                    else {
+                let (items, offset, sources) = if columns.is_some() {
+                    let row = usize::from(address.row - range.first.row) % list.len();
+                    let Some(expr::Element::List(items)) = list.get(row) else {
                         unreachable!("matrix rows checked")
                     };
-                    row.get(usize::from(address.column - range.first.column) % row.len())
+                    let offset = usize::from(address.column - range.first.column) % items.len();
+                    let sources = rows
+                        .as_ref()
+                        .and_then(|rows| rows.get(row))
+                        .and_then(Option::as_deref);
+                    (items, offset, sources)
                 } else {
-                    list.get(index % list.len())
+                    (list, index % list.len(), literals.as_deref())
                 };
-                plan.push((
-                    address,
-                    element_source(c, item.unwrap(), &mut budget, false)?,
-                ));
+                let literal = sources.and_then(|sources| sources.get(offset)).copied();
+                let formula = literal.or_else(|| {
+                    items
+                        .object(offset)
+                        .map(|id| c.label(id))
+                        .filter(|label| !label.starts_with('\0'))
+                });
+                let formula = if let Some(formula) = formula {
+                    charge(&mut budget, formula.len())?;
+                    formula.to_owned()
+                } else {
+                    element_source(
+                        c,
+                        items.get(offset).expect("fill element"),
+                        &mut budget,
+                        Format::Source,
+                    )?
+                };
+                plan.push((address, formula));
             }
         } else {
             let formula = if c.id(source).is_some() {
@@ -656,7 +740,10 @@ fn plan_fill(
                 };
                 for (column, item) in items.iter().enumerate() {
                     let address = start.offset(column as u16, row as u16).ok_or(LIMIT)?;
-                    plan.push((address, element_source(c, item, &mut budget, false)?));
+                    plan.push((
+                        address,
+                        element_source(c, item, &mut budget, Format::Source)?,
+                    ));
                 }
             }
         } else {
@@ -665,7 +752,10 @@ fn plan_fill(
             }
             for (column, item) in list.iter().enumerate() {
                 let address = start.offset(column as u16, 0).ok_or(LIMIT)?;
-                plan.push((address, element_source(c, item, &mut budget, false)?));
+                plan.push((
+                    address,
+                    element_source(c, item, &mut budget, Format::Source)?,
+                ));
             }
         }
     }
@@ -707,11 +797,18 @@ fn shifted_fill(range: Range, formula: &str) -> Result<Vec<(Address, String)>, S
     Ok(plan)
 }
 
+#[derive(Clone, Copy)]
+enum Format {
+    Source,
+    Degrees,
+    Radians,
+}
+
 fn list_source(
     c: &Construction,
     list: expr::List<'_>,
     budget: &mut usize,
-    display: bool,
+    format: Format,
 ) -> Result<String, String> {
     charge(budget, 2 + 2 * list.len())?;
     let mut output = String::from("{");
@@ -719,7 +816,7 @@ fn list_source(
         if output.len() > 1 {
             output.push_str(", ");
         }
-        output.push_str(&element_source(c, item, budget, display)?);
+        output.push_str(&element_source(c, item, budget, format)?);
     }
     output.push('}');
     Ok(output)
@@ -729,24 +826,22 @@ fn element_source(
     c: &Construction,
     item: expr::Element<'_>,
     budget: &mut usize,
-    display: bool,
+    format: Format,
 ) -> Result<String, String> {
     match item {
-        expr::Element::List(list) => list_source(c, list, budget, display),
+        expr::Element::List(list) => list_source(c, list, budget, format),
         expr::Element::Text(text) => {
             charge(budget, text.len().saturating_mul(2) + 2)?;
             Ok(quoted(text))
         }
         expr::Element::Value(kind, value) => {
             let source = match value {
-                Value::Number(n) if kind == Kind::Angle && n.is_finite() => {
-                    if display {
-                        format!("{}°", c.format_display_number(n.to_degrees()))
-                    } else {
-                        format!("{}°", literal_number(n.to_degrees()))
-                    }
-                }
-                _ => scalar_source(c, value, display)?,
+                Value::Number(n) if kind == Kind::Angle && n.is_finite() => match format {
+                    Format::Radians => format!("{} rad", c.format_display_number(n)),
+                    Format::Degrees => format!("{}°", c.format_display_number(n.to_degrees())),
+                    Format::Source => format!("{}°", literal_number(n.to_degrees())),
+                },
+                _ => scalar_source(c, value, !matches!(format, Format::Source))?,
             };
             charge(budget, source.len())?;
             Ok(source)
@@ -808,6 +903,22 @@ pub(crate) fn prepare(
     source: &str,
     target: Option<&str>,
 ) -> Result<(), String> {
+    prepare_cells(
+        c,
+        source,
+        target,
+        &mut BTreeSet::new(),
+        &mut BTreeSet::new(),
+    )
+}
+
+fn prepare_cells(
+    c: &mut Construction,
+    source: &str,
+    target: Option<&str>,
+    visited: &mut BTreeSet<Address>,
+    inputs: &mut BTreeSet<Address>,
+) -> Result<(), String> {
     use expr::lex::{tokens, Tok, Token};
     let grid_edit = target.and_then(Address::parse).is_some();
     if !needs_preparation(target.unwrap_or_default(), source) {
@@ -823,19 +934,16 @@ pub(crate) fn prepare(
         Tok::Name { text, call: false } => Address::parse(text),
         _ => None,
     };
-    let mut addresses = std::collections::BTreeSet::new();
+    let mut addresses = BTreeSet::new();
     let mut coordinate_work = MAX_SOURCE_BYTES;
     let mut remaining = MAX_CELLS_PER_OPERATION;
-    let add_range = |addresses: &mut std::collections::BTreeSet<_>,
-                     remaining: &mut usize,
-                     first,
-                     last|
-     -> Result<(), String> {
-        let range = Range::parse(first, last)?;
-        charge(remaining, range.width() * range.height())?;
-        addresses.extend(range.column_major());
-        Ok(())
-    };
+    let add_range =
+        |addresses: &mut BTreeSet<_>, remaining: &mut usize, first, last| -> Result<(), String> {
+            let range = Range::parse(first, last)?;
+            charge(remaining, range.width() * range.height())?;
+            addresses.extend(range.column_major());
+            Ok(())
+        };
     for (i, token) in tokens.iter().enumerate() {
         if let Tok::Name { text, call: false } = &token.tok {
             if grid_edit || text.contains('$') {
@@ -915,7 +1023,30 @@ pub(crate) fn prepare(
             return Err(LIMIT.into());
         }
     }
-    for address in addresses {
+    visit_cells(visited, addresses.iter().copied())?;
+    inputs.extend(addresses.iter().copied());
+    reserve_cells(c, addresses, target)
+}
+
+fn visit_cells(
+    visited: &mut BTreeSet<Address>,
+    cells: impl IntoIterator<Item = Address>,
+) -> Result<(), String> {
+    for address in cells {
+        visited.insert(address);
+        if visited.len() > MAX_CELLS_PER_OPERATION {
+            return Err(LIMIT.into());
+        }
+    }
+    Ok(())
+}
+
+fn reserve_cells(
+    c: &mut Construction,
+    cells: impl IntoIterator<Item = Address>,
+    target: Option<&str>,
+) -> Result<(), String> {
+    for address in cells {
         let label = address.label();
         if target == Some(label.as_str()) {
             // A range may include its result cell. The parser will reject

@@ -3299,3 +3299,8 @@ mismatches = ["1:spreadsheet"]
 id = "spreadsheet-labelledfill-001"
 reason = "GeoGebra writes text to A1 and 9 to B1. The kernel refuses to change A1 from a number to text because the labelled result reads it as a number. A1 stays 3, B1 remains absent, and no result is created."
 mismatches = ["1:spreadsheet"]
+
+[[gap]]
+id = "spreadsheet-filldistinctbudget-001"
+reason = "GeoGebra fills A1 with ? and B1 with 0. geokernel rejects the entire fill before writing because the shifted formulas and destinations visit more than 1,024 distinct cells. See DIFFERENCES.md."
+mismatches = ["0:spreadsheet"]
