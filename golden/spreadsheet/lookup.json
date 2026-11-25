@@ -1,0 +1,93 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-lookup-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "3",
+          "cells": { "A1": "3" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "4",
+          "cells": { "A1": "3", "B1": "4" },
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "n = 1",
+          "observe": [
+            "n"
+          ],
+          "cells": { "A1": "3", "B1": "4" },
+          "outputs": {
+            "n": { "type": "number", "defined": true, "value": 1.0 }
+          }
+        },
+        {
+          "action": "command",
+          "input": "v = Cell(n, 1)",
+          "observe": [
+            "v"
+          ],
+          "cells": { "A1": "3", "B1": "4" },
+          "outputs": {
+            "n": { "type": "number", "defined": true, "value": 1.0 },
+            "v": { "type": "number", "defined": true, "value": 3.0 }
+          }
+        },
+        {
+          "action": "command",
+          "input": "n = 2",
+          "observe": [
+            "v"
+          ],
+          "cells": { "A1": "3", "B1": "4" },
+          "outputs": {
+            "n": { "type": "number", "defined": true, "value": 2.0 },
+            "v": { "type": "number", "defined": true, "value": 4.0 }
+          }
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "7",
+          "cells": { "A1": "3", "B1": "7" },
+          "outputs": {
+            "n": { "type": "number", "defined": true, "value": 2.0 },
+            "v": { "type": "number", "defined": true, "value": 7.0 }
+          }
+        },
+        {
+          "action": "command",
+          "input": "w = Cell(42, 4)",
+          "observe": [
+            "v",
+            "w"
+          ],
+          "cells": { "A1": "3", "B1": "7" },
+          "outputs": {
+            "n": { "type": "number", "defined": true, "value": 2.0 },
+            "v": { "type": "number", "defined": true, "value": 7.0 },
+            "w": { "type": "number", "defined": false }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-geometrydisplay-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "degree_mode",
+          "cells": {},
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "=Segment((0,0),(3,4))",
+          "cells": { "A1": "5" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=90°",
+          "cells": { "A1": "5", "B1": "90°" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

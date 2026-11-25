@@ -1,0 +1,41 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-liverangefill-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "C1",
+          "input": "2",
+          "cells": { "C1": "2" },
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "FillCells(A1:A2,{C1})",
+          "observe": [],
+          "cells": { "A1": "2", "A2": "2", "C1": "2" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "C1",
+          "input": "9",
+          "cells": { "A1": "9", "A2": "9", "C1": "9" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

@@ -20,6 +20,7 @@ pub use expr::CasRow;
 pub mod kernel;
 pub mod plot;
 pub mod script;
+pub mod spreadsheet;
 pub mod svg;
 pub mod tol;
 

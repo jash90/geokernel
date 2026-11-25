@@ -1,0 +1,51 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-typedemptyrange-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "r = CellRange(A1,A2,\"text\")",
+          "observe": [
+            "r"
+          ],
+          "cells": {},
+          "outputs": {
+            "r": {
+              "type": "list",
+              "defined": true,
+              "elements": []
+            }
+          }
+        },
+        {
+          "action": "command",
+          "input": "v = Element(r,1)",
+          "observe": [
+            "v"
+          ],
+          "cells": {},
+          "outputs": {
+            "r": {
+              "type": "list",
+              "defined": true,
+              "elements": []
+            },
+            "v": { "type": "text", "defined": false }
+          }
+        }
+      ]
+    }
+  ]
+}

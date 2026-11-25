@@ -1,0 +1,108 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-address-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "AA7",
+          "input": "3",
+          "cells": { "AA7": "3" },
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "r = Row(AA7)",
+          "observe": [
+            "r"
+          ],
+          "cells": { "AA7": "3" },
+          "outputs": {
+            "r": { "type": "number", "defined": true, "value": 7.0 }
+          }
+        },
+        {
+          "action": "command",
+          "input": "c = Column(AA7)",
+          "observe": [
+            "c"
+          ],
+          "cells": { "AA7": "3" },
+          "outputs": {
+            "c": { "type": "number", "defined": true, "value": 27.0 },
+            "r": { "type": "number", "defined": true, "value": 7.0 }
+          }
+        },
+        {
+          "action": "command",
+          "input": "t = ColumnName(AA7)",
+          "observe": [
+            "t"
+          ],
+          "cells": { "AA7": "3" },
+          "outputs": {
+            "c": { "type": "number", "defined": true, "value": 27.0 },
+            "r": { "type": "number", "defined": true, "value": 7.0 },
+            "t": { "type": "text", "defined": true, "text": "AA" }
+          }
+        },
+        {
+          "action": "command",
+          "input": "u = Row((1, 1))",
+          "observe": [
+            "u"
+          ],
+          "cells": { "AA7": "3" },
+          "outputs": {
+            "c": { "type": "number", "defined": true, "value": 27.0 },
+            "r": { "type": "number", "defined": true, "value": 7.0 },
+            "t": { "type": "text", "defined": true, "text": "AA" },
+            "u": { "type": "number", "defined": false }
+          }
+        },
+        {
+          "action": "command",
+          "input": "v = Column((1, 1))",
+          "observe": [
+            "v"
+          ],
+          "cells": { "AA7": "3" },
+          "outputs": {
+            "c": { "type": "number", "defined": true, "value": 27.0 },
+            "r": { "type": "number", "defined": true, "value": 7.0 },
+            "t": { "type": "text", "defined": true, "text": "AA" },
+            "u": { "type": "number", "defined": false },
+            "v": { "type": "number", "defined": false }
+          }
+        },
+        {
+          "action": "command",
+          "input": "w = ColumnName((1, 1))",
+          "observe": [
+            "w"
+          ],
+          "cells": { "AA7": "3" },
+          "outputs": {
+            "c": { "type": "number", "defined": true, "value": 27.0 },
+            "r": { "type": "number", "defined": true, "value": 7.0 },
+            "t": { "type": "text", "defined": true, "text": "AA" },
+            "u": { "type": "number", "defined": false },
+            "v": { "type": "number", "defined": false },
+            "w": { "type": "text", "defined": false }
+          }
+        }
+      ]
+    }
+  ]
+}

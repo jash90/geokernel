@@ -2647,3 +2647,15 @@ fn selecting_polygon_outputs_charges_entries_and_outputs() {
     );
     assert_eq!(left, 0);
 }
+
+#[test]
+fn moved_spreadsheet_point_round_trips_through_the_archive() {
+    let mut wb = Workbench::default();
+    let a1 = geo_kernel::spreadsheet::Address::parse("A1").unwrap();
+    wb.edit_spreadsheet_cell(a1, "=(1,2)").unwrap();
+    let id = wb.construction().id("A1").unwrap();
+    assert!(wb.move_point(id, 3.0, 4.0));
+    let bytes = wb.export_ggb(None).unwrap();
+    wb.load_bytes(&bytes, "Spreadsheet").unwrap();
+    assert_eq!(wb.spreadsheet_display(a1), "(3, 4)");
+}

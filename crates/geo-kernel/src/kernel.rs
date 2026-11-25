@@ -1108,6 +1108,9 @@ pub struct Construction {
     /// when the construction is rebuilt by a redefinition.
     intersection_swaps: BTreeSet<(Id, Id)>,
     by_label: HashMap<String, Id>,
+    spreadsheet_slots: BTreeMap<crate::spreadsheet::Address, Id>,
+    blank_cells: BTreeSet<Id>,
+    cell_inputs: HashMap<Id, String>,
     replacement_target: Option<Id>,
     optimizers: Vec<Id>,
     /// The optimizer updating the rest of the construction after its search.
@@ -1473,6 +1476,21 @@ impl Default for DrawingStyle {
     }
 }
 
+fn redefinable(def: Def) -> bool {
+    matches!(
+        def,
+        Def::Number(_)
+            | Def::Boolean(_)
+            | Def::Angle(_)
+            | Def::FreePoint { .. }
+            | Def::Vector(VectorDef::Free { .. })
+            | Def::Expr(_)
+            | Def::Measure(MeasureDef::Slope(_))
+            | Def::Path(PathDef::On { .. } | PathDef::OnParam { .. })
+            | Def::Point(PointDef::Closest { .. })
+    )
+}
+
 impl Construction {
     pub fn new() -> Self {
         Self::default()
@@ -1505,6 +1523,102 @@ impl Construction {
             .get(label)
             .copied()
             .or_else(|| axis::lookup(label))
+    }
+
+    pub(crate) fn spreadsheet_slots(
+        &self,
+    ) -> impl Iterator<Item = (crate::spreadsheet::Address, Id)> + '_ {
+        self.spreadsheet_slots
+            .iter()
+            .map(|(&address, &id)| (address, id))
+    }
+
+    pub(crate) fn spreadsheet_slot(&self, address: crate::spreadsheet::Address) -> Option<Id> {
+        self.spreadsheet_slots
+            .get(&address)
+            .copied()
+            .filter(|id| Some(*id) != self.replacement_target)
+    }
+
+    pub fn is_blank_cell(&self, id: Id) -> bool {
+        self.blank_cells.contains(&id)
+    }
+
+    pub fn spreadsheet_editor_input(&self, id: Id) -> Option<&str> {
+        self.cell_inputs.get(&id).map(String::as_str)
+    }
+
+    pub(crate) fn remember_cell_input(&mut self, id: Id, input: &str) {
+        self.cell_inputs.insert(id, input.to_owned());
+    }
+
+    pub(crate) fn add_blank_cell(&mut self, label: &str) -> Result<(), String> {
+        let id = self
+            .add(label, Def::Number(0.0))
+            .map_err(|error| error.to_string())?;
+        self.blank_cells.insert(id);
+        self.request_hidden(id);
+        Ok(())
+    }
+
+    pub(crate) fn write_spreadsheet_cell(
+        &mut self,
+        label: &str,
+        blank: bool,
+        define: impl FnOnce(&mut Self) -> Result<Option<Id>, String>,
+    ) -> Result<Option<Id>, String> {
+        let Some(id) = self.id(label) else {
+            return define(self);
+        };
+        let was_blank = self.blank_cells.remove(&id);
+        if blank {
+            self.blank_cells.insert(id);
+        }
+        let result = self.redefine(id, define);
+        if result.is_ok() {
+            self.cell_inputs.remove(&id);
+        } else {
+            if was_blank {
+                self.blank_cells.insert(id);
+            } else {
+                self.blank_cells.remove(&id);
+            }
+        }
+        result
+    }
+
+    pub(crate) fn clear_spreadsheet_cell(&mut self, label: &str) -> Result<(), String> {
+        if self.id(label).is_some_and(|id| !self.is_blank_cell(id)) {
+            self.write_spreadsheet_cell(label, true, |c| {
+                expr::define(c, label, "?", false).map(Some)
+            })?;
+        }
+        Ok(())
+    }
+
+    fn is_flexible_cell_dependency(&self, child: Id, parent: Id) -> bool {
+        matches!(self.def(child), Def::Expr(def) if expr::flexible_cell_dependency(self, def, parent))
+    }
+
+    pub(crate) fn check_spreadsheet_replacement(&self, old: Id, new: Id) -> Result<(), String> {
+        let refuse = |reason| format!("object `{}` already exists: {reason}", self.label(old));
+        let (before, after) = (self.def(old), self.def(new));
+        let same_line = before == after && matches!(before, Def::Line(..));
+        let loses_slider = (self.slider_interval(old).is_some()
+            || self.saved_slider_bounds.contains_key(&old))
+            && self.slider_interval(new).is_none()
+            && !self.saved_slider_bounds.contains_key(&new);
+        if loses_slider || !(same_line || redefinable(before) && redefinable(after)) {
+            return Err(refuse("this definition cannot be replaced in place"));
+        }
+        if self.kind(old) != self.kind(new)
+            && self
+                .children(old)
+                .any(|child| !self.is_flexible_cell_dependency(child, old))
+        {
+            return Err(refuse("a dependent object requires the original cell kind"));
+        }
+        Ok(())
     }
 
     pub(crate) fn resolve_label(&self, label: &str) -> Option<Id> {
@@ -1915,6 +2029,22 @@ impl Construction {
         self.children(id)
     }
 
+    /// Whether a graph edge only updates a spreadsheet lookup or range.
+    /// The deletion traversal also pays for inspecting the formula.
+    pub fn spreadsheet_watch_only(
+        &self,
+        child: Id,
+        parent: Id,
+        remaining: &mut usize,
+    ) -> Result<bool, String> {
+        match self.def(child) {
+            Def::Expr(def) if crate::spreadsheet::Address::parse(self.label(parent)).is_some() => {
+                expr::spreadsheet_watch_only(self, def, parent, remaining)
+            }
+            _ => Ok(false),
+        }
+    }
+
     /// Checks a definition and computes the value it would have if it were
     /// added now, without adding it.
     pub(crate) fn evaluate(&self, def: Def) -> Result<Value, Error> {
@@ -2134,6 +2264,13 @@ impl Construction {
             }
             if let Some(label) = self.labels.pop() {
                 self.by_label.remove(&label);
+                if let Some(address) = crate::spreadsheet::Address::parse(&label) {
+                    if self.spreadsheet_slots.get(&address) == Some(&Id(self.defs.len())) {
+                        self.spreadsheet_slots.remove(&address);
+                    }
+                }
+                self.blank_cells.remove(&Id(self.defs.len()));
+                self.cell_inputs.remove(&Id(self.defs.len()));
                 self.object_scripts.remove(&label);
             }
         }
@@ -2407,20 +2544,6 @@ impl Construction {
     ) -> Result<Option<Id>, String> {
         let label = self.label(id).to_owned();
         let refuse = |reason| format!("object `{label}` already exists: {reason}");
-        let supported = |def| {
-            matches!(
-                def,
-                Def::Number(_)
-                    | Def::Boolean(_)
-                    | Def::Angle(_)
-                    | Def::FreePoint { .. }
-                    | Def::Vector(VectorDef::Free { .. })
-                    | Def::Expr(_)
-                    | Def::Measure(MeasureDef::Slope(_))
-                    | Def::Path(PathDef::On { .. } | PathDef::OnParam { .. })
-                    | Def::Point(PointDef::Closest { .. })
-            )
-        };
         let old = self.def(id);
         let locus_inputs = self.locus_order_inputs().map_err(refuse)?;
         let dependents = self
@@ -2464,7 +2587,7 @@ impl Construction {
             let old_bounds = self.saved_slider_bounds.get(&id).copied();
             let def = self.defs[new.0];
             let same_line = matches!(old, Def::Line(..)) && old == def;
-            if (!supported(old) && !same_line)
+            if (!redefinable(old) && !same_line)
                 || ((self.slider_interval(id).is_some() || old_bounds.is_some())
                     && new_bounds.is_none())
             {
@@ -2479,10 +2602,14 @@ impl Construction {
             {
                 return Err(refuse("a replacement must have one visible output"));
             }
-            if !supported(def) && !same_line {
+            if !redefinable(def) && !same_line {
                 return Err(refuse("this replacement cannot be installed in place"));
             }
-            if def.kind() != old.kind() && !self.children[id.0].is_empty() {
+            if def.kind() != old.kind()
+                && self
+                    .children(id)
+                    .any(|child| !self.is_flexible_cell_dependency(child, id))
+            {
                 return Err(refuse("a dependent object requires the original kind"));
             }
             let mut remaining = MAX_REDEFINITION_EDGES;
@@ -3080,6 +3207,11 @@ impl Construction {
         }
         let old = std::mem::replace(&mut self.labels[id.0], freed.clone());
         self.by_label.remove(&old);
+        if let Some(address) = crate::spreadsheet::Address::parse(&old) {
+            self.spreadsheet_slots.remove(&address);
+        }
+        self.blank_cells.remove(&id);
+        self.cell_inputs.remove(&id);
         self.object_scripts.remove(&old);
         self.by_label.insert(freed, id);
         // a freed label lies below the start of its family's search
@@ -3301,6 +3433,9 @@ impl Construction {
             }
         }
         self.by_label.insert(label.to_string(), id);
+        if let Some(address) = crate::spreadsheet::Address::parse(label) {
+            self.spreadsheet_slots.entry(address).or_insert(id);
+        }
         let element = if let Some(owner) = owner {
             self.output_entry(owner)
         } else if label.starts_with('\0')
@@ -3576,6 +3711,7 @@ impl Construction {
             return Ok(0);
         }
         self.construction_sources.remove(&id);
+        self.cell_inputs.remove(&id);
         self.defs[id.0] = def;
         self.values[id.0] = self.store_point_coordinates(id.0, new);
         Ok(self.propagate(id))
@@ -3610,6 +3746,7 @@ impl Construction {
                 continue;
             }
             self.construction_sources.remove(&id);
+            self.cell_inputs.remove(&id);
             self.defs[id.0] = Def::FreePoint { x, y };
             self.values[id.0] = self.store_point_coordinates(id.0, Value::Point { x, y });
             first = first.min(self.evaluation_rank(id));
@@ -3638,6 +3775,7 @@ impl Construction {
         if new.same(&self.paths[slot].1) {
             return Ok(0);
         }
+        self.cell_inputs.remove(&id);
         self.paths[slot].1 = new;
         self.values[id.0] = PathDef::value(&new);
         Ok(self.propagate(id))
@@ -3717,6 +3855,7 @@ impl Construction {
         // which changes what reads it even when the value stays.
         let had_decimal = expr::forget_decimal(self, id);
         let had_source = self.construction_sources.remove(&id).is_some();
+        self.cell_inputs.remove(&id);
         // Bit equality: `0` to `-0` is a change (`1/a` flips its sign).
         let old = match def {
             Def::Number(old)

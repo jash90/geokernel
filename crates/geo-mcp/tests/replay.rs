@@ -1296,3 +1296,135 @@ fn replays_recorded_cas_view_interactions() {
     }
     assert_eq!(count, 6);
 }
+
+#[test]
+fn replays_recorded_spreadsheet_interactions() {
+    use geo_app::headless::{self, egui, Headless, Profile};
+    use geo_app::Workbench;
+    use geo_kernel::spreadsheet::Address;
+    use std::collections::BTreeMap;
+
+    let fixture: BTreeMap<String, String> =
+        serde_json::from_str(include_str!("fixtures/spreadsheet_scenarios.json")).unwrap();
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../golden/spreadsheet");
+    let dt = headless::DT;
+    let locate = |window: &Headless, label: &str| {
+        window
+            .widgets()
+            .into_iter()
+            .find(|w| w.visible && w.label == label)
+            .unwrap_or_else(|| panic!("no visible {label}"))
+            .rect
+            .center()
+    };
+    let click = |window: &mut Headless, label: &str| {
+        let point = locate(window, label);
+        window.frame(
+            dt,
+            vec![
+                egui::Event::PointerMoved(point),
+                headless::press(point, egui::PointerButton::Primary, true),
+            ],
+        );
+        window.frame(
+            dt,
+            vec![headless::press(point, egui::PointerButton::Primary, false)],
+        );
+        window.frame(dt, Vec::new());
+    };
+    let key = |window: &mut Headless, key, modifiers| {
+        window.frame(dt, vec![headless::key(key, true, modifiers)]);
+        window.frame(dt, vec![headless::key(key, false, modifiers)]);
+    };
+    let replace = |window: &mut Headless, text: &str| {
+        key(window, egui::Key::A, egui::Modifiers::COMMAND);
+        if text.is_empty() {
+            key(window, egui::Key::Backspace, egui::Modifiers::NONE);
+        } else {
+            window.frame(dt, vec![egui::Event::Text(text.into())]);
+        }
+        key(window, egui::Key::Enter, egui::Modifiers::NONE);
+    };
+
+    for (scenario, id) in &fixture {
+        let topic = id
+            .strip_prefix("spreadsheet-")
+            .unwrap()
+            .strip_suffix("-001")
+            .unwrap();
+        let data: Value =
+            serde_json::from_slice(&std::fs::read(root.join(format!("{topic}.json"))).unwrap())
+                .unwrap();
+        let case = &data["cases"][0];
+        assert_eq!(case["id"], id.as_str());
+        let mut window = Headless::new(
+            Workbench::default(),
+            None,
+            Profile::Desktop,
+            (1400.0, 850.0),
+            1.0,
+        );
+        window.frame(dt, Vec::new());
+        click(&mut window, "Menu");
+        click(&mut window, "Arkusz kalkulacyjny");
+        for step in case["spreadsheet"].as_array().unwrap() {
+            match step["action"].as_str().unwrap() {
+                "edit" => {
+                    let label = step["cell"].as_str().unwrap();
+                    click(&mut window, label);
+                    replace(&mut window, step["input"].as_str().unwrap());
+                    let source = Address::parse(label).unwrap();
+                    let selected = window.app.spreadsheet_editor.as_ref().unwrap().selected;
+                    assert_eq!(selected.row, source.row + 1, "{scenario}: Enter");
+                    assert_eq!(selected.column, source.column, "{scenario}: Enter");
+                    click(&mut window, label);
+                    if let Some(value) = step["cells"][label].as_str() {
+                        assert_eq!(
+                            window.accessible_value(label),
+                            Some(value),
+                            "{scenario}: {label}"
+                        );
+                    }
+                }
+                "command" => {
+                    let source = step["input"].as_str().unwrap();
+                    if geo_kernel::spreadsheet::is_fill_line(source) {
+                        click(&mut window, "A1");
+                        replace(&mut window, &format!("={source}"));
+                    } else {
+                        window.app.wb.run_line(source).unwrap();
+                        window.frame(dt, Vec::new());
+                    }
+                }
+                "undo" => click(&mut window, "Cofnij"),
+                "redo" => click(&mut window, "Ponów"),
+                "drag" => {
+                    click(&mut window, step["cell"].as_str().unwrap());
+                    let from = locate(&window, "Wypełnij zakres");
+                    let to = locate(&window, step["target"].as_str().unwrap());
+                    window.frame(
+                        dt,
+                        vec![
+                            egui::Event::PointerMoved(from),
+                            headless::press(from, egui::PointerButton::Primary, true),
+                        ],
+                    );
+                    window.frame(dt, vec![egui::Event::PointerMoved(to)]);
+                    window.frame(
+                        dt,
+                        vec![headless::press(to, egui::PointerButton::Primary, false)],
+                    );
+                    window.frame(dt, Vec::new());
+                }
+                action => panic!("unexpected spreadsheet action {action}"),
+            }
+            let c = window.app.wb.construction();
+            let actual: BTreeMap<_, _> = c
+                .spreadsheet_cells()
+                .map(|(address, _)| (address.label(), c.spreadsheet_display(address)))
+                .collect();
+            assert_eq!(json!(actual), step["cells"], "{scenario}: {step}");
+        }
+    }
+    assert_eq!(fixture.len(), 6);
+}

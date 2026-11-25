@@ -25,6 +25,7 @@ pub(crate) enum Tok {
     RBrace,
     Comma,
     Semicolon,
+    Colon,
     Range,
     Plus,
     Minus,
@@ -141,6 +142,19 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
                 end,
             });
             continue;
+        } else if let Some(end) = absolute_cell_end(src, start) {
+            while chars.peek().is_some_and(|&(i, _)| i < end) {
+                chars.next();
+            }
+            out.push(Token {
+                tok: Tok::Name {
+                    text: src[start..end].to_owned(),
+                    call: false,
+                },
+                start,
+                end,
+            });
+            continue;
         } else if is_name_char(ch) && !ch.is_numeric() || matches!(ch, '_' | '\0') {
             let mut end = start;
             while let Some(&(i, c)) = chars.peek() {
@@ -198,6 +212,7 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
                 '}' => Tok::RBrace,
                 ',' => Tok::Comma,
                 ';' => Tok::Semicolon,
+                ':' => Tok::Colon,
                 '+' => Tok::Plus,
                 // `MINUS`: hyphen, en dash, minus sign
                 '-' | '\u{2013}' | '\u{2212}' => Tok::Minus,
@@ -352,6 +367,20 @@ pub(crate) fn is_name_char(c: char) -> bool {
 /// The value of a literal that [`number_end`] delimited. GeoGebra's lexer
 /// takes `–` and `−` as the sign of an exponent, but converting such a
 /// literal fails ("Not a digit"), so the line is an error there too.
+fn absolute_cell_end(src: &str, start: usize) -> Option<usize> {
+    let tail = &src[start..];
+    if !tail.starts_with(|ch: char| ch == '$' || ch.is_ascii_uppercase()) {
+        return None;
+    }
+    let end = tail
+        .bytes()
+        .take_while(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || *b == b'$')
+        .count();
+    let candidate = &tail[..end];
+    (candidate.contains('$') && crate::spreadsheet::Address::parse(candidate).is_some())
+        .then_some(start + end)
+}
+
 fn literal_value(text: &str) -> Result<f64, String> {
     if !text.contains(['\u{2013}', '\u{2212}']) {
         if let Ok(v) = text.parse::<f64>() {

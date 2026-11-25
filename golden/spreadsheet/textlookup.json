@@ -1,0 +1,47 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-textlookup-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "value",
+          "cells": { "B2": "value" },
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "t = Cell(2, 2)",
+          "observe": [
+            "t"
+          ],
+          "cells": { "B2": "value" },
+          "outputs": {
+            "t": { "type": "text", "defined": true, "text": "value" }
+          }
+        },
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "other",
+          "cells": { "B2": "other" },
+          "outputs": {
+            "t": { "type": "text", "defined": true, "text": "other" }
+          }
+        }
+      ]
+    }
+  ]
+}

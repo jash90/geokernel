@@ -1,0 +1,62 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-rangefillnamedlist-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "C1",
+          "input": "2",
+          "cells": { "C1": "2" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "D1",
+          "input": "hello",
+          "cells": { "C1": "2", "D1": "hello" },
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "l = {{C1,D1}}",
+          "observe": [],
+          "cells": { "C1": "2", "D1": "hello" },
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "FillCells(A1:B2,l)",
+          "observe": [],
+          "cells": { "A1": "2", "A2": "2", "B1": "hello", "B2": "hello", "C1": "2", "D1": "hello" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "C1",
+          "input": "9",
+          "cells": { "A1": "9", "A2": "9", "B1": "hello", "B2": "hello", "C1": "9", "D1": "hello" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "D1",
+          "input": "world",
+          "cells": { "A1": "9", "A2": "9", "B1": "world", "B2": "world", "C1": "9", "D1": "world" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

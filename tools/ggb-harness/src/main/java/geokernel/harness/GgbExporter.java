@@ -80,6 +80,11 @@ public final class GgbExporter {
                 if (input.get("casview") instanceof List<?> actions) {
                     session.casView(actions);
                 }
+                if (input.get("spreadsheet") instanceof List<?> actions) {
+                    session.spreadsheet(actions);
+                    session.kernel().getApplication().getSettings().getSpreadsheet()
+                            .setDimensions(36, 18);
+                }
             } catch (RuntimeException e) {
                 throw new IllegalStateException("case " + id + " failed: " + e.getMessage(), e);
             }

@@ -1,0 +1,48 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-fillformuladestination-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "2",
+          "cells": { "B1": "2" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "3",
+          "cells": { "B1": "2", "B2": "3" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "=Sum(B1:B2)",
+          "cells": { "A1": "5", "B1": "2", "B2": "3" },
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "FillCells(A1,{7,8})",
+          "observe": [],
+          "cells": { "A1": "7", "B1": "8", "B2": "3" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

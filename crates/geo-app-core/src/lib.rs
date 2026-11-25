@@ -28,6 +28,7 @@ pub mod palette;
 pub mod scriptlog;
 pub mod shape;
 pub mod snap;
+pub mod spreadsheet;
 pub mod style;
 pub mod text;
 pub mod ticks;

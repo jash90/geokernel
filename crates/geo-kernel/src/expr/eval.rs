@@ -1093,6 +1093,9 @@ impl<const M: bool> Ctx<'_, M> {
                 _ => f64::NAN,
             })),
             Node::Obj(id) => object_ex(self.c, id),
+            Node::CellLookup(column, row, kind) => self
+                .cell_lookup(column, row, kind)
+                .map_or_else(|| Ex::plain(Val::N(f64::NAN)), |id| object_ex(self.c, id)),
             Node::Cmd(def, hint) => Ex {
                 obj: true,
                 ..Ex::plain(with_command_budget(self.meter, || {
@@ -1230,6 +1233,9 @@ impl<const M: bool> Ctx<'_, M> {
             // a list is only read through `list`
             Node::FnName(_)
             | Node::List(..)
+            | Node::CellRange(..)
+            | Node::CellItem(..)
+            | Node::CellWatch(..)
             | Node::ItemObject(_)
             | Node::Range(..)
             | Node::Seq(..) => Ex::plain(N(f64::NAN)),
@@ -1693,6 +1699,29 @@ impl<const M: bool> Ctx<'_, M> {
         }
     }
 
+    pub(super) fn cell_lookup(&self, column: u32, row: u32, kind: Kind) -> Option<Id> {
+        let address = crate::spreadsheet::Address::from_numbers(
+            self.full_number(column),
+            self.full_number(row),
+        )?;
+        self.c
+            .spreadsheet_cell(address)
+            .filter(|&id| self.c.kind(id) == kind)
+    }
+
+    fn object_element(&self, id: Id) -> Option<Slot> {
+        if self.c.kind(id) == Kind::List {
+            let (start, len) = self.object_list(id)?;
+            Some(Slot::list(start, len))
+        } else if let Some(text) = self.c.text(id) {
+            self.lists?
+                .charge(text.len() as u64)
+                .then(|| Slot::text(text, Some(id)))
+        } else {
+            Some(Slot::object(self.c, id))
+        }
+    }
+
     fn list_node(&self, i: u32, node: Node) -> Option<(u32, u32)> {
         let lists = self.lists?;
         match node {
@@ -1712,6 +1741,27 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Item(a) => self.list(a),
             Node::Local(depth, Elem::List) => self.local(depth)?.run,
             Node::Obj(id) => self.object_list(id),
+            Node::CellLookup(column, row, kind) => {
+                self.object_list(self.cell_lookup(column, row, kind)?)
+            }
+            Node::CellRange(first, len, _) => {
+                if !lists.charge(u64::from(len)) {
+                    return None;
+                }
+                let cells = (first..first + len).filter_map(|item| {
+                    let Node::CellItem(id) = self.node(item) else {
+                        return None;
+                    };
+                    (!self.c.is_blank_cell(id)).then_some(id)
+                });
+                let count = cells.clone().count() as u32;
+                let start = lists.reserve(count)?;
+                for (offset, id) in cells.enumerate() {
+                    let slot = self.object_element(id)?;
+                    lists.set(start + offset as u32, slot);
+                }
+                Some((start, count))
+            }
             Node::Bin(op, a, b) => self.list_binary(op, a, b),
             Node::Un(op, a) => self.list_unary(op, a),
             Node::RootList(a) => self.root_list(a),

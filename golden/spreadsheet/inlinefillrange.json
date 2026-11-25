@@ -1,0 +1,27 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-inlinefillrange-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "FillCells(CellRange(A1,B2),{4})",
+          "observe": [],
+          "cells": { "A1": "4", "A2": "4", "B1": "4", "B2": "4" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

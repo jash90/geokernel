@@ -22,8 +22,14 @@ fn open(app: &mut App, ctx: &egui::Context, path: &Path) {
         Ok(()) => {
             app.load_error = None;
             app.show_cas = app.wb.cas_visible_on_open();
+            app.show_spreadsheet = app
+                .wb
+                .spreadsheet_view()
+                .and_then(|view| view.visible)
+                .unwrap_or(false);
             app.save_error = None;
             app.cancel_cas_edit();
+            app.spreadsheet_editor = None;
             app.input_box_edit = None;
             app.input_box_rects.clear();
             ctx.memory_mut(|memory| {
@@ -85,6 +91,7 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
     if typing {
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
             app.cancel_cas_edit();
+            app.cancel_spreadsheet_edit();
             app.input.clear();
             app.input_error = None;
             app.keyboard.open = false;
@@ -190,7 +197,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
     }
     region(app, ui, regions.algebra.egui(), "algebra", |app, ui| {
-        if app.show_cas {
+        if app.show_spreadsheet {
+            crate::spreadsheet::show(app, ui);
+        } else if app.show_cas {
             crate::cas::show(app, ui);
         } else {
             algebra::show(app, ui);
@@ -308,7 +317,14 @@ fn save_to(app: &App, path: &Path) -> Result<(), String> {
     });
     let bytes = app
         .wb
-        .export_ggb_with_cas_visibility(view, app.show_cas)
+        .export_ggb_with_spreadsheet(
+            view,
+            app.show_cas,
+            app.show_spreadsheet,
+            app.spreadsheet_editor
+                .as_ref()
+                .map(|editor| editor.selected),
+        )
         .map_err(|e| e.to_string())?;
     let mut file = std::fs::OpenOptions::new()
         .write(true)

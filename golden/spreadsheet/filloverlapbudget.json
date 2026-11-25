@@ -1,0 +1,27 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-filloverlapbudget-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "FillCells(B1:B2,Sum(C1:C600))",
+          "observe": [],
+          "cells": { "B1": "0", "B2": "0" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

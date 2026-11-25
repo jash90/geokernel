@@ -1,0 +1,55 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-files-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "1.250",
+          "cells": { "A1": "1.25" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=$A$1 * 2",
+          "cells": { "A1": "1.25", "B1": "2.5" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "Total",
+          "cells": { "A1": "1.25", "A2": "Total", "B1": "2.5" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "=0/0",
+          "cells": { "A1": "1.25", "A2": "Total", "B1": "2.5", "B2": "?" },
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "FillCells(A3:B3, {3,4})",
+          "observe": [],
+          "cells": { "A1": "1.25", "A2": "Total", "A3": "3", "B1": "2.5", "B2": "?", "B3": "4" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

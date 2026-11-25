@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0" version="5.4.936.0" app="classic" platform="a" xsi:noNamespaceSchemaLocation="https://www.geogebra.org/apps/xsd/ggb.xsd" xmlns="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<gui>
+	<window width="800" height="600"/>
+	<labelingStyle val="3"/>
+	<font size="12"/>
+</gui>
+<euclidianView>
+	<viewNumber viewNo="1"/>
+	<size width="800" height="600"/>
+	<coordSystem xZero="215" yZero="315" scale="50" yscale="50"/>
+	<evSettings axes="true" grid="false" gridIsBold="false" pointCapturing="3" rightAngleStyle="1" checkboxSize="26" gridType="3"/>
+	<bgColor r="255" g="255" b="255"/>
+	<axesColor r="28" g="28" b="31"/>
+	<gridColor r="180" g="179" b="186"/>
+	<lineStyle axes="1" grid="0"/>
+	<axis id="0" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+	<axis id="1" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+</euclidianView>
+<spreadsheetView>
+	<dimensions rows="36" columns="18"/>
+</spreadsheetView>
+<algebraView>
+	<mode val="1"/>
+</algebraView>
+<kernel>
+	<continuous val="false"/>
+	<usePathAndRegionParameters val="true"/>
+	<decimals val="2"/>
+	<angleUnit val="degree"/>
+	<algebraStyle val="0" spreadsheet="0"/>
+	<coordStyle val="0"/>
+</kernel>
+<tableview min="0" max="0" step="0"/>
+<scripting blocked="false" disabled="false"/>
+<construction title="" author="" date="">
+<expression label="P" exp="(1, 1)" type="point"/>
+<element type="point" label="P">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="1" y="1" z="1"/>
+</element>
+<expression label="Q" exp="(4, 4)" type="point"/>
+<element type="point" label="Q">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="4" y="4" z="1"/>
+</element>
+<command name="Segment">
+	<input a0="P" a1="Q"/>
+	<output a0="s"/>
+</command>
+<element type="segment" label="s">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="-3" y="3" z="0"/>
+</element>
+<command name="Point">
+	<input a0="s"/>
+	<output a0="U"/>
+</command>
+<element type="point" label="U">
+	<show object="true" label="true"/>
+	<objColor r="125" g="125" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="1" y="1" z="1"/>
+</element>
+<expression label="V" exp="(x(U), y(U) + 1)" type="point"/>
+<element type="point" label="V">
+	<show object="true" label="true"/>
+	<objColor r="110" g="109" b="115" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="4"/>
+	<pointStyle val="0"/>
+	<coords x="1" y="2" z="1"/>
+</element>
+<command name="Locus">
+	<input a0="V" a1="U"/>
+	<output a0="l"/>
+</command>
+<element type="locus" label="l">
+	<show object="true" label="false" ev="4"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+</element>
+<expression label="E1" exp="1"/>
+<element type="numeric" label="E1">
+	<value val="1"/>
+	<show object="false" label="true"/>
+	<auxiliary val="true"/>
+</element>
+<expression label="F1" exp="2"/>
+<element type="numeric" label="F1">
+	<value val="2"/>
+	<show object="false" label="true"/>
+	<auxiliary val="true"/>
+</element>
+<expression label="E2" exp="1.02"/>
+<element type="numeric" label="E2">
+	<value val="1.02"/>
+	<show object="false" label="true"/>
+	<auxiliary val="true"/>
+</element>
+<expression label="F2" exp="2.02"/>
+<element type="numeric" label="F2">
+	<value val="2.02"/>
+	<show object="false" label="true"/>
+	<auxiliary val="true"/>
+</element>
+</construction>
+</geogebra>

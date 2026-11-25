@@ -26,6 +26,10 @@ pub enum Property {
         style: DrawingStyle,
     },
     NumberRounding(NumberRounding),
+    CellInput {
+        label: String,
+        input: String,
+    },
     SliderLabel {
         label: String,
         presentation: SliderLabel,
@@ -76,6 +80,7 @@ impl Property {
             Self::DrawingStyle { label, .. }
             | Self::ClosestCircleAngle { label, .. }
             | Self::RegularVertex { label, .. }
+            | Self::CellInput { label, .. }
             | Self::SliderBounds { label, .. }
             | Self::SliderLabel { label, .. }
             | Self::SliderStyle { label, .. }
@@ -110,6 +115,18 @@ impl Property {
             Self::ImageAsset { name, asset } => c.register_image_asset(name.clone(), asset.clone()),
             Self::DrawingStyle { label, style } => {
                 c.set_drawing_style(object(c, label)?, *style);
+                Ok(())
+            }
+            Self::CellInput { label, input } => {
+                use crate::spreadsheet::{Address, LIMIT, MAX_INPUT_BYTES};
+                if input.len() > MAX_INPUT_BYTES {
+                    return Err(LIMIT.into());
+                }
+                let address = Address::parse(label).ok_or("invalid cell address")?;
+                let id = c
+                    .spreadsheet_cell(address)
+                    .ok_or("missing spreadsheet cell")?;
+                c.remember_cell_input(id, input);
                 Ok(())
             }
             Self::NumberRounding(rounding) => {
@@ -242,6 +259,9 @@ impl fmt::Display for Property {
                     f.write_str(", outline")?;
                 }
                 f.write_str(")")
+            }
+            Self::CellInput { label, input } => {
+                write!(f, "$cellInput({label}, {})", encode_text(input))
             }
             Self::NumberRounding(rounding) => {
                 let (mode, digits) = match rounding {
@@ -390,6 +410,7 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
         && !line.starts_with("$inputBoxStyle(")
         && !line.starts_with("$objectScripts(")
         && !line.starts_with("$drawingStyle(")
+        && !line.starts_with("$cellInput(")
         && !line.starts_with("$closestCircleAngle(")
         && !line.starts_with("$regularVertex(")
     {
@@ -398,6 +419,15 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
     Some((|| {
         let (form, args) = split_call(line).ok_or("invalid saved property")?;
         match (form, args.as_slice()) {
+            ("$cellInput", [label, input]) => {
+                if input.len() > 2 * crate::spreadsheet::MAX_INPUT_BYTES + 1 {
+                    return Err(crate::spreadsheet::LIMIT.into());
+                }
+                Ok(Property::CellInput {
+                    label: (*label).to_owned(),
+                    input: decode_text(input)?,
+                })
+            }
             ("$drawingStyle", [label, layer, shown, thickness, rest @ ..])
                 if rest.is_empty() || rest == ["outline"] =>
             {

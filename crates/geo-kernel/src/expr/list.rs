@@ -562,6 +562,12 @@ impl<'a> List<'a> {
         self.len == 0
     }
 
+    /// Whether this list is a rectangular matrix of scalar objects.
+    pub fn is_matrix(&self) -> bool {
+        use crate::algo::vector::matrix;
+        matrix::dimensions(*self, matrix::budget()).is_some()
+    }
+
     /// The element at `k`, from 0.
     pub fn get(&self, k: usize) -> Option<Element<'a>> {
         if k >= self.len() {

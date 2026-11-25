@@ -1,0 +1,27 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-fillrow-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "FillRow(4, {1, 2, 3, 4, 5})",
+          "observe": [],
+          "cells": { "A4": "1", "B4": "2", "C4": "3", "D4": "4", "E4": "5" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

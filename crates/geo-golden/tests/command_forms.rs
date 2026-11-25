@@ -76,10 +76,23 @@ fn harness_cases() -> BTreeMap<String, Case> {
 }
 
 fn kinds_of(case: &Case) -> BTreeMap<String, Kind> {
-    case.snapshots[0]
+    let mut kinds: BTreeMap<_, _> = case.snapshots[0]
         .iter()
         .map(|(l, e)| (l.clone(), e.kind))
-        .collect()
+        .collect();
+    for step in case.spreadsheet.iter().flatten() {
+        kinds.extend(
+            step.outputs
+                .iter()
+                .map(|(label, value)| (label.clone(), value.kind)),
+        );
+        if let Some((label, rhs)) = step.input.as_deref().and_then(|line| line.split_once('=')) {
+            if rhs.trim_start().starts_with("Locus(") {
+                kinds.insert(label.trim().to_owned(), Kind::Locus);
+            }
+        }
+    }
+    kinds
 }
 
 /// A form can occur in the script or in later assignments and rejections.
@@ -117,6 +130,11 @@ fn case_lines(case: &Case, which: Lines) -> impl Iterator<Item = &String> {
                 Some(line)
             }
             _ => None,
+        }))
+        .chain(case.spreadsheet.iter().flatten().filter_map(move |step| {
+            (which == Lines::All && matches!(step.action, model::SpreadsheetAction::Command))
+                .then_some(step.input.as_ref())
+                .flatten()
         }))
 }
 

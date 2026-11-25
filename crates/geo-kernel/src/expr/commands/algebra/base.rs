@@ -21,6 +21,11 @@ impl<const M: bool> Ctx<'_, M> {
             return None;
         }
         match self.node(i) {
+            Node::CellLookup(column, row, kind) => {
+                let id = self.cell_lookup(column, row, kind)?;
+                self.c.text(id).map(Cow::Borrowed)
+            }
+
             Node::Relation { objects, count, .. } => {
                 let ids = &objects[..usize::from(count)];
                 let names = ids
