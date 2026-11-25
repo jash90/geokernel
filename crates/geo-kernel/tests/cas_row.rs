@@ -29,6 +29,18 @@ fn evaluates_recorded_exact_row_regressions() {
         ("", "Solve(x^2/x = 0)", "{}", r"\mathbf{\left\{ \right\}}"),
         (
             "",
+            "Solve(x = sqrt(4))",
+            "{x = 2}",
+            r"\mathbf{ \left\{ x = 2 \right\} }",
+        ),
+        (
+            "",
+            "Solve(x^2/x = sqrt(0))",
+            "{}",
+            r"\mathbf{\left\{ \right\}}",
+        ),
+        (
+            "",
             "Solve(y = 1)",
             "{y = 1}",
             r"\mathbf{ \left\{ y = 1 \right\} }",
