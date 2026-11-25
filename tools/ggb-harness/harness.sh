@@ -170,7 +170,7 @@ case "$cmd" in
               run_golden '!nocas'
               exit
               ;;
-            cas.json|locusequation.json|envelope.json|curvepairs.json) enable_giac ;;
+            cas.json|cascell.json|locusequation.json|envelope.json|curvepairs.json) enable_giac ;;
             prove.json) enable_giac ;;
           esac
         fi
@@ -187,6 +187,8 @@ case "$cmd" in
     sample="${1:-1}"
     zipstep="${2:-50}"
     for file in "$here"/cases/*.json; do
+      # CAS row output is recorded in golden/cascell, independently of XML.
+      if [ "${file##*/}" = cascell.json ]; then continue; fi
       (
         if [ "${GGB_HARNESS_CAS:-0}" != 1 ]; then
           case "${file##*/}" in

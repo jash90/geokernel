@@ -19,6 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 
+import org.geogebra.common.cas.view.CASCellProcessor;
 import org.geogebra.common.factories.AwtFactoryCommon;
 import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
@@ -46,6 +47,7 @@ import org.geogebra.common.kernel.algos.AlgoRoots;
 import org.geogebra.common.kernel.algos.AlgoSemicircle;
 import org.geogebra.common.kernel.algos.AlgoVertexIneq;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
+import org.geogebra.common.kernel.geos.GeoCasCell;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoConicPart;
 import org.geogebra.common.kernel.geos.GeoCurveCartesian;
@@ -170,6 +172,21 @@ final class Session {
 
     Kernel kernel() {
         return kernel;
+    }
+
+    Map<String, Object> casCell(String input) {
+        String fixed = new CASCellProcessor(app.getLocalization()).fixInputErrors(input);
+        GeoCasCell cell = new GeoCasCell(kernel.getConstruction());
+        cell.setInput(fixed);
+        cell.setProcessingInformation("", fixed, "");
+        cell.setEvalCommand("Evaluate");
+        processor.processCasCell(cell, true, app.getXML());
+
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("input", input);
+        row.put("output", cell.getOutput(StringTemplate.defaultTemplate));
+        row.put("latex", cell.getLaTeXOutput());
+        return row;
     }
 
     void setView(double[] view) {

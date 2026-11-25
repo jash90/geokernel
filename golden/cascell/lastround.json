@@ -1,0 +1,103 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cascell-lastround-001",
+      "group": "cascell",
+      "script": [
+        "a = abs(1/3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.3333333333333333 }
+        }
+      ],
+      "cascell": { "input": "3*a", "output": "1", "latex": "\\mathbf{1}" }
+    },
+    {
+      "id": "cascell-lastround-002",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Solve(1/(1/x) = 0)", "output": "{}", "latex": "\\mathbf{\\left\\{ \\right\\}}" }
+    },
+    {
+      "id": "cascell-lastround-003",
+      "group": "cascell",
+      "script": [
+        "a = -1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 }
+        }
+      ],
+      "cascell": { "input": "a!", "output": "?", "latex": "\\mathbf{?}" }
+    },
+    {
+      "id": "cascell-lastround-004",
+      "group": "cascell",
+      "script": [
+        "g: y = 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 }
+        }
+      ],
+      "cascell": { "input": "Solve(g)", "output": "{y = 1}", "latex": "\\mathbf{ \\left\\{ y = 1 \\right\\} }" }
+    },
+    {
+      "id": "cascell-lastround-006",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "0<(0<(0<(0<(0<(0<(0<(0<(0<(0<(0<(x)<1)<1)<1)<1)<1)<1)<1)<1)<1)<1)<1", "output": "false", "latex": "\\mathbf{false}" }
+    },
+    {
+      "id": "cascell-lastround-007",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "1E40000 + 1E40000", "output": "?", "latex": "\\mathbf{?}" }
+    },
+    {
+      "id": "cascell-lastround-008",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Solve(x = 1E10000)", "output": "?", "latex": "\\mathbf{?}" }
+    }
+  ]
+}

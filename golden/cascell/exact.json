@@ -1,0 +1,155 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cascell-exact-001",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "sqrt(2) + sqrt(3)", "output": "sqrt(2) + sqrt(3)", "latex": "\\mathbf{\\sqrt{2} + \\sqrt{3}}" }
+    },
+    {
+      "id": "cascell-exact-002",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "2/3 * 5/7", "output": "10 / 21", "latex": "\\mathbf{\\frac{10}{21}}" }
+    },
+    {
+      "id": "cascell-exact-003",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "9007199254740992 + 1", "output": "9007199254740993", "latex": "\\mathbf{9007199254740993}" }
+    },
+    {
+      "id": "cascell-exact-004",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Expand((x + 1) * (x - 1))", "output": "x² - 1", "latex": "\\mathbf{x^{2} - 1}" }
+    },
+    {
+      "id": "cascell-exact-005",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Factor(x^2 - 1)", "output": "(x + 1) (x - 1)", "latex": "\\mathbf{\\left(x + 1 \\right) \\; \\left(x - 1 \\right)}" }
+    },
+    {
+      "id": "cascell-exact-006",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "(x + 1) * (x - 1)", "output": "x² - 1", "latex": "\\mathbf{x^{2} - 1}" }
+    },
+    {
+      "id": "cascell-exact-007",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Solve(x^2 = 1)", "output": "{x = -1, x = 1}", "latex": "\\mathbf{ \\left\\{ x = -1, x = 1 \\right\\} }" }
+    },
+    {
+      "id": "cascell-exact-008",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "NextPrime(100)", "output": "101", "latex": "\\mathbf{101}" }
+    },
+    {
+      "id": "cascell-exact-009",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "1 / 0", "output": "?", "latex": "\\mathbf{?}" }
+    },
+    {
+      "id": "cascell-exact-010",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "?", "output": "?", "latex": "\\mathbf{?}" }
+    },
+    {
+      "id": "cascell-exact-011",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": " 2/3 * 5/7 = ", "output": "10 / 21", "latex": "\\mathbf{\\frac{10}{21}}" }
+    },
+    {
+      "id": "cascell-exact-012",
+      "group": "cascell",
+      "script": [
+        "g: 2x + 3y = 6"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": 3.0, "c": -6.0 }
+        }
+      ],
+      "cascell": { "input": "f(x) = 1 + Simplify(g)", "output": "(f(x) = 2x + 3y + 1, f(x) = 7)", "latex": "\\mathbf{\\left(f\\left(x \\right)\\, = \\,2 \\; x + 3 \\; y + 1,\\;f\\left(x \\right)\\, = \\,7 \\right)}" }
+    }
+  ]
+}

@@ -24,11 +24,20 @@ pub struct Case {
     pub steps: Vec<Step>,
     pub observe: Option<BTreeSet<String>>,
     pub snapshots: Vec<BTreeMap<String, Expected>>,
+    pub cascell: Option<CasCell>,
     /// Generator of the file this case came from. Filled by the loader.
     #[serde(skip)]
     pub generator: String,
     #[serde(skip)]
     schema: u32,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CasCell {
+    pub input: String,
+    pub output: String,
+    pub latex: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -1248,6 +1257,14 @@ pub fn parse_file(text: &str, source: &str) -> Result<File, String> {
 fn validate_case(case: &Case) -> Result<(), String> {
     if case.id.is_empty() {
         return Err("empty id".into());
+    }
+    if (case.group == "cascell") != case.cascell.is_some()
+        || case
+            .cascell
+            .as_ref()
+            .is_some_and(|row| row.input.trim().is_empty() || case.steps.len() != 1)
+    {
+        return Err("a cascell case needs one input and only the initial step".into());
     }
     if let Some(view) = case.view {
         let [xmin, xmax, ymin, ymax, xscale, yscale] = view;

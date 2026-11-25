@@ -382,7 +382,7 @@ pub(crate) fn plain_number(s: &str) -> Option<f64> {
 }
 
 /// The value of a superscript digit (`INDEXDIGIT`).
-fn superscript_digit(c: char) -> Option<u32> {
+pub(super) fn superscript_digit(c: char) -> Option<u32> {
     match c {
         '\u{2070}' => Some(0),
         '\u{b9}' => Some(1),
@@ -395,7 +395,7 @@ fn superscript_digit(c: char) -> Option<u32> {
 
 /// End of `POWERN` at `start`: an optional superscript minus, then
 /// superscript digits.
-fn power_end(src: &str, start: usize) -> Option<usize> {
+pub(super) fn power_end(src: &str, start: usize) -> Option<usize> {
     let rest = &src[start..];
     let sign = if rest.starts_with('\u{207b}') {
         '\u{207b}'.len_utf8()

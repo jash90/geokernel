@@ -1,6 +1,6 @@
 use super::{Poly, Quotient, Rat, Work};
 use crate::cas::factor;
-use crate::expr::{entry, free_decimal, Bin, Entry, Node, StoredExtra};
+use crate::expr::{entry, free_decimal, Bin, Entry, Node, StoredExtra, Un};
 use crate::{Construction, Def, Id, Value};
 
 pub(super) fn variables() -> [Quotient; 3] {
@@ -11,12 +11,12 @@ pub(super) fn number(value: Rat) -> Quotient {
     Quotient::polynomial(Poly::constant(value))
 }
 
-fn from_decimal(d: &crate::expr::Dec) -> Option<Rat> {
+pub(super) fn from_decimal(d: &crate::expr::Dec) -> Option<Rat> {
     let (coefficient, exp) = d.signed_coefficient()?;
     Rat::decimal(coefficient, exp)
 }
 
-fn object(c: &Construction, id: Id) -> Option<Rat> {
+pub(super) fn object(c: &Construction, id: Id) -> Option<Rat> {
     let Value::Number(value) = c.value(id) else {
         return None;
     };
@@ -45,10 +45,41 @@ pub(super) fn read(
     vars: &[Quotient; 3],
     work: &mut Work<'_>,
 ) -> Option<Quotient> {
-    read_at(c, e, i, vars, work, 0)
+    read_at::<false>(c, e, i, vars, work, 0)
 }
 
-fn read_at(
+pub(super) fn number_definition(c: &Construction, id: Id) -> Option<std::borrow::Cow<'_, Entry>> {
+    match c.def(id) {
+        Def::Expr(def) => Some(std::borrow::Cow::Borrowed(entry(c, def))),
+        Def::Number(_) => {
+            let source = c.construction_source(id)?;
+            if source.len() > super::row::MAX_INPUT_BYTES {
+                return None;
+            }
+            let parsed = crate::expr::parse::parse(c, source).ok()?;
+            if !parsed.parents.is_empty() {
+                return None;
+            }
+            Some(std::borrow::Cow::Owned(crate::expr::function_entry(
+                c, parsed,
+            )))
+        }
+        _ => None,
+    }
+}
+
+pub(super) fn row_number(c: &Construction, id: Id, work: &mut Work<'_>) -> Option<Rat> {
+    if let Some(definition) = number_definition(c, id) {
+        if let Some(value) = read_at::<true>(c, &definition, definition.root, &variables(), work, 0)
+            .and_then(|value| value.scalar())
+        {
+            return Some(value);
+        }
+    }
+    object(c, id)
+}
+
+fn read_at<const DEFINITIONS: bool>(
     c: &Construction,
     e: &Entry,
     i: u32,
@@ -63,7 +94,7 @@ fn read_at(
     if i == e.root {
         if let StoredExtra::Cas(form) = &e.extra {
             if let Some(tree) = form.tree() {
-                return read_at(c, tree, tree.root, vars, work, depth + 1);
+                return read_at::<DEFINITIONS>(c, tree, tree.root, vars, work, depth + 1);
             }
         }
         if let Some(value) = cached_function(e) {
@@ -73,11 +104,12 @@ fn read_at(
     if let Some(result) = e.graph_rewrite(i) {
         let result = result.as_ref()?;
         if let Some(tree) = result.tree() {
-            return read_at(c, tree, tree.root, vars, work, depth + 1);
+            return read_at::<DEFINITIONS>(c, tree, tree.root, vars, work, depth + 1);
         }
         return substitute(result.quotient()?, vars, work);
     }
-    let args = |index, work: &mut Work<'_>| read_at(c, e, index, vars, work, depth + 1);
+    let args =
+        |index, work: &mut Work<'_>| read_at::<DEFINITIONS>(c, e, index, vars, work, depth + 1);
     let function = |id, arguments: &[Quotient; 3], work: &mut Work<'_>| {
         let value = c.value(id);
         if !matches!(value, Value::Function | Value::FunctionNVar) {
@@ -87,7 +119,7 @@ fn read_at(
             return None;
         };
         let input = entry(c, def);
-        read_at(c, input, input.root, arguments, work, depth + 1)
+        read_at::<DEFINITIONS>(c, input, input.root, arguments, work, depth + 1)
     };
 
     match e.nodes[i as usize] {
@@ -107,7 +139,23 @@ fn read_at(
         Node::CasVariable(index) => vars.get(usize::from(index)).cloned(),
         Node::Local(index, _) => vars.get(index as usize).cloned(),
         Node::SystemFunction(arity, root) if arity <= 3 => args(root, work),
-        Node::Obj(id) => Some(number(object(c, id)?)),
+        Node::Obj(id) => {
+            if DEFINITIONS && matches!(c.value(id), Value::Number(_)) {
+                if let Some(definition) = number_definition(c, id) {
+                    if let Some(value) = read_at::<DEFINITIONS>(
+                        c,
+                        &definition,
+                        definition.root,
+                        vars,
+                        work,
+                        depth + 1,
+                    ) {
+                        return Some(value);
+                    }
+                }
+            }
+            Some(number(object(c, id)?))
+        }
         Node::FunctionObject(id) => function(id, vars, work),
         Node::Apply(id, arg) => {
             let input = [args(arg, work)?, vars[1].clone(), vars[2].clone()];
@@ -138,6 +186,10 @@ fn read_at(
                 }
                 _ => unreachable!(),
             }
+        }
+        Node::Un(Un::Abs, arg) if DEFINITIONS => {
+            let value = args(arg, work)?.scalar()?;
+            Some(number(if value.num < 0 { value.neg()? } else { value }))
         }
         Node::Cas(op, a, b) if op.is_function() => {
             let source = args(a, work)?;

@@ -65,7 +65,7 @@ public final class GoldenGenerator {
             Map<?, ?> input = (Map<?, ?>) c;
             String id = (String) input.get("id");
             String group = (String) input.get("group");
-            if (("cas".equals(group) || "curvepairs".equals(group)) && !GiacOracle.enabled()) {
+            if (("cas".equals(group) || "cascell".equals(group) || "curvepairs".equals(group)) && !GiacOracle.enabled()) {
                 throw new IllegalStateException("CAS fixtures require the native Giac oracle");
             }
             if (!ids.add(id)) {
@@ -308,9 +308,17 @@ public final class GoldenGenerator {
         }
         golden.put("steps", outSteps);
         golden.put("snapshots", snapshots);
+        String row = (String) input.get("cascell");
+        if ("cascell".equals(input.get("group")) != (row != null)
+                || row != null && (row.isBlank() || steps.size() != 1)) {
+            throw new IllegalArgumentException("a cascell case needs one input and only the initial step");
+        }
+        if (row != null) {
+            golden.put("cascell", session.casCell(row));
+        }
         if (input.size() != (4 + (boundaryGrowth ? 1 : 0) + (pointListGrowth ? 1 : 0)
                 + (rootGrowth ? 1 : 0) + (sampleCurves ? 1 : 0) + (view != null ? 1 : 0)
-                + (fileLoading ? 1 : 0) + (observe != null ? 1 : 0))) {
+                + (fileLoading ? 1 : 0) + (observe != null ? 1 : 0) + (row != null ? 1 : 0))) {
             throw new IllegalArgumentException(
                     "unexpected fields in the case input");
         }

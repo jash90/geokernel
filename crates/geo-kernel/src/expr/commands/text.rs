@@ -441,7 +441,7 @@ pub(in crate::expr) fn format_number(value: f64) -> String {
 }
 
 // StringTemplate uses its own pi and scientific notation for LaTeX.
-fn format_number_with_template(value: f64, latex: bool) -> String {
+pub(in crate::expr) fn format_number_with_template(value: f64, latex: bool) -> String {
     if value.is_nan() {
         return "?".into();
     }

@@ -21,7 +21,7 @@ impl Op {
     }
 }
 
-fn input(op: Op, argument: &str) -> Option<String> {
+pub(in crate::expr::cas) fn input(op: Op, argument: &str) -> Option<String> {
     let template = match op {
         Op::Simplify => SIMPLIFY,
         Op::Expand => EXPAND,
@@ -29,7 +29,7 @@ fn input(op: Op, argument: &str) -> Option<String> {
         Op::IFactor => IFACTOR,
         _ => return None,
     };
-    Some(fill(template, &[argument], &[]))
+    row_fill(template, &[argument])
 }
 
 /// CmdSimplify converts a line, segment or conic to a function. An
@@ -180,9 +180,9 @@ fn normalize(e: &mut Expr, parameter: &str, graph: bool) {
         Expr::Name(name) if name == parameter => *name = "x".to_owned(),
         Expr::Name(name) if graph => {
             if name == "inf" {
-                *e = Expr::Num(f64::INFINITY);
+                *e = Expr::Num(f64::INFINITY, None);
             } else if name == "?" {
-                *e = Expr::Num(f64::NAN);
+                *e = Expr::Num(f64::NAN, None);
             }
         }
         Expr::Neg(a) => normalize(a, parameter, graph),
@@ -201,7 +201,7 @@ fn normalize(e: &mut Expr, parameter: &str, graph: bool) {
 
 fn build(b: &mut crate::expr::equation::Builder, expression: &Expr) -> Option<u32> {
     let node = match expression {
-        Expr::Num(n) => Node::Num(*n),
+        Expr::Num(n, _) => Node::Num(*n),
         Expr::Name(name) => match name.as_str() {
             "x" => Node::Var,
             "y" => Node::VarY,
@@ -400,7 +400,7 @@ pub(crate) fn implicit(c: &Construction, id: crate::Id, op: Op) -> Option<(Vec<V
         expression.push(')');
     }
     let raw = evaluate_raw(&input(op, &expression)?)?;
-    let coeffs = equation_coefficients(&parse(&raw)?, &Expr::Num(0.0))?;
+    let coeffs = equation_coefficients(&parse(&raw)?, &Expr::Num(0.0, None))?;
     Some((coeffs, format!("{raw} = 0")))
 }
 
@@ -462,7 +462,7 @@ mod tests {
         );
         let result = parse("x*(x+1)*(x-1)").unwrap();
         assert_eq!(
-            equation_coefficients(&result, &Expr::Num(0.0)),
+            equation_coefficients(&result, &Expr::Num(0.0, None)),
             Some(vec![vec![0.0], vec![-1.0], vec![0.0], vec![1.0]])
         );
     }

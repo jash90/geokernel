@@ -59,6 +59,22 @@ One JSON object per file, stored under `golden/<group>/`.
 | `steps` | array of Step | The first step is always `initial`. |
 | `snapshots` | array of Snapshot | Same length as `steps`. `snapshots[i]` is the state after `steps[i]`. |
 
+### CAS rows
+
+Cases of group `cascell` use the initial script and snapshot to set up any
+construction objects that the row reads. They have exactly one step and a
+`cascell` object with three strings.
+
+| Field | Meaning |
+| --- | --- |
+| `input` | The original text entered in the CAS view. |
+| `output` | `GeoCasCell.getOutput` with the default template after Evaluate. |
+| `latex` | `GeoCasCell.getLaTeXOutput`, including its bold wrapper. |
+
+The Linux x86_64 harness uses native Giac and records both strings. The
+comparator requires exact string equality for each. Construction snapshots
+retain their usual comparison rules.
+
 ## Step
 
 | `action` | Other fields | Meaning |

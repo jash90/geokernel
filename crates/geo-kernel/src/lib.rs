@@ -16,6 +16,7 @@ pub mod base64;
 mod cas;
 pub mod equation;
 pub mod expr;
+pub use expr::CasRow;
 pub mod kernel;
 pub mod plot;
 pub mod script;

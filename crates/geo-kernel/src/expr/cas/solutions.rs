@@ -246,7 +246,7 @@ fn as_equation(terms: &[([u8; 3], f64)]) -> Option<crate::cas::Quotient> {
     Some(crate::cas::Quotient::polynomial(Poly(coefficients)))
 }
 
-fn dense_at(poly: &Poly, index: usize) -> Vec<Rat> {
+pub(super) fn dense_at(poly: &Poly, index: usize) -> Vec<Rat> {
     let len = poly
         .0
         .keys()
@@ -260,7 +260,7 @@ fn dense_at(poly: &Poly, index: usize) -> Vec<Rat> {
     dense
 }
 
-fn is_pole(root: Root, denominator: &[Rat]) -> bool {
+pub(super) fn is_pole(root: Root, denominator: &[Rat]) -> bool {
     if denominator.len() <= 1 {
         return denominator.is_empty();
     }

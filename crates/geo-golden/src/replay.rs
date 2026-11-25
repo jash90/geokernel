@@ -149,6 +149,17 @@ pub fn replay(case: &Case) -> CaseOutcome {
         }
         compare_snapshot(&mut out, &c, i, snapshot, &former);
     }
+    if let Some(row) = &case.cascell {
+        let result = c.evaluate_cas_row(&row.input);
+        for (label, expected, actual) in [
+            ("output", &row.output, result.text),
+            ("latex", &row.latex, result.latex),
+        ] {
+            if expected != &actual {
+                out.mismatches.push(failure(0, label, expected, actual));
+            }
+        }
+    }
     out
 }
 
