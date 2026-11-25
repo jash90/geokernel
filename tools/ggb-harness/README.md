@@ -177,6 +177,17 @@ value differs from the control proves the property. The test compares the result
 is stale; `GEOKERNEL_EXPORT_BLESS=1` rewrites it. A normal `cargo test` reads
 that file and derives the `export` column of `docs/kinds.csv` from it.
 
+The export test calls `export-snapshot --element-tags` for the source and its
+export. The snapshot adds the original element attributes and those the
+reference writer emits after reload. Raster file entries are compared by
+SHA-256 because the archive writer assigns new names. The `ElementTags` proof
+records the source, the export and the reload for each witnessed inventory row.
+Run the export test with `GEOKERNEL_EXPORT_CONTAINER=1` and
+`GEOKERNEL_EXPORT_BLESS=1` to record the proof on Linux x86_64. The reference
+files for the element properties come from `saved/make_saved.py` and the
+`element-properties`, `element-properties-extra` and
+`element-raster-properties` saved topics.
+
 `export-snapshot --lenient <directory>` records what GeoGebra reports while
 loading (`reported`) instead of stopping, and writes `{"failed": ...}` for a
 file its reader gives up. The hand-written files of

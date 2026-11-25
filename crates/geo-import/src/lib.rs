@@ -41,6 +41,7 @@
 pub mod archive;
 pub mod convert;
 pub mod export;
+mod properties;
 pub mod xml;
 
 use std::fmt;

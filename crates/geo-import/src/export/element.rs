@@ -386,7 +386,7 @@ impl Writer<'_> {
                 self.xml.val("pointStyle", &point_style.to_string())?;
             }
         }
-        if matches!(object_kind, Kind::Text | Kind::InputBox) {
+        if matches!(object_kind, Kind::Text | Kind::InputBox | Kind::List) {
             match saved.and_then(|style| style.rounding) {
                 Some(Rounding::Decimals(digits)) => {
                     self.xml.val("decimals", &digits.to_string())?;
@@ -454,7 +454,51 @@ impl Writer<'_> {
         if c.text_presentation(id).is_some() {
             self.text_style(id)?;
         }
+        if let Some(properties) = saved.and_then(|s| s.preserved.as_deref()) {
+            self.properties(properties, class, false)?;
+        }
         self.xml.buffer.push_str("</element>\n");
+        Ok(())
+    }
+
+    fn properties(
+        &mut self,
+        properties: &crate::properties::Properties,
+        class: &str,
+        before_matrix: bool,
+    ) -> Result<(), ExportError> {
+        for tag in properties
+            .for_class(class)
+            .iter()
+            .filter(|tag| (tag.name == "eigenvectors") == before_matrix)
+        {
+            self.property(tag)?;
+        }
+        Ok(())
+    }
+
+    fn property(&mut self, tag: &crate::properties::Tag) -> Result<(), ExportError> {
+        if !tag.can_write(self.c, &mut self.expressions) {
+            return Ok(());
+        }
+        self.xml.charge_items(1)?;
+        let attributes = tag
+            .attributes
+            .iter()
+            .map(|(key, value)| (*key, value.as_str()))
+            .collect::<Vec<_>>();
+        if tag.children.is_empty() {
+            self.xml.tag(tag.name, &attributes)?;
+        } else {
+            self.xml.open(tag.name, &attributes)?;
+            for child in &tag.children {
+                self.property(child)?;
+            }
+            self.xml.close(tag.name);
+        }
+        if self.xml.buffer.len() as u64 > crate::archive::MAX_XML_BYTES {
+            return Err(failure("construction XML exceeds the import size limit"));
+        }
         Ok(())
     }
 
@@ -663,6 +707,14 @@ impl Writer<'_> {
         }
 
         if let Some(conic) = c.arc(id).map(|arc| arc.conic).or_else(|| c.conic(id)) {
+            if let Some(properties) = self
+                .presentation
+                .object_styles
+                .get(c.label(id))
+                .and_then(|s| s.preserved.as_deref())
+            {
+                self.properties(properties, kind(c.kind(id)), true)?;
+            }
             let values = conic.matrix.map(number);
             self.xml.tag(
                 "matrix",
@@ -682,16 +734,20 @@ impl Writer<'_> {
     fn text_style(&mut self, id: Id) -> Result<(), ExportError> {
         let c = self.c;
         let text = c.text_presentation(id).expect("text checked by caller");
-        self.xml.val("isLaTeX", flag(text.latex))?;
+        if text.latex {
+            self.xml.val("isLaTeX", "true")?;
+        }
         let style = u8::from(text.bold) | (u8::from(text.italic) << 1);
-        self.xml.tag(
-            "font",
-            &[
-                ("serif", flag(text.serif)),
-                ("sizeM", &text.size.to_string()),
-                ("style", &style.to_string()),
-            ],
-        )?;
+        if text.latex || text.serif || text.size != 1.0 || style != 0 {
+            self.xml.tag(
+                "font",
+                &[
+                    ("serif", flag(text.serif)),
+                    ("sizeM", &text.size.to_string()),
+                    ("style", &style.to_string()),
+                ],
+            )?;
+        }
         if text.offset != [0, 0] {
             self.xml
                 .pixels("labelOffset", text.offset[0], text.offset[1])?;
@@ -742,7 +798,9 @@ impl Writer<'_> {
         });
         self.xml.tag("file", &[("name", name)])?;
         self.xml.val("inBackground", flag(image.style.background))?;
-        self.xml.val("interpolate", flag(image.style.interpolate))?;
+        if !image.style.interpolate {
+            self.xml.val("interpolate", "false")?;
+        }
         match image.placement {
             ImagePlacement::Screen([x, y]) => {
                 self.xml

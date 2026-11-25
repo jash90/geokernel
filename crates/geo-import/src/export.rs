@@ -140,6 +140,8 @@ pub struct ObjectStyle {
     pub slider: Option<Box<SliderLayout>>,
     /// `<animation>` of an object that is not a slider.
     pub animation: Option<Box<SliderAnimation>>,
+    /// Additional file properties without live fields.
+    pub preserved: Option<Box<crate::properties::Properties>>,
 }
 
 /// `<lineStyle type= thickness= typeHidden= opacity= drawArrow=>`.
@@ -858,6 +860,12 @@ impl Xml {
         self.attributes(name, attrs)?;
         self.buffer.push_str(">\n");
         Ok(())
+    }
+
+    fn close(&mut self, name: &str) {
+        self.buffer.push_str("</");
+        self.buffer.push_str(name);
+        self.buffer.push_str(">\n");
     }
 
     fn tag(&mut self, name: &str, attrs: &[(&str, &str)]) -> Result<(), ExportError> {

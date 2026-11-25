@@ -27,7 +27,8 @@
 //!   the rounding of a text, the arc of an angle, slider placement and
 //!   animation.
 //!
-//! Other UI properties and styles are ignored.
+//! * Additional element properties without a live model are kept as attributes
+//!   for export. Only supported tag and attribute names are retained.
 //!
 //! At most [`MAX_ITEMS`] items (an item counts once, plus once per output of
 //! a command) are read, a command lists at most [`MAX_ARGUMENTS`] inputs and
@@ -46,7 +47,8 @@ use geo_kernel::kernel::EquationForm;
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
 
-/// The most items (expressions, commands, elements) a construction may have.
+/// The most items (expressions, commands, elements and retained properties)
+/// a construction may have.
 pub const MAX_ITEMS: usize = 200_000;
 
 /// The most inputs, and the most outputs, one command may list. Every output
@@ -251,7 +253,7 @@ impl SavedView {
     }
 }
 
-fn bad(e: impl std::fmt::Display) -> ImportError {
+pub(crate) fn bad(e: impl std::fmt::Display) -> ImportError {
     ImportError::Xml(e.to_string())
 }
 
@@ -269,7 +271,9 @@ fn attr(e: &BytesStart, name: &str) -> Result<Option<String>, ImportError> {
 
 /// The value of an attribute, with entities resolved, at most
 /// [`MAX_ATTRIBUTE_BYTES`] long.
-fn value_of(a: &quick_xml::events::attributes::Attribute) -> Result<String, ImportError> {
+pub(crate) fn value_of(
+    a: &quick_xml::events::attributes::Attribute,
+) -> Result<String, ImportError> {
     if a.value.len() > MAX_ATTRIBUTE_BYTES {
         return Err(ImportError::AttributeTooLong);
     }
@@ -402,7 +406,7 @@ fn read_text_style(el: &mut Element, name: &str, e: &BytesStart) -> Result<(), I
 }
 
 /// `Integer.parseInt`: a sign and decimal digits that fit 32 bits.
-fn java_int(text: &str) -> Option<i32> {
+pub(crate) fn java_int(text: &str) -> Option<i32> {
     text.parse().ok()
 }
 
@@ -622,11 +626,16 @@ fn push(doc: &mut Document, item: Item) -> Result<(), ImportError> {
         Item::Command { outputs, .. } => 1 + outputs.len(),
         _ => 1,
     };
+    charge(doc, weight)?;
+    doc.items.push(item);
+    Ok(())
+}
+
+fn charge(doc: &mut Document, weight: usize) -> Result<(), ImportError> {
     if doc.weight + weight > MAX_ITEMS {
         return Err(ImportError::TooManyItems);
     }
     doc.weight += weight;
-    doc.items.push(item);
     Ok(())
 }
 
@@ -685,6 +694,8 @@ pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, I
     let mut seen_construction = false;
     let mut command: Option<(String, Vec<String>, Vec<String>)> = None;
     let mut element: Option<Element> = None;
+    let mut element_depth = None;
+    let mut chart_tags_depth = None;
     let mut in_kernel = false;
     let mut in_gui = false;
     let mut perspective_depth = None;
@@ -779,6 +790,36 @@ pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, I
                     }
                 }
                 continue;
+            }
+            if let Some(parent) = element_depth {
+                let el = element.as_mut().expect("open element");
+                if child_depth != parent {
+                    if chart_tags_depth == Some(child_depth) && name == "tag" {
+                        let tag =
+                            crate::properties::read(&el.kind, &name, e)?.expect("chart property");
+                        charge(&mut doc, 1)?;
+                        el.object_style
+                            .preserved
+                            .as_mut()
+                            .expect("chart tags")
+                            .push_chart_tag(tag);
+                    }
+                    continue;
+                }
+                if let Some(tag) = crate::properties::read(&el.kind, &name, e)? {
+                    charge(&mut doc, 1)?;
+                    if tag.name == "tags" && !empty {
+                        chart_tags_depth = Some(depth);
+                    }
+                    el.start_point |= tag.name == "startPoint" && el.kind == "vector";
+                    el.object_style
+                        .preserved
+                        .get_or_insert_with(|| {
+                            Box::new(crate::properties::Properties::new(&el.kind))
+                        })
+                        .push(tag);
+                    continue;
+                }
             }
             match name.as_str() {
                 "cellPair" if in_construction && command.is_none() && element.is_none() => {
@@ -898,6 +939,7 @@ pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, I
                         push(&mut doc, Item::Element(Box::new(el)))?;
                     } else {
                         element = Some(el);
+                        element_depth = Some(depth);
                     }
                 }
                 "show" if element.is_some() => {
@@ -1232,6 +1274,11 @@ pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, I
             }
         }
         match event {
+            Event::End(_) if element_depth.is_some_and(|parent| depth >= parent) => {
+                if chart_tags_depth == Some(depth + 1) {
+                    chart_tags_depth = None;
+                }
+            }
             Event::End(e) => match e.name().as_ref() {
                 "cellPair" if cas_depth == Some(depth + 1) => {
                     cas_depth = None;
@@ -1271,7 +1318,11 @@ pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, I
                     }
                 }
                 "element" => {
-                    if let Some(el) = element.take() {
+                    if let Some(mut el) = element.take() {
+                        element_depth = None;
+                        if let Some(properties) = &mut el.object_style.preserved {
+                            properties.finish();
+                        }
                         push(&mut doc, Item::Element(Box::new(el)))?;
                     }
                 }

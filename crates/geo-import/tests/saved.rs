@@ -666,12 +666,17 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
         .unwrap()
         .map(|e| e.unwrap().path())
         .filter(|p| p.extension().is_some_and(|e| e == "snapshot"))
-        // The export oracle reloads the style fixtures and compares them.
+        // The export oracle compares the style fixtures, including the
+        // controls and raster assets outside the generic snapshot schema.
         .filter(|p| {
-            !p.file_stem()
-                .unwrap()
-                .to_string_lossy()
-                .starts_with(STYLE_FIXTURES)
+            let name = p.file_stem().unwrap().to_string_lossy();
+            ![
+                STYLE_FIXTURES,
+                "saved-element-properties-",
+                "saved-element-raster-properties-",
+            ]
+            .iter()
+            .any(|&prefix| name.starts_with(prefix))
         })
         .filter(|p| {
             !EXPRESSION_FIXTURES

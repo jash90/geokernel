@@ -2,10 +2,13 @@ package geokernel.harness;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.util.HexFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,10 +19,15 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 
 import javax.imageio.ImageIO;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
 
 import org.geogebra.common.awt.MyImage;
 
 import org.geogebra.common.factories.AwtFactoryCommon;
+import org.geogebra.common.io.XMLStringBuilder;
 import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
@@ -58,12 +66,14 @@ public final class ExportSnapshot {
      * hand-written file with a malformed tag is read.
      */
     private static boolean lenient;
+    private static boolean elementTags;
 
     public static void main(String[] args) throws Exception {
         lenient = args.length == 2 && "--lenient".equals(args[0]);
-        if (args.length != (lenient ? 2 : 1)) {
+        elementTags = args.length == 2 && "--element-tags".equals(args[0]);
+        if (args.length != (lenient || elementTags ? 2 : 1)) {
             throw new IllegalArgumentException(
-                    "usage: ExportSnapshot [--lenient] <directory of .ggb files>");
+                    "usage: ExportSnapshot [--lenient|--element-tags] <directory of .ggb files>");
         }
         Path dir = Path.of(args[args.length - 1]);
         try (var files = Files.list(dir)) {
@@ -177,6 +187,30 @@ public final class ExportSnapshot {
         snapshot.put("styles", styles);
         snapshot.put("settings", settings);
         snapshot.put("reported", reported);
+        if (elementTags) {
+            try (var input = archive.getInputStream(archive.getEntry("geogebra.xml"))) {
+                snapshot.put("elementTags", elementTags(new InputSource(input)));
+            }
+            var construction = new XMLStringBuilder();
+            app.getKernel().getConstruction().getConstructionXML(construction, false);
+            var xml = new StringReader("<geogebra>" + construction + "</geogebra>");
+            snapshot.put("reloadedTags", elementTags(new InputSource(xml)));
+            Map<String, String> rasterHashes = new LinkedHashMap<>();
+            var digest = MessageDigest.getInstance("SHA-256");
+            var imageGeos = app.getKernel().getConstruction().getGeoSetConstructionOrder();
+            for (GeoElement geo : imageGeos) {
+                if (geo instanceof GeoImage && geo.isLabelSet()) {
+                    var image = archive.getEntry(geo.getGraphicsAdapter().getImageFileName());
+                    if (image != null) {
+                        try (var data = archive.getInputStream(image)) {
+                            rasterHashes.put(geo.getLabelSimple(),
+                                    HexFormat.of().formatHex(digest.digest(data.readAllBytes())));
+                        }
+                    }
+                }
+            }
+            snapshot.put("rasterHashes", rasterHashes);
+        }
         if (kernel.getConstruction().getCasCell(0) != null) {
             snapshot.put("casRows", Session.casRows(kernel.getConstruction()));
         }
@@ -185,6 +219,43 @@ public final class ExportSnapshot {
             snapshot.put("spreadsheetCells", cells);
         }
         return snapshot;
+    }
+
+    /** Records the attributes and repeated tags of each labelled element. */
+    private static Map<String, Object> elementTags(InputSource xml) throws Exception {
+        var factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        var document = factory.newDocumentBuilder().parse(xml);
+        Map<String, Object> result = new LinkedHashMap<>();
+        var elements = document.getElementsByTagName("element");
+        for (int i = 0; i < elements.getLength(); i++) {
+            Element geo = (Element) elements.item(i);
+            if (geo.getParentNode().getParentNode() != document.getDocumentElement()
+                    || !"construction".equals(geo.getParentNode().getNodeName())) {
+                continue;
+            }
+            Map<String, List<Object>> tags = new LinkedHashMap<>();
+            appendTags(geo, tags, "");
+            result.put(geo.getAttribute("label"), tags);
+        }
+        return result;
+    }
+
+    private static void appendTags(Element geo, Map<String, List<Object>> tags, String prefix) {
+        for (var child = geo.getFirstChild(); child != null; child = child.getNextSibling()) {
+            if (child instanceof Element property) {
+                String name = prefix + property.getTagName();
+                Map<String, Object> attrs = new LinkedHashMap<>();
+                for (int i = 0; i < property.getAttributes().getLength(); i++) {
+                    var attr = property.getAttributes().item(i);
+                    attrs.put(attr.getNodeName(), attr.getNodeValue());
+                }
+                tags.computeIfAbsent(name, key -> new ArrayList<>()).add(attrs);
+                if ("tags".equals(name) || "casMap".equals(name)) {
+                    appendTags(property, tags, name + "/");
+                }
+            }
+        }
     }
 
     /**

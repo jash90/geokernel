@@ -100,6 +100,13 @@ const SAVED_CASES: &[&str] = &[
     "saved-input-rounding-001.xml",
     "saved-canvas-sector-001.xml",
     "saved-styles-008.ggb",
+    "saved-element-properties-001.xml",
+    "saved-element-properties-002.xml",
+    "saved-element-properties-003.xml",
+    "saved-element-properties-004.xml",
+    "saved-element-properties-005.xml",
+    "saved-element-properties-extra-001.xml",
+    "saved-element-raster-properties-001.ggb",
     // Styled objects that are undefined in the saved state.
     "saved-styles-009.xml",
     "saved-styles-010.xml",
@@ -523,17 +530,13 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
             (name, wb, again, view, origin, bytes)
         })
         .collect();
-    for (scratch, lenient) in [
-        (&exports, false),
-        (&sources, false),
-        (&plain, false),
-        (&hand, true),
+    for (scratch, run) in [
+        (&exports, tag_snapshots as fn(&std::path::Path) -> _),
+        (&sources, tag_snapshots),
+        (&plain, java_snapshots),
+        (&hand, lenient_java_snapshots),
     ] {
-        let output = if lenient {
-            lenient_java_snapshots(&scratch.0)
-        } else {
-            java_snapshots(&scratch.0)
-        };
+        let output = run(&scratch.0);
         assert!(
             output.status.success(),
             "Java export oracle failed:\n{}\n{}",
@@ -547,6 +550,7 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
     };
 
     let mut count = 0;
+    let mut tag_proof = BTreeMap::new();
     let mut gave_up = Vec::new();
     // Per fixture: the styles of the source and of the export without the
     // saved presentation, for the witnesses.
@@ -566,6 +570,7 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
                 // by property, for every object.
                 let source = read(&sources, name);
                 compare_presentation(name, live, &source, &snap, bytes);
+                record_tag_witnesses(&mut tag_proof, name, &source, &snap);
                 assert_json(&source["settings"], &snap["settings"], name);
                 let stripped = read(&plain, name);
                 // A witness needs the same object in the stripped export.
@@ -700,6 +705,7 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
         .entry("Spreadsheet")
         .or_default()
         .insert("cells", spreadsheet_export_witness());
+    proof.insert("ElementTags", tag_proof);
     let serialized = serde_json::to_string_pretty(&proof).unwrap() + "\n";
     let path = proof_path();
     if std::env::var_os("GEOKERNEL_EXPORT_BLESS").is_some() {
@@ -739,10 +745,11 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
             "tests/fixtures/export-proof.json is stale; rerun with GEOKERNEL_EXPORT_BLESS=1\n{details}"
         );
     }
-    let pairs = proof.values().map(BTreeMap::len).sum::<usize>();
+    let element_tags = proof["ElementTags"].len();
+    let pairs = proof.values().map(BTreeMap::len).sum::<usize>() - element_tags;
     println!(
         "{} exported files, {count} objects, {} kinds, {pairs} proven kind and property pairs, \
-         {} files the reference gives up",
+         {element_tags} element tags, {} files the reference gives up",
         constructions.len(),
         WITNESSES.len(),
         gave_up.len()
@@ -1256,25 +1263,32 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
         .collect()
 }
 
-/// What the reference application saves for a kind and the importer does not
-/// read. A kind with an entry stays `partial`.
-const NOT_KEPT: &[(&str, &str)] = &[
-    ("Point", "polar and complex coordinate style and the vertical increment are not kept"),
-    ("Vector", "the start point and the coordinate style are not kept"),
-    ("Segment", "the outlying-intersection and keep-type flags are not kept"),
-    ("Ray", "the outlying-intersection and keep-type flags are not kept"),
-    ("Arc", "the outlying-intersection and keep-type flags are not kept"),
-    ("Sector", "the outlying-intersection and keep-type flags are not kept"),
-    ("Number", "the symbolic mode and the slope triangle size are not kept"),
-    ("Function", "the show-on-axis and simplify flags and the table column are not kept"),
-    ("Polygon", "the mask flag is not kept"),
-    ("List", "the drop-down display with its selected index and the font and rounding of a list are not kept"),
-    ("Text", "the symbolic mode is not kept"),
-    ("FunctionNVar", "the level of detail is not kept"),
-    ("PieChart", "the colour and filling of single slices are not kept"),
-    ("InputBox", "the font and size and symbolic mode and alignment and typed text are not kept"),
-    ("Button", "the font and size and position and the image are not kept"),
+/// Additional limits specific to a construction kind.
+const PROPERTY_LIMITS: &[(&str, &str)] = &[
+    (
+        "Point",
+        "vertical increments must be supported numeric expressions",
+    ),
+    (
+        "Vector",
+        "a start point must be saved coordinates or a point label",
+    ),
+    (
+        "PieChart",
+        "slice image fills need assets the writer does not carry",
+    ),
+    ("Button", "button image assets are not carried"),
 ];
+
+fn definition_limit(kind: &str) -> &'static str {
+    match kind {
+        "Function" | "FunctionNVar" => "function expressions need a saved journal definition",
+        "Curve" => "parametric curves need a saved journal definition",
+        "List" => "dependent lists need a saved journal definition",
+        "Text" => "dependent text expressions need a saved journal definition",
+        _ => "its definition needs a saved form",
+    }
+}
 
 /// The leaves of a style snapshot by their path (`line.type`). A list is one leaf.
 fn flatten(path: &str, value: &Value, out: &mut BTreeMap<String, Value>) {
@@ -1354,7 +1368,7 @@ fn the_export_column_follows_the_journal_rule_and_the_recorded_proof() {
         let proven = proof.get(kind);
         let mut reasons = Vec::new();
         if !own_data {
-            reasons.push("its definition needs a saved form".to_owned());
+            reasons.push(definition_limit(kind).to_owned());
         }
         let missing: Vec<_> = kind_properties(kind)
             .into_iter()
@@ -1364,7 +1378,7 @@ fn the_export_column_follows_the_journal_rule_and_the_recorded_proof() {
             reasons.push(format!("no witness for {}", missing.join(" and ")));
         }
         reasons.extend(
-            NOT_KEPT
+            PROPERTY_LIMITS
                 .iter()
                 .filter(|(lossy, _)| *lossy == kind)
                 .map(|(_, loss)| (*loss).to_owned()),
@@ -1397,19 +1411,321 @@ fn the_export_column_follows_the_journal_rule_and_the_recorded_proof() {
     );
 }
 
-fn java_snapshots(dir: &std::path::Path) -> std::process::Output {
-    Command::new(repo_root().join("tools/ggb-harness/harness.sh"))
-        .arg("export-snapshot")
-        .arg(dir)
+const ELEMENT_TAGS: &[&str] = &[
+    "show",
+    "objColor",
+    "lineStyle",
+    "pointSize",
+    "pointStyle",
+    "labelMode",
+    "labelOffset",
+    "caption",
+    "dynamicCaption",
+    "tooltipMode",
+    "fixed",
+    "auxiliary",
+    "layer",
+    "animation",
+    "slider",
+    "condition",
+    "decoration",
+    "angleStyle",
+    "allowReflexAngle",
+    "forceReflexAngle",
+    "emphasizeRightAngle",
+    "arcSize",
+    "eqnStyle",
+    "coords",
+    "coordStyle",
+    "value",
+    "matrix",
+    "eigenvectors",
+    "coefficients",
+    "startPoint",
+    "curveParam",
+    "trace",
+    "spreadsheetTrace",
+    "selectionAllowed",
+    "breakpoint",
+    "font",
+    "decimals",
+    "significantfigures",
+    "isLaTeX",
+    "textAlign",
+    "verticalAlign",
+    "userinput",
+    "tempUserInput",
+    "content",
+    "contentSerif",
+    "contentSize",
+    "dimensions",
+    "fixedSize",
+    "checkbox",
+    "comboBox",
+    "listType",
+    "selectedIndex",
+    "length",
+    "incrementY",
+    "absoluteScreenLocation",
+    "inBackground",
+    "centered",
+    "interpolate",
+    "isMask",
+    "cropBox",
+    "fading",
+    "bgColor",
+    "borderColor",
+    "boundingBox",
+    "file",
+    "audio",
+    "video",
+    "embed",
+    "embedSettings",
+    "linkedGeo",
+    "parent",
+    "parentLabel",
+    "ordering",
+    "algebra",
+    "tableview",
+    "keepTypeOnTransform",
+    "outlyingIntersections",
+    "showTrimmed",
+    "showOnAxis",
+    "symbolic",
+    "simplifyCoefficients",
+    "slopeTriangleSize",
+    "startStyle",
+    "endStyle",
+    "headStyle",
+    "levelOfDetailQuality",
+    "strokeCoords",
+    "strokeBezierCoords",
+    "variables",
+    "autocolor",
+    "tag",
+    "tags",
+    "casMap",
+    "listener",
+    "ggbscript",
+    "javascript",
+];
+
+/// Inventory rows with limits documented under Construction export.
+const UNWITNESSED_ELEMENT_TAGS: &[&str] = &[
+    "allowReflexAngle",
+    "audio",
+    "autocolor",
+    "borderColor",
+    "boundingBox",
+    "casMap",
+    "content",
+    "contentSize",
+    "embed",
+    "embedSettings",
+    "fading",
+    "forceReflexAngle",
+    "linkedGeo",
+    "listener",
+    "parent",
+    "spreadsheetTrace",
+    "strokeCoords",
+    "variables",
+    "verticalAlign",
+    "video",
+];
+
+#[test]
+fn element_tag_proof_accounts_for_the_inventory() {
+    let proof: Value = serde_json::from_str(&fs::read_to_string(proof_path()).unwrap()).unwrap();
+    let witnesses = proof["ElementTags"].as_object().unwrap();
+    let all: BTreeSet<_> = ELEMENT_TAGS.iter().copied().collect();
+    let documented: BTreeSet<_> = UNWITNESSED_ELEMENT_TAGS.iter().copied().collect();
+    let proven: BTreeSet<_> = witnesses.keys().map(String::as_str).collect();
+    assert_eq!(all.len(), 96);
+    assert!(proven.is_disjoint(&documented));
+    assert_eq!(
+        proven.union(&documented).copied().collect::<BTreeSet<_>>(),
+        all
+    );
+    for witness in witnesses.values() {
+        assert!(witness["fixture"].is_string() && witness["label"].is_string());
+        for stage in ["source", "export", "reload"] {
+            assert!(witness[stage].is_array(), "{stage}: {witness}");
+        }
+    }
+    println!("{} of {} element tags witnessed", proven.len(), all.len());
+}
+
+/// Non-default values set by the saved-file generator. A tag already
+/// witnessed on a different kind must still survive on these objects.
+const PROPERTY_CASES: &[(&str, &str, &[&str])] = &[
+    (
+        "saved-element-properties-001",
+        "field",
+        &[
+            "font",
+            "symbolic",
+            "contentSerif",
+            "textAlign",
+            "tempUserInput",
+            "length",
+            "decimals",
+        ],
+    ),
+    (
+        "saved-element-properties-001",
+        "b",
+        &["font", "dimensions", "labelOffset"],
+    ),
+    (
+        "saved-element-properties-002",
+        "L",
+        &["comboBox", "selectedIndex", "font", "decimals"],
+    ),
+    ("saved-element-properties-002", "M", &["listType"]),
+    (
+        "saved-element-properties-003",
+        "A",
+        &["coordStyle", "incrementY"],
+    ),
+    (
+        "saved-element-properties-003",
+        "v",
+        &["coordStyle", "startPoint"],
+    ),
+    (
+        "saved-element-properties-003",
+        "s",
+        &["outlyingIntersections", "keepTypeOnTransform"],
+    ),
+    ("saved-element-properties-003", "p", &["isMask"]),
+    ("saved-element-properties-003", "n", &["slopeTriangleSize"]),
+    (
+        "saved-element-properties-004",
+        "f",
+        &[
+            "tableview",
+            "showOnAxis",
+            "simplifyCoefficients",
+            "lineStyle",
+        ],
+    ),
+    (
+        "saved-element-properties-004",
+        "t",
+        &["symbolic", "font", "isLaTeX", "startPoint"],
+    ),
+    ("saved-element-properties-005", "pie", &["tags/tag"]),
+    (
+        "saved-element-properties-extra-001",
+        "h",
+        &["levelOfDetailQuality"],
+    ),
+    ("saved-element-properties-extra-001", "s", &["parentLabel"]),
+    (
+        "saved-element-raster-properties-001",
+        "anchoredImage",
+        &["file", "interpolate", "cropBox"],
+    ),
+];
+
+fn record_tag_witnesses(
+    proof: &mut BTreeMap<&str, Value>,
+    fixture: &str,
+    source: &Value,
+    export: &Value,
+) {
+    let witness = |label: &str, name: &str| {
+        let original = &source["elementTags"][label][name];
+        let written = &export["elementTags"][label][name];
+        let reference = &source["reloadedTags"][label][name];
+        let reloaded = &export["reloadedTags"][label][name];
+        // The archive writer allocates its own names for raster assets.
+        let hash = &source["rasterHashes"][label];
+        let raster = name == "file" && hash.is_string() && hash == &export["rasterHashes"][label];
+        if original.is_null()
+            || written.is_null()
+            || reloaded.is_null()
+            || !(reference == reloaded || raster)
+        {
+            return None;
+        }
+        let mut value = json!({
+            "fixture": fixture, "label": label, "source": original,
+            "export": written, "reload": reloaded,
+        });
+        if raster {
+            value["sha256"] = hash.clone();
+        }
+        Some(value)
+    };
+
+    for &(case, label, tags) in PROPERTY_CASES
+        .iter()
+        .filter(|(case, _, _)| *case == fixture)
+    {
+        for &tag in tags {
+            if tag == "tempUserInput" {
+                // The reference clears this linked field's pending input on
+                // reload of its own file. Preserve both saved attributes.
+                let input = &source["elementTags"][label][tag];
+                assert!(input[0]["eval"].is_string() && input[0]["display"].is_string());
+                assert_eq!(export["elementTags"][label][tag], *input);
+                assert!(source["reloadedTags"][label][tag].is_null());
+                assert!(export["reloadedTags"][label][tag].is_null());
+            } else {
+                assert!(
+                    witness(label, tag).is_some(),
+                    "{case}: {label}.{tag} changed across the reference reload"
+                );
+            }
+        }
+    }
+
+    for (label, tags) in source["elementTags"].as_object().unwrap() {
+        for name in tags.as_object().unwrap().keys() {
+            let tag = if name == "tags/tag" { "tag" } else { name };
+            let Some(&tag) = ELEMENT_TAGS.iter().find(|&&key| key == tag) else {
+                continue;
+            };
+            let std::collections::btree_map::Entry::Vacant(entry) = proof.entry(tag) else {
+                continue;
+            };
+            if let Some(value) = witness(label, name) {
+                entry.insert(value);
+            }
+        }
+    }
+}
+
+fn oracle_command(args: &[&str], dir: &std::path::Path) -> Command {
+    let root = repo_root();
+    let (script, path) = if std::env::var_os("GEOKERNEL_EXPORT_CONTAINER").is_some() {
+        (
+            "linux-x86_64.sh",
+            PathBuf::from("/geokernel").join(dir.strip_prefix(&root).unwrap()),
+        )
+    } else {
+        ("harness.sh", dir.to_owned())
+    };
+    let mut command = Command::new(root.join("tools/ggb-harness").join(script));
+    command.arg("export-snapshot").args(args).arg(path);
+    command
+}
+
+fn tag_snapshots(dir: &std::path::Path) -> std::process::Output {
+    oracle_command(&["--element-tags"], dir)
         .output()
-        .expect("run Java harness")
+        .expect("run Java element tag oracle")
+}
+
+fn java_snapshots(dir: &std::path::Path) -> std::process::Output {
+    oracle_command(&[], dir).output().expect("run Java harness")
 }
 
 /// Snapshots that record what the reader reports instead of stopping at it.
 fn lenient_java_snapshots(dir: &std::path::Path) -> std::process::Output {
-    Command::new(repo_root().join("tools/ggb-harness/harness.sh"))
-        .args(["export-snapshot", "--lenient"])
-        .arg(dir)
+    oracle_command(&["--lenient"], dir)
         .output()
         .expect("run Java harness")
 }
@@ -1669,7 +1985,12 @@ struct Scratch(PathBuf);
 
 impl Scratch {
     fn new(case: &str) -> Self {
-        let path = std::env::temp_dir().join(format!(
+        let parent = if std::env::var_os("GEOKERNEL_EXPORT_CONTAINER").is_some() {
+            repo_root().join("target")
+        } else {
+            std::env::temp_dir()
+        };
+        let path = parent.join(format!(
             "geokernel-ggb-oracle-{case}-{}",
             std::process::id()
         ));
@@ -2277,10 +2598,8 @@ fn cas_export_witness() -> Value {
         )
         .unwrap();
     }
-    let output = Command::new(repo_root().join("tools/ggb-harness/harness.sh"))
+    let output = oracle_command(&[], &dir.0)
         .env("GGB_HARNESS_CAS", "1")
-        .arg("export-snapshot")
-        .arg(&dir.0)
         .output()
         .unwrap();
     assert!(
@@ -2482,4 +2801,138 @@ fn reloads_spreadsheet_exports_in_geogebra() {
     } else {
         assert_eq!(proof["Spreadsheet"]["cells"], witness);
     }
+}
+
+#[test]
+fn saved_widget_and_list_properties_round_trip() {
+    let file = br#"<geogebra format="5.0"><construction>
+      <element type="numeric" label="a"><value val="2"/></element>
+      <command name="InputBox"><input a0="a"/><output a0="box"/></command>
+      <element type="textfield" label="box">
+        <font serif="true" sizeM="1.75" style="1"/>
+        <contentSerif val="true"/>
+        <symbolic val="true"/>
+        <textAlign val="right"/>
+        <tempUserInput eval="a&amp;b" display="a &lt; b"/>
+      </element>
+      <expression label="L" exp="{1, 2, 3}"/>
+      <element type="list" label="L">
+        <comboBox val="true"/>
+        <selectedIndex val="2"/>
+        <font serif="false" sizeM="1.25" style="2"/>
+        <decimals val="4"/>
+      </element>
+    </construction></geogebra>"#;
+    let load = |bytes| {
+        let mut wb = Workbench::default();
+        wb.load_for_export(bytes, "saved widgets").unwrap();
+        wb
+    };
+    let original = export_widget_xml(&load(file));
+    for tag in [
+        r#"<font serif="true" sizeM="1.75" style="1"/>"#,
+        r#"<contentSerif val="true"/>"#,
+        r#"<symbolic val="true"/>"#,
+        r#"<textAlign val="right"/>"#,
+        r#"<tempUserInput eval="a&amp;b" display="a &lt; b"/>"#,
+        r#"<comboBox val="true"/>"#,
+        r#"<selectedIndex val="2"/>"#,
+        r#"<font serif="false" sizeM="1.25" style="2"/>"#,
+        r#"<decimals val="4"/>"#,
+    ] {
+        assert!(original.contains(tag), "{tag}: {original}");
+    }
+    assert_eq!(export_widget_xml(&load(original.as_bytes())), original);
+}
+
+fn export_widget_xml(wb: &Workbench) -> String {
+    let bytes = wb.export_ggb(wb.file_view()).unwrap();
+    geo_import::archive::extract_xml(&bytes)
+        .unwrap()
+        .into_owned()
+}
+
+#[test]
+fn saved_geometry_and_display_flags_round_trip() {
+    let file = br#"<geogebra format="5.0"><construction>
+      <element type="point" label="P"><coords x="2" y="3" z="1"/><coordStyle style="polar"/><incrementY val="0.250"/></element>
+      <element type="vector" label="v"><coords x="1" y="0" z="0"/><startPoint exp="P"/><coordStyle style="polar"/></element>
+      <element type="numeric" label="n"><value val="2"/><slopeTriangleSize val="3"/><symbolic val="false"/></element>
+      <expression label="f" exp="x^2"/>
+      <element type="function" label="f"><tableview column="2" points="false"/><simplifyCoefficients val="false"/></element>
+      <element type="button" label="b"><dimensions width="135.0" height="42"/><absoluteScreenLocation x="18" y="29"/></element>
+      <expression label="t" exp="&quot;Formula&quot;"/>
+      <element type="text" label="t"><isLaTeX val="true"/><symbolic val="true"/></element>
+    </construction></geogebra>"#;
+    let mut wb = Workbench::default();
+    wb.load_for_export(file, "presentation flags").unwrap();
+    let xml = export_widget_xml(&wb);
+    for tag in [
+        r#"<coordStyle style="polar"/>"#,
+        r#"<incrementY val="0.250"/>"#,
+        r#"<startPoint exp="P"/>"#,
+        r#"<slopeTriangleSize val="3"/>"#,
+        r#"<symbolic val="false"/>"#,
+        r#"<tableview column="2" points="false"/>"#,
+        r#"<simplifyCoefficients val="false"/>"#,
+        r#"<dimensions width="135.0" height="42"/>"#,
+        r#"<absoluteScreenLocation x="18" y="29"/>"#,
+        r#"<isLaTeX val="true"/>"#,
+        r#"<symbolic val="true"/>"#,
+    ] {
+        assert!(xml.contains(tag), "{tag}: {xml}");
+    }
+}
+
+#[test]
+fn saved_properties_obey_document_and_archive_limits() {
+    let wrap = |tag: &str| {
+        format!(
+            "<geogebra><construction><element type=\"point\" label=\"P\"><coords x=\"0\" y=\"0\" z=\"1\"/>{tag}</element></construction></geogebra>"
+        )
+    };
+    let oversized = wrap(&format!(
+        "<coordStyle style=\"{}\"/>",
+        "x".repeat(geo_import::xml::MAX_ATTRIBUTE_BYTES + 1)
+    ));
+    let many = wrap(&r#"<coordStyle style="polar"/>"#.repeat(geo_import::xml::MAX_ITEMS));
+    for archived in [false, true] {
+        let bytes = |xml: &str| {
+            if archived {
+                archive(xml.as_bytes(), None)
+            } else {
+                xml.as_bytes().to_vec()
+            }
+        };
+        assert!(matches!(
+            geo_import::import(&bytes(&oversized)),
+            Err(geo_import::ImportError::AttributeTooLong)
+        ));
+        assert!(matches!(
+            geo_import::import(&bytes(&many)),
+            Err(geo_import::ImportError::TooManyItems)
+        ));
+    }
+}
+
+#[test]
+fn saved_properties_do_not_reintroduce_unchecked_expressions_or_nested_tags() {
+    let file = br#"<geogebra format="5.0"><construction>
+      <element type="point" label="P">
+        <coords x="1" y="0" z="1"/>
+        <incrementY val="Execute({&quot;n = 7&quot;})"/>
+        <unknown><coords x="20" y="30" z="1"/><coordStyle style="polar"/></unknown>
+      </element>
+      <element type="vector" label="v"><coords x="1" y="0" z="0"/><startPoint exp="Execute({})"/></element>
+    </construction></geogebra>"#;
+    let mut wb = Workbench::default();
+    wb.load_for_export(file, "nested properties").unwrap();
+    let xml = export_widget_xml(&wb);
+    assert!(!xml.contains("Execute"), "{xml}");
+    assert!(!xml.contains("<coordStyle"), "{xml}");
+    let c = wb.construction();
+    assert_eq!(
+        c.value(c.id("P").unwrap()),
+        geo_kernel::Value::Point { x: 1.0, y: 0.0 }
+    );
 }

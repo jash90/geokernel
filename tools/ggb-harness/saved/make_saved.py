@@ -728,6 +728,50 @@ case("projectiveoverflow", ["A = (0, 1)", "B = (2, 1)", "l = Line(A, B)", "P = (
      [{"action": "point_coords", "label": "P", "x": 1e308, "y": 0, "z": 1e-6},
       {"action": "point_coords", "label": "T", "x": 2, "y": 1, "z": 0}])
 
+case("element-properties", [
+    "a = 3.5", "field = InputBox(a)", 'b = Button("Apply")',
+], [
+    {"action": "style", "label": "field", "font": [True, 1.5, 1],
+     "symbolic": True, "content_serif": False, "text_align": "RIGHT",
+     "temp_input": ["3 +", "3+"], "input_length": 14, "decimals": 3},
+    {"action": "style", "label": "b", "font": [False, 1.25, 2],
+     "button_position": [24, 45], "button_size": [120, 42]},
+])
+case("element-properties", ['L = {1.25, 2.5, 3.75}', 'M = {}'], [
+    {"action": "style", "label": "L", "dropdown": 2, "font": [True, 1.25, 2],
+     "decimals": 4},
+    {"action": "style", "label": "M", "list_type": "point"},
+])
+case("element-properties", [
+    "A = (1, 2)", "B = (4, 2)", "C = (3, 5)", "v = (2, 1)", "s = Segment(A, B)",
+    "p = Polygon(A, B, C)", "n = Slope(Line(A, C))",
+], [
+    {"action": "style", "label": "A", "point_polar": True, "vertical_increment": "0.25"},
+    {"action": "style", "label": "v", "vector_polar": True, "vector_start": "A"},
+    {"action": "style", "label": "s", "outlying_intersections": True, "keep_type": True},
+    {"action": "style", "label": "p", "mask": True},
+    {"action": "style", "label": "n", "slope_triangle_size": 4},
+])
+case("element-properties", ["f(x) = x > 2", 't = Text("x^2", (2, 3), true, true)'], [
+    {"action": "style", "label": "f", "show_on_axis": True,
+     "simplify_coefficients": False, "table_column": 3, "line": [15, 5]},
+    {"action": "style", "label": "t", "symbolic": True, "font": [True, 1.5, 2]},
+])
+case("element-properties", ["pie = PieChart({1, 2, 3})"], [
+    {"action": "style", "label": "pie", "slice_color": [50, 70, 90]},
+])
+
+case("element-properties-extra", [
+    "h(x, y) = x + y", "n = 2", "s = PenStroke((0, 0), (1, 2))",
+], [
+    {"action": "style", "label": "h", "surface_quality": True},
+    {"action": "style", "label": "n", "spreadsheet_trace": True},
+    {"action": "style", "label": "s", "split_parent": "originalStroke"},
+])
+case("element-raster-properties", image_points, [
+    {"action": "style", "label": "anchoredImage", "interpolate": False},
+], archive=True, images=[anchor_image])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

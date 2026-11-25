@@ -208,6 +208,18 @@ pub(crate) fn convert_with_assets(
             saved_style.caption.clone_from(&el.caption);
         }
         let label = quote(&el.label);
+        if let Some(properties) = saved_style.preserved.as_deref_mut() {
+            properties.retain(|tag| {
+                if tag.can_write(&c.kernel, &mut expressions) {
+                    return true;
+                }
+                c.out.notes.push(format!(
+                    "{} of `{label}`: unsupported saved attributes",
+                    tag.name
+                ));
+                false
+            });
+        }
         if let Some(dynamic) = saved_style.dynamic_color.take() {
             match expressions.dynamic_color(&c.kernel, &dynamic) {
                 Ok(dynamic) => saved_style.dynamic_color = Some(Box::new(dynamic)),

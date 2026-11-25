@@ -1,0 +1,16 @@
+{
+  "schema": 2,
+  "id": "saved-element-properties-005",
+  "script": [
+    "pie = PieChart({1, 2, 3})"
+  ],
+  "objects": {
+    "pie": {
+      "type": "piechart",
+      "defined": true,
+      "center": [0.0, 0.0],
+      "radius": 3.0,
+      "fractions": [0.16666666666666666, 0.3333333333333333, 0.5]
+    }
+  }
+}
