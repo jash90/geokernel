@@ -2998,7 +2998,7 @@ reason = "This row requires the Giac CAS backend."
 [[gap]]
 id = "cas-numeric-003"
 mismatches = ["0:latex", "0:output"]
-reason = "This row requires the Giac CAS backend."
+reason = "The default build returns \"Numeric requires a CAS build\" and empty LaTeX. The reference fallback prints 1 and \\mathbf{1}."
 
 [[gap]]
 id = "cas-mixednumber-001"
@@ -3217,5 +3217,45 @@ reason = "This row requires the Giac CAS backend."
 
 [[gap]]
 id = "cascell-closing-004"
-reason = 'Kernel-only CAS rows refuse NSolutions with a starting value (text ?, LaTeX \mathbf{?}); the reference prints {1.41} and \mathbf{ \left\{ 1.41 \right\} }. See crates/geo-kernel/src/expr/cas/row.rs:131.'
+reason = 'Kernel-only CAS rows refuse NSolutions with a starting value (text ?, LaTeX \mathbf{?}). The reference prints {1.41} and \mathbf{ \left\{ 1.41 \right\} }. See crates/geo-kernel/src/expr/cas/row.rs:131.'
 mismatches = ["0:output", "0:latex"]
+
+[[gap]]
+id = "cascell-stackclose-001"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Numeric requires a CAS build\" and empty LaTeX. The reference prints 150 and \\mathbf{150}. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-002"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Numeric requires a CAS build\" and empty LaTeX. The reference prints 0.13 and \\mathbf{0.13}. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-003"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Numeric requires a CAS build\" and empty LaTeX. The reference prints 0 and \\mathbf{0}. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-004"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Numeric requires a CAS build\" and empty LaTeX. The reference prints 1 * 10²⁰ and \\mathbf{1 \\cdot 10^{20}}. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-005"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Assume requires a CAS build\" and empty LaTeX. The reference prints {-3 / 4 π, 1 / 4 π} and \\mathbf{ \\left\\{ \\frac{-3}{4} \\; \\pi , \\frac{1}{4} \\; \\pi  \\right\\} }. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-006"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Numeric requires a CAS build\" and empty LaTeX. The reference prints 9 and \\mathbf{9}. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-007"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"ExtendedGCD requires a CAS build\" and empty LaTeX. The reference prints {1, 0, ?} and \\mathbf{ \\left\\{ 1, 0, ? \\right\\} }. See crates/geo-kernel/src/expr/cas/row.rs:63."
+
+[[gap]]
+id = "cascell-stackclose-008"
+mismatches = ["0:latex", "0:output"]
+reason = "The default build returns \"Eigenvalues requires a CAS build\" and empty LaTeX. The reference prints ? and \\mathbf{?}. See crates/geo-kernel/src/expr/cas/row.rs:63."

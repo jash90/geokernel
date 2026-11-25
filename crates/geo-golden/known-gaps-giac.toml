@@ -1773,8 +1773,7 @@ agrees = true
 
 [[gap]]
 id = "cas-numeric-003"
-mismatches = ["0:latex", "0:output"]
-reason = 'GeoCasCell falls back to the number 1 for Numeric with three arguments and prints \mathbf{1}. The kernel returns the generic CAS input error and empty LaTeX because row/translation.rs has only the Numeric.1 and Numeric.2 templates.'
+agrees = true
 
 [[gap]]
 id = "cas-mixednumber-001"
@@ -1950,4 +1949,37 @@ agrees = true
 
 [[gap]]
 id = "cascell-closing-004"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-001"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-002"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-003"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-004"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-005"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-006"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-007"
+mismatches = ["0:latex", "0:output"]
+reason = "The 64 KiB template limit in crates/geo-kernel/src/expr/cas/giac.rs:48 rejects the four copies of the 20,000-digit integer before assembly. The kernel returns \"Sorry, something went wrong. Please check your input\" and empty LaTeX. The reference prints {1, 0, ?} and \\mathbf{ \\left\\{ 1, 0, ? \\right\\} }."
+
+[[gap]]
+id = "cascell-stackclose-008"
 agrees = true

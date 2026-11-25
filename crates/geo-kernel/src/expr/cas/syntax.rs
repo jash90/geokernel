@@ -28,6 +28,7 @@ pub(super) fn relation(op: u8) -> Option<&'static str> {
         b'G' => ">=",
         b'=' => "==",
         b'!' => "!=",
+        b'&' => "&&",
         _ => return None,
     })
 }
@@ -59,30 +60,58 @@ impl Reader<'_> {
 
     fn equation(&mut self) -> Option<Expr> {
         let left = self.sum()?;
-        match self.peek() {
-            Some(op @ (b'<' | b'>' | b'=' | b'!')) if self.input => {
-                self.i += 1;
-                let compare = self.eat(b'=');
-                let right = Box::new(self.sum()?);
-                let left = Box::new(left);
-                if !compare && op == b'=' {
-                    Some(Expr::Eq(left, right))
-                } else {
-                    let op = match (op, compare) {
-                        (b'<', true) => b'L',
-                        (b'>', true) => b'G',
-                        (b'!', false) => return None,
-                        (op, _) => op,
-                    };
-                    Some(Expr::Bin(op, left, right))
+        if self.input {
+            if let Some(op) = self.inequality() {
+                return self.inequality_chain(left, op);
+            }
+            if self.eat(b'!') {
+                if !self.eat(b'=') {
+                    return None;
                 }
+                return Some(Expr::Bin(b'!', Box::new(left), Box::new(self.sum()?)));
             }
-            Some(b'=') => {
-                self.i += 1;
-                Some(Expr::Eq(Box::new(left), Box::new(self.sum()?)))
-            }
-            _ => Some(left),
         }
+        if self.eat(b'=') {
+            if self.input && self.eat(b'=') {
+                return Some(Expr::Bin(b'=', Box::new(left), Box::new(self.sum()?)));
+            }
+            return Some(Expr::Eq(Box::new(left), Box::new(self.sum()?)));
+        }
+        Some(left)
+    }
+
+    fn inequality(&mut self) -> Option<u8> {
+        let op @ (b'<' | b'>') = self.peek()? else {
+            return None;
+        };
+        self.i += 1;
+        Some(match (op, self.eat(b'=')) {
+            (b'<', true) => b'L',
+            (b'>', true) => b'G',
+            _ => op,
+        })
+    }
+
+    fn inequality_chain(&mut self, mut left: Expr, mut op: u8) -> Option<Expr> {
+        let mut chain = None;
+        for _ in 0..MAX_DEPTH {
+            let right = self.sum()?;
+            let next = self.inequality();
+            let final_comparison = next.is_none();
+            let next_left = next.map(|_| right.clone());
+            let pair = Expr::Bin(op, Box::new(left), Box::new(right));
+            let joined = match chain {
+                Some(chain) => Expr::Bin(b'&', Box::new(chain), Box::new(pair)),
+                None => pair,
+            };
+            if final_comparison {
+                return Some(joined);
+            }
+            chain = Some(joined);
+            left = next_left?;
+            op = next?;
+        }
+        None
     }
 
     fn sum(&mut self) -> Option<Expr> {
@@ -160,7 +189,8 @@ impl Reader<'_> {
         } else {
             self.atom()?
         };
-        let base = if self.eat(b'!') {
+        let base = if self.peek() == Some(b'!') && self.s.get(self.i + 1) != Some(&b'=') {
+            self.i += 1;
             Expr::Call("!".into(), vec![base])
         } else {
             base

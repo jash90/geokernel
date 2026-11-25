@@ -18,8 +18,7 @@
 //! new evidence rows.
 
 use geo_golden::forms::{self, CommandForms, Evidence};
-use geo_golden::model::Case;
-use geo_golden::model::Step;
+use geo_golden::model::{Case, ExpectedData, Step};
 use geo_golden::table::Table;
 use geo_golden::{gaps, model, repo_root};
 use geo_kernel::Kind;
@@ -162,7 +161,7 @@ fn cas_row_uses_form(case: &Case, command: &str, form: &str) -> bool {
                     "equation" => equation(),
                     "expression" => true,
                     "list" => argument.starts_with('{') || kind() == Some(Kind::List),
-                    "matrix" => argument.starts_with("{{") || kind() == Some(Kind::List),
+                    "matrix" => cas_matrix_argument(case, argument),
                     "number" => kind() == Some(Kind::Number),
                     "polynomial" => !equation() && kind() != Some(Kind::Number),
                     "variable" => {
@@ -174,6 +173,35 @@ fn cas_row_uses_form(case: &Case, command: &str, form: &str) -> bool {
                 }
             })
     })
+}
+
+/// A matrix needs rows of the same nonzero length. A list label by itself
+/// supplies no evidence about its shape, so inspect its recorded contents.
+fn cas_matrix_argument(case: &Case, argument: &str) -> bool {
+    let recorded_list = |label: &str| match case.snapshots.last()?.get(label)?.data.as_ref()? {
+        ExpectedData::List(items) => Some(items),
+        _ => None,
+    };
+    let widths = if let Some(rows) = geo_kernel::expr::list_literal_elements(argument) {
+        rows.iter()
+            .map(|row| {
+                geo_kernel::expr::list_literal_elements(row)
+                    .map(|items| items.len())
+                    .or_else(|| recorded_list(row).map(Vec::len))
+            })
+            .collect::<Vec<_>>()
+    } else if let Some(rows) = recorded_list(argument) {
+        rows.iter()
+            .map(|row| match &row.data {
+                Some(ExpectedData::List(items)) => Some(items.len()),
+                _ => None,
+            })
+            .collect()
+    } else {
+        return false;
+    };
+    matches!(widths.first(), Some(Some(width)) if *width > 0)
+        && widths.iter().all(|width| width == &widths[0])
 }
 
 #[test]
@@ -618,4 +646,19 @@ fn redefinitions_and_rejections_count_as_calls() {
     assert!(reaches(Lines::All, "Radius", "conic"));
     assert!(reaches(Lines::Script, "Radius", "conic"));
     assert!(!reaches(Lines::Rejected, "Radius", "conic"));
+}
+
+#[test]
+fn cas_matrix_evidence_rejects_flat_lists() {
+    let cases = harness_cases();
+    assert!(!cas_row_uses_form(
+        &cases["cascell-stackclose-008"],
+        "Eigenvalues",
+        "matrix"
+    ));
+    assert!(cas_row_uses_form(
+        &cases["cas-eigenvalues-001"],
+        "Eigenvalues",
+        "matrix"
+    ));
 }

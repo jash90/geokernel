@@ -42,6 +42,14 @@ cases = [
     case("display", 3, "Factor((x-2)*(x+1)*(x+3))"),
     case("display", 4, "g", "g: x + y = 0"),
     case("display", 5, "g", "g: x + y = 0.5"),
+    case("stackclose", 1, "Numeric(1.5E2)"),
+    case("stackclose", 2, "Numeric(1/8)"),
+    case("stackclose", 3, "Numeric(-1/1000)"),
+    case("stackclose", 4, "Numeric(10^20)"),
+    case("stackclose", 5, "Assume(-pi < x < pi, Solutions(sin(x) = cos(x)))"),
+    case("stackclose", 6, "Numeric(f(3))", "f(x) = x^2"),
+    case("stackclose", 7, f"ExtendedGCD({'9' * 20_000}, 1)"),
+    case("stackclose", 8, "Eigenvalues({1,2})"),
 ]
 Path(__file__).with_name("cascell.json").write_text(
     json.dumps({"cases": cases}, indent=2) + "\n", encoding="utf-8"

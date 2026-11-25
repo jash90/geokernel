@@ -37,10 +37,10 @@ fn read_back(input: &Expr, raw: &str) -> Option<CasRow> {
         Expr::Call(name, args) if name == "Numeric" => Some(args.len()),
         _ => None,
     };
-    normalize(&mut value, &mut constants, numeric == Some(1));
+    normalize(&mut value, &mut constants);
     let value = cell_equation(value);
-    Some(if numeric.is_some() {
-        display::render_numeric(&value)
+    Some(if let Some(arity) = numeric {
+        display::render_numeric(&value, arity > 1)
     } else {
         display::render(&value)
     })
@@ -48,7 +48,7 @@ fn read_back(input: &Expr, raw: &str) -> Option<CasRow> {
 
 /// CASgiac removes dummy-variable prefixes and GeoCasCell gives each
 /// arbitrary integration constant an index within the cell.
-fn normalize(tree: &mut Expr, constants: &mut Vec<String>, round: bool) {
+fn normalize(tree: &mut Expr, constants: &mut Vec<String>) {
     let name = |name: &mut String| {
         if let Some(original) = name.strip_prefix("ggbtmpvar") {
             *name = original.to_owned();
@@ -71,19 +71,15 @@ fn normalize(tree: &mut Expr, constants: &mut Vec<String>, round: bool) {
                 name(n);
             }
         }
-        Expr::Num(n, text) => {
-            if round && n.is_finite() {
-                *text = Some(display::rounded(*n));
-            }
-        }
-        Expr::Neg(child) => normalize(child, constants, round),
+        Expr::Num(..) => {}
+        Expr::Neg(child) => normalize(child, constants),
         Expr::Eq(a, b) => {
-            normalize(a, constants, round);
-            normalize(b, constants, round);
+            normalize(a, constants);
+            normalize(b, constants);
         }
         Expr::Bin(op, a, b) => {
-            normalize(a, constants, round);
-            normalize(b, constants, round);
+            normalize(a, constants);
+            normalize(b, constants);
             // GeoGebra reads i*pi/n as i times the real fraction pi/n.
             if *op == b'/' {
                 if let Expr::Bin(b'*', i, real) = &mut **a {
@@ -102,12 +98,12 @@ fn normalize(tree: &mut Expr, constants: &mut Vec<String>, round: bool) {
         Expr::Call(n, items) => {
             name(n);
             for item in items {
-                normalize(item, constants, round);
+                normalize(item, constants);
             }
         }
         Expr::List(items) | Expr::Tuple(items) => {
             for item in items {
-                normalize(item, constants, round);
+                normalize(item, constants);
             }
         }
     }
@@ -122,11 +118,12 @@ fn translate(c: &Construction, tree: &Expr) -> Option<String> {
     let translated = match tree {
         Expr::Call(name, _)
             if !matches!(name.as_str(), "Substitute" | "!")
-                && !BUILTINS.contains(&name.as_str()) =>
+                && !BUILTINS.contains(&name.as_str())
+                && function(c, name).is_none() =>
         {
             source
         }
-        _ => EVALUATE.replace("%0", &source),
+        _ => giac::row_fill(EVALUATE, &[&source])?,
     };
     (translated.len() <= MAX_INPUT_BYTES).then_some(translated)
 }
@@ -167,6 +164,15 @@ fn literal(text: &str) -> Option<String> {
     }
 }
 
+fn function(c: &Construction, name: &str) -> Option<crate::Id> {
+    let id = c.resolve_label(name)?;
+    matches!(
+        c.kind(id),
+        crate::Kind::Function | crate::Kind::FunctionNVar
+    )
+    .then_some(id)
+}
+
 struct Translator<'a> {
     c: &'a Construction,
     command_index: usize,
@@ -183,7 +189,9 @@ impl Translator<'_> {
             },
             Expr::Neg(a) => format!("-({})", self.print(a)?),
             Expr::Bin(op, a, b) => {
-                if let Some(op) = super::super::syntax::relation(*op) {
+                if *op == b'&' {
+                    giac::row_fill("(%0 && %1)", &[&self.print(a)?, &self.print(b)?])?
+                } else if let Some(op) = super::super::syntax::relation(*op) {
                     format!("{} {op} {}", self.print(a)?, self.print(b)?)
                 } else {
                     format!("({}){}({})", self.print(a)?, *op as char, self.print(b)?)
@@ -241,7 +249,9 @@ impl Translator<'_> {
                     },
                 )
             }
-            ("Evaluate", [arg]) => Some(EVALUATE.replace("%0", &self.print(arg)?)),
+            // GeoCasCell's algebra fallback drops an unsupported Numeric wrapper.
+            ("Numeric", [first, _, _, ..]) => giac::row_fill(EVALUATE, &[&self.print(first)?]),
+            ("Evaluate", [arg]) => giac::row_fill(EVALUATE, &[&self.print(arg)?]),
             ("NextPrime", [arg]) => Some(format!("nextprime({})", self.print(arg)?)),
             ("PreviousPrime", [arg]) => Some(format!(
                 "[[ggbpparg0:={}],if (ggbpparg0>2) then prevprime(ggbpparg0) else 0/0 fi][1]",
@@ -249,16 +259,28 @@ impl Translator<'_> {
             )),
             ("Solve" | "Solutions" | "NSolve" | "NSolutions", [arg]) => {
                 let variable = variable(solve_variable(self.c, arg));
-                Some(giac::row_solve(name, &self.print(arg)?, &variable))
+                giac::row_solve(name, &self.print(arg)?, &variable)
             }
-            ("Solve" | "Solutions" | "NSolve" | "NSolutions", [arg, variable]) => Some(
-                giac::row_solve(name, &self.print(arg)?, &self.print(variable)?),
-            ),
+            ("Solve" | "Solutions" | "NSolve" | "NSolutions", [arg, variable]) => {
+                giac::row_solve(name, &self.print(arg)?, &self.print(variable)?)
+            }
             (name, [arg]) if Op::named(name).is_some_and(Op::is_giac_rewrite) => {
-                let text = giac::rewrite::input(Op::named(name)?, &self.print(arg)?)?;
-                Some(text.replace("ggbsimparg01", &format!("ggbsimparg0{index}")))
+                giac::rewrite::row_input(Op::named(name)?, &self.print(arg)?, index)
             }
-            _ => self.cas_only_command(name, args, index),
+            _ if is_feature_command(name) => self.cas_only_command(name, args, index),
+            _ => {
+                let id = function(self.c, name)?;
+                let mut remaining = MAX_INPUT_BYTES;
+                let arguments = args
+                    .iter()
+                    .map(|arg| {
+                        let value = self.print(arg)?;
+                        remaining = remaining.checked_sub(value.len())?;
+                        Some(value)
+                    })
+                    .collect::<Option<Vec<_>>>()?;
+                giac::row_application(self.c, id, &arguments)
+            }
         }
     }
 
@@ -276,17 +298,19 @@ impl Translator<'_> {
                 Some(arg)
             })
             .collect::<Option<Vec<_>>>()?;
-        if template.contains("%[1..]") {
-            let argument = printed.first()?;
-            let source = if printed.len() == 1 {
-                argument.clone()
-            } else {
-                format!("[{}]", printed.join(","))
-            };
-            return Some(template.replace("%0", argument).replace('%', &source));
-        }
         let arguments: Vec<_> = printed.iter().map(String::as_str).collect();
-        Some(giac::row_fill(&template, &arguments))
+        if template.contains("%[1..]") {
+            let first = *arguments.first()?;
+            let template = template.replace("%[1..]", "%1[1..]");
+            if arguments.len() == 1 {
+                return giac::row_fill(&template, &[first, first]);
+            }
+            let separators = arguments.len() - 1;
+            remaining.checked_sub(separators + 2)?;
+            let all = format!("[{}]", arguments.join(","));
+            return giac::row_fill(&template, &[first, &all]);
+        }
+        giac::row_fill(&template, &arguments)
     }
 }
 #[cfg(test)]
@@ -302,7 +326,7 @@ mod tests {
         );
         assert_eq!(
             translate(&c, &parse("Solve(x^2=1)", true).unwrap()),
-            Some(giac::row_solve("Solve", "(x)^(2)=1", "x")),
+            giac::row_solve("Solve", "(x)^(2)=1", "x"),
         );
     }
 
@@ -329,10 +353,7 @@ mod tests {
     fn translates_a_solve_with_the_equations_variable() {
         let c = Construction::new();
         let tree = parse("Solve(y = 1)", true).unwrap();
-        assert_eq!(
-            translate(&c, &tree),
-            Some(giac::row_solve("Solve", "y=1", "y"))
-        );
+        assert_eq!(translate(&c, &tree), giac::row_solve("Solve", "y=1", "y"));
     }
 
     #[test]

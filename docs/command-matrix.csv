@@ -553,7 +553,7 @@ nPr,,english,P2,done,1,1,
 CASLoaded,,geogebra,,out_of_scope,,,"Reports whether the CAS view is part of the app, which the kernel has no view of."
 IsVertexForm,,function,P2,done,10,10,
 TableToChart,,english,,out_of_scope,,,
-ExtendedGCD,,cas,P2,done,2,2,"Done only with the giac feature (docs/cas-giac.md): ExtendedGCD(number, number), ExtendedGCD(polynomial, polynomial)."
+ExtendedGCD,,cas,P2,partial,2,1,"Done only with the giac feature (docs/cas-giac.md): ExtendedGCD(polynomial, polynomial)."
 ModularExponent,,cas,P2,done,1,1,"Done only with the giac feature (docs/cas-giac.md): ModularExponent(number, number, number)."
 CharacteristicPolynomial,,cas,P2,done,1,1,Done only with the giac feature (docs/cas-giac.md): CharacteristicPolynomial(matrix).
 MinimalPolynomial,,cas,P2,done,1,1,Done only with the giac feature (docs/cas-giac.md): MinimalPolynomial(matrix).

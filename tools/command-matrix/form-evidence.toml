@@ -4997,7 +4997,7 @@ giac = true
 [[form]]
 command = "Assume"
 form = "condition,expression"
-cases = ["cas-assume-001"]
+cases = ["cas-assume-001", "cascell-stackclose-005"]
 giac = true
 
 [[form]]
@@ -5081,7 +5081,7 @@ giac = true
 [[form]]
 command = "Numeric"
 form = "expression"
-cases = ["cas-numeric-001"]
+cases = ["cas-numeric-001", "cascell-stackclose-001", "cascell-stackclose-002", "cascell-stackclose-003", "cascell-stackclose-004", "cascell-stackclose-006"]
 giac = true
 
 [[form]]
@@ -5202,12 +5202,6 @@ giac = true
 command = "ToExponential"
 form = "expression"
 cases = ["cas-toexponential-001"]
-giac = true
-
-[[form]]
-command = "ExtendedGCD"
-form = "number,number"
-cases = ["cas-extendedgcd-001"]
 giac = true
 
 [[form]]

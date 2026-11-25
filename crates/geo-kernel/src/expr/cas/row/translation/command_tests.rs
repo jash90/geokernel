@@ -224,9 +224,12 @@ fn numeric() {
     let row = read_back(&tree, "0.6666666667").unwrap();
     assert_eq!(row.text, "0.67");
     assert_eq!(row.latex, "\\mathbf{0.6666666667}");
-    // cas-numeric-003
+    // cas-numeric-003 removes the unsupported Numeric wrapper.
     let tree = parse("Numeric(1,2,3)", true).unwrap();
-    assert!(translate(&c, &tree).is_none());
+    assert_eq!(
+        translate(&c, &tree),
+        translate(&c, &parse("1", true).unwrap())
+    );
 }
 
 #[test]
@@ -567,4 +570,88 @@ fn qrdecomposition() {
     // cas-qrdecomposition-002
     let tree = parse("QRDecomposition(1,2)", true).unwrap();
     assert!(translate(&c, &tree).is_none());
+}
+
+#[test]
+fn closing_numeric_uses_the_recorded_rounding_and_exponent() {
+    let c = Construction::new();
+    let scientific = parse("Numeric(1.5E2)", true).unwrap();
+    assert!(translate(&c, &scientific)
+        .unwrap()
+        .contains("ggbnumans:=150"));
+    for (source, raw, text, latex) in [
+        ("Numeric(1.5E2)", "150.0", "150", r"\mathbf{150}"),
+        ("Numeric(1/8)", "0.125", "0.13", r"\mathbf{0.13}"),
+        ("Numeric(-1/1000)", "-0.001", "0", r"\mathbf{0}"),
+        (
+            "Numeric(10^20)",
+            "1E+20",
+            "1 * 10²⁰",
+            r"\mathbf{1 \cdot 10^{20}}",
+        ),
+    ] {
+        let row = read_back(&parse(source, true).unwrap(), raw).unwrap();
+        assert_eq!(
+            (row.text.as_str(), row.latex.as_str()),
+            (text, latex),
+            "{source}"
+        );
+        assert_eq!(row.exact, None);
+    }
+}
+
+#[test]
+fn closing_numeric_fallback_uses_the_first_argument() {
+    let c = Construction::new();
+    let tree = parse("Numeric(1,2,3)", true).unwrap();
+    assert_eq!(
+        translate(&c, &tree),
+        translate(&c, &parse("1", true).unwrap())
+    );
+    let row = read_back(&tree, "1").unwrap();
+    assert_eq!(row.text, "1");
+    assert_eq!(row.latex, r"\mathbf{1}");
+}
+
+#[test]
+fn closing_assume_translates_both_bounds_of_a_chain() {
+    let c = Construction::new();
+    let tree = parse("Assume(-pi < x < pi, Solutions(sin(x) = cos(x)))", true).unwrap();
+    assert!(translate(&c, &tree)
+        .unwrap()
+        .starts_with("[[assume((-(pi) < x && x < pi))],"));
+    let row = read_back(&tree, "{-3/4*pi,1/4*pi}").unwrap();
+    assert_eq!(row.text, "{-3 / 4 π, 1 / 4 π}");
+    assert_eq!(
+        row.latex,
+        r"\mathbf{ \left\{ \frac{-3}{4} \; \pi , \frac{1}{4} \; \pi  \right\} }"
+    );
+}
+
+#[test]
+fn closing_defined_function_calls_inline_inside_numeric() {
+    let c = crate::script::load("f(x) = x^2").unwrap();
+    let tree = parse("Numeric(f(3))", true).unwrap();
+    assert!(translate(&c, &tree).unwrap().contains("ggbnumans:=(3)^(2)"));
+    let row = read_back(&tree, "9.0").unwrap();
+    assert_eq!(row.text, "9");
+    assert_eq!(row.latex, r"\mathbf{9}");
+}
+
+#[test]
+fn closing_repetitions_are_bounded_before_template_assembly() {
+    let c = Construction::new();
+    for (len, fits) in [(16_000, true), (20_000, false)] {
+        let source = format!("ExtendedGCD({}, 1)", "9".repeat(len));
+        let Expr::Call(name, args) = parse(&source, true).unwrap() else {
+            panic!("expected an ExtendedGCD call");
+        };
+        let mut translator = Translator {
+            c: &c,
+            command_index: 0,
+        };
+        let assembled = translator.cas_only_command(&name, &args, 1);
+        assert_eq!(assembled.is_some(), fits, "{len} digits");
+        assert!(assembled.is_none_or(|input| input.len() <= MAX_INPUT_BYTES));
+    }
 }

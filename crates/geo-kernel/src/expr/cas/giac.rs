@@ -45,18 +45,25 @@ const PLOTSOLVE_1: &str = "[[ggbplarg:=ggbsort(normal([op(solve(%0))]))],[when(s
 /// function (`GeoGebraCAS.getCASCommand`).
 const PLOTSOLVE_2: &str = "ggbtmpvarPlotSolve(%0,%1)";
 
-pub(super) fn row_fill(template: &str, args: &[&str]) -> String {
-    fill(template, args, args)
+pub(super) fn row_fill(template: &str, args: &[&str]) -> Option<String> {
+    let parts = || template_parts(template, args, args);
+    let size = parts().try_fold(0usize, |size, part| {
+        let size = size.checked_add(part.len())?;
+        (size <= super::row::MAX_INPUT_BYTES).then_some(size)
+    })?;
+    let mut input = String::with_capacity(size);
+    input.extend(parts());
+    Some(input)
 }
 
-pub(super) fn row_solve(name: &str, input: &str, variable: &str) -> String {
+pub(super) fn row_solve(name: &str, input: &str, variable: &str) -> Option<String> {
     let template = match name {
         "Solve" => SOLVE_2,
         "Solutions" => SOLUTIONS_2,
         "NSolve" => NSOLVE_2,
         _ => NSOLUTIONS_2,
     };
-    fill(template, &[input, variable], &[input, variable])
+    row_fill(template, &[input, variable])
 }
 
 pub(super) fn row_object(c: &Construction, id: crate::Id) -> Option<String> {
@@ -64,6 +71,33 @@ pub(super) fn row_object(c: &Construction, id: crate::Id) -> Option<String> {
     let mut printer = Printer::new(c, Vec::new(), false);
     printer.row = true;
     printer.object(id, &mut result)?;
+    Some(result)
+}
+
+/// Inline a construction function with its call arguments bound to the
+/// formal parameters, while preserving the expression's exact literals.
+pub(super) fn row_application(c: &Construction, id: crate::Id, args: &[String]) -> Option<String> {
+    let Def::Expr(def) = c.def(id) else {
+        return None;
+    };
+    let definition = crate::expr::entry(c, def);
+    let arity = match (c.value(id), definition.nodes[definition.root as usize]) {
+        (Value::Function, _) => 1,
+        (Value::FunctionNVar, Node::SystemFunction(arity, _)) => usize::from(arity),
+        _ => return None,
+    };
+    if arity != args.len() || definition.curve_parameter.is_some() {
+        return None;
+    }
+    let mut printer = Printer::new(c, Vec::new(), false);
+    printer.row = true;
+    printer.row_arguments = args;
+    let definition = match &definition.extra {
+        crate::expr::StoredExtra::Cas(form) => form.tree().unwrap_or(definition),
+        _ => definition,
+    };
+    let mut result = String::new();
+    printer.expr(definition, definition.root, &mut result)?;
     Some(result)
 }
 
@@ -406,29 +440,44 @@ fn print_hint(
 /// `GeoGebraCAS.getCASCommand`'s substitution: `%n` and `%%n` (numeric) are
 /// replaced by argument `n`; the `_` escaping of `Ggb2giac.p` is undone.
 fn fill(template: &str, args: &[&str], numeric: &[&str]) -> String {
-    let mut out = String::with_capacity(template.len() + 64);
-    let bytes = template.as_bytes();
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'%' {
-            let mut j = i + 1;
-            let numeric_form = bytes.get(j) == Some(&b'%');
-            if numeric_form {
-                j += 1;
-            }
-            let args = if numeric_form { numeric } else { args };
-            if let Some(d) = bytes.get(j).filter(|b| b.is_ascii_digit()) {
-                if let Some(arg) = args.get(usize::from(d - b'0')) {
-                    out.push_str(arg);
-                    i = j + 1;
-                    continue;
-                }
+    template_parts(template, args, numeric).collect()
+}
+
+/// Yield literal runs and each placeholder's replacement without copying
+/// the arguments. The row translator can measure the complete input first.
+fn template_parts<'a>(
+    mut template: &'a str,
+    args: &'a [&'a str],
+    numeric: &'a [&'a str],
+) -> impl Iterator<Item = &'a str> {
+    std::iter::from_fn(move || {
+        if template.is_empty() {
+            return None;
+        }
+        let literal = template.find('%').unwrap_or(template.len());
+        if literal > 0 {
+            let (part, rest) = template.split_at(literal);
+            template = rest;
+            return Some(part);
+        }
+        let (offset, args) = if template.starts_with("%%") {
+            (2, numeric)
+        } else {
+            (1, args)
+        };
+        if let Some(digit) = template
+            .as_bytes()
+            .get(offset)
+            .filter(|b| b.is_ascii_digit())
+        {
+            if let Some(&arg) = args.get(usize::from(digit - b'0')) {
+                template = &template[offset + 1..];
+                return Some(arg);
             }
         }
-        out.push(bytes[i] as char);
-        i += 1;
-    }
-    out
+        template = &template[1..];
+        Some("%")
+    })
 }
 
 /// Prints trees the way the reference's Giac template prints the
@@ -443,6 +492,7 @@ struct Printer<'a> {
     numeric: bool,
     parameter: Option<&'a str>,
     row: bool,
+    row_arguments: &'a [String],
     remaining: std::cell::Cell<usize>,
     depth: std::cell::Cell<usize>,
 }
@@ -455,6 +505,7 @@ impl<'a> Printer<'a> {
             numeric,
             parameter: None,
             row: false,
+            row_arguments: &[],
             remaining: std::cell::Cell::new(8192),
             depth: std::cell::Cell::new(0),
         }
@@ -635,6 +686,15 @@ impl<'a> Printer<'a> {
         }
     }
 
+    fn row_argument(&self, index: usize, out: &mut String) -> Option<()> {
+        let argument = self.row_arguments.get(index)?;
+        if out.len().checked_add(argument.len())? > super::row::MAX_INPUT_BYTES {
+            return None;
+        }
+        out.push_str(argument);
+        Some(())
+    }
+
     /// Whether the printed definition of the subtree starts with a minus.
     fn leading_negative(&self, e: &Entry, i: u32) -> bool {
         match e.nodes[i as usize] {
@@ -708,6 +768,7 @@ impl<'a> Printer<'a> {
                 out.push_str("-1");
                 Some(())
             }
+            Node::Var if !self.row_arguments.is_empty() => self.row_argument(0, out),
             Node::Var => {
                 let parameter = self.parameter.unwrap_or("x");
                 if !matches!(parameter, "x" | "y" | "z") {
@@ -715,6 +776,12 @@ impl<'a> Printer<'a> {
                 }
                 out.push_str(parameter);
                 Some(())
+            }
+            Node::Local(index, _) if !self.row_arguments.is_empty() => {
+                self.row_argument(index as usize, out)
+            }
+            Node::SystemFunction(arity, body) if self.row_arguments.len() == usize::from(arity) => {
+                self.expr(e, body, out)
             }
             Node::Local(0, _) if self.parameter.is_some() => {
                 out.push('x');
@@ -725,6 +792,9 @@ impl<'a> Printer<'a> {
                 Some(())
             }
             Node::SystemFunction(2, body) if self.parameter.is_some() => self.expr(e, body, out),
+            Node::VarY if !self.row_arguments.is_empty() => {
+                self.row_argument(self.row_arguments.len() - 1, out)
+            }
             Node::VarY => {
                 out.push('y');
                 Some(())
