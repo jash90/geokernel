@@ -179,6 +179,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     }
     let charts = charts::Frame::new(painter, rect, c, t, scene.generation);
     let mut curves = None;
+    let mut list_items_left = 512;
     for layer in c.drawing_layers() {
         if c.images().len() != 0 {
             image::paint(painter, rect, c, t, Some(layer), scene.visible, scene.ghost);
@@ -190,7 +191,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             t,
             scene,
             layer,
-            (&mut curves, charts.as_ref()),
+            (&mut curves, charts.as_ref(), &mut list_items_left),
         );
     }
 }
@@ -202,9 +203,10 @@ fn paint_layer<'c>(
     t: &ViewTransform,
     scene: &Scene,
     layer: u8,
-    (curves, charts): (
+    (curves, charts, list_items_left): (
         &mut Option<crate::curves::Curves>,
         Option<&charts::Frame<'_>>,
+        &mut usize,
     ),
 ) {
     let (w, h) = (rect.width() as f64, rect.height() as f64);
@@ -723,6 +725,27 @@ fn paint_layer<'c>(
                         Align2::LEFT_BOTTOM,
                     ));
                 }
+            }
+        } else if let Value::List { .. } = value {
+            use std::ops::ControlFlow;
+            if let Some(list) = c.elements(id).filter(|_| *list_items_left > 0) {
+                list.canvas_members(list_items_left, |object, value| {
+                    if object.is_none() {
+                        match value {
+                            Value::Point { x, y } => {
+                                let pos = p(x, y);
+                                if rect.expand(DEPENDENT_POINT_RADIUS).contains(pos) {
+                                    point_shape(painter, pos, color(id), DEPENDENT_POINT_RADIUS);
+                                }
+                            }
+                            Value::Vector { x, y } => {
+                                painter.arrow(p(0.0, 0.0), p(x, y) - p(0.0, 0.0), curve(id));
+                            }
+                            _ => {}
+                        }
+                    }
+                    ControlFlow::Continue(())
+                });
             }
         } else if let Value::InputBox = value {
             let [x, y, width, height] = c.input_box_rect(id).map(|v| v as f32);

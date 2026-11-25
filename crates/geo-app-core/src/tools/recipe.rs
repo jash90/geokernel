@@ -179,6 +179,7 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
         | Tool::Slider
         | Tool::Checkbox
         | Tool::InputBox
+        | Tool::CreateList
         | Tool::MoveView
         | Tool::ZoomIn
         | Tool::ZoomOut
@@ -462,6 +463,7 @@ pub(super) fn build(
         | Tool::Slider
         | Tool::Checkbox
         | Tool::InputBox
+        | Tool::CreateList
         | Tool::MoveView
         | Tool::ZoomIn
         | Tool::ZoomOut
@@ -561,6 +563,7 @@ pub(super) fn hint(tool: Tool, picks: &[Kind]) -> Hint {
         (Tool::VectorPolygon, _) => Hint::NextVertexOrClose,
         (Tool::Area, _) => Hint::AreaObject,
         (Tool::Slope, _) => Hint::SlopeObject,
+        (Tool::CreateList, _) => Hint::SelectListMembers,
         (Tool::VectorFromPoint, 0) => Hint::PointOrVector,
         (Tool::VectorFromPoint, _) if first == Some(Kind::Point) => Hint::Vector,
         (Tool::VectorFromPoint, _) => Hint::Point,

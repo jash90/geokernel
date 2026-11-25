@@ -187,6 +187,7 @@ pub const fn tool_caption(tool: Tool) -> &'static str {
         Tool::Parabola => "Parabola",
         Tool::Conic5 => "Stożkowa przez pięć punktów",
         Tool::Area => "Pole",
+        Tool::CreateList => "Utwórz listę",
         Tool::Slope => "Nachylenie",
     }
 }
@@ -237,6 +238,7 @@ pub enum Hint {
     Vector,
     InversionCircle,
     PlaceControl,
+    SelectListMembers,
     DragView,
     ClickToZoomIn,
     ClickToZoomOut,
@@ -303,6 +305,7 @@ pub const fn hint(key: Hint) -> &'static str {
         Hint::CenterOfDilation => "Kliknij środek jednokładności",
         Hint::Vector => "Kliknij wektor",
         Hint::InversionCircle => "Kliknij okrąg inwersji",
+        Hint::SelectListMembers => "Zaznacz obiekty, aby utworzyć listę",
         Hint::PlaceControl => "Kliknij w widoku grafiki, aby ustawić położenie",
         Hint::DragView => "Przeciągnij, aby przesunąć widok",
         Hint::ClickToZoomIn => "Kliknij, aby powiększyć",

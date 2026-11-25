@@ -1074,3 +1074,30 @@ fn input_box_canvas_edits_a_boolean_and_a_text_literal() {
     assert_eq!(c.text(c.id("note").unwrap()), Some("two \"quotes\""));
     assert_eq!(h.state().wb.undo_depth(), (2, 0));
 }
+
+#[test]
+fn canvas_list_tool_creates_a_live_list_from_the_selection_rectangle() {
+    let mut h = harness("A = (0, 0)\nB = (2, 2)\nC = (5, 1)");
+    let tool = Tool::all()
+        .find(|tool| tool.caption() == "Utwórz listę")
+        .expect("create list tool");
+    h.state_mut().select_tool(tool);
+    drag(&mut h, world(-0.5, 2.5), world(2.5, -0.5));
+    let c = h.state().wb.construction();
+    let l = c.id("l1").expect("list from the two enclosed points");
+    assert_eq!(
+        geo_app_core::describe::object_text(c, l),
+        "{(0, 0), (2, 2)}"
+    );
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    let bytes = h.state().wb.export_ggb(None).unwrap();
+    let mut again = Workbench::default();
+    again.load_for_export(&bytes, "list-tool").unwrap();
+    let a = again.construction().id("A").unwrap();
+    assert!(again.move_point(a, 1.0, 1.0));
+    let c = again.construction();
+    assert_eq!(
+        geo_app_core::describe::object_text(c, c.id("l1").unwrap()),
+        "{(1, 1), (2, 2)}"
+    );
+}

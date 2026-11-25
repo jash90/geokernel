@@ -1482,3 +1482,19 @@ fn a_thousand_canvas_input_boxes_fit_the_frame_budget() {
         assert!(median <= 4.0, "input boxes: {median:.3} ms (budget 4 ms)");
     }
 }
+
+#[test]
+fn canvas_list_points_are_drawn_with_a_frame_limit() {
+    let mut w = Window::with("l = Sequence((k / 100, 1), k, 1, 3000)", String::new());
+    let drawn = w.settled(2);
+    let hidden = Window::with(
+        "l = Sequence((k / 100, 1), k, 1, 3000)\nSetVisibleInView(l, 1, false)",
+        String::new(),
+    )
+    .settled(2);
+    assert!(drawn.vertices > hidden.vertices, "{drawn:?}");
+    assert!(
+        drawn.vertices <= 60_000 && drawn.shapes <= 4700,
+        "{drawn:?}"
+    );
+}

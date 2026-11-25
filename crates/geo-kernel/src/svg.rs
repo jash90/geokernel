@@ -39,6 +39,7 @@ impl View {
             ymax: f64::NEG_INFINITY,
         };
         let mut v = empty();
+        let mut list_items_left = 4096;
         let mut texts = empty();
         let mut grow = |x: f64, y: f64| {
             if !(x.is_finite() && y.is_finite()) {
@@ -110,6 +111,18 @@ impl View {
                 Value::Polygon { .. } | Value::PolyLine { .. } => {
                     for (x, y) in c.vertices(id).flatten() {
                         grow(x, y);
+                    }
+                }
+                Value::List { .. } if list_items_left > 0 => {
+                    if let Some(list) = c.elements(id) {
+                        list.canvas_members(&mut list_items_left, |object, value| {
+                            if object.is_none() {
+                                if let Value::Point { x, y } = value {
+                                    grow(x, y);
+                                }
+                            }
+                            std::ops::ControlFlow::Continue(())
+                        });
                     }
                 }
                 Value::Vector { x, y } => {
@@ -286,6 +299,7 @@ fn render_geometry(
     let mut points = String::new();
     let mut texts = String::new();
     let mut controls = String::new();
+    let mut list_items_left = 4096;
 
     // Used to draw an "infinite" line as a segment longer than the view.
     let (mx, my) = (0.5 * (view.xmin + view.xmax), 0.5 * (view.ymin + view.ymax));
@@ -581,6 +595,36 @@ fn render_geometry(
                     }
                 }
             }
+            Value::List { .. } => {
+                use std::ops::ControlFlow;
+                if let Some(list) = c.elements(id) {
+                    list.canvas_members(&mut list_items_left, |object, value| {
+                        if object.is_none() {
+                            match value {
+                                Value::Point { x, y } => {
+                                    let (x, y) = (sx(x), sy(y));
+                                    let _ = writeln!(
+                                        points,
+                                        r#"<circle cx="{x:.2}" cy="{y:.2}" r="4"/>"#
+                                    );
+                                }
+                                Value::Vector { x, y } => {
+                                    let _ = writeln!(
+                                        segments,
+                                        r#"<line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>"#,
+                                        sx(0.0),
+                                        sy(0.0),
+                                        sx(x),
+                                        sy(y)
+                                    );
+                                }
+                                _ => {}
+                            }
+                        }
+                        ControlFlow::Continue(())
+                    });
+                }
+            }
             Value::InputBox => {
                 let [x, y, width, height] = c.input_box_rect(id);
                 let (x, y) = label_offset(id).unwrap_or((x, y));
@@ -674,7 +718,6 @@ fn render_geometry(
             | Value::Circle { .. }
             | Value::Number(_)
             | Value::FunctionNVar
-            | Value::List { .. }
             | Value::HomogeneousPoint { .. }
             | Value::NormalizedPointAtInfinity { .. }
             | Value::Curve { .. }
@@ -1018,4 +1061,16 @@ fn input_box_svg_draws_at_saved_position_with_escaped_text() {
     );
     assert!(svg.contains("<rect x=\"48.00\" y=\"64.00\""));
     assert!(svg.contains(">x &lt; y</text>"));
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_list_svg_draws_anonymous_points_only() {
+    let c = crate::script::load("A = (0, 0)\nl = {A, (1, 2), (3, 4)}\nn = {1, 2}").unwrap();
+    let view = View::fit(&c);
+    let render =
+        |labels: &[&str]| render_visible(&c, view, 400, 300, |id| labels.contains(&c.label(id)));
+    assert_eq!(render(&["A", "l", "n"]).matches("<circle ").count(), 3);
+    assert_eq!(render(&["l"]).matches("<circle ").count(), 2);
+    assert_eq!(render(&["n"]).matches("<circle ").count(), 0);
 }

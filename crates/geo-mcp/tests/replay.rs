@@ -33,6 +33,7 @@ const SCALE: f64 = 50.0;
 /// The landed scenarios, by group.
 const LANDED: &[(u8, &[&str])] = &[
     (16, &["tool_input_box_places_empty_widget"]),
+    (17, &["tool_create_list_from_rectangle"]),
     (
         1,
         &[
@@ -374,6 +375,7 @@ fn tool_name(mode: i64) -> Option<&'static str> {
         61 => "input_box",
         65 => "polyline",
         70 => "vector_polygon",
+        71 => "create_list",
         _ => return None,
     })
 }
@@ -1158,7 +1160,7 @@ fn the_observed_pointer_scenarios_replay() {
         count += 1;
     }
     assert_eq!(count, names.len());
-    assert_eq!((replayed, ours), (94, 3), "scenarios replayed");
+    assert_eq!((replayed, ours), (95, 3), "scenarios replayed");
     assert_eq!(
         skipped.into_iter().collect::<Vec<_>>(),
         [(5, 1), (6, 1), (8, 1)],

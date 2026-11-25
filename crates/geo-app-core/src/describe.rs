@@ -125,6 +125,14 @@ pub fn object_text(c: &Construction, id: Id) -> String {
         },
         Value::Function | Value::FunctionNVar => String::new(),
         Value::InputBox => c.input_box_text(id).into_owned(),
+        Value::List { .. } => {
+            let mut text = String::new();
+            if let Some(list) = c.elements(id) {
+                let mut remaining = 256;
+                list_value(c, list, &mut remaining, &mut text);
+            }
+            text
+        }
         Value::Text => c.text(id).unwrap_or_default().to_owned(),
         // `GeoLocusStroke.toString` gives the label
         Value::Image | Value::PenStroke { .. } => c.label(id).to_owned(),
@@ -132,6 +140,55 @@ pub fn object_text(c: &Construction, id: Id) -> String {
         Value::Number(value) if c.has_slider_bounds(id) => c.format_display_number(value),
         v => value_text(&v),
     }
+}
+
+fn bounded_list_text(text: &str) -> &str {
+    text.char_indices()
+        .nth(128)
+        .map_or(text, |(at, _)| &text[..at])
+}
+
+fn list_value(
+    c: &Construction,
+    list: geo_kernel::expr::List<'_>,
+    remaining: &mut usize,
+    text: &mut String,
+) {
+    use geo_kernel::expr::Element;
+    text.push('{');
+    for (i, element) in list.iter().enumerate() {
+        if i > 0 {
+            text.push_str(", ");
+        }
+        if *remaining == 0 {
+            text.push('…');
+            break;
+        }
+        *remaining -= 1;
+        match element {
+            Element::List(nested) => list_value(c, nested, remaining, text),
+            Element::Text(s) => {
+                use std::fmt::Write;
+                let s = bounded_list_text(s);
+                let _ = write!(text, "{s:?}");
+            }
+            Element::Value(_, Value::Bool(value)) => {
+                text.push_str(if value { "true" } else { "false" });
+            }
+            Element::Value(geo_kernel::Kind::Angle, Value::Number(angle)) => {
+                text.push_str(&degrees(angle));
+            }
+            Element::Value(_, value) => {
+                if let Some(object) = list.object(i) {
+                    let value = object_text(c, object);
+                    text.push_str(bounded_list_text(&value));
+                } else {
+                    text.push_str(&value_text(&value));
+                }
+            }
+        }
+    }
+    text.push('}');
 }
 
 /// The row value of an object of a kind the window does not know yet: a
@@ -164,6 +221,7 @@ pub fn is_known(v: &Value) -> bool {
             | Value::ImplicitCurve
             | Value::Text
             | Value::InputBox
+            | Value::List { .. }
             | Value::Image
             | Value::PieChart
             | Value::PenStroke { .. }
@@ -296,4 +354,15 @@ fn input_box_algebra_value_follows_linked_object() {
     assert_eq!(object_text(&c, c.id("empty").unwrap()), "");
     c.move_point(c.id("A").unwrap(), 4.0, 5.0).unwrap();
     assert_eq!(object_text(&c, point), "(4, 5)");
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_list_algebra_formats_members_as_values() {
+    // lists-lit-004 and lists-lit-010 contain anonymous and referenced points.
+    let c = geo_kernel::script::load("A = (1, 2)\nl = {A, (3, 4), 3, {false, \"text\"}}").unwrap();
+    assert_eq!(
+        object_text(&c, c.id("l").unwrap()),
+        "{(1, 2), (3, 4), 3, {false, \"text\"}}"
+    );
 }

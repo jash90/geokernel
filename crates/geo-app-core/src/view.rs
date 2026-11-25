@@ -90,6 +90,7 @@ pub fn visible_content_bounds(c: &Construction, visible: impl Fn(Id) -> bool) ->
         ymax: f64::NEG_INFINITY,
     };
     let mut any = false;
+    let mut list_items_left = 4096;
     let mut add = |b: &mut Bounds, x: f64, y: f64| {
         if x.is_finite() && y.is_finite() {
             b.grow(x, y);
@@ -128,6 +129,18 @@ pub fn visible_content_bounds(c: &Construction, visible: impl Fn(Id) -> bool) ->
                     for [x, y] in points {
                         add(&mut b, x, y);
                     }
+                }
+            }
+            Value::List { .. } if list_items_left > 0 => {
+                if let Some(list) = c.elements(id) {
+                    list.canvas_members(&mut list_items_left, |object, value| {
+                        if object.is_none() {
+                            if let Value::Point { x, y } = value {
+                                add(&mut b, x, y);
+                            }
+                        }
+                        std::ops::ControlFlow::Continue(())
+                    });
                 }
             }
             Value::Text => {

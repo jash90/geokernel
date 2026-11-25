@@ -122,6 +122,11 @@ pub enum HitType {
     SliderKnob,
 }
 
+fn point_hit(s: (f64, f64), p: (f64, f64), radius: f64) -> bool {
+    let (dx, dy) = (s.0 - p.0, s.1 - p.1);
+    dx.abs() < radius && dx * dx + dy * dy <= radius * radius
+}
+
 /// Whether the closed square of half-width `t` around `p` meets the segment
 /// `a`-`b` (Liang-Barsky clipping).
 fn segment_meets_square(a: (f64, f64), b: (f64, f64), p: (f64, f64), t: f64) -> bool {
@@ -173,13 +178,44 @@ pub fn hit(
     let to_screen = |x: f64, y: f64| tr.world_to_screen(x, y);
     let boundary = |hit: bool| hit.then_some(HitType::Boundary);
     match c.value(id) {
+        Value::List { .. } => {
+            use std::ops::ControlFlow;
+            let mut result = None;
+            c.elements(id)?.canvas_members(
+                &mut { geo_kernel::expr::MAX_CANVAS_LIST_ITEMS },
+                |object, value| {
+                    let found = if let Some(object) = object {
+                        hit(c, object, tr, p, t, reach)
+                    } else {
+                        match value {
+                            Value::Point { x, y } => {
+                                boundary(point_hit(to_screen(x, y), p, t + reach.point_min))
+                            }
+                            Value::Vector { x, y } => boundary(segment_meets_square(
+                                to_screen(0.0, 0.0),
+                                to_screen(x, y),
+                                p,
+                                t,
+                            )),
+                            _ => None,
+                        }
+                    };
+                    if found.is_some() {
+                        result = found;
+                        ControlFlow::Break(())
+                    } else {
+                        ControlFlow::Continue(())
+                    }
+                },
+            );
+            result
+        }
         Value::Point { x, y } => {
             // `DrawPoint.hit`: r = max(pointSize, threshold + 12); the
             // window's points are never larger than that.
             let s = to_screen(x, y);
             let r = t + reach.point_min;
-            let (dx, dy) = (s.0 - p.0, s.1 - p.1);
-            boundary(dx.abs() < r && dx * dx + dy * dy <= r * r)
+            boundary(point_hit(s, p, r))
         }
         v @ Value::Line { .. } => {
             let (a, b, k) = v.unit_line()?;
@@ -1121,4 +1157,29 @@ mod control_tests {
             Some(point)
         );
     }
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_list_hits_member_shapes() {
+    let c = geo_kernel::script::load(
+        "A = (0, 0)\nB = (3, 0)\ns = Segment(A, B)\nl = {(0, 2), s}\nn = {0, 2}",
+    )
+    .unwrap();
+    let tr = ViewTransform::new(geo_kernel::svg::View::fit(&c), 400.0, 300.0);
+    let reach = Reach::square(3.0);
+    let test = |label, x, y| {
+        hit(
+            &c,
+            c.id(label).unwrap(),
+            &tr,
+            tr.world_to_screen(x, y),
+            3.0,
+            &reach,
+        )
+    };
+    assert_eq!(test("l", 0.0, 2.0), Some(HitType::Boundary));
+    assert_eq!(test("l", 1.5, 0.0), Some(HitType::Boundary));
+    assert_eq!(test("l", 1.5, 2.0), None);
+    assert_eq!(test("n", 0.0, 0.0), None);
 }

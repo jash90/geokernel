@@ -464,4 +464,10 @@ for rhs in ("First(\"hello\")", "First(\"hello\", n)", "First(\"\", 2)", "First(
     case("textelem", nums(n=2) + [f"p = {rhs}"],
          [setn("n", 0), setn("n", 1), setn("n", 5), setn("n", 6), setn("n", -1), setn("n", 2)])
 
+# The members enclosed by the Create List tool's selection rectangle.
+case("canvas", [
+    pt("A", 0, 0), pt("B", 2, 2), pt("C", 5, 1),
+    "l1 = {A, B}",
+], [mv("A", 1, 1)])
+
 cases.write()

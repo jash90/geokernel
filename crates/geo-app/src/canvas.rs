@@ -328,6 +328,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             | Tool::Slider
             | Tool::Checkbox
             | Tool::InputBox
+            | Tool::CreateList
     );
     // The show/hide tool shows hidden objects faintly and lets them be picked.
     let show_all = tool == Tool::ShowHide;
@@ -488,6 +489,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let intents = gesture.end_frame(|origin| {
         let ((sx, sy), pt) = at_press(app, origin.egui());
         let c = app.wb.construction();
+        if tool == Tool::CreateList {
+            rect_from = Some((sx, sy));
+            return Grab::Rect;
+        }
         if tool == Tool::ZoomIn || tool == Tool::ZoomOut {
             // A drag of the zoom in tool over empty space zooms to the
             // rectangle it draws; one that starts on an object zooms
@@ -684,24 +689,61 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // only the zoom in tool's, and only from 30 px on in both directions.
     if intents.end_drag {
         if let (Some(from), Some(to)) = (app.rect_from, app.rect_to) {
-            let (x0, y0, x1, y1) = camera::zoom_rectangle(from, to, w, h);
-            if x1 - x0 >= camera::ZOOM_RECT_THRESHOLD && y1 - y0 >= camera::ZOOM_RECT_THRESHOLD {
-                let t_now = cam.transform(w, h);
-                let wx0 = t_now.screen_to_world(x0, y0).0;
-                let wx1 = t_now.screen_to_world(x1, y0).0;
-                let wy0 = t_now.screen_to_world(x0, y1).1;
-                let wy1 = t_now.screen_to_world(x0, y0).1;
-                cam = Camera::showing(
-                    view::Bounds {
-                        xmin: wx0,
-                        ymin: wy0,
-                        xmax: wx1,
-                        ymax: wy1,
-                    },
-                    w,
-                    h,
-                    app.rules.scale_limits,
-                );
+            if tool == Tool::CreateList {
+                let t = cam.transform(w, h);
+                let bounds = [
+                    from.0.min(to.0),
+                    from.1.min(to.1),
+                    from.0.max(to.0),
+                    from.1.max(to.1),
+                ];
+                let contains = |x, y| {
+                    let (x, y) = t.world_to_screen(x, y);
+                    (bounds[0]..=bounds[2]).contains(&x) && (bounds[1]..=bounds[3]).contains(&y)
+                };
+                let c = app.wb.construction();
+                let hits = c
+                    .ids()
+                    .filter(|&id| {
+                        app.wb.is_visible(id)
+                            && match c.value(id) {
+                                Value::Point { x, y } => contains(x, y),
+                                Value::Segment { x1, y1, x2, y2 } => {
+                                    contains(x1, y1) && contains(x2, y2)
+                                }
+                                Value::Circle { cx, cy, r } => {
+                                    contains(cx - r, cy + r) && contains(cx + r, cy - r)
+                                }
+                                Value::Polygon { .. } | Value::PolyLine { .. } => c
+                                    .vertices(id)
+                                    .all(|p| p.is_some_and(|(x, y)| contains(x, y))),
+                                _ => false,
+                            }
+                    })
+                    .take(257)
+                    .collect();
+                create_list(app, hits);
+            } else {
+                let (x0, y0, x1, y1) = camera::zoom_rectangle(from, to, w, h);
+                if x1 - x0 >= camera::ZOOM_RECT_THRESHOLD && y1 - y0 >= camera::ZOOM_RECT_THRESHOLD
+                {
+                    let t_now = cam.transform(w, h);
+                    let wx0 = t_now.screen_to_world(x0, y0).0;
+                    let wx1 = t_now.screen_to_world(x1, y0).0;
+                    let wy0 = t_now.screen_to_world(x0, y1).1;
+                    let wy1 = t_now.screen_to_world(x0, y0).1;
+                    cam = Camera::showing(
+                        view::Bounds {
+                            xmin: wx0,
+                            ymin: wy0,
+                            xmax: wx1,
+                            ymax: wy1,
+                        },
+                        w,
+                        h,
+                        app.rules.scale_limits,
+                    );
+                }
             }
         }
     }
@@ -720,6 +762,19 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             Tool::ZoomIn => zoom_click(app, &mut cam, ZOOM_TOOL, local, w, h),
             Tool::ZoomOut => zoom_click(app, &mut cam, 1.0 / ZOOM_TOOL, local, w, h),
             Tool::MoveView => {}
+            Tool::CreateList => {
+                let c = app.wb.construction();
+                let hits = c
+                    .ids()
+                    .filter(|&id| {
+                        shown(app, id)
+                            && hit::hit(c, id, &t, local, press_reach.threshold, &press_reach)
+                                .is_some()
+                    })
+                    .take(257)
+                    .collect();
+                create_list(app, hits);
+            }
             Tool::Slider | Tool::Checkbox | Tool::InputBox => {
                 if app.tool.control_request().is_none() {
                     app.control_fields = if tool == Tool::Slider {
@@ -799,10 +854,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
     }
     app.wb.set_camera(cam);
-    if intents
-        .started
-        .is_some_and(|g| matches!(g, Grab::Pan | Grab::Axis | Grab::Rect))
-    {
+    if intents.started.is_some_and(|g| {
+        matches!(g, Grab::Pan | Grab::Axis) || (g == Grab::Rect && tool == Tool::ZoomIn)
+    }) {
         if let Some(before) = app.view_gesture.begin(cam0) {
             app.wb.record_view_step(before);
         }
@@ -900,7 +954,16 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // The rectangle the zoom in tool drags out, snapped to the view's ratio
     // when it is near it (`updateSelectionRectangle`).
     if let (Some(from), Some(to)) = (app.rect_from, app.rect_to) {
-        let (x0, y0, x1, y1) = camera::zoom_rectangle(from, to, w, h);
+        let (x0, y0, x1, y1) = if tool == Tool::CreateList {
+            (
+                from.0.min(to.0),
+                from.1.min(to.1),
+                from.0.max(to.0),
+                from.1.max(to.1),
+            )
+        } else {
+            camera::zoom_rectangle(from, to, w, h)
+        };
         let r = Rect::from_min_max(
             rect.min + vec2(x0 as f32, y0 as f32),
             rect.min + vec2(x1 as f32, y1 as f32),
@@ -1273,6 +1336,35 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     app.apply_outcome(outcome);
 }
 
+fn create_list(app: &mut App, mut ids: Vec<Id>) {
+    use geo_kernel::Def;
+    const MAX_TOOL_MEMBERS: usize = 256;
+    if !(2..=MAX_TOOL_MEMBERS).contains(&ids.len()) {
+        return;
+    }
+    let c = app.wb.construction();
+    let mut parent_points = std::collections::BTreeSet::new();
+    for &id in &ids {
+        if let Def::Segment(a, b) = c.def(id) {
+            parent_points.extend([a, b]);
+        }
+    }
+    ids.retain(|id| !parent_points.contains(id));
+    if ids.len() < 2 || ids.iter().map(|&id| c.label(id).len()).sum::<usize>() > 16384 {
+        return;
+    }
+    ids.sort_unstable();
+    let label = geo_app_core::labels::next_label(Kind::List, |label| c.id(label).is_some());
+    let members = ids
+        .iter()
+        .map(|&id| c.label(id))
+        .collect::<Vec<_>>()
+        .join(", ");
+    app.apply_outcome(crate::tools::Outcome::Run(vec![format!(
+        "{label} = {{{members}}}"
+    )]));
+}
+
 fn input_box_editor(app: &mut App, ui: &mut Ui, canvas: Rect) {
     use geo_kernel::kernel::control::MAX_INPUT_BOX_CHARS;
     let Some((label, mut text, focus)) = app.input_box_edit.take() else {
@@ -1321,7 +1413,7 @@ fn input_box_editor(app: &mut App, ui: &mut Ui, canvas: Rect) {
                     app.wb.set_boolean(link, value);
                 }
             }
-            _ if c.is_independent_text(link) => {
+            _ if c.is_independent_text(link) && text != c.input_box_text(id) => {
                 let _: Result<(), _> = app.wb.run_line(&format!("{} = {text:?}", c.label(link)));
             }
             _ => {}

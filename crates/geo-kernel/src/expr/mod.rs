@@ -215,7 +215,7 @@ pub(crate) use lex::{is_name_char, plain_number};
 mod list;
 pub(in crate::expr) use commands::text::TextOp;
 pub(crate) use list::{same_slots, Slot};
-pub use list::{Element, List};
+pub use list::{Element, List, MAX_CANVAS_LIST_ITEMS};
 pub(crate) mod math;
 mod names;
 mod parse;

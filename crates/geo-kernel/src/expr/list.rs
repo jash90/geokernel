@@ -449,6 +449,9 @@ pub struct List<'a> {
     len: u32,
 }
 
+/// The number of entries a list can contribute to a canvas traversal.
+pub const MAX_CANVAS_LIST_ITEMS: usize = 256;
+
 /// One element of a [`List`].
 #[derive(Clone, Copy, Debug)]
 pub enum Element<'a> {
@@ -552,8 +555,74 @@ impl<'a> List<'a> {
         })
     }
 
+    /// Visits members eligible for graphics, with one allowance shared by
+    /// the entire list tree. Named elements have their own drawables.
+    pub fn canvas_members(
+        self,
+        frame_remaining: &mut usize,
+        mut visit: impl FnMut(Option<Id>, Value) -> std::ops::ControlFlow<()>,
+    ) {
+        let limit = (*frame_remaining).min(MAX_CANVAS_LIST_ITEMS);
+        let mut probe = limit;
+        if !self.canvas_drawable(&mut probe) {
+            *frame_remaining -= limit - probe;
+            return;
+        }
+        let mut remaining = limit;
+        let _ = self.visit_canvas_members(&mut remaining, &mut visit);
+        *frame_remaining -= limit - remaining;
+    }
+
+    fn canvas_drawable(self, remaining: &mut usize) -> bool {
+        for element in self.iter() {
+            if *remaining == 0 {
+                break;
+            }
+            *remaining -= 1;
+            match element {
+                Element::Value(Kind::Number | Kind::Boolean | Kind::InputBox | Kind::Button, _) => {
+                    return false;
+                }
+                Element::List(nested) if !nested.canvas_drawable(remaining) => return false,
+                _ => {}
+            }
+        }
+        true
+    }
+
+    fn visit_canvas_members(
+        self,
+        remaining: &mut usize,
+        visit: &mut impl FnMut(Option<Id>, Value) -> std::ops::ControlFlow<()>,
+    ) -> std::ops::ControlFlow<()> {
+        use std::ops::ControlFlow;
+        for (i, member) in self.iter().enumerate() {
+            if *remaining == 0 {
+                break;
+            }
+            *remaining -= 1;
+            match member {
+                Element::List(list) => list.visit_canvas_members(remaining, visit)?,
+                Element::Value(
+                    Kind::Point
+                    | Kind::Vector
+                    | Kind::Segment
+                    | Kind::Line
+                    | Kind::Ray
+                    | Kind::Circle
+                    | Kind::Conic
+                    | Kind::Arc
+                    | Kind::Sector,
+                    value,
+                ) if value.is_defined() => visit(self.object(i), value)?,
+                _ => {}
+            }
+        }
+        ControlFlow::Continue(())
+    }
+
     /// The original object when the element is a named geometry object.
-    pub(crate) fn object(&self, k: usize) -> Option<Id> {
+    pub fn object(&self, k: usize) -> Option<Id> {
         (k < self.len())
             .then(|| self.slots[self.start as usize + k].object_id())
             .flatten()
@@ -683,4 +752,24 @@ mod dilation_tests {
         let record = list.slots[0].conic(&c).unwrap();
         assert!(record.same(&c.conic(c.id("q").unwrap()).unwrap()));
     }
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_list_scan_has_shared_and_per_list_limits() {
+    let c = crate::script::load("l = Sequence((k, 0), k, 1, 3000)").unwrap();
+    let list = c.elements(c.id("l").unwrap()).unwrap();
+    let mut remaining = 300;
+    let mut visited = 0;
+    for _ in 0..2 {
+        list.canvas_members(&mut remaining, |_, _| {
+            visited += 1;
+            std::ops::ControlFlow::Continue(())
+        });
+    }
+    assert_eq!(remaining, 0);
+    assert_eq!(visited, 300);
+    let mut remaining = 300;
+    list.canvas_members(&mut remaining, |_, _| std::ops::ControlFlow::Continue(()));
+    assert_eq!(remaining, 300 - MAX_CANVAS_LIST_ITEMS);
 }

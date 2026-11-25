@@ -61,6 +61,7 @@ pub enum Tool {
     Distance,
     Area,
     Slope,
+    CreateList,
     ReflectLine,
     ReflectPoint,
     ReflectCircle,
@@ -115,7 +116,13 @@ pub const GROUPS: &[&[Tool]] = &[
         Tool::CircumcircularSector,
     ],
     &[Tool::Ellipse, Tool::Hyperbola, Tool::Parabola, Tool::Conic5],
-    &[Tool::Angle, Tool::Distance, Tool::Area, Tool::Slope],
+    &[
+        Tool::Angle,
+        Tool::Distance,
+        Tool::Area,
+        Tool::Slope,
+        Tool::CreateList,
+    ],
     &[
         Tool::ReflectLine,
         Tool::ReflectPoint,
@@ -163,6 +170,7 @@ impl Tool {
                 | Tool::Slider
                 | Tool::Checkbox
                 | Tool::InputBox
+                | Tool::CreateList
                 | Tool::MoveView
                 | Tool::ZoomIn
                 | Tool::ZoomOut

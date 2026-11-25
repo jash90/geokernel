@@ -825,6 +825,12 @@ fn samples() -> Samples {
         .collect();
     cases.sort_by(|a, b| a.id.cmp(&b.id));
     let listed = |id: &str| regenerating() || SAMPLE_CASES.contains(&id);
+    let literal_points = cases
+        .iter()
+        .find(|case| case.id == "lists-lit-004")
+        .expect("the anonymous point list")
+        .script
+        .clone();
     for case in &cases {
         for e in case.snapshots[0].values() {
             s.recorded.insert(format!("{:?}", e.kind));
@@ -864,6 +870,16 @@ fn samples() -> Samples {
             }
         }
     }
+    // A list of named points does not draw them again, and most command
+    // samples are numeric lists. Include the recorded anonymous points.
+    s.any
+        .entry("List".into())
+        .or_default()
+        .push((literal_points.clone(), "l".into()));
+    s.single
+        .entry("List".into())
+        .or_default()
+        .push(literal_points);
     let rasters = include_bytes!("../../../golden/ggb/saved/saved-images-001.ggb");
     let imported = geo_import::import(rasters).unwrap();
     let c = script::load(&imported.script.join("\n")).unwrap();

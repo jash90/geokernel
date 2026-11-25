@@ -12,6 +12,21 @@
  },
  "scenarios": [
   {
+   "name": "tool_create_list_from_rectangle",
+   "source": "EuclidianController.createList and lists-canvas-001",
+   "tool_mode": 71,
+   "initial_script": ["A = (0, 0)", "B = (2, 2)", "C = (5, 1)"],
+   "events": [
+    {"t": 0, "type": "mouse_down", "pos": [-0.5, 2.49]},
+    {"t": 150, "type": "mouse_move", "pos": [2.5, -0.51]},
+    {"t": 220, "type": "mouse_up", "pos": [2.5, -0.51]}
+   ],
+   "expected": {
+    "created_labels": ["l1"],
+    "undo_steps_added": 1
+   }
+  },
+  {
    "name": "tool_input_box_places_empty_widget",
    "source": "EuclidianController.button and controls-inputbox-001",
    "tool_mode": 61,

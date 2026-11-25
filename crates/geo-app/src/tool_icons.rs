@@ -335,6 +335,15 @@ pub fn paint(painter: &Painter, tool: Tool, c: Pos2, half: f32) {
             ink.dot(3.0, 4.0, 3.1, RESULT);
             ink.line((-9.0, -3.0), (-4.0, -3.0));
         }
+        Tool::CreateList => {
+            ink.poly(
+                &[(-5.0, -8.0), (-8.0, -6.0), (-8.0, 6.0), (-5.0, 8.0)],
+                false,
+            );
+            ink.poly(&[(5.0, -8.0), (8.0, -6.0), (8.0, 6.0), (5.0, 8.0)], false);
+            ink.dot(-2.0, 2.0, 1.8, POINT);
+            ink.dot(2.0, -2.0, 1.8, RESULT);
+        }
         Tool::InputBox => {
             ink.poly(
                 &[(-10.0, -6.0), (10.0, -6.0), (10.0, 6.0), (-10.0, 6.0)],
