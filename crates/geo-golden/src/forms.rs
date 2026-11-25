@@ -296,6 +296,15 @@ pub fn calls(expr: &str) -> Vec<(String, Vec<String>)> {
     out
 }
 
+fn is_cell_address(arg: &str) -> bool {
+    geo_kernel::spreadsheet::Address::parse(arg.trim()).is_some()
+}
+
+fn is_cell_range(arg: &str) -> bool {
+    arg.split_once(':')
+        .is_some_and(|(first, last)| is_cell_address(first) && is_cell_address(last))
+}
+
 /// The kind of an argument, where it can be told without the kernel: a
 /// label of the case, a number written with digits, operators and number
 /// labels, a comparison (a boolean), a list in braces, a pair of numbers (a
@@ -319,6 +328,7 @@ pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
     let list_literal =
         |value: &str| value.starts_with('{') && closing(value, 0) == Some(value.len());
     if list_literal(a)
+        || is_cell_range(a)
         || a.strip_prefix("Sequence").is_some_and(|args| {
             let args = args.trim_start();
             args.starts_with('(') && closing(args, 0) == Some(args.len())
@@ -547,18 +557,17 @@ fn call_fits(command: &str, form: &str, args: &[String], kinds: &[Option<Kind>])
         "CellRange" | "Row" | "Column" | "ColumnName" | "FillCells"
     ) {
         let tokens: Vec<_> = form.split(',').collect();
-        let is_cell = |arg: &str| geo_kernel::spreadsheet::Address::parse(arg.trim()).is_some();
         return tokens.len() == args.len()
             && tokens.iter().zip(args.iter().zip(kinds)).all(
                 |(&token, (arg, kind))| match token {
-                    "cell" => is_cell(arg),
-                    "range" => arg.split_once(':').is_some_and(|(a, b)| is_cell(a) && is_cell(b))
+                    "cell" => is_cell_address(arg),
+                    "range" => is_cell_range(arg)
                         || geo_kernel::script::split_call(arg).is_some_and(|(name, bounds)| {
                             name == "CellRange"
-                                && matches!(bounds.as_slice(), [a, b] | [a, b, _] if is_cell(a) && is_cell(b))
+                                && matches!(bounds.as_slice(), [a, b] | [a, b, _] if is_cell_address(a) && is_cell_address(b))
                         }),
                     "type" => true,
-                    "object" => is_cell(arg) || kind.is_some(),
+                    "object" => is_cell_address(arg) || kind.is_some(),
                     _ => kind.is_some_and(|kind| token_matches(token, kind)),
                 },
             );
@@ -1038,6 +1047,8 @@ mod tests {
         assert_eq!(arg_kind("true", &l), Some(Kind::Boolean));
         assert_eq!(arg_kind("(1, a)", &l), Some(Kind::Point));
         assert_eq!(arg_kind("{1, 2}", &l), Some(Kind::List));
+        assert_eq!(arg_kind("$A$1 : A3", &l), Some(Kind::List));
+        assert_eq!(arg_kind("A:A", &l), None);
         assert_eq!(arg_kind("Sequence(i*a,i,1,200000)", &l), Some(Kind::List));
         assert_eq!(arg_kind("Sequence(5) + a", &l), None);
         assert_eq!(arg_kind("Dilate({A}, 2)", &l), Some(Kind::List));
