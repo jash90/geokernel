@@ -198,7 +198,7 @@ fn exact(c: &Construction, tree: Expr, work: &mut Work<'_>) -> Option<Expr> {
                 .map(|item| calculate(item, work))
                 .collect::<Option<Vec<_>>>()?,
         ),
-        Expr::Num(..) => tree,
+        Expr::Num(..) => reduce(tree, work)?,
     })
 }
 
