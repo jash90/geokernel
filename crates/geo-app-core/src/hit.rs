@@ -168,6 +168,23 @@ fn line_meets_square(a: (f64, f64), b: (f64, f64), p: (f64, f64), t: f64) -> boo
     (nx * (p.0 - a.0) + ny * (p.1 - a.1)).abs() <= t * (nx.abs() + ny.abs())
 }
 
+/// Shape preparation and vertex reads allowed across one hit query.
+pub(crate) const SHAPE_HIT_WORK: usize = 4096;
+
+struct ShapeWork {
+    left: usize,
+    refused: bool,
+}
+
+impl ShapeWork {
+    fn new() -> Self {
+        Self {
+            left: SHAPE_HIT_WORK,
+            refused: false,
+        }
+    }
+}
+
 /// How the object `id` is hit by the square of half-width `t` around `p`
 /// (`mouse` is the mouse's threshold), or `None`.
 pub fn hit(
@@ -193,6 +210,26 @@ pub fn hit_with_list_budget(
     reach: &Reach,
     list_items_left: &mut usize,
 ) -> Option<HitType> {
+    hit_with_work(
+        c,
+        id,
+        tr,
+        p,
+        t,
+        reach,
+        (list_items_left, &mut ShapeWork::new()),
+    )
+}
+
+fn hit_with_work(
+    c: &Construction,
+    id: Id,
+    tr: &ViewTransform,
+    p: (f64, f64),
+    t: f64,
+    reach: &Reach,
+    (list_items_left, shape_work): (&mut usize, &mut ShapeWork),
+) -> Option<HitType> {
     let to_screen = |x: f64, y: f64| tr.world_to_screen(x, y);
     let boundary = |hit: bool| hit.then_some(HitType::Boundary);
     match c.value(id) {
@@ -201,7 +238,15 @@ pub fn hit_with_list_budget(
             let mut result = None;
             c.elements(id)?.canvas_members(list_items_left, |member| {
                 let found = if let Some(object) = member.object {
-                    hit(c, object, tr, p, t, reach)
+                    hit_with_work(
+                        c,
+                        object,
+                        tr,
+                        p,
+                        t,
+                        reach,
+                        (&mut { geo_kernel::expr::MAX_CANVAS_LIST_ITEMS }, shape_work),
+                    )
                 } else {
                     boundary(match member.value {
                         Value::Vector { x, y } => {
@@ -228,7 +273,7 @@ pub fn hit_with_list_budget(
         | Value::Ray { .. }
         | Value::Circle { .. }) => boundary(primitive_meets_square(value, tr, p, t, reach)),
         Value::Vector { x, y } => {
-            let (x0, y0) = vector::start(c, id)?;
+            let (x0, y0) = vector::start_with_work(c, id, &mut shape_work.left)?;
             boundary(segment_meets_square(
                 to_screen(x0, y0),
                 to_screen(x0 + x, y0 + y),
@@ -322,7 +367,7 @@ pub fn hit_with_list_budget(
                 .then_some(HitType::Filling)
         }
         Value::Polygon { .. } => {
-            let pts = screen_vertices(c, id, tr)?;
+            let pts = hit_vertices(c, id, tr, shape_work)?;
             // `DrawPolygon.hit`: polygons are drawn filled.
             let (mut xmin, mut xmax) = (f64::INFINITY, f64::NEG_INFINITY);
             for q in &pts {
@@ -353,7 +398,7 @@ pub fn hit_with_list_budget(
             (contains || intersects).then_some(HitType::Filling)
         }
         Value::PolyLine { .. } => {
-            let pts = screen_vertices(c, id, tr)?;
+            let pts = hit_vertices(c, id, tr, shape_work)?;
             boundary(
                 pts.windows(2)
                     .any(|e| segment_meets_square(e[0], e[1], p, t)),
@@ -755,8 +800,41 @@ pub fn screen_vertices(c: &Construction, id: Id, t: &ViewTransform) -> Option<Ve
     pts.filter(|p| p.len() >= 2)
 }
 
+fn hit_vertices(
+    c: &Construction,
+    id: Id,
+    t: &ViewTransform,
+    work: &mut ShapeWork,
+) -> Option<Vec<(f64, f64)>> {
+    let Some(vertices) = c.vertices_with_work(id, &mut work.left) else {
+        work.refused = true;
+        return None;
+    };
+    let points: Option<Vec<_>> = vertices
+        .map(|v| v.map(|(x, y)| t.world_to_screen(x, y)))
+        .collect();
+    points.filter(|pts| pts.len() >= 2)
+}
+
 /// `GeoClass` drawing priorities (higher is drawn on top), used by
 /// `DefaultGeoPriorityComparator`.
+pub(crate) fn polygon_boundary(
+    c: &Construction,
+    id: Id,
+    t: &ViewTransform,
+    pos: (f64, f64),
+    reach: &Reach,
+) -> bool {
+    let Some(points) = hit_vertices(c, id, t, &mut ShapeWork::new()) else {
+        return false;
+    };
+    let mut pairs = points
+        .iter()
+        .copied()
+        .zip(points.iter().copied().cycle().skip(1));
+    pairs.any(|(a, b)| segment_meets_square(a, b, pos, reach.threshold))
+}
+
 fn type_priority(kind: Kind) -> u8 {
     match kind {
         Kind::Text => 150,
@@ -915,6 +993,20 @@ pub fn pick_with_text(
     text: Option<Id>,
     accept: impl Fn(Id) -> bool,
 ) -> Option<Id> {
+    pick_with_shape_limit(c, t, position, reach, selected, text, accept).0
+}
+
+/// Reports whether any shape was refused before hit testing.
+pub(crate) fn pick_with_shape_limit(
+    c: &Construction,
+    t: &ViewTransform,
+    position: (f64, f64),
+    reach: &Reach,
+    selected: Option<Id>,
+    text: Option<Id>,
+    accept: impl Fn(Id) -> bool,
+) -> (Option<Id>, bool) {
+    let mut shape_work = ShapeWork::new();
     let mut list_items_left = geo_kernel::expr::MAX_FRAME_CANVAS_LIST_ITEMS;
     let mut pass = |threshold: f64| {
         let mut choice = Choice::default();
@@ -925,9 +1017,15 @@ pub fn pick_with_text(
             if c.kind(id) == Kind::Text || !accept(id) {
                 continue;
             }
-            if let Some(how) =
-                hit_with_list_budget(c, id, t, position, threshold, reach, &mut list_items_left)
-            {
+            if let Some(how) = hit_with_work(
+                c,
+                id,
+                t,
+                position,
+                threshold,
+                reach,
+                (&mut list_items_left, &mut shape_work),
+            ) {
                 choice.add(c, id, index, how, Some(id) == selected);
             }
         }
@@ -937,7 +1035,7 @@ pub fn pick_with_text(
     if let (false, Some(retry)) = (choice.hits(), reach.retry) {
         choice = pass(retry);
     }
-    choice.choose(selected)
+    (choice.choose(selected), shape_work.refused)
 }
 
 /// Every object among those `accept` allows that a press at `(sx, sy)`
@@ -951,19 +1049,20 @@ pub fn hits(
     reach: &Reach,
     accept: impl Fn(Id) -> bool,
 ) -> Vec<Id> {
+    let mut shape_work = ShapeWork::new();
     let mut list_items_left = geo_kernel::expr::MAX_FRAME_CANVAS_LIST_ITEMS;
     let mut pass = |threshold: f64| -> Vec<Id> {
         c.ids()
             .filter(|&id| {
                 accept(id)
-                    && hit_with_list_budget(
+                    && hit_with_work(
                         c,
                         id,
                         t,
                         (sx, sy),
                         threshold,
                         reach,
-                        &mut list_items_left,
+                        (&mut list_items_left, &mut shape_work),
                     )
                     .is_some()
             })
@@ -1014,6 +1113,28 @@ mod tests {
 
     fn only<'a>(c: &'a Construction, name: &'a str) -> impl Fn(Id) -> bool + 'a {
         move |id| c.label(id) == name
+    }
+
+    #[test]
+    fn picking_caps_polygon_and_polyline_preparation() {
+        for command in ["Polygon", "PolyLine"] {
+            let c = geo_kernel::script::load(&format!(
+                "L = Sequence((k, k^2), k, 1, 4097)\np = {command}(L)"
+            ))
+            .unwrap();
+            let (_, t) = setup();
+            let pos = t.world_to_screen(1.0, 1.0);
+            let reach = Reach::square(5.0);
+            let polygon = c.id("p").unwrap();
+            assert!(
+                pick(&c, &t, pos, &reach, None, |id| id == polygon).is_none(),
+                "{command}"
+            );
+            assert!(
+                hits(&c, &t, pos, &reach, |id| id == polygon).is_empty(),
+                "{command}"
+            );
+        }
     }
 
     #[test]

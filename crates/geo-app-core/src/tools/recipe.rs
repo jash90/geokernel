@@ -49,7 +49,32 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
     let first = picks.first().copied();
     let has = |f: fn(Option<Kind>) -> bool| picks.iter().any(|&k| f(Some(k)));
     match tool {
-        Tool::Point => n == 0 && cand.is_none(),
+        Tool::Point | Tool::PointOnObject => n == 0 && cand.is_none_or(|kind| kind == Kind::Point),
+        Tool::Relation => n < 2 && cand.is_some(),
+        Tool::SegmentFixed => n == 0 && point(cand),
+        Tool::AngleFixed => n < 2 && point(cand),
+        Tool::Extremum => {
+            n == 0 && matches!(cand, Some(Kind::Function | Kind::Conic | Kind::Circle))
+        }
+        Tool::Roots => {
+            n == 0
+                && matches!(
+                    cand,
+                    Some(
+                        Kind::Function
+                            | Kind::Conic
+                            | Kind::Circle
+                            | Kind::Line
+                            | Kind::Segment
+                            | Kind::Ray
+                    )
+                )
+        }
+        Tool::RigidPolygon => {
+            (n < super::MAX_RIGID_VERTICES && point(cand))
+                || (n == 0 && cand == Some(Kind::Polygon))
+        }
+        Tool::AttachDetach => false,
         Tool::Intersect => match (first, cand) {
             (None, Some(Kind::Line | Kind::Circle | Kind::Conic)) => true,
             (Some(a), Some(b)) => n == 1 && intersection_pair(a, b).is_some(),
@@ -213,7 +238,23 @@ pub(super) fn finish(tool: Tool, picks: &[Kind]) -> Option<Finish> {
     let n = picks.len();
     let first = picks.first().copied();
     let done = match tool {
-        Tool::Point => n == 1,
+        Tool::Point | Tool::PointOnObject | Tool::Roots | Tool::Extremum => n == 1,
+        Tool::SegmentFixed => {
+            return (n == 1).then_some(Finish::Ask(NumberRequest {
+                title: text::tool_caption(tool),
+                prompt: text::label(Label::Length),
+                default: 2.0,
+                degrees: false,
+            }))
+        }
+        Tool::AngleFixed => {
+            return (n == 2).then_some(Finish::Ask(NumberRequest {
+                title: text::tool_caption(tool),
+                prompt: text::label(Label::AngleInDegrees),
+                default: 45.0,
+                degrees: true,
+            }))
+        }
         Tool::Midpoint | Tool::Bisector => n == 2 || (n == 1 && first != Some(Kind::Point)),
         Tool::Distance => n == 2 || (n == 1 && matches!(first, Some(Kind::Segment | Kind::Circle))),
         Tool::Circle3
@@ -245,7 +286,7 @@ pub(super) fn finish(tool: Tool, picks: &[Kind]) -> Option<Finish> {
                 degrees: false,
             }))
         }
-        Tool::Polygon | Tool::Polyline => false,
+        Tool::Polygon | Tool::Polyline | Tool::RigidPolygon => false,
         Tool::VectorPolygon => picks == [Kind::Polygon],
         Tool::RegularPolygon => {
             return (n == 2).then_some(Finish::Ask(NumberRequest {
@@ -290,16 +331,18 @@ pub(super) fn build(
     let taken = |l: &str, allocated: &[String]| is_taken(l) || allocated.iter().any(|a| a == l);
     let kinds: Vec<Kind> = picks.iter().map(Pick::kind).collect();
     let args: Vec<String> = picks.iter().map(|p| p.label().to_owned()).collect();
-    let number_label = number.map(|v| {
-        let label = if tool == Tool::Rotate {
-            next_greek(|l| taken(l, &allocated))
-        } else {
-            next_label(Kind::Number, |l| taken(l, &allocated))
-        };
-        allocated.push(label.clone());
-        lines.push(format!("{label} = {v}"));
-        label
-    });
+    let number_label = number
+        .filter(|_| !matches!(tool, Tool::SegmentFixed | Tool::AngleFixed))
+        .map(|v| {
+            let label = if tool == Tool::Rotate {
+                next_greek(|l| taken(l, &allocated))
+            } else {
+                next_label(Kind::Number, |l| taken(l, &allocated))
+            };
+            allocated.push(label.clone());
+            lines.push(format!("{label} = {v}"));
+            label
+        });
     let num = number_label.as_deref().unwrap_or("");
     let a = |i: usize| args[i].as_str();
     // The point (or line) first, the circle second.
@@ -331,7 +374,37 @@ pub(super) fn build(
         (format!("{command}({})", args.join(", ")), Name::Fresh(kind))
     };
     let (rhs, name) = match tool {
-        Tool::Point | Tool::VectorPolygon => return lines,
+        Tool::Point
+        | Tool::PointOnObject
+        | Tool::Relation
+        | Tool::AttachDetach
+        | Tool::VectorPolygon => return lines,
+        Tool::SegmentFixed => (
+            format!("Segment({}, {})", a(0), number.expect("length")),
+            Name::Fresh(Kind::Segment),
+        ),
+        Tool::AngleFixed => {
+            let angle = next_greek(is_taken);
+            let point = primed(a(0), Kind::Point, is_taken);
+            let radians = number.expect("angle");
+            lines.push(format!(
+                "{{{angle}, {point}}} = Angle({}, {}, {radians})",
+                a(0),
+                a(1)
+            ));
+            return lines;
+        }
+        Tool::RigidPolygon => (
+            format!("RigidPolygon({})", args.join(", ")),
+            Name::Polygon(args.len()),
+        ),
+        Tool::Extremum if kinds[0] != Kind::Function => construct("Vertex", &args, Kind::Point),
+        Tool::Extremum => construct("Extremum", &args, Kind::Point),
+        Tool::Roots if kinds[0] == Kind::Function => construct("Root", &args, Kind::Point),
+        Tool::Roots => (
+            format!("Intersect(xAxis, {})", a(0)),
+            Name::Fresh(Kind::Point),
+        ),
         Tool::Locus => (
             format!("Locus({})", point_first()),
             Name::Fresh(Kind::Locus),
@@ -534,7 +607,19 @@ pub(super) fn hint(tool: Tool, picks: &[Kind]) -> Hint {
     let first = picks.first().copied();
     match (tool, n) {
         (Tool::Move, _) => Hint::DragPoint,
-        (Tool::Point, _) => Hint::ClickToPlacePoint,
+        (Tool::Point | Tool::PointOnObject, _) => Hint::ClickToPlacePoint,
+        (Tool::Relation, 0) => Hint::FirstObject,
+        (Tool::Relation, _) => Hint::SecondObject,
+        (Tool::SegmentFixed, _) => Hint::FirstEndOfSegment,
+        (Tool::AngleFixed, 0) => Hint::TwoPointsOrSegment,
+        (Tool::AngleFixed, _) => Hint::VertexOfAngle,
+        (Tool::RigidPolygon, 0) => Hint::VectorPolygonStart,
+        (Tool::RigidPolygon, 1 | 2) => Hint::NextVertex,
+        (Tool::RigidPolygon, _) => Hint::NextVertexOrClose,
+        (Tool::Extremum, _) => Hint::ExtremumObject,
+        (Tool::Roots, _) => Hint::RootsObject,
+        (Tool::AttachDetach, _) => Hint::Attachment,
+
         (Tool::Intersect, 0) => Hint::FirstObject,
         (Tool::Intersect, _) => Hint::SecondObject,
         (Tool::Midpoint, 0) => Hint::TwoPointsSegmentOrCircle,

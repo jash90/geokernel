@@ -1,0 +1,996 @@
+{
+  "scenarios": [
+    {
+      "name": "tool_relation_compares_points",
+      "tool_mode": 14,
+      "initial_script": [
+        "A = (1, 1)",
+        "B = (2, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            3.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            3.99
+          ]
+        },
+        {
+          "t": 400,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 460,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            0.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_rigid_polygon_closes",
+      "tool_mode": 64,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            0.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            0.99
+          ]
+        },
+        {
+          "t": 400,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            3.99
+          ]
+        },
+        {
+          "t": 460,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            3.99
+          ]
+        },
+        {
+          "t": 600,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 660,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_segment_fixed_creates_endpoint",
+      "tool_mode": 45,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "text",
+          "text": "4"
+        },
+        {
+          "t": 260,
+          "type": "key",
+          "key": "Enter"
+        }
+      ]
+    },
+    {
+      "name": "tool_angle_fixed_on_segment",
+      "tool_mode": 46,
+      "initial_script": [
+        "A = (2, 0)",
+        "B = (0, 0)",
+        "f = Segment(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        {
+          "t": 200,
+          "type": "text",
+          "text": "90"
+        },
+        {
+          "t": 260,
+          "type": "key",
+          "key": "Enter"
+        }
+      ]
+    },
+    {
+      "name": "tool_extremum_picks_function",
+      "tool_mode": 75,
+      "initial_script": [
+        "f(x) = (x - 1)^2 + 1"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            3.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            3.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_roots_picks_function",
+      "tool_mode": 76,
+      "initial_script": [
+        "f(x) = x^2 - 1"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            3.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            3.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            -1.01
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            -1.01
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_point_on_object_places_in_polygon",
+      "tool_mode": 501,
+      "initial_script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (0, 4)",
+        "p = Polygon(A, B, C)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            -0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            -0.01
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_attach_detach_redefines_point",
+      "tool_mode": 67,
+      "initial_script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "f = Segment(A, B)",
+        "P = (2, 2)",
+        "M = Midpoint(A, P)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            3,
+            -0.01
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            -0.01
+          ]
+        },
+        {
+          "t": 400,
+          "type": "mouse_down",
+          "pos": [
+            3,
+            -0.01
+          ]
+        },
+        {
+          "t": 460,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            -0.01
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_attach_detach_frees_path_point",
+      "tool_mode": 67,
+      "initial_script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "f = Segment(A, B)",
+        "P = Point(f, 0.75)",
+        "M = Midpoint(A, P)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            3,
+            -0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            -0.01
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_point_on_x_axis",
+      "tool_mode": 501,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            -0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            -0.01
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_point_on_y_axis",
+      "tool_mode": 501,
+      "initial_script": [
+        "A = (-6, -3)",
+        "B = (-2, -3)",
+        "C = (-4, 1)",
+        "f = Line(A, B)",
+        "D = (4, -2)",
+        "E = (6, -2)",
+        "k = Circle(D, E)",
+        "G = (-7, 3)",
+        "H = (-3, 4)",
+        "u = Vector(G, H)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            1.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            1.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_point_on_vector",
+      "tool_mode": 501,
+      "initial_script": [
+        "A = (0, 0)",
+        "B = (4, 2)",
+        "u = Vector(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            0.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_segment_fixed_starts_on_function",
+      "tool_mode": 45,
+      "initial_script": [
+        "f(x) = x^2"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "text",
+          "text": "4"
+        },
+        {
+          "t": 260,
+          "type": "key",
+          "key": "Enter"
+        }
+      ]
+    },
+    {
+      "name": "tool_angle_fixed_segment_after_point",
+      "tool_mode": 46,
+      "initial_script": [
+        "A = (2, 0)",
+        "B = (0, 0)",
+        "C = (1, 2)",
+        "f = Segment(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            1.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            1.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        {
+          "t": 400,
+          "type": "text",
+          "text": "90"
+        },
+        {
+          "t": 460,
+          "type": "key",
+          "key": "Enter"
+        }
+      ]
+    },
+    {
+      "name": "tool_angle_fixed_negative",
+      "tool_mode": 46,
+      "initial_script": [
+        "A = (2, 0)",
+        "B = (0, 0)",
+        "f = Segment(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            -0.01
+          ]
+        },
+        {
+          "t": 200,
+          "type": "text",
+          "text": "-90\u00b0"
+        },
+        {
+          "t": 260,
+          "type": "key",
+          "key": "Enter"
+        }
+      ]
+    },
+    {
+      "name": "tool_segment_fixed_expression",
+      "tool_mode": 45,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "text",
+          "text": "1+2"
+        },
+        {
+          "t": 260,
+          "type": "key",
+          "key": "Enter"
+        }
+      ]
+    },
+    {
+      "name": "tool_attach_detach_frees_fixed_endpoint",
+      "tool_mode": 67,
+      "initial_script": [
+        "A = (0, 0)",
+        "s = Segment(A, 3)",
+        "M = Midpoint(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            3,
+            -0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            -0.01
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_relation_compares_text_and_point",
+      "tool_mode": 14,
+      "initial_script": [
+        "T = Text(\"hello\", (1, 1))",
+        "A = (2, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1.2,
+            1.15
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1.2,
+            1.15
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_roots_picks_circle",
+      "tool_mode": 76,
+      "initial_script": [
+        "O = (0, 0)",
+        "k = Circle(O, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            1.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            1.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_extremum_picks_circle",
+      "tool_mode": 75,
+      "initial_script": [
+        "O = (0, 0)",
+        "k = Circle(O, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            1.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            1.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_roots_tangent_circle",
+      "tool_mode": 76,
+      "initial_script": [
+        "O = (0, 2)",
+        "k = Circle(O, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            3.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            3.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_roots_disjoint_circle",
+      "tool_mode": 76,
+      "initial_script": [
+        "O = (0, 3)",
+        "k = Circle(O, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0,
+            4.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            0,
+            4.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_extremum_hyperbola",
+      "tool_mode": 75,
+      "initial_script": [
+        "h: x^2/4 - y^2/9 = 1"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2.1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2.1,
+            0.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tool_point_on_large_polygon",
+      "tool_mode": 501,
+      "initial_script": [
+        "L = Sequence((k, k^2), k, 1, 4097)",
+        "p = Polygon(L)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ],
+      "observe": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "name": "tool_point_on_large_polyline",
+      "tool_mode": 501,
+      "initial_script": [
+        "L = Sequence((k, k^2), k, 1, 4097)",
+        "p = Polyline(L)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ],
+      "observe": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "name": "tool_rigid_copy_large_polygon",
+      "tool_mode": 64,
+      "initial_script": [
+        "L = Sequence((k, k^2), k, 1, 4097)",
+        "p = Polygon(L)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ],
+      "observe": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "name": "tool_relation_compares_large_polygon",
+      "tool_mode": 14,
+      "initial_script": [
+        "L = Sequence((k, k^2), k, 1, 4097)",
+        "p = Polygon(L)",
+        "A = (2, 4)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            3.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            3.99
+          ]
+        }
+      ],
+      "observe": [
+        "A"
+      ]
+    }
+  ]
+}

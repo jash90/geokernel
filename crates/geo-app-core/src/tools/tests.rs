@@ -242,7 +242,8 @@ fn every_offered_tool_combination_runs_in_the_kernel() {
             let mut placed = Vec::new();
             let mut used = 0;
             for pick in picks {
-                let point_done = tool == Tool::Point && !placed.is_empty();
+                let point_done =
+                    matches!(tool, Tool::Point | Tool::PointOnObject) && !placed.is_empty();
                 if point_done || !matches!(outcome, Outcome::Ignored | Outcome::Pending) {
                     break;
                 }
@@ -277,7 +278,11 @@ fn every_offered_tool_combination_runs_in_the_kernel() {
             let more = match outcome {
                 Outcome::Run(more) => more,
                 // The point tool is done once its point is placed.
-                Outcome::Pending if tool == Tool::Point && !placed.is_empty() => Vec::new(),
+                Outcome::Pending
+                    if matches!(tool, Tool::Point | Tool::PointOnObject) && !placed.is_empty() =>
+                {
+                    Vec::new()
+                }
                 _ => continue,
             };
             let mut lines = placed;
@@ -300,7 +305,11 @@ fn every_offered_tool_combination_runs_in_the_kernel() {
         !t.is_direct()
             && !matches!(
                 t,
-                Tool::Polygon | Tool::Polyline | Tool::VectorPolygon | Tool::Conic5
+                Tool::Polygon
+                    | Tool::Polyline
+                    | Tool::VectorPolygon
+                    | Tool::RigidPolygon
+                    | Tool::Conic5
             )
     }) {
         assert!(

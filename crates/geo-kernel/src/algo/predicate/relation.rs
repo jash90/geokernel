@@ -448,13 +448,15 @@ fn on_path(c: &Construction, id: Id, p: (f64, f64), stop: &impl Fn(u64) -> bool)
         }
         Value::Function => is_equal(c.function_value(id, p.0)?, p.1),
         Value::Polygon { .. } | Value::PolyLine { .. } => {
-            let mut vertices = c.vertices(id);
+            const VERTEX_WORK: usize = 4096;
+            let mut work = VERTEX_WORK;
+            let mut vertices = c.vertices_with_work(id, &mut work)?;
+            if stop((VERTEX_WORK - work) as u64) {
+                return None;
+            }
             let first = vertices.next()??;
             let mut from = first;
             for to in vertices {
-                if stop(1) {
-                    return None;
-                }
                 let to = to?;
                 if on_segment(from, to) {
                     return Some(true);
@@ -465,4 +467,14 @@ fn on_path(c: &Construction, id: Id, p: (f64, f64), stop: &impl Fn(u64) -> bool)
         }
         _ => return None,
     })
+}
+
+#[cfg(test)]
+#[test]
+fn polygon_relation_refuses_a_shape_before_walking_edges() {
+    let c = crate::script::load("L = Sequence((k, k^2), k, 1, 4097)\np = Polygon(L)\nA = (1, 1)")
+        .unwrap();
+    let ids = [c.id("A").unwrap(), c.id("p").unwrap()];
+    let reports = numerical(&c, &ids, |_| false);
+    assert_eq!(reports[0].message, unavailable().message);
 }

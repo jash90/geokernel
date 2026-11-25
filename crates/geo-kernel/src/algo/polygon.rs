@@ -1552,8 +1552,10 @@ pub(crate) fn exec(
         }
         "Centroid" if n == 1 => single(c, name, args[0], PolygonDef::Centroid),
         "Centroid" => Err(format!("`Centroid` does not take {n} argument(s)")),
-        // `Vertex(k)` of a general conic belongs to the conic readers
-        "Vertex" | "Corner" if !(n == 1 && kind_of(c, args[0]) == Some(Kind::Conic)) => {
+        // `Vertex(k)` of a conic belongs to the conic readers
+        "Vertex" | "Corner"
+            if !(n == 1 && matches!(kind_of(c, args[0]), Some(Kind::Conic | Kind::Circle))) =>
+        {
             vertex_line(c, name, &args)
         }
         "InteriorAngles" if n == 1 => outputs_line(c, name, args[0], Outputs::Angles(true)),
@@ -2262,6 +2264,14 @@ mod tests {
     }
 
     #[test]
+    fn a_circle_has_four_conic_vertices() {
+        let mut c = load("A = (0, 0)\nB = (4, 0)\nk = Circle(A, B)").unwrap();
+        run(&mut c, "{P, Q, R, S} = Vertex(k)").unwrap();
+        let points = ["P", "Q", "R", "S"].map(|label| c.point(c.id(label).unwrap()).unwrap());
+        assert_eq!(points, [(-4.0, 0.0), (4.0, 0.0), (0.0, -4.0), (0.0, 4.0)]);
+    }
+
+    #[test]
     fn a_rejected_line_creates_nothing() {
         let mut c = load("A = (0, 0)\nB = (4, 0)\nk = Circle(A, B)\nr = 3\n").unwrap();
         let before = c.len();
@@ -2277,8 +2287,8 @@ mod tests {
             ("p = PolyLine(A)", "does not take 1"),
             ("p = Centroid(k)", "`k` is a circle, expected a polygon"),
             (
-                "p = Vertex(k)",
-                "`k` is a circle, expected a polygon or polyline",
+                "p = Vertex(A)",
+                "`A` is a point, expected a polygon or polyline",
             ),
             ("p = Vertex(A, B, r)", "does not take 3"),
             (

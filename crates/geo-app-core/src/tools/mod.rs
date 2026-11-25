@@ -26,6 +26,14 @@ use geo_kernel::kernel::Kind;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Tool {
+    Relation,
+    RigidPolygon,
+    SegmentFixed,
+    AngleFixed,
+    Extremum,
+    Roots,
+    PointOnObject,
+    AttachDetach,
     Move,
     Point,
     Intersect,
@@ -97,10 +105,17 @@ pub const GROUPS: &[&[Tool]] = &[
         Tool::FreehandShape,
         Tool::FreehandFunction,
     ],
-    &[Tool::Point, Tool::Intersect, Tool::Midpoint],
+    &[
+        Tool::Point,
+        Tool::PointOnObject,
+        Tool::Intersect,
+        Tool::Midpoint,
+        Tool::AttachDetach,
+    ],
     &[
         Tool::Line,
         Tool::Segment,
+        Tool::SegmentFixed,
         Tool::Ray,
         Tool::Vector,
         Tool::VectorFromPoint,
@@ -115,6 +130,7 @@ pub const GROUPS: &[&[Tool]] = &[
     ],
     &[
         Tool::Polygon,
+        Tool::RigidPolygon,
         Tool::RegularPolygon,
         Tool::Polyline,
         Tool::VectorPolygon,
@@ -133,6 +149,10 @@ pub const GROUPS: &[&[Tool]] = &[
     &[Tool::Ellipse, Tool::Hyperbola, Tool::Parabola, Tool::Conic5],
     &[
         Tool::Angle,
+        Tool::AngleFixed,
+        Tool::Relation,
+        Tool::Extremum,
+        Tool::Roots,
         Tool::Distance,
         Tool::Area,
         Tool::Slope,
@@ -218,6 +238,8 @@ impl Tool {
                 | Tool::Image
                 | Tool::ShowHideLabel
                 | Tool::CopyVisualStyle
+                | Tool::AttachDetach
+                | Tool::Relation
         )
     }
 }
@@ -234,6 +256,8 @@ pub(crate) fn locus_pick_is_valid(
         None => (c.kind(id) == Kind::Point && !c.def(id).is_free()) || c.has_slider_bounds(id),
     }
 }
+
+pub(crate) const MAX_RIGID_VERTICES: usize = 1000;
 
 pub const MAX_PLACED_TEXT_CHARS: usize = 4096;
 
@@ -277,6 +301,10 @@ pub enum Outcome {
     SelectionChanged,
     /// Run these script lines as one change.
     Run(Vec<String>),
+    /// Compare objects without changing the construction.
+    Relation([String; 2]),
+    /// Copy an existing polygon using the current view's offset.
+    RigidCopy(String),
     /// Build a vector polygon, positioning each vertex relative to the first.
     VectorPolygon { picks: Vec<Pick>, copy_offset: f64 },
     /// Add this new point (a pending point of the tool use), put it at
@@ -308,6 +336,8 @@ pub enum NewPoint {
     Free(f64, f64),
     /// `Point(path)`, put at `(x, y)` (the kernel projects it onto the path).
     OnPath { path: String, x: f64, y: f64 },
+    /// `PointIn(region)` at the pointer.
+    InRegion { region: String, x: f64, y: f64 },
     /// `Intersect(a, b)`, or `Intersect(a, b, n)` for one of two points.
     Intersection {
         a: String,
@@ -325,6 +355,8 @@ pub enum NewPoint {
 pub fn new_points_on_objects(tool: Tool, picks: &[Pick]) -> bool {
     match tool {
         Tool::Point
+        | Tool::PointOnObject
+        | Tool::SegmentFixed
         | Tool::Line
         | Tool::Segment
         | Tool::Ray
@@ -377,6 +409,8 @@ pub struct ToolState {
     asking: Option<NumberRequest>,
     control_at: Option<(f64, f64)>,
     text_anchor: Option<String>,
+    attachment_region: bool,
+    recent_attachment: Option<(f64, f64)>,
 }
 
 impl ToolState {
@@ -387,6 +421,8 @@ impl ToolState {
             asking: None,
             control_at: None,
             text_anchor: None,
+            attachment_region: false,
+            recent_attachment: None,
         }
     }
 
@@ -558,7 +594,7 @@ impl ToolState {
     fn closes_on(&self, label: &str) -> bool {
         matches!(
             self.tool,
-            Tool::Polygon | Tool::Polyline | Tool::VectorPolygon
+            Tool::Polygon | Tool::Polyline | Tool::VectorPolygon | Tool::RigidPolygon
         ) && self.picks.len() >= 3
             && matches!(self.picks.first(), Some(Pick::Object { label: l, .. }) if l == label)
     }
@@ -598,6 +634,8 @@ impl ToolState {
         self.asking = None;
         self.control_at = None;
         self.text_anchor = None;
+        self.attachment_region = false;
+        self.recent_attachment = None;
     }
 
     /// Handles a click. `hit` is the existing object under the pointer that
@@ -632,13 +670,19 @@ impl ToolState {
             (Tool::Delete, Some((label, _))) => return Outcome::Delete(label.to_owned()),
             (Tool::ShowHide, Some((label, _))) => return Outcome::ToggleVisible(label.to_owned()),
             (Tool::Delete | Tool::ShowHide, None) => return Outcome::Ignored,
-            (Tool::Point, Some((label, Kind::Point))) => return Outcome::Select(label.to_owned()),
+            (Tool::Point | Tool::PointOnObject, Some((label, Kind::Point))) => {
+                return Outcome::Select(label.to_owned())
+            }
+            (Tool::AttachDetach, _) => return Outcome::Ignored,
             _ if self.asking.is_some() => return Outcome::Ignored,
             _ => {}
         }
         if let Some((label, kind)) = hit {
             if self.tool == Tool::Area && matches!(kind, Kind::Polygon | Kind::Arc) {
                 return Outcome::Ignored;
+            }
+            if self.tool == Tool::RigidPolygon && kind == Kind::Polygon && self.picks.is_empty() {
+                return Outcome::RigidCopy(label.to_owned());
             }
             if self.tool == Tool::VectorPolygon && kind == Kind::Polygon {
                 self.picks = vec![Pick::Object {
@@ -673,6 +717,9 @@ impl ToolState {
                 let (rhs, at) = match new_point {
                     NewPoint::Free(x, y) => (format!("({}, {})", exact(*x), exact(*y)), None),
                     NewPoint::OnPath { path, x, y } => (format!("Point({path})"), Some((*x, *y))),
+                    NewPoint::InRegion { region, x, y } => {
+                        (format!("PointIn({region})"), Some((*x, *y)))
+                    }
                     NewPoint::Intersection { a, b, index: None } => {
                         (format!("Intersect({a}, {b})"), None)
                     }
@@ -721,6 +768,9 @@ impl ToolState {
     /// is not in the construction yet.
     fn build(&mut self, number: Option<f64>, is_taken: &dyn Fn(&str) -> bool) -> Outcome {
         let picks = std::mem::take(&mut self.picks);
+        if self.tool == Tool::Relation {
+            return Outcome::Relation([picks[0].label().to_owned(), picks[1].label().to_owned()]);
+        }
         if self.tool == Tool::VectorPolygon {
             return Outcome::VectorPolygon {
                 picks,
@@ -737,10 +787,46 @@ impl ToolState {
         }
     }
 
+    pub fn valid_number(&self, value: f64) -> bool {
+        value.is_finite() && (self.tool != Tool::SegmentFixed || value >= 0.0)
+    }
+
+    pub(crate) fn set_attachment_pick(&mut self, pick: Pick, region: bool) -> Outcome {
+        self.attachment_region = region;
+        if self.picked(pick.label()) {
+            self.picks.clear();
+            Outcome::SelectionChanged
+        } else {
+            self.picks.push(pick);
+            Outcome::Pending
+        }
+    }
+
+    pub(crate) fn attachment_region(&self) -> bool {
+        self.attachment_region
+    }
+
+    pub(crate) fn remember_attachment(&mut self, pos: (f64, f64)) {
+        self.recent_attachment = Some(pos);
+    }
+
+    pub(crate) fn attachment_at(&self, pos: (f64, f64)) -> bool {
+        self.recent_attachment == Some(pos)
+    }
+
+    pub(crate) fn observe_attachment_pointer(&mut self, pos: (f64, f64)) {
+        if !self.attachment_at(pos) {
+            self.recent_attachment = None;
+        }
+    }
+
     /// Completes a tool that asked for a number. `value` is in the unit the
     /// request named (degrees for angles). Returns [`Outcome::Ignored`] when
     /// the tool was not waiting.
     pub fn finish_number(&mut self, value: f64, is_taken: &dyn Fn(&str) -> bool) -> Outcome {
+        if !self.valid_number(value) {
+            return Outcome::Ignored;
+        }
         let Some(request) = self.asking.take() else {
             return Outcome::Ignored;
         };

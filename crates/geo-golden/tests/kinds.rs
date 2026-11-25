@@ -1363,6 +1363,22 @@ fn checked_cells_agree_with_the_code() {
     assert!(errors.is_empty(), "{}", errors.join("\n"));
 }
 
+#[test]
+fn function_tools_cover_the_function_tool_cell() {
+    use geo_app_core::tools::{Tool, ToolState};
+
+    let table = Table::parse(&read("docs/kinds.csv"), "docs/kinds.csv").unwrap();
+    let tools_support_functions = [Tool::Extremum, Tool::Roots]
+        .into_iter()
+        .all(|tool| ToolState::new(tool).accepts_object("f", Kind::Function));
+    let tool = table.header.iter().position(|name| name == "tool").unwrap();
+    let function = table.rows.iter().find(|row| row[0] == "Function").unwrap();
+    assert_eq!(
+        function[tool],
+        if tools_support_functions { "yes" } else { "no" }
+    );
+}
+
 /// Confirm the list contributes the drawing itself, not a named operand or
 /// an SVG description. Probe the actual boundary and an unrelated position.
 fn list_graphics(topic: &str, mark: Option<&str>, target: (f64, f64), picked: bool) {

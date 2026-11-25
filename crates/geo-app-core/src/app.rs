@@ -141,6 +141,7 @@ pub struct App {
     pub input: String,
     pub input_error: Option<String>,
     pub tool_error: Option<String>,
+    pub relation_report: Option<Vec<geo_kernel::algo::predicate::RelationReport>>,
     pub load_error: Option<String>,
     pub save_error: Option<String>,
     /// Path being edited in the Save As dialog.
@@ -262,6 +263,7 @@ impl App {
             input: String::new(),
             input_error: None,
             tool_error: None,
+            relation_report: None,
             load_error,
             save_error: None,
             save_path: None,
@@ -391,6 +393,7 @@ impl App {
         self.press_rotation = None;
         self.image_request = None;
         self.pen_samples.clear();
+        self.relation_report = None;
         self.tool.reset();
         self.tool_press = None;
         self.wb.cancel_tool_use();
@@ -432,6 +435,27 @@ impl App {
             return true;
         }
         false
+    }
+
+    /// Reads the numeric dialog in its displayed units.
+    pub fn tool_number_value(&self) -> Option<f64> {
+        let tool = self.tool.tool();
+        if !matches!(tool, Tool::AngleFixed | Tool::SegmentFixed) {
+            return parse_number(&self.number_text);
+        }
+        if self.number_text.len() > 4096 {
+            return None;
+        }
+        if let Some(value) = parse_number(&self.number_text) {
+            return Some(value);
+        }
+        let (number, angle) =
+            geo_kernel::expr::dialog_number(self.wb.construction(), &self.number_text)?;
+        Some(if angle && tool == Tool::AngleFixed {
+            number.to_degrees()
+        } else {
+            number
+        })
     }
 
     /// Whether undo has something to do: a step, or a tool use to take back.
@@ -497,6 +521,9 @@ impl App {
                         self.wb.move_pending_point(id, x, y);
                     }
                     self.wb.selected = new;
+                    if self.tool.tool() == Tool::SegmentFixed {
+                        self.wb.end_tool_use();
+                    }
                     self.apply_pick(*then);
                 }
                 Err(e) => {
@@ -526,6 +553,14 @@ impl App {
                     }
                 }
             }
+            Outcome::Relation([a, b]) => {
+                let c = self.wb.construction();
+                self.relation_report = c
+                    .id(&a)
+                    .zip(c.id(&b))
+                    .and_then(|(a, b)| c.compare_objects(a, b));
+            }
+            Outcome::RigidCopy(_) => unreachable!("polygon copy resolves its view before applying"),
             Outcome::AskNumber(request) => {
                 self.number_text = crate::describe::n2(request.default);
                 self.tool_error = None;

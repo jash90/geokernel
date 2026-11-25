@@ -332,9 +332,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let tool = app.tool.tool();
     let move_tool = tool == Tool::Move;
     let mut input_box_click = None;
-    // A tool that builds from picks takes them when the button goes down
-    // (spec E1); the delete and show/hide tools act on a click.
-    let press_tool = !tool.is_direct();
+    // Construction tools take their picks on press (spec E1). Relation
+    // also picks on press, and Attach or Detach needs both press and release.
+    let press_tool = !tool.is_direct() || matches!(tool, Tool::Relation | Tool::AttachDetach);
     // The show/hide tool shows hidden objects faintly and lets them be picked.
     let show_all = tool == Tool::ShowHide;
     let t = cam.transform(w, h);
@@ -439,6 +439,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // made.
     if let (Some(pos), Some(_)) = (fed.early_release, fed.owned) {
         release_tool(app, &t, to_local(pos), &press_reach);
+    }
+    if let Some(pos) = response.hover_pos() {
+        app.observe_tool_pointer(to_local(pos));
     }
     if let (true, Some(pos)) = (press_tool, fed.owned) {
         let (local, pt) = at_press(app, pos);
@@ -1861,6 +1864,17 @@ fn pick_position(app: &App, pick: &Pick) -> Option<(f64, f64)> {
 /// drawn from the first pick to the pointer, in the object's own style
 /// (spec E7). The free end jumps onto a point under the pointer, by the
 /// rule a click uses (spec E6).
+fn fills_polygon_preview(tool: Tool, points: usize) -> bool {
+    points >= 3 && (tool != Tool::RigidPolygon || points <= 48)
+}
+
+#[test]
+fn rigid_polygon_preview_bounds_ear_clipping() {
+    assert!(fills_polygon_preview(Tool::RigidPolygon, 48));
+    assert!(!fills_polygon_preview(Tool::RigidPolygon, 49));
+    assert!(fills_polygon_preview(Tool::Polygon, 49));
+}
+
 fn preview(
     app: &App,
     painter: &egui::Painter,
@@ -1881,14 +1895,14 @@ fn preview(
         let (x, y) = app.preview_end(t, local, &hit::Reach::of(&app.metrics, false));
         rect.min + vec2(x as f32, y as f32)
     });
-    if app.tool.tool() == Tool::Polygon && !picks.is_empty() {
+    if matches!(app.tool.tool(), Tool::Polygon | Tool::RigidPolygon) {
         // The sides so far and the one following the pointer, lightly filled.
         let mut pts: Vec<egui::Pos2> = picks
             .iter()
             .filter_map(|p| pick_position(app, p).map(screen))
             .collect();
         pts.extend(pointer);
-        if pts.len() >= 3 {
+        if fills_polygon_preview(app.tool.tool(), pts.len()) {
             let tris: Vec<(f64, f64)> = pts.iter().map(|p| (p.x as f64, p.y as f64)).collect();
             let mut mesh = egui::Mesh::default();
             for &p in &pts {

@@ -216,7 +216,7 @@ impl Group for ConicPartDef {
             Self::Asymptote { .. } | Self::Axis { .. } | Self::LinearEccentricity(_) => {
                 CONIC_OBJECTS
             }
-            Self::Pole { .. } | Self::Diameter { .. } => CIRCLE_OR_CONIC,
+            Self::Pole { .. } | Self::Diameter { .. } | Self::Vertex { .. } => CIRCLE_OR_CONIC,
             _ => CONIC,
         };
         c.expect(self.conic(), conics)?;
@@ -429,6 +429,8 @@ impl Group for ConicPartDef {
         let [arg] = args else { return None };
         let kinds = if matches!(func, "Asymptote" | "Axes") {
             CONIC_OBJECTS
+        } else if matches!(func, "Vertex" | "Corner") {
+            CIRCLE_OR_CONIC
         } else {
             CONIC
         };

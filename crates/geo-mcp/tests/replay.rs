@@ -24,6 +24,7 @@ use serde_json::{json, Value};
 
 const FIXTURE: &str = include_str!("fixtures/pointer_scenarios.json");
 const EDITOR_FIXTURE: &str = include_str!("fixtures/editor_tool_scenarios.json");
+const TOOL_CAPTURE: &str = include_str!("fixtures/tool_pointer_capture.json");
 
 /// The graphics view of the observations, and where the standard view puts
 /// the world origin in it.
@@ -374,7 +375,15 @@ fn tool_name(mode: i64) -> Option<&'static str> {
         7 => "vector",
         10 => "circle",
         11 => "circle3",
+        14 => "relation",
         15 => "segment",
+        45 => "segment_fixed",
+        46 => "angle_fixed",
+        64 => "rigid_polygon",
+        67 => "attach_detach",
+        75 => "extremum",
+        76 => "roots",
+        501 => "point_on_object",
         16 => "polygon",
         17 => "text",
         18 => "ray",
@@ -626,6 +635,8 @@ struct Outcome {
     after: Value,
     origin0: (f64, f64),
     undo_added: i64,
+    tool_frames: Vec<(Value, Value)>,
+    tool_undo: Vec<Value>,
     diffs: Vec<String>,
 }
 
@@ -669,6 +680,8 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
     let mut last_t = None::<f64>;
     let mut frames = Vec::new();
     let mut fingers = Vec::new();
+    let mut tool_frames = Vec::new();
+    let capture = s["frames"].is_array();
     for (i, e) in events.iter().enumerate() {
         let t = num(&e["t"]) / 1000.0;
         let dt = match last_t {
@@ -698,6 +711,17 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
             call(&mut w.server, "select_tool", json!({ "tool": tool }))?;
             continue;
         }
+        // The recorded dialog edit targets a ready text field. Give the
+        // modal time to take keyboard focus after the canvas release.
+        let dt = if matches!(mode, 45 | 46) && e["type"] == "text" && dt > 2.0 / 60.0 {
+            frames.extend(std::iter::repeat_n(
+                json!({"dt": 1.0 / 60.0, "events": []}),
+                2,
+            ));
+            dt - 2.0 / 60.0
+        } else {
+            dt
+        };
         frames.push(json!({"dt": dt, "events": frame_events(&w, e, &mut fingers)?}));
         let after_1 = ["objects_after_event_1", "after_first_click"];
         if i == 1 && after_1.iter().any(|k| expected.get(k).is_some()) {
@@ -714,6 +738,14 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
                 compare_created(&before, &st, created, "after the first click", &mut diffs);
             }
         }
+        if capture && matches!(e["type"].as_str(), Some("mouse_up" | "key")) {
+            call(
+                &mut w.server,
+                "input",
+                json!({"frames": std::mem::take(&mut frames), "settle": false}),
+            )?;
+            tool_frames.push((e["t"].clone(), w.state()));
+        }
     }
     call(
         &mut w.server,
@@ -726,11 +758,20 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
     compare_editor(expected, &w.server.session.headless().app, &mut diffs);
     let after = w.state();
     let undo_added = undo_depth(&after) - depth0;
+    let mut tool_undo = Vec::new();
+    if capture {
+        for _ in 0..undo_added {
+            call(&mut w.server, "undo", json!({}))?;
+            tool_undo.push(w.state());
+        }
+    }
     Ok(Outcome {
         before,
         after,
         origin0,
         undo_added,
+        tool_frames,
+        tool_undo,
         diffs,
     })
 }
@@ -1211,6 +1252,162 @@ fn ours_expected(name: &str, observed: &Value) -> Value {
     }
 }
 
+fn compare_tool_objects(reference: &Value, state: &Value, when: &str, diffs: &mut Vec<String>) {
+    let reference = reference.as_object().unwrap();
+    let mut expected: Vec<_> = reference
+        .keys()
+        .map(|name| match name.as_str() {
+            "loc1" => "locus1",
+            label => label,
+        })
+        .collect();
+    expected.sort_unstable();
+    let mut actual = scenario_labels(state);
+    actual.sort_unstable();
+    if actual != expected {
+        diffs.push(format!(
+            "{when}: objects {actual:?}, reference {expected:?}"
+        ));
+    }
+    for (label, geo) in reference {
+        let name = if label == "loc1" { "locus1" } else { label };
+        let Some(actual) = object(state, name) else {
+            continue;
+        };
+        let kind = geo["type"].as_str().unwrap();
+        let actual_kind = if kind == "stroke" { "pen stroke" } else { kind };
+        if actual["type"] != actual_kind || actual["defined"] != geo["defined"] {
+            diffs.push(format!(
+                "{when}: {name} is {} (defined: {}), reference {kind} (defined: {})",
+                actual["type"], actual["defined"], geo["defined"]
+            ));
+        }
+        if kind == "point" {
+            for field in ["on_path", "in_region"] {
+                if actual[field] != geo[field] {
+                    diffs.push(format!(
+                        "{when}: {name} {field} is {}, reference {}",
+                        actual[field], geo[field]
+                    ));
+                }
+            }
+        }
+        if geo["defined"] != true {
+            continue;
+        }
+        let fields: &[&str] = match kind {
+            "point" | "vector" => &["x", "y"],
+            "circle" => &["cx", "cy", "r"],
+            "segment" => &["x1", "y1", "x2", "y2"],
+            "angle" | "number" => &["value"],
+            "polygon" => &["area"],
+            _ => &[],
+        };
+        for &field in fields {
+            let actual = &actual["coords"][field];
+            if !same(num(actual), num(&geo[field])) {
+                diffs.push(format!(
+                    "{when}: {name} {field} is {actual}, reference {}",
+                    geo[field]
+                ));
+            }
+        }
+    }
+}
+
+fn compare_tool_capture(capture: &Value, out: &Outcome) -> Vec<String> {
+    let frames = capture["frames"].as_array().unwrap();
+    let undo = capture["undo"].as_array().unwrap();
+    let desktop_only = match capture["name"].as_str() {
+        Some("tool_text_places_literal") => Some("text1"),
+        Some("tool_input_box_places_empty_widget") => Some("InputBox1"),
+        Some("tool_create_list_from_rectangle") => Some("l1"),
+        _ => None,
+    };
+    let compare_frame = |frame: &Value, state: &Value, when: &str, diffs: &mut Vec<String>| {
+        if let Some(extra) = desktop_only {
+            let mut state = state.clone();
+            state["objects"]
+                .as_array_mut()
+                .unwrap()
+                .retain(|obj| obj["name"] != extra);
+            compare_tool_objects(&frame["objects"], &state, when, diffs);
+        } else {
+            compare_tool_objects(&frame["objects"], state, when, diffs);
+        }
+    };
+    let mut diffs = out.diffs.clone();
+    compare_tool_objects(&capture["initial"], &out.before, "initial", &mut diffs);
+    if out.tool_frames.len() != frames.len() {
+        diffs.push(format!(
+            "{} frames, reference {}",
+            out.tool_frames.len(),
+            frames.len()
+        ));
+    }
+    for (frame, (time, state)) in frames.iter().zip(&out.tool_frames) {
+        let when = format!("frame {}", frame["t"]);
+        if *time != frame["t"] {
+            diffs.push(format!("{when}: replayed at {time}"));
+        }
+        compare_frame(frame, state, &when, &mut diffs);
+    }
+    if let Some(frame) = frames.last() {
+        compare_frame(frame, &out.after, "settled", &mut diffs);
+    }
+    // Desktop submits the two dialogs and creates the list. Their one
+    // additional undo step must return to the reference's initial state.
+    let expected_undo: Vec<_> = if desktop_only.is_some() {
+        assert!(undo.is_empty(), "reference acquired a new undo step");
+        vec![&capture["initial"]]
+    } else {
+        undo.iter().collect()
+    };
+    if out.undo_added != expected_undo.len() as i64 || out.tool_undo.len() != expected_undo.len() {
+        diffs.push(format!(
+            "{} undo steps, expected {}",
+            out.undo_added,
+            expected_undo.len()
+        ));
+    }
+    for (index, (expected, actual)) in expected_undo.into_iter().zip(&out.tool_undo).enumerate() {
+        compare_tool_objects(expected, actual, &format!("undo {}", index + 1), &mut diffs);
+    }
+    if capture["tool_mode"] == 14
+        && out.after["tool"]["relation"]
+            .as_array()
+            .is_none_or(Vec::is_empty)
+    {
+        diffs.push("missing relation report".to_owned());
+    }
+    diffs
+}
+
+#[test]
+fn tool_capture_detects_changed_constraints_and_undo_objects() {
+    let data: Value = serde_json::from_str(TOOL_CAPTURE).unwrap();
+    let capture = data["scenarios"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "tool_segment_fixed_creates_endpoint")
+        .unwrap();
+    let out = replay(capture, false, "ours").unwrap();
+    assert!(compare_tool_capture(capture, &out).is_empty());
+    let mut wrong_path = capture.clone();
+    wrong_path["frames"][1]["objects"]["B"]["on_path"] = json!(false);
+    let mut wrong_undo = capture.clone();
+    wrong_undo["undo"][0]["A"]["x"] = json!(999.0);
+    let discrepancies = [
+        compare_tool_capture(&wrong_path, &out),
+        compare_tool_capture(&wrong_undo, &out),
+    ];
+    assert!(
+        discrepancies.iter().all(|diffs| !diffs.is_empty()),
+        "{discrepancies:?}"
+    );
+}
+
 #[test]
 fn the_observed_pointer_scenarios_replay() {
     let fixture: Value = serde_json::from_str(FIXTURE).unwrap();
@@ -1243,6 +1440,40 @@ fn the_observed_pointer_scenarios_replay() {
         }
         diffs
     };
+    let captures: Value = serde_json::from_str(TOOL_CAPTURE).unwrap();
+    let captures = captures["scenarios"].as_array().unwrap();
+    let mut captured_passes = 0;
+    let mut recaptured = 0;
+    let mut bounded = 0;
+    for capture in captures {
+        let name = capture["name"].as_str().unwrap();
+        if capture["initial"].get("$object_count").is_some() {
+            // These constructions exceed the interactive shape allowance and
+            // auto-fit outside the replay viewport. Core tests exercise the cap.
+            bounded += 1;
+            continue;
+        }
+        if let Some(existing) = scenarios().find(|scenario| scenario["name"] == name) {
+            for key in ["tool_mode", "initial_script", "events"] {
+                assert_eq!(capture[key], existing[key], "{name} {key}");
+            }
+            recaptured += 1;
+        }
+        let diffs = both(capture, "ours", &|out| compare_tool_capture(capture, out));
+        if !diffs.is_empty() {
+            failed.push(name.to_owned());
+        }
+        table.push(format!(
+            "{name}: {}",
+            if diffs.is_empty() {
+                "pass".to_owned()
+            } else {
+                diffs.join("; ")
+            }
+        ));
+        captured_passes += usize::from(!scenarios().any(|scenario| scenario["name"] == name));
+    }
+    assert_eq!((captured_passes, recaptured, bounded), (23, 5, 4));
     for s in scenarios() {
         let name = s["name"].as_str().unwrap();
         assert!(
@@ -1318,6 +1549,9 @@ fn the_observed_pointer_scenarios_replay() {
     }
     assert_eq!(count, names.len());
     assert_eq!((replayed, ours), (104, 4), "scenarios replayed");
+    let unique_replayed = replayed + ours + captured_passes;
+    let unique_scenarios = names.len() + captures.len() - recaptured;
+    assert_eq!((unique_replayed, unique_scenarios), (131, 138));
     assert_eq!(
         skipped.into_iter().collect::<Vec<_>>(),
         [(5, 1), (6, 1), (8, 1)],

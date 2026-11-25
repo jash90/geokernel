@@ -2,6 +2,7 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/EuclidianController.java
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/modes/ModeDeleteLocus.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDispatcher.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -29,9 +30,22 @@ use crate::app::App;
 use crate::hit::{self, Reach};
 use crate::interact::{self, ViewTransform};
 use crate::tools::{
-    creates_by_drag, intersection_pair, new_points_on_objects, NewPoint, Outcome, Tool,
+    creates_by_drag, intersection_pair, new_points_on_objects, NewPoint, Outcome, Pick, Tool,
+    MAX_RIGID_VERTICES,
 };
 use geo_kernel::kernel::{Id, Kind, Value};
+
+/// Polygon preparation and vertex reads allowed for one constraint pick.
+const CONSTRAINT_VERTEX_WORK: usize = hit::SHAPE_HIT_WORK;
+
+/// Label probes allowed for the outputs of one Roots or Extremum click.
+const ANALYSIS_LABEL_WORK: usize = 4096;
+
+fn rigid_copy_size(c: &geo_kernel::Construction, polygon: Id) -> Option<usize> {
+    let mut left = CONSTRAINT_VERTEX_WORK;
+    let count = c.vertices_with_work(polygon, &mut left)?.size_hint().0;
+    (3..=MAX_RIGID_VERTICES).contains(&count).then_some(count)
+}
 
 /// The side of the eraser's square, in pixels
 /// (`EuclidianConstants.DEFAULT_ERASER_SIZE`).
@@ -50,6 +64,7 @@ pub struct ToolPress {
     /// The point the press made or found with the point tool, which a drag
     /// moves.
     pub point: Option<Id>,
+    attachment: Option<Id>,
 }
 
 /// The kinds a new point can be put on (`Path` in the reference; polygons
@@ -109,8 +124,38 @@ impl App {
             }
         }
         let c = self.wb.construction();
+        if self.tool.tool() == Tool::PointOnObject {
+            if let Some((object, region)) = self.constraint_at(t, pos, reach).or_else(|| {
+                self.decor
+                    .axes
+                    .then(|| {
+                        ["xAxis", "yAxis"]
+                            .into_iter()
+                            .filter_map(|name| c.id(name))
+                            .find(|&id| hit::hit(c, id, t, pos, reach.threshold, reach).is_some())
+                    })
+                    .flatten()
+                    .map(|axis| (axis, false))
+            }) {
+                let label = c.label(object).to_owned();
+                return if region {
+                    NewPoint::InRegion {
+                        region: label,
+                        x,
+                        y,
+                    }
+                } else {
+                    NewPoint::OnPath { path: label, x, y }
+                };
+            }
+            return NewPoint::Free(x, y);
+        }
         let path = hit::pick(c, t, pos, reach, None, |id| {
-            self.hittable(id) && is_path(c, id)
+            self.hittable(id)
+                && (is_path(c, id)
+                    || self.tool.tool() == Tool::SegmentFixed
+                        && c.kind(id) == Kind::Function
+                        && geo_kernel::algo::path::function_is_path(c, id))
         });
         match path {
             Some(p) => NewPoint::OnPath {
@@ -150,6 +195,176 @@ impl App {
         best.map(|(_, n)| Some(n))
     }
 
+    fn constraint_at(
+        &self,
+        t: &ViewTransform,
+        pos: (f64, f64),
+        reach: &Reach,
+    ) -> Option<(Id, bool)> {
+        let c = self.wb.construction();
+        let polygon = || {
+            hit::pick(c, t, pos, reach, None, |id| {
+                self.hittable(id) && c.kind(id) == Kind::Polygon
+            })
+        };
+        let carrier = hit::pick(c, t, pos, reach, None, |id| {
+            self.hittable(id)
+                && (is_path(c, id)
+                    || c.kind(id) == Kind::Vector
+                    || c.kind(id) == Kind::Function
+                        && geo_kernel::algo::path::function_is_path(c, id))
+        });
+        let polygon = carrier
+            .is_none_or(|id| c.kind(id) == Kind::Segment)
+            .then(polygon)
+            .flatten();
+        let polygon_boundary =
+            polygon.is_some_and(|id| hit::polygon_boundary(c, id, t, pos, reach));
+        let object = match (carrier, polygon) {
+            (Some(_), Some(polygon)) if polygon_boundary => polygon,
+            (Some(carrier), _) => carrier,
+            (None, polygon) => polygon?,
+        };
+        let region = match c.kind(object) {
+            Kind::Polygon => !polygon_boundary || self.tool.tool() == Tool::AttachDetach,
+            Kind::Sector | Kind::Arc => {
+                hit::hit(c, object, t, pos, reach.threshold, reach) == Some(hit::HitType::Filling)
+            }
+            _ => false,
+        };
+        Some((object, region))
+    }
+
+    fn attach_detach_click(
+        &mut self,
+        t: &ViewTransform,
+        pos: (f64, f64),
+        reach: &Reach,
+    ) -> Outcome {
+        use geo_kernel::algo::path::PathDef;
+        use geo_kernel::Def;
+
+        let c = self.wb.construction();
+        let point = hit::pick(c, t, pos, reach, None, |id| {
+            self.hittable(id) && c.kind(id) == Kind::Point
+        });
+        let existing = self.tool.picks().first().cloned();
+        if let Some(id) = point {
+            let label = c.label(id).to_owned();
+            if matches!(
+                c.def(id),
+                Def::Path(
+                    PathDef::On { .. }
+                        | PathDef::OnParam { .. }
+                        | PathDef::InRegion { .. }
+                        | PathDef::FixedEndpoint { .. }
+                )
+            ) {
+                let Value::Point { x, y } = c.value(id) else {
+                    return Outcome::Ignored;
+                };
+                self.tool.reset();
+                return Outcome::Run(vec![format!(
+                    "{label} = $point({}, {})",
+                    x + 20.0 / t.xscale(),
+                    y + 20.0 / t.yscale()
+                )]);
+            }
+            if !matches!(c.def(id), Def::FreePoint { .. }) {
+                return Outcome::Ignored;
+            }
+            if let Some(first) = existing.as_ref().filter(|pick| pick.kind() != Kind::Point) {
+                return self.attach_to(
+                    t,
+                    pos,
+                    &label,
+                    first.label(),
+                    self.tool.attachment_region(),
+                );
+            }
+            if existing.is_none_or(|pick| pick.label() == label) {
+                return self.tool.set_attachment_pick(
+                    Pick::Object {
+                        label,
+                        kind: Kind::Point,
+                    },
+                    false,
+                );
+            }
+            return Outcome::Ignored;
+        }
+        let Some((id, region)) = self.constraint_at(t, pos, reach) else {
+            return Outcome::Ignored;
+        };
+        let label = c.label(id).to_owned();
+        if let Some(first) = existing.as_ref().filter(|pick| pick.kind() == Kind::Point) {
+            return self.attach_to(t, pos, first.label(), &label, region);
+        }
+        if existing.is_none_or(|pick| pick.label() == label) {
+            let kind = c.kind(id);
+            return self
+                .tool
+                .set_attachment_pick(Pick::Object { label, kind }, region);
+        }
+        Outcome::Ignored
+    }
+
+    fn attach_detach_drag(
+        &mut self,
+        t: &ViewTransform,
+        pos: (f64, f64),
+        reach: &Reach,
+        point: Id,
+    ) -> Outcome {
+        use geo_kernel::algo::path::PathDef;
+        use geo_kernel::Def;
+
+        let c = self.wb.construction();
+        let label = c.label(point).to_owned();
+        let attached = match c.def(point) {
+            Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) => Some(path),
+            Def::Path(PathDef::InRegion { region }) => Some(region),
+            Def::FreePoint { .. } => None,
+            _ => return Outcome::Ignored,
+        };
+        if let Some((id, region)) = self.constraint_at(t, pos, reach) {
+            if Some(id) != attached {
+                let target = c.label(id).to_owned();
+                return self.attach_to(t, pos, &label, &target, region);
+            }
+        } else if attached.is_some() {
+            let (x, y) = t.screen_to_world(pos.0, pos.1);
+            self.tool.reset();
+            return Outcome::Run(vec![format!("{label} = $point({x}, {y})")]);
+        }
+        Outcome::Ignored
+    }
+
+    fn attach_to(
+        &mut self,
+        t: &ViewTransform,
+        pos: (f64, f64),
+        point: &str,
+        target: &str,
+        region: bool,
+    ) -> Outcome {
+        let command = if region { "PointIn" } else { "Point" };
+        let line = format!("{point} = {command}({target})");
+        let (x, y) = t.screen_to_world(pos.0, pos.1);
+        if self.wb.run_tool_lines(&[line]).is_err() {
+            return Outcome::Ignored;
+        }
+        let id = self
+            .wb
+            .construction()
+            .id(point)
+            .expect("point identity is preserved");
+        self.wb.move_pending_point(id, x, y);
+        self.tool.reset();
+        self.tool.remember_attachment(pos);
+        Outcome::Select(point.to_owned())
+    }
+
     fn tool_pick_kind(&self, id: Id) -> Kind {
         let c = self.wb.construction();
         let kind = c.kind(id);
@@ -175,17 +390,32 @@ impl App {
     /// Whether the object can participate in the active tool's next pick.
     pub fn accepts_tool_hit(&self, id: Id) -> bool {
         let c = self.wb.construction();
-        if self.tool.tool() == Tool::MoveRotate {
+        let tool = self.tool.tool();
+        if tool == Tool::MoveRotate {
             return match self
                 .rotation_center
                 .as_deref()
                 .and_then(|label| c.id(label))
             {
-                Some(center) => id == center || crate::interact::can_rotate(c, id, center),
+                Some(center) => id == center || interact::can_rotate(c, id, center),
                 None => c.kind(id) == Kind::Point,
             };
         }
-        if self.tool.tool() == Tool::Locus {
+        if tool == Tool::AngleFixed
+            && self.tool.picks().is_empty()
+            && c.segment_endpoints(id).is_some()
+        {
+            return true;
+        }
+        if matches!(tool, Tool::PointOnObject | Tool::AttachDetach)
+            && (is_path(c, id) || matches!(c.kind(id), Kind::Polygon | Kind::Function))
+        {
+            return true;
+        }
+        if tool == Tool::AttachDetach {
+            return c.kind(id) == Kind::Point && interact::movable(c, id);
+        }
+        if tool == Tool::Locus {
             let point = c.kind(id) == Kind::Point && !c.def(id).is_free();
             let on_path = |id| {
                 matches!(
@@ -221,7 +451,39 @@ impl App {
     fn tool_click(&mut self, t: &ViewTransform, pos: (f64, f64), reach: &Reach) -> Outcome {
         let tool = self.tool.tool();
         let c = self.wb.construction();
-        let mut id = hit::pick(c, t, pos, reach, None, |id| self.hittable(id));
+        if tool == Tool::AttachDetach {
+            let outcome = self.attach_detach_click(t, pos, reach);
+            self.apply_outcome(outcome.clone());
+            return outcome;
+        }
+        let analysis = matches!(tool, Tool::Extremum | Tool::Roots);
+        let mut id = None;
+        if analysis {
+            for kinds in [&[Kind::Function][..], &[Kind::Conic, Kind::Circle][..]] {
+                id = hit::pick(c, t, pos, reach, None, |id| {
+                    self.hittable(id) && kinds.contains(&c.kind(id))
+                });
+                if id.is_some() {
+                    break;
+                }
+            }
+        }
+        if id.is_none() {
+            let text = if tool == Tool::Relation {
+                self.text_at(pos, None, |id| self.hittable(id))
+            } else {
+                None
+            };
+            let (picked, refused) =
+                hit::pick_with_shape_limit(c, t, pos, reach, None, text, |id| self.hittable(id));
+            if refused
+                && matches!(tool, Tool::PointOnObject | Tool::RigidPolygon)
+                && picked.is_none_or(|id| c.kind(id) == Kind::List)
+            {
+                return Outcome::Ignored;
+            }
+            id = picked;
+        }
         let accepts = |id| self.accepts_tool_hit(id);
         if matches!(
             tool,
@@ -231,6 +493,8 @@ impl App {
                 | Tool::Parabola
                 | Tool::VectorFromPoint
                 | Tool::Locus
+                | Tool::Extremum
+                | Tool::Roots
         ) && id.is_none_or(|id| !accepts(id))
         {
             id = hit::pick(c, t, pos, reach, None, |id| {
@@ -256,7 +520,33 @@ impl App {
                 // The radius comes from existing objects, unless the click is empty.
                 return Outcome::Ignored;
             }
-            if tool == Tool::VectorPolygon
+            if tool == Tool::AngleFixed
+                && matches!(c.kind(id), Kind::Segment | Kind::Circle | Kind::Conic)
+            {
+                let Some((start, end)) = c.segment_endpoints(id) else {
+                    return Outcome::Ignored;
+                };
+                self.tool.reset();
+                for point in [end, start] {
+                    let outcome = self.tool.click(
+                        Some((c.label(point), Kind::Point)),
+                        (0.0, 0.0),
+                        &|label| c.id(label).is_some(),
+                    );
+                    if matches!(outcome, Outcome::AskNumber(_)) {
+                        self.apply_outcome(outcome.clone());
+                        return outcome;
+                    }
+                }
+                return Outcome::Ignored;
+            }
+            if tool == Tool::RigidPolygon
+                && c.kind(id) == Kind::Polygon
+                && (!picks.is_empty() || rigid_copy_size(c, id).is_none())
+            {
+                return Outcome::Ignored;
+            }
+            if matches!(tool, Tool::VectorPolygon | Tool::RigidPolygon)
                 && !picks.is_empty()
                 && c.kind(id) == Kind::Point
                 && picks
@@ -289,22 +579,78 @@ impl App {
         }
         let hit = id.map(|id| (c.label(id).to_owned(), self.tool_pick_kind(id)));
         let new_point = if self.tool.accepts_new_point()
-            && id.is_none_or(|id| c.kind(id) != Kind::Point && !accepts(id))
-        {
+            && id.is_none_or(|id| {
+                c.kind(id) != Kind::Point && (tool == Tool::PointOnObject || !accepts(id))
+            }) {
             self.new_point_at(t, pos, reach)
         } else {
             NewPoint::Free(0.0, 0.0)
         };
-        let mut outcome = {
-            let c = self.wb.construction();
-            self.tool.click_with(
-                hit.as_ref().map(|(l, k)| (l.as_str(), *k)),
-                &new_point,
-                &|l| c.id(l).is_some(),
-            )
+        let c = self.wb.construction();
+        let label_probes = std::cell::Cell::new(0);
+        let is_taken = |label: &str| {
+            let used = label_probes.get();
+            if analysis {
+                label_probes.set(used + 1);
+            }
+            (!analysis || used < ANALYSIS_LABEL_WORK) && c.id(label).is_some()
         };
+        let mut outcome = self.tool.click_with(
+            hit.as_ref().map(|(l, k)| (l.as_str(), *k)),
+            &new_point,
+            &is_taken,
+        );
         if let Outcome::VectorPolygon { copy_offset, .. } = &mut outcome {
             *copy_offset = t.view().xmax / 15.0;
+        }
+        if analysis {
+            if label_probes.get() > ANALYSIS_LABEL_WORK {
+                return Outcome::Ignored;
+            }
+            if let Outcome::Run(lines) = &mut outcome {
+                let (_, rhs) = lines[0]
+                    .split_once(" = ")
+                    .expect("tool recipe is an assignment");
+                let slots = if hit
+                    .as_ref()
+                    .is_some_and(|(_, kind)| matches!(kind, Kind::Circle | Kind::Conic))
+                {
+                    geo_kernel::script::initial_output_slots(c, rhs)
+                } else {
+                    geo_kernel::script::multi_output_count(c, rhs)
+                        .and_then(Result::ok)
+                        .map(|count| vec![true; count])
+                };
+                if let Some(slots) = slots.filter(|slots| slots.len() > 1) {
+                    let mut free_labels = crate::labels::free_point_labels(is_taken);
+                    let names = slots
+                        .into_iter()
+                        .map(|named| {
+                            if named {
+                                free_labels.next().expect("point labels")
+                            } else {
+                                String::new()
+                            }
+                        })
+                        .collect::<Vec<_>>();
+                    if label_probes.get() > ANALYSIS_LABEL_WORK {
+                        return Outcome::Ignored;
+                    }
+                    lines[0] = format!("{{{}}} = {rhs}", names.join(", "));
+                }
+            }
+        }
+        if let Outcome::RigidCopy(label) = outcome {
+            let c = self.wb.construction();
+            let Some(size) = c.id(&label).and_then(|id| rigid_copy_size(c, id)) else {
+                return Outcome::Ignored;
+            };
+            let name = crate::labels::polygon_label(size, |candidate| c.id(candidate).is_some());
+            let offset = t.view().xmax / 15.0;
+            outcome = Outcome::Run(vec![format!(
+                "{name} = RigidPolygon({label}, {offset}, {})",
+                -offset
+            )]);
         }
         let shown = outcome.clone();
         self.apply_outcome(outcome);
@@ -321,7 +667,25 @@ impl App {
             deferred: false,
             acted: false,
             point: None,
+            attachment: None,
         };
+        if tool == Tool::AttachDetach {
+            self.tool.observe_attachment_pointer(pos);
+            if self.tool.attachment_at(pos) {
+                // A replacement under the same pointer position does not
+                // become a new detach hit until that pointer moves.
+                press.acted = true;
+                return press;
+            }
+            let c = self.wb.construction();
+            press.attachment = hit::pick(c, t, pos, reach, None, |id| {
+                self.hittable(id) && c.kind(id) == Kind::Point && interact::movable(c, id)
+            });
+            press.acted = press.attachment.is_some();
+            if press.acted {
+                return press;
+            }
+        }
         if creates_by_drag(tool) && self.tool.picks().len() == 1 && self.tool.asking().is_none() {
             press.deferred = true;
             press.acted = true;
@@ -330,7 +694,7 @@ impl App {
         let before = self.wb.construction().len();
         let outcome = self.tool_click(t, pos, reach);
         press.acted = !matches!(outcome, Outcome::Ignored);
-        if tool == Tool::Point {
+        if matches!(tool, Tool::Point | Tool::PointOnObject) {
             let c = self.wb.construction();
             press.point = match outcome {
                 // Only a placement that succeeded made the last object.
@@ -341,6 +705,12 @@ impl App {
             .filter(|&id| interact::movable(c, id));
         }
         press
+    }
+
+    pub fn observe_tool_pointer(&mut self, pos: (f64, f64)) {
+        if self.tool.tool() == Tool::AttachDetach {
+            self.tool.observe_attachment_pointer(pos);
+        }
     }
 
     /// The release that ends a construction tool's press, at `pos` in the
@@ -356,6 +726,18 @@ impl App {
         pos: (f64, f64),
         reach: &Reach,
     ) {
+        if self.tool.tool() == Tool::AttachDetach {
+            if let Some(point) = press.attachment {
+                let distance = (pos.0 - press.at.0).hypot(pos.1 - press.at.1);
+                if distance <= reach.threshold {
+                    self.tool_click(t, pos, reach);
+                } else {
+                    let outcome = self.attach_detach_drag(t, pos, reach, point);
+                    self.apply_outcome(outcome);
+                }
+            }
+            return;
+        }
         if !creates_by_drag(self.tool.tool()) || self.tool.picks().len() != 1 {
             return;
         }
@@ -640,6 +1022,306 @@ mod tests {
         let (x, y) = at(0.0, 3.0);
         assert!(app.erase_at(&t(), (x + 14.0, y), 5.0));
         assert_eq!(labels(&app), ["A", "B"]);
+    }
+
+    fn point(c: &geo_kernel::Construction, label: &str) -> (f64, f64) {
+        let id = c.id(label).unwrap_or_else(|| panic!("missing {label}"));
+        let Value::Point { x, y } = c.value(id) else {
+            panic!("{label} is undefined")
+        };
+        (x, y)
+    }
+
+    fn click_tool(app: &mut App, x: f64, y: f64) {
+        let reach = reach(app);
+        let press = app.press_tool(&t(), at(x, y), &reach);
+        app.release_tool(press, &t(), at(x, y), &reach);
+    }
+
+    fn answer_tool(app: &mut App, value: f64) {
+        let outcome = app
+            .tool
+            .finish_number(value, &|label| app.wb.construction().id(label).is_some());
+        app.apply_outcome(outcome);
+    }
+
+    #[test]
+    fn tool_constraint_picks_keep_the_selected_path() {
+        for (tool, script, x, y, point, carrier) in [
+            (Tool::PointOnObject, "", 2.0, 0.0, "A", "xAxis"),
+            (
+                Tool::PointOnObject,
+                "A = (0, 0)\nB = (4, 2)\nu = Vector(A, B)",
+                2.0,
+                1.0,
+                "C",
+                "u",
+            ),
+            (Tool::SegmentFixed, "f(x) = x^2", 1.0, 1.0, "A", "f"),
+        ] {
+            let mut app = app(script, tool);
+            click_tool(&mut app, x, y);
+            let c = app.wb.construction();
+            assert_eq!(
+                c.def(c.id(point).unwrap()),
+                Def::Path(PathDef::On {
+                    path: c.id(carrier).unwrap(),
+                }),
+                "{carrier}"
+            );
+        }
+    }
+
+    #[test]
+    fn roots_caps_the_search_for_free_output_labels() {
+        let mut source = String::from("f(x) = x^2 - 1\n");
+        for label in crate::labels::free_point_labels(|_| false).take(2100) {
+            use std::fmt::Write;
+            writeln!(source, "{label} = (100, 100)").unwrap();
+        }
+        let mut app = app(&source, Tool::Roots);
+        let count = app.wb.construction().len();
+        assert_eq!(count, 2101);
+        click_tool(&mut app, 0.0, -1.0);
+        assert_eq!(app.wb.construction().len(), count);
+        assert_eq!(app.wb.undo_depth(), (0, 0));
+    }
+
+    #[test]
+    fn fixed_tool_numeric_input_is_bounded() {
+        let mut app = app("a = 2", Tool::SegmentFixed);
+        app.number_text = "a + 1".to_owned();
+        assert_eq!(app.tool_number_value(), Some(3.0));
+        app.number_text = format!("{}1", " ".repeat(4096));
+        assert_eq!(app.tool_number_value(), None);
+    }
+
+    #[test]
+    fn fixed_segment_creates_a_movable_endpoint_after_placing_its_start() {
+        let mut app = app("", Tool::SegmentFixed);
+        click_tool(&mut app, 1.0, 1.0);
+        assert!(app.tool.asking().is_some());
+        answer_tool(&mut app, 4.0);
+        let c = app.wb.construction();
+        let b = c.id("B").unwrap();
+        assert_eq!(point(c, "B"), (5.0, 1.0));
+        assert!(interact::movable(c, b));
+        assert_eq!(c.kind(c.id("f").unwrap()), Kind::Segment);
+        assert_eq!(app.wb.undo_depth(), (2, 0));
+        assert!(app.undo());
+        assert_eq!(labels(&app), ["A"]);
+        assert!(app.undo());
+        assert!(labels(&app).is_empty());
+    }
+
+    #[test]
+    fn fixed_angle_accepts_a_segment_and_creates_a_rotated_point() {
+        let mut app = app(
+            "A = (2, 0)\nB = (0, 0)\nf = Segment(A, B)",
+            Tool::AngleFixed,
+        );
+        click_tool(&mut app, 1.0, 0.0);
+        assert!(app.tool.asking().is_some());
+        answer_tool(&mut app, 90.0);
+        let c = app.wb.construction();
+        let p = point(c, "B'");
+        assert!(
+            (p.0 - 2.0).abs() < 1e-9 && (p.1 + 2.0).abs() < 1e-9,
+            "{p:?}"
+        );
+        assert!(c.ids().any(|id| c.kind(id) == Kind::Angle));
+        assert_eq!(app.wb.undo_depth(), (1, 0));
+        assert!(app.undo());
+        assert_eq!(labels(&app), ["A", "B", "f"]);
+    }
+
+    #[test]
+    fn rigid_polygon_closes_at_the_first_vertex() {
+        let mut app = app("", Tool::RigidPolygon);
+        for (x, y) in [(1.0, 1.0), (4.0, 1.0), (1.0, 4.0)] {
+            click_tool(&mut app, x, y);
+        }
+        assert_eq!(picks(&app), ["A", "B", "C"]);
+        click_tool(&mut app, 1.0, 1.0);
+        let c = app.wb.construction();
+        assert!(c.ids().any(|id| c.kind(id) == Kind::Polygon));
+        assert!(!interact::movable(c, c.id("C").unwrap()));
+        assert_eq!(app.wb.undo_depth(), (1, 0));
+        assert!(app.undo());
+        assert!(labels(&app).is_empty());
+    }
+
+    #[test]
+    fn rigid_polygon_caps_pending_vertices() {
+        let mut tool = crate::tools::ToolState::new(Tool::RigidPolygon);
+        for i in 0..1001 {
+            tool.click(
+                Some((&format!("P_{{{i}}}"), Kind::Point)),
+                (0.0, 0.0),
+                &|_| true,
+            );
+        }
+        assert_eq!(tool.picks().len(), 1000);
+        assert!(matches!(
+            tool.click(Some(("P_{0}", Kind::Point)), (0.0, 0.0), &|_| false),
+            Outcome::Run(_)
+        ));
+    }
+
+    #[test]
+    fn oversized_shapes_do_not_place_free_points_or_start_a_copy() {
+        for (tool, command) in [
+            (Tool::RigidPolygon, "Polygon"),
+            (Tool::PointOnObject, "Polygon"),
+            (Tool::PointOnObject, "PolyLine"),
+            (Tool::Relation, "Polygon"),
+        ] {
+            let source = format!("L = Sequence((k, k^2), k, 1, 4097)\np = {command}(L)");
+            let mut app = app(&source, tool);
+            click_tool(&mut app, 1.0, 1.0);
+            assert_eq!(labels(&app), ["L", "p"], "{tool:?}");
+            // Relation may pick the separately visible source list.
+            if tool != Tool::Relation {
+                assert!(picks(&app).is_empty(), "{tool:?}");
+            } else {
+                assert!(!picks(&app).iter().any(|label| label == "p"), "{tool:?}");
+            }
+            assert_eq!(app.wb.undo_depth(), (0, 0));
+        }
+    }
+
+    #[test]
+    fn rigid_polygon_copy_checks_the_full_shape_budget() {
+        for (count, expected) in [(1000, Some(1000)), (1001, None), (4097, None)] {
+            let source = format!("L = Sequence((k, k^2), k, 1, {count})\np = Polygon(L)");
+            let app = app(&source, Tool::RigidPolygon);
+            let c = app.wb.construction();
+            let id = c.id("p").unwrap();
+            assert_eq!(rigid_copy_size(c, id), expected);
+        }
+    }
+
+    #[test]
+    fn point_on_object_joins_the_polygon_boundary_instead_of_a_side() {
+        let mut app = app(
+            "A = (0, 0)\nB = (4, 0)\nC = (0, 4)\np = Polygon(A, B, C)",
+            Tool::PointOnObject,
+        );
+        click_tool(&mut app, 2.0, 0.0);
+        let c = app.wb.construction();
+        assert_eq!(
+            c.def(c.id("D").unwrap()),
+            Def::Path(PathDef::On {
+                path: c.id("p").unwrap()
+            })
+        );
+    }
+
+    #[test]
+    fn a_point_on_an_object_moves_along_a_function() {
+        let mut app = app("f(x) = x^2", Tool::PointOnObject);
+        click_tool(&mut app, 1.0, 1.0);
+        let c = app.wb.construction();
+        let p = c.id("A").unwrap();
+        assert_eq!(
+            c.def(p),
+            Def::Path(PathDef::On {
+                path: c.id("f").unwrap()
+            })
+        );
+        assert!(app.wb.move_point(p, 2.0, 4.0));
+        assert_eq!(point(app.wb.construction(), "A"), (2.0, 4.0));
+    }
+
+    #[test]
+    fn relation_reports_two_objects_without_creating_one() {
+        let mut app = app("A = (1, 1)\nB = (2, 1)", Tool::Relation);
+        click_tool(&mut app, 1.0, 1.0);
+        click_tool(&mut app, 4.0, 4.0);
+        assert_eq!(picks(&app), ["A"]);
+        click_tool(&mut app, 2.0, 1.0);
+        assert!(!app.relation_report.as_ref().unwrap().is_empty());
+        assert_eq!(labels(&app), ["A", "B"]);
+        assert_eq!(app.wb.undo_depth(), (0, 0));
+    }
+
+    #[test]
+    fn extremum_takes_a_function_and_undoes_its_points() {
+        let mut app = app("f(x) = (x - 1)^2 + 1", Tool::Extremum);
+        click_tool(&mut app, 4.0, 4.0);
+        assert_eq!(labels(&app), ["f"]);
+        click_tool(&mut app, 1.0, 1.0);
+        let c = app.wb.construction();
+        assert_eq!(point(c, "A"), (1.0, 1.0));
+        assert!(app.undo());
+        assert_eq!(labels(&app), ["f"]);
+        assert!(!app.undo());
+    }
+
+    #[test]
+    fn roots_takes_a_function_and_undoes_all_outputs_together() {
+        let mut app = app("f(x) = x^2 - 1", Tool::Roots);
+        click_tool(&mut app, 4.0, 4.0);
+        assert_eq!(labels(&app), ["f"]);
+        click_tool(&mut app, 0.0, -1.0);
+        let c = app.wb.construction();
+        assert_eq!(point(c, "A"), (-1.0, 0.0));
+        assert_eq!(point(c, "B"), (1.0, 0.0));
+        assert!(app.undo());
+        assert_eq!(labels(&app), ["f"]);
+        assert!(!app.undo());
+    }
+
+    #[test]
+    fn point_on_object_places_a_point_inside_a_polygon() {
+        let mut app = app(
+            "A = (0, 0)\nB = (4, 0)\nC = (0, 4)\np = Polygon(A, B, C)",
+            Tool::PointOnObject,
+        );
+        click_tool(&mut app, 0.0, 0.0);
+        assert!(app.wb.construction().id("D").is_none());
+        click_tool(&mut app, 1.0, 1.0);
+        let c = app.wb.construction();
+        let d = c.id("D").unwrap();
+        assert_eq!(
+            c.def(d),
+            Def::Path(PathDef::InRegion {
+                region: c.id("p").unwrap()
+            })
+        );
+        assert_eq!(point(c, "D"), (1.0, 1.0));
+        assert!(app.undo());
+        assert!(app.wb.construction().id("D").is_none());
+    }
+
+    #[test]
+    fn attach_detach_redefines_the_same_point_and_keeps_its_dependents() {
+        let mut app = app(
+            "A = (0, 0)\nB = (4, 0)\nf = Segment(A, B)\nP = (2, 2)\nM = Midpoint(A, P)",
+            Tool::AttachDetach,
+        );
+        click_tool(&mut app, 2.0, 2.0);
+        assert_eq!(picks(&app), ["P"]);
+        click_tool(&mut app, 3.0, 0.0);
+        let c = app.wb.construction();
+        let p = c.id("P").unwrap();
+        assert_eq!(
+            c.def(p),
+            Def::Path(PathDef::On {
+                path: c.id("f").unwrap()
+            })
+        );
+        assert_eq!(point(c, "P"), (3.0, 0.0));
+        assert_eq!(point(c, "M"), (1.5, 0.0));
+        click_tool(&mut app, 3.0, 0.0);
+        assert!(matches!(app.wb.construction().def(p), Def::Path(_)));
+        click_tool(&mut app, 3.02, 0.0);
+        assert!(app.wb.construction().def(p).is_free());
+        assert_eq!(app.wb.undo_depth(), (2, 0));
+        assert!(app.undo());
+        assert!(matches!(app.wb.construction().def(p), Def::Path(_)));
+        assert!(app.undo());
+        assert_eq!(point(app.wb.construction(), "P"), (2.0, 2.0));
     }
 
     fn picks(app: &App) -> Vec<String> {
