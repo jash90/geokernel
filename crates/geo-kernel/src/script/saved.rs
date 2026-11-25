@@ -55,6 +55,10 @@ pub enum Property {
         label: String,
         bounds: [Option<String>; 2],
     },
+    SliderIncrement {
+        label: String,
+        step: Option<f64>,
+    },
     SliderStyle {
         label: String,
         style: SliderStyle,
@@ -93,6 +97,7 @@ impl Property {
             | Self::CellInput { label, .. }
             | Self::SliderBounds { label, .. }
             | Self::SliderLabel { label, .. }
+            | Self::SliderIncrement { label, .. }
             | Self::SliderStyle { label, .. }
             | Self::InputBoxStyle { label, .. }
             | Self::CheckboxStyle { label, .. }
@@ -167,6 +172,14 @@ impl Property {
                 let id = object(c, label)?;
                 let [min, max] = bounds;
                 c.restore_slider_bounds(id, [min.as_deref(), max.as_deref()])
+            }
+            Self::SliderIncrement { label, step } => {
+                let id = object(c, label)?;
+                if !c.has_slider_bounds(id) || step.is_some_and(|v| !v.is_finite() || v <= 0.0) {
+                    return Err("invalid slider increment".into());
+                }
+                c.set_slider_increment(id, *step);
+                Ok(())
             }
             Self::SliderStyle { label, style } => {
                 let id = object(c, label)?;
@@ -368,6 +381,12 @@ impl fmt::Display for Property {
                 encode_text(label),
                 step.map_or_else(|| "_".into(), |s| format!("{s:?}"))
             ),
+            Self::SliderIncrement { label, step } => write!(
+                f,
+                "$sliderIncrement({}, {})",
+                encode_text(label),
+                step.map_or_else(|| "_".into(), |step| format!("{step:?}"))
+            ),
             Self::SliderStyle { label, style } => {
                 let field = |v: Option<f64>| v.map_or_else(|| "_".into(), |v| format!("{v:?}"));
                 let (x, y) = style.position.unzip();
@@ -461,6 +480,7 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
         && !line.starts_with("$numberRounding(")
         && !line.starts_with("$sliderLabel(")
         && !line.starts_with("$sliderStyle(")
+        && !line.starts_with("$sliderIncrement(")
         && !line.starts_with("$checkboxStyle(")
         && !line.starts_with("$inputBoxStyle(")
         && !line.starts_with("$objectScripts(")
@@ -572,6 +592,12 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
                     bounds: [bound(*min)?, bound(*max)?],
                 })
             }
+            ("$sliderIncrement", [label, step]) => Ok(Property::SliderIncrement {
+                label: decode_text(label)?,
+                step: (*step != "_")
+                    .then(|| step.parse::<f64>().map_err(|_| "invalid slider increment"))
+                    .transpose()?,
+            }),
             ("$sliderStyle", [label, absolute, x, y, width, horizontal, fixed, knob, step]) => {
                 let number = |field: &str| {
                     field

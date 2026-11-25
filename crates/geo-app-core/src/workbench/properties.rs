@@ -148,6 +148,7 @@ impl Workbench {
                 .unwrap_or(0)
                 .clamp(0, 10)
                 .to_string(),
+            Thickness if c.has_slider_bounds(id) => show(f64::from(drawing.line_thickness) / 2.0),
             Thickness => drawing.line_thickness.to_string(),
             LineType => {
                 let code = a
@@ -262,9 +263,12 @@ impl Workbench {
                 _ => "0",
             }
             .to_owned(),
-            ConicEquation => {
-                i32::from(matches!(c.equation_form(id), Some(EquationForm::Specific))).to_string()
+            ConicEquation => match c.equation_form(id) {
+                Some(EquationForm::Specific) => "1",
+                Some(EquationForm::Parametric(_)) => "2",
+                _ => "0",
             }
+            .to_owned(),
             SliderMin | SliderMax => c.slider_bound_sources(id)[usize::from(field == SliderMax)]
                 .clone()
                 .unwrap_or_default(),
@@ -279,7 +283,12 @@ impl Workbench {
             SliderWidth => show(slider.width),
             SliderHorizontal => slider.horizontal.to_string(),
             SliderFixed => slider.fixed.to_string(),
-            SliderStep => show(slider.step.unwrap_or(0.0)),
+            SliderStep => show(
+                c.slider_animation_options(id)[0]
+                    .and_then(|src| c.numeric_value(src))
+                    .or(slider.step)
+                    .unwrap_or(0.0),
+            ),
             AnimationSpeed => show(playback(c, id).speed),
             AnimationMode => playback(c, id).mode.to_string(),
         }
@@ -325,27 +334,12 @@ impl Workbench {
             return Err(EditError::InvalidValue);
         }
         use Field::*;
-        let dynamic = matches!(
-            field,
-            DynamicRed | DynamicGreen | DynamicBlue | DynamicAlpha
-        );
-        let fallible = dynamic
-            || matches!(
-                field,
-                SliderMin
-                    | SliderMax
-                    | Condition
-                    | Anchor
-                    | Absolute
-                    | TextLatex
-                    | TextSize
-                    | TextBold
-                    | TextItalic
-                    | PositionX
-                    | PositionY
-            );
-        let propagates = fallible || matches!(field, AngleInterval | LineEquation | ConicEquation);
-        if propagates && labels.len().saturating_mul(self.construction.len()) > MAX_PROPAGATION {
+        // Charge the full construction per target for the shared property
+        // path. Visibility and input-box length only change keyed records.
+        let charge_construction = !matches!(field, Visible | InputLength);
+        if charge_construction
+            && labels.len().saturating_mul(self.construction.len()) > MAX_PROPAGATION
+        {
             return Err(EditError::SelectionTooLarge);
         }
         if self.tool_use.is_some() {
@@ -499,7 +493,7 @@ impl Workbench {
         let mut numeric = 0.0;
         let mut integral = 0;
         let mut checked = false;
-        match field.input() {
+        match field.input_for(c, id) {
             Input::Integer(min, max) => integral = integer(min, max)?,
             Input::Number(min, max) => numeric = number(min, max)?,
             Input::Choice(choices) => integral = integer(0, choices.len() as i32 - 1)?,
@@ -540,7 +534,7 @@ impl Workbench {
             LineEquation | ConicEquation => {
                 let form = match (field, integral) {
                     (LineEquation, 1) => EquationForm::Explicit,
-                    (LineEquation, 2) => EquationForm::Parametric("t".to_owned()),
+                    (LineEquation | ConicEquation, 2) => EquationForm::Parametric("t".to_owned()),
                     (ConicEquation, 1) => EquationForm::Specific,
                     _ => EquationForm::Implicit,
                 };
@@ -562,6 +556,13 @@ impl Workbench {
             ShowLabel => {
                 drawing.show_label = checked;
                 drawing.label_edited = true;
+            }
+            Thickness if c.has_slider_bounds(id) => {
+                drawing.line_thickness = if numeric <= 0.0 {
+                    2
+                } else {
+                    (numeric * 2.0).round() as u8
+                };
             }
             Thickness => {
                 if integral == 0
@@ -746,8 +747,10 @@ impl Workbench {
             SliderFixed => slider.fixed = checked,
             SliderKnob => slider.knob_size = Some(numeric),
             SliderStep => {
-                slider.step = (numeric > 0.0).then_some(numeric);
-                slider.step_expression = None;
+                return saved(Property::SliderIncrement {
+                    label: label_owned(),
+                    step: (numeric > 0.0).then_some(numeric),
+                });
             }
         }
 

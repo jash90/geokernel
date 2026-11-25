@@ -352,6 +352,16 @@ impl Construction {
         self.slider_styles.insert(id, style);
     }
 
+    /// A deliberate increment edit also replaces the step in the command's
+    /// animation options. Restoring older slider layouts keeps their precedence.
+    pub(crate) fn set_slider_increment(&mut self, id: Id, step: Option<f64>) {
+        let mut style = self.slider_style(id).clone();
+        style.step = step;
+        style.step_expression = None;
+        self.set_slider_style(id, style);
+        self.slider_animation_options.entry(id).or_default()[0] = step.map(|step| step.to_string());
+    }
+
     pub fn slider_style(&self, id: Id) -> &SliderStyle {
         self.slider_styles.get(&id).unwrap_or(&DEFAULT_SLIDER_STYLE)
     }

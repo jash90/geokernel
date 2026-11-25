@@ -690,6 +690,9 @@ impl Log {
 
     pub(crate) fn record_saved_property(&mut self, property: Property) {
         let replace = match (&property, self.ops.last()) {
+            (Property::Appearance { label, .. }, Some(Op::SavedProperty(previous))) => {
+                matches!(previous.as_ref(), Property::Appearance { label: old, .. } if old == label)
+            }
             (Property::SliderStyle { label, .. }, Some(Op::SavedProperty(previous))) => {
                 matches!(previous.as_ref(), Property::SliderStyle { label: old, .. } if old == label)
             }

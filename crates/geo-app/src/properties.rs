@@ -1,7 +1,7 @@
 //! The keyboard-accessible properties inspector.
 
 use crate::App;
-use eframe::egui::{self, ComboBox, Id, Key, Modal, Modifiers, TextEdit, Ui};
+use eframe::egui::{self, ComboBox, Id, Key, LayerId, Modal, Modifiers, TextEdit, Ui};
 use geo_app_core::properties::{EditError, Field, Input, Tab};
 use geo_kernel::Id as ObjectId;
 
@@ -21,7 +21,8 @@ fn tab_label(tab: Tab) -> &'static str {
     }
 }
 
-pub(crate) fn show(app: &mut App, ctx: &egui::Context) {
+pub(crate) fn show(app: &mut App, root: &Ui) {
+    let ctx = root.ctx();
     let Some(mut dialog) = app.properties.take() else {
         return;
     };
@@ -33,7 +34,9 @@ pub(crate) fn show(app: &mut App, ctx: &egui::Context) {
         ctx.memory_mut(|m| m.request_focus(canvas_id()));
         return;
     };
-    let response = Modal::new(Id::unique("object_properties")).show(ctx, |ui| {
+    let modal = Modal::new(Id::unique("object_properties"));
+    let layer = modal.area.layer();
+    let response = modal.show(ctx, |ui| {
         ctx.accesskit_node_builder(ui.unique_id(), |node| {
             node.set_role(egui::accesskit::Role::Dialog);
             node.set_label(TITLE);
@@ -58,7 +61,9 @@ pub(crate) fn show(app: &mut App, ctx: &egui::Context) {
             }
         });
         ui.separator();
-        let mut change = None;
+        let previous_draft = dialog.draft.take();
+        let mut blurred = None;
+        let mut changes = Vec::new();
         egui::ScrollArea::vertical()
             .id_salt(dialog.tab as u8)
             .max_height((ctx.content_rect().height() - 155.0).clamp(55.0, 540.0))
@@ -73,17 +78,35 @@ pub(crate) fn show(app: &mut App, ctx: &egui::Context) {
                         && !app.wb.property_value(id, Field::Condition).is_empty();
                     let result = ui.add_enabled_ui(!condition_controls_visibility, |ui| {
                         ui.push_id(field, |ui| {
-                            field_input(ui, field, &mut value, &mut dialog.draft)
+                            field_input(
+                                ui,
+                                field,
+                                field.label_for(app.wb.construction(), id),
+                                &mut value,
+                                previous_draft.as_ref(),
+                                &mut dialog.draft,
+                            )
                         })
                         .inner
                     });
-                    if result.inner && change.is_none() {
-                        change = Some((field, value));
+                    if result.inner {
+                        if previous_draft
+                            .as_ref()
+                            .is_some_and(|(active, _)| *active == field)
+                        {
+                            blurred = Some((field, value));
+                        } else {
+                            changes.push((field, value));
+                        }
                     }
                 }
             });
-        if let Some((field, value)) = change {
-            dialog.error = app
+        let mut edits = blurred.into_iter().chain(changes).peekable();
+        if edits.peek().is_some() {
+            dialog.error = None;
+        }
+        for (field, value) in edits {
+            let error = app
                 .wb
                 .edit_property(
                     dialog.targets(),
@@ -92,9 +115,10 @@ pub(crate) fn show(app: &mut App, ctx: &egui::Context) {
                     app.view.as_ref().map(|(_, view)| view),
                 )
                 .err();
-            if dialog.error.is_none() && matches!(field, Field::Anchor | Field::TextLatex) {
+            if error.is_none() && matches!(field, Field::Anchor | Field::TextLatex) {
                 dialog.refresh_fields(app.wb.construction());
             }
+            dialog.error = dialog.error.or(error);
             ctx.request_repaint();
         }
         if next_tab != dialog.tab {
@@ -134,6 +158,7 @@ pub(crate) fn show(app: &mut App, ctx: &egui::Context) {
         })
         .inner
     });
+    append_to_scene(ctx, root.layer_id(), layer);
     if response.inner {
         ctx.memory_mut(|m| m.request_focus(canvas_id()));
     } else {
@@ -141,41 +166,85 @@ pub(crate) fn show(app: &mut App, ctx: &egui::Context) {
     }
 }
 
+/// Egui flattens separately painted layers into a fresh buffer each frame.
+/// With the entire scene already in that buffer, appending even one dialog
+/// shape would double its allocation. Preserve the modal's input layer but
+/// append its paint to the scene when nothing needs to draw between them.
+fn append_to_scene(ctx: &egui::Context, scene: LayerId, modal: LayerId) {
+    if ctx.layer_transform_to_global(scene).is_some()
+        || ctx.layer_transform_to_global(modal).is_some()
+    {
+        return;
+    }
+    let layers: Vec<_> = ctx.memory(|m| {
+        m.layer_ids()
+            .filter(|layer| {
+                *layer != scene
+                    && *layer != modal
+                    && (scene.order..=modal.order).contains(&layer.order)
+            })
+            .collect()
+    });
+    ctx.graphics_mut(|graphics| {
+        if layers
+            .iter()
+            .any(|&layer| graphics.get(layer).is_some_and(|list| !list.is_empty()))
+        {
+            return;
+        }
+        let mut shapes = std::mem::take(graphics.entry(modal));
+        let target = graphics.entry(scene);
+        for index in 0..shapes.next_idx().0 {
+            shapes.mutate_shape(egui::layers::ShapeIdx(index), |shape| {
+                let paint = std::mem::replace(&mut shape.shape, egui::Shape::Noop);
+                let index = target.add(shape.clip_rect, paint);
+                target.mutate_shape(index, |target| {
+                    target.transform_after_tessellation = shape.transform_after_tessellation;
+                });
+            });
+        }
+    });
+}
+
 fn field_input(
     ui: &mut Ui,
     field: Field,
+    label: &str,
     value: &mut String,
-    draft: &mut Option<(Field, String)>,
+    previous_draft: Option<&(Field, String)>,
+    next_draft: &mut Option<(Field, String)>,
 ) -> bool {
     if matches!(field.input(), Input::Check) {
         let mut checked = value == "true";
-        if ui.checkbox(&mut checked, field.label()).changed() {
+        if ui.checkbox(&mut checked, label).changed() {
             *value = checked.to_string();
             return true;
         }
         return false;
     }
     ui.horizontal(|ui| {
-        let label = ui.label(field.label());
+        let label = ui.label(label);
         if let Input::Choice(choices) = field.input() {
             let current = value.parse::<usize>().unwrap_or(0).min(choices.len() - 1);
-            let mut new = current;
+            let mut chosen = None;
             ComboBox::from_id_salt("choice")
                 .selected_text(choices[current])
                 .show_ui(ui, |ui| {
                     for (i, choice) in choices.iter().enumerate() {
-                        ui.selectable_value(&mut new, i, *choice);
+                        if ui.selectable_label(i == current, *choice).clicked() {
+                            chosen = Some(i);
+                        }
                     }
                 })
                 .response
                 .labelled_by(label.id);
-            if new != current {
-                *value = new.to_string();
+            if let Some(chosen) = chosen {
+                *value = chosen.to_string();
                 return true;
             }
             return false;
         }
-        let current = draft.as_ref().filter(|(editing, _)| *editing == field);
+        let current = previous_draft.filter(|(editing, _)| *editing == field);
         let mut edited = current.map_or_else(|| value.clone(), |(_, value)| value.clone());
         let response = ui
             .add(
@@ -185,15 +254,10 @@ fn field_input(
             )
             .labelled_by(label.id);
         if response.has_focus() {
-            *draft = Some((field, edited));
-        } else if response.lost_focus() {
-            if draft.as_ref().is_some_and(|(editing, _)| *editing == field) {
-                *draft = None;
-            }
-            if edited != *value {
-                *value = edited;
-                return true;
-            }
+            *next_draft = Some((field, edited));
+        } else if (current.is_some() || response.lost_focus()) && edited != *value {
+            *value = edited;
+            return true;
         }
         false
     })

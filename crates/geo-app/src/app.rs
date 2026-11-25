@@ -230,7 +230,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     save_dialog(app, &ctx);
     image_dialog(app, &ctx);
     function_inspector(app, &ctx);
-    crate::properties::show(app, &ctx);
+    crate::properties::show(app, ui);
 }
 
 fn save_dialog(app: &mut App, ctx: &egui::Context) {

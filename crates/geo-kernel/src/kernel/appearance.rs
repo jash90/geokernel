@@ -1,8 +1,7 @@
-//! Optional presentation overrides. Arithmetic color channels are anonymous
-//! numeric objects, with the same dependencies as other inline arguments.
+//! Optional presentation overrides and numeric expressions owned by color channels.
 
 use super::{Construction, Id};
-use crate::Kind;
+use crate::expr;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -53,10 +52,10 @@ pub struct Playback {
     pub playing: bool,
 }
 
-#[derive(Clone, Copy, Debug)]
 pub(super) enum Channel {
     Literal(f64),
     Object(Id),
+    Expression(Box<expr::Entry>),
 }
 
 impl DynamicColor {
@@ -162,34 +161,34 @@ impl Construction {
         if !self.exists(id) {
             return Err("object is missing".into());
         }
-        let checkpoint = self.checkpoint();
-        let mut channels = self
-            .appearance_channels
-            .get(&id)
-            .copied()
-            .unwrap_or_default();
-        for (i, channel) in channels.iter_mut().enumerate() {
+        let mut changed = [const { None }; 4];
+        for (i, update) in changed.iter_mut().enumerate() {
             if style.dynamic.channels[i] == self.appearance(id).dynamic.channels[i] {
                 continue;
             }
             let Some(source) = style.dynamic.channels[i].as_deref() else {
-                *channel = None;
+                *update = Some(None);
                 continue;
             };
-            if let Some(resolved) = self.prepare_color_channel(id, i, source) {
-                *channel = Some(resolved);
+            if let Some(channel) = self.prepare_color_channel(source) {
+                *update = Some(Some(channel));
             } else if tolerate_missing {
                 style.dynamic.channels[i] = None;
-                *channel = None;
+                *update = Some(None);
             } else {
-                self.discard_since(checkpoint);
                 return Err("invalid numeric color channel".into());
             }
         }
-        if channels.iter().all(Option::is_none) {
-            self.appearance_channels.remove(&id);
-        } else {
-            self.appearance_channels.insert(id, channels);
+        if changed.iter().any(Option::is_some) {
+            let channels = self.appearance_channels.entry(id).or_default();
+            for (channel, update) in channels.iter_mut().zip(changed) {
+                if let Some(update) = update {
+                    *channel = update;
+                }
+            }
+            if channels.iter().all(Option::is_none) {
+                self.appearance_channels.remove(&id);
+            }
         }
         if let Some(caption) = &style.caption {
             if let Ok(index) = self.controls.binary_search_by_key(&id, |(id, _)| *id) {
@@ -222,25 +221,21 @@ impl Construction {
         Ok(())
     }
 
-    fn prepare_color_channel(&mut self, owner: Id, i: usize, source: &str) -> Option<Channel> {
+    fn prepare_color_channel(&self, source: &str) -> Option<Channel> {
         if let Ok(value) = source.parse::<f64>() {
             return value.is_finite().then_some(Channel::Literal(value));
         }
         if let Some(id) = self.id(source) {
             return self.kind(id).is_number().then_some(Channel::Object(id));
         }
-        let label = format!("\0color:{}:{i}:{}", owner.index(), self.len());
-        if crate::expr::argument_object(self, source, &label, Kind::Number) {
-            self.id(&label).map(Channel::Object)
-        } else {
-            None
-        }
+        expr::presentation_number(self, source).map(Channel::Expression)
     }
 
-    fn color_channel(&self, channel: Option<Channel>) -> Option<f64> {
+    fn color_channel(&self, channel: Option<&Channel>) -> Option<f64> {
         let value = match channel? {
-            Channel::Literal(value) => value,
-            Channel::Object(id) => self.number(id)?,
+            Channel::Literal(value) => *value,
+            Channel::Object(id) => self.number(*id)?,
+            Channel::Expression(entry) => expr::presentation_value(self, entry)?,
         };
         value.is_finite().then(|| {
             let x = value.rem_euclid(2.0);
@@ -249,7 +244,7 @@ impl Construction {
     }
 
     pub fn dynamic_fill_opacity(&self, id: Id) -> Option<f64> {
-        self.color_channel(self.appearance_channels.get(&id)?[3])
+        self.color_channel(self.appearance_channels.get(&id)?[3].as_ref())
     }
 
     pub fn dynamic_color(&self, id: Id, rgb: [u8; 3]) -> Option<[u8; 3]> {
@@ -259,7 +254,8 @@ impl Construction {
             return None;
         }
         let base = self.appearance(id).dynamic.components(rgb);
-        let [x, y, z] = std::array::from_fn(|i| self.color_channel(channels[i]).unwrap_or(base[i]));
+        let [x, y, z] =
+            std::array::from_fn(|i| self.color_channel(channels[i].as_ref()).unwrap_or(base[i]));
         let rgb = match space {
             1 | 2 => {
                 let chroma = if space == 1 {

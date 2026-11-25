@@ -97,7 +97,7 @@ pub(super) fn line(painter: &Painter, points: [Pos2; 2], stroke: Stroke, style: 
             &range,
             stroke,
             &[dash * scale, scale],
-            &[gap * scale],
+            &[gap * scale, gap * scale],
             0.0,
             &mut shapes,
         );

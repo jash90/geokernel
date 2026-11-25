@@ -166,7 +166,7 @@ fields! {
     SegmentEnd, Style, "Koniec odcinka", Choice(&["Domyślny", "Kreska", "Strzałka", "Widełki", "Pusty grot", "Pełny grot", "Puste koło", "Pełne koło"]);
     VectorArrow, Style, "Grot wektora", Check;
     SegmentDecoration, Style, "Znaczniki odcinka", Choice(&["Brak", "Jedna kreska", "Dwie kreski", "Trzy kreski", "Jedna strzałka", "Dwie strzałki", "Trzy strzałki"]);
-    TextSize, Style, "Rozmiar tekstu (%)", Number(10.0, 1000.0);
+    TextSize, Style, "Rozmiar tekstu (%)", Number(1.0, 10000.0);
     TextBold, Style, "Pogrubienie", Check;
     TextItalic, Style, "Kursywa", Check;
     TextLatex, Style, "Formuła LaTeX", Check;
@@ -187,7 +187,7 @@ fields! {
     Tooltip, Advanced, "Podpowiedź", Choice(&["Automatycznie", "Włączona", "Wyłączona", "Podpis", "Następna komórka"]);
     Selectable, Advanced, "Zezwalaj na wybieranie", Check;
     LineEquation, Advanced, "Postać równania prostej", Choice(&["Ogólna", "Kierunkowa", "Parametryczna"]);
-    ConicEquation, Advanced, "Postać równania krzywej stożkowej", Choice(&["Ogólna", "Kanoniczna"]);
+    ConicEquation, Advanced, "Postać równania krzywej stożkowej", Choice(&["Ogólna", "Kanoniczna", "Parametryczna"]);
     SliderMin, Advanced, "Minimum suwaka", Text;
     SliderMax, Advanced, "Maksimum suwaka", Text;
     SliderWidth, Advanced, "Długość suwaka", Number(0.1, 10000.0);
@@ -201,6 +201,20 @@ fields! {
 }
 
 impl Field {
+    pub fn input_for(self, c: &Construction, id: Id) -> Input {
+        if self == Self::Thickness && c.has_slider_bounds(id) {
+            return Number(-f64::MAX, 127.5);
+        }
+        self.input()
+    }
+
+    pub fn label_for(self, c: &Construction, id: Id) -> &'static str {
+        if self == Self::Thickness && c.has_slider_bounds(id) {
+            return "Grubość linii (px)";
+        }
+        self.label()
+    }
+
     pub fn supports(self, c: &Construction, id: Id) -> bool {
         if !c.exists(id) {
             return false;

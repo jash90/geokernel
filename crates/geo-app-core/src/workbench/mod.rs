@@ -1282,7 +1282,19 @@ impl Workbench {
             return;
         }
         let label = self.construction.label(id).to_owned();
-        if offset == (0.0, 0.0) {
+        let style = self.construction.appearance(id);
+        if style.label_offset.iter().any(Option::is_some) {
+            let mut style = style.clone();
+            style.label_offset = [Some(offset.0.round() as i32), Some(offset.1.round() as i32)];
+            let property = geo_kernel::script::saved::Property::Appearance {
+                label,
+                style: Box::new(style),
+            };
+            property
+                .apply(&mut self.construction)
+                .expect("moving a label does not change a color channel");
+            self.log.record_saved_property(property);
+        } else if offset == (0.0, 0.0) {
             self.label_offsets.remove(&label);
         } else {
             self.label_offsets.insert(label, offset);

@@ -192,9 +192,17 @@ pub fn paint_with_list_budget(
     scene: &Scene,
     list_items_left: &mut usize,
 ) {
-    if let Some(rects) = scene.label_rects {
-        rects.borrow_mut().clear();
-    }
+    let previous_labels = scene.label_rects.map_or(0, |rects| {
+        let mut rects = rects.borrow_mut();
+        let count = rects.len();
+        rects.clear();
+        count
+    });
+    let label_capacity = if c.drawing_layers().nth(1).is_some() {
+        0
+    } else {
+        previous_labels
+    };
     if let Some(rects) = scene.text_rects {
         rects.borrow_mut().clear();
     }
@@ -217,6 +225,7 @@ pub fn paint_with_list_budget(
                 charts.as_ref(),
                 list_items_left,
                 &mut regions_left,
+                label_capacity,
             ),
         );
     }
@@ -229,11 +238,12 @@ fn paint_layer<'c>(
     t: &ViewTransform,
     scene: &Scene,
     layer: u8,
-    (curves, charts, list_items_left, regions_left): (
+    (curves, charts, list_items_left, regions_left, label_capacity): (
         &mut Option<crate::curves::Curves>,
         Option<&charts::Frame<'_>>,
         &mut usize,
         &mut usize,
+        usize,
     ),
 ) {
     let (w, h) = (rect.width() as f64, rect.height() as f64);
@@ -312,7 +322,8 @@ fn paint_layer<'c>(
             !scene.cull || near_view(c, id, t, w, h) || (scene.label_offset)(id).is_some()
         })
         .collect();
-    let mut labels: Vec<Label<'c>> = Vec::new();
+    let mut labels: Vec<Label<'c>> =
+        Vec::with_capacity(label_capacity.min(ids.len() + angles.len()));
     // Curved outlines are tessellated and kept between frames.
     let is_curve = |id: Id| match c.value(id) {
         Value::Curve { .. } => true,
@@ -358,7 +369,7 @@ fn paint_layer<'c>(
             }
             continue;
         }
-        if let Some(drawn) = curves.as_ref().and_then(|k| k.get(c, id, color(id))) {
+        if let Some(drawn) = curves.as_ref().and_then(|k| k.get(c, id, stroke_color(id))) {
             let alpha = if strong { 0.35 } else { 0.2 };
             let glow = Stroke::new(8.0, scene.palette.color(id).egui().gamma_multiply(alpha));
             for path in drawn.paths() {
@@ -1020,7 +1031,10 @@ fn object_label<'a>(c: &'a Construction, id: Id, base: Cow<'a, str>) -> Cow<'a, 
         return base;
     };
     let caption = || c.object_caption(id);
-    let value = || crate::describe::object_text(c, id);
+    let value = || match (c.kind(id), c.value(id)) {
+        (Kind::Angle, Value::Number(radians)) => crate::describe::degrees(radians),
+        _ => crate::describe::object_text(c, id),
+    };
     let name = c.label(id);
     match mode {
         1 => Cow::Owned(format!("{name} = {}", value())),
