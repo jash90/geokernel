@@ -82,6 +82,9 @@ pub struct Element {
     pub coords: Option<[String; 3]>,
     /// `<value val=>` as written.
     pub value: Option<String>,
+    /// Number of retained tags seen when the angle value was read, reduced
+    /// to the number of preceding style tags after grouping.
+    pub(crate) angle_value_position: usize,
     /// Optional archive-backed icon of a button or text field.
     pub widget_icon: Option<String>,
     /// The saved display form of a line or conic.
@@ -424,6 +427,56 @@ pub(crate) fn java_double(text: &str) -> Option<f64> {
     text.parse().ok()
 }
 
+/// Whether Java's float parser accepts a finite value, including hex notation.
+pub(crate) fn finite_java_float(text: &str) -> bool {
+    let trimmed = text.trim_matches(|ch| ch <= ' ');
+    let unsigned = trimmed.strip_prefix(['+', '-']).unwrap_or(trimmed);
+    let Some(hex) = unsigned
+        .strip_prefix("0x")
+        .or_else(|| unsigned.strip_prefix("0X"))
+    else {
+        return java_double(text).is_some_and(|value| (value as f32).is_finite());
+    };
+    let hex = hex.strip_suffix(['f', 'F', 'd', 'D']).unwrap_or(hex);
+    let Some((mantissa, exponent)) = hex.split_once(['p', 'P']) else {
+        return false;
+    };
+    let negative = exponent.starts_with('-');
+    let exponent = exponent.strip_prefix(['+', '-']).unwrap_or(exponent);
+    if exponent.is_empty() || !exponent.bytes().all(|digit| digit.is_ascii_digit()) {
+        return false;
+    }
+    let exponent = exponent.parse::<i64>().unwrap_or(i64::MAX);
+    let exponent = if negative { -exponent } else { exponent };
+
+    let (whole, fraction) = mantissa.split_once('.').unwrap_or((mantissa, ""));
+    if (whole.is_empty() && fraction.is_empty())
+        || !whole
+            .bytes()
+            .chain(fraction.bytes())
+            .all(|digit| digit.is_ascii_hexdigit())
+    {
+        return false;
+    }
+    let digits = whole.chars().chain(fraction.chars());
+    let leading_zeros = digits.clone().take_while(|&digit| digit == '0').count();
+    // Eight significant digits cover the float's overflow rounding threshold
+    // exactly. The remaining digits can only increase the magnitude.
+    let mut significant = 0_u32;
+    let mut count = 0;
+    for digit in digits.skip(leading_zeros).take(8) {
+        significant = significant * 16 + digit.to_digit(16).expect("validated hex digit");
+        count += 1;
+    }
+    if significant == 0 {
+        return true;
+    }
+    let scale = exponent.saturating_add(4 * (whole.len() as i64 - leading_zeros as i64 - count));
+    scale <= 127
+        && (scale < -256
+            || ((f64::from(significant) * 2.0_f64.powi(scale as i32)) as f32).is_finite())
+}
+
 /// The number parser of the reference for sizes and positions, which also
 /// takes `undefined` and `null` for NaN.
 fn reference_double(text: &str) -> Option<f64> {
@@ -470,6 +523,27 @@ fn read_line_style(e: &BytesStart) -> Result<Option<LineStyle>, ImportError> {
     }
     line.draw_arrow = attr(e, "drawArrow")?.map(|v| v == "true");
     Ok(Some(line))
+}
+
+/// The legacy placement tag updates the same fields as labelOffset or slider.
+fn read_control_screen_location(el: &mut Element, e: &BytesStart) -> Result<(), ImportError> {
+    let x = attr(e, "x")?.as_deref().and_then(java_double);
+    let y = attr(e, "y")?.as_deref().and_then(java_double);
+    let (Some(x), Some(y)) = (x, y) else {
+        return Ok(());
+    };
+    let [x, y] = [x as i32, y as i32];
+    if el.kind == "boolean" {
+        el.label_offset = Some([x, y]);
+    } else {
+        let slider = el.object_style.slider.get_or_insert_with(Box::default);
+        if !slider.absolute {
+            slider.absolute = true;
+            slider.width = Some(if el.kind == "angle" { 180.0 } else { 200.0 });
+        }
+        slider.position = Some([f64::from(x), f64::from(y)]);
+    }
+    Ok(())
 }
 
 /// The placement of `<slider>`: the mode, the position, the width and then
@@ -802,6 +876,13 @@ pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, I
                             .expect("chart tags")
                             .push_chart_tag(tag);
                     }
+                    continue;
+                }
+                if name == "absoluteScreenLocation"
+                    && matches!(el.kind.as_str(), "boolean" | "numeric" | "angle")
+                {
+                    charge(&mut doc, 1)?;
+                    read_control_screen_location(el, e)?;
                     continue;
                 }
                 if let Some(tag) = crate::properties::read(&el.kind, &name, e)? {
@@ -1170,7 +1251,11 @@ pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, I
                 "slider" if element.is_some() => {
                     let el = element.as_mut().expect("checked above");
                     el.slider = Some([attr(e, "min")?, attr(e, "max")?]);
-                    el.object_style.slider = Some(Box::new(read_slider_layout(e)?));
+                    let mut layout = read_slider_layout(e)?;
+                    if let Some(previous) = el.object_style.slider.as_deref() {
+                        layout.position = layout.position.or(previous.position);
+                    }
+                    el.object_style.slider = Some(Box::new(layout));
                 }
                 "file"
                 | "inBackground"
@@ -1221,7 +1306,15 @@ pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, I
                     element.as_mut().expect("checked above").start_point = true;
                 }
                 "value" if element.is_some() => {
-                    element.as_mut().expect("checked above").value = attr(e, "val")?;
+                    let el = element.as_mut().expect("checked above");
+                    el.value = attr(e, "val")?;
+                    if el.kind == "angle" {
+                        el.angle_value_position = el
+                            .object_style
+                            .preserved
+                            .as_deref()
+                            .map_or(0, |tags| tags.len());
+                    }
                 }
                 "file"
                     if element
@@ -1323,7 +1416,7 @@ pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, I
                     if let Some(mut el) = element.take() {
                         element_depth = None;
                         if let Some(properties) = &mut el.object_style.preserved {
-                            properties.finish();
+                            properties.finish(&mut el.angle_value_position);
                         }
                         push(&mut doc, Item::Element(Box::new(el)))?;
                     }

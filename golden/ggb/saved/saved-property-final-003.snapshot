@@ -1,0 +1,10 @@
+{
+  "schema": 2,
+  "id": "saved-property-final-003",
+  "script": [
+    "chart = BarChart({2,3,4}, {2,3,4})"
+  ],
+  "objects": {
+    "chart": { "type": "number", "defined": true, "value": 9.0 }
+  }
+}

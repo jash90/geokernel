@@ -162,13 +162,32 @@ public final class SavedExporter {
                 kernel.lookupLabel((String) label).setEuclidianVisible(false);
             }
         }
+        boolean reloaded = false;
         for (Object s : (List<?>) input.get("steps")) {
             Map<?, ?> step = (Map<?, ?>) s;
+            Object action = step.get("action");
+            if ("load_xml".equals(action)) {
+                try {
+                    app.getXMLio().processXMLString((String) step.get("xml"), true, false);
+                } catch (org.geogebra.common.io.XMLParseException error) {
+                    throw new IllegalArgumentException(error);
+                }
+                reloaded = true;
+                continue;
+            }
             GeoElement geo = kernel.lookupLabel((String) step.get("label"));
             if (geo == null) {
                 throw new IllegalArgumentException(step.get("label") + " does not exist");
             }
-            Object action = step.get("action");
+            if ("delete_and_undo".equals(action)) {
+                app.setUndoActive(true);
+                kernel.initUndoInfo();
+                geo.remove();
+                kernel.storeUndoInfo();
+                kernel.undo();
+                reloaded = true;
+                continue;
+            }
             if ("delete_and_run".equals(action)) {
                 geo.remove();
                 runCommands(kernel, List.of(step.get("input")), script, created);
@@ -256,7 +275,9 @@ public final class SavedExporter {
         }
         // The state to save, and what GeoGebra computes in it.
         Map<String, Object> objects = new LinkedHashMap<>();
-        for (GeoElement geo : created) {
+        Iterable<GeoElement> saved = reloaded
+                ? kernel.getConstruction().getGeoSetConstructionOrder() : created;
+        for (GeoElement geo : saved) {
             if (geo.isLabelSet() && kernel.lookupLabel(geo.getLabelSimple()) == geo) {
                 objects.put(geo.getLabelSimple(), describe(geo));
             }
@@ -408,6 +429,8 @@ public final class SavedExporter {
                 case "mask" -> ((GeoPolygon) geo).setIsMask((Boolean) value);
                 case "slice_color", "bar_color" ->
                         ((ChartStyleGeo) geo).getStyle().setBarColor(color((List<?>) value), 2);
+                case "bar_alpha" -> ((ChartStyleGeo) geo).getStyle().setBarAlpha(
+                        Float.parseFloat((String) value), 2);
                 case "bar_fill_type" ->
                         ((ChartStyleGeo) geo).getStyle().setBarFillType(
                                 FillType.valueOf((String) value), 2);

@@ -42,67 +42,68 @@ impl Properties {
             .push(tag);
     }
 
-    pub(crate) fn finish(&mut self) {
-        // The writer emits conic eigenvectors before the matrix and angle
-        // styles before the value. Keep the order within each group.
+    pub(crate) fn len(&self) -> usize {
+        self.tags.len()
+    }
+
+    pub(crate) fn finish(&mut self, value_position: &mut usize) {
+        // Keep the writer's grouping without losing which angle styles
+        // preceded the value in the source.
+        if self.class == "angle" {
+            *value_position = self.tags[..*value_position]
+                .iter()
+                .filter(|tag| tag.is_angle_style())
+                .count();
+        }
         self.tags.sort_by_key(|tag| {
-            if tag.name == "eigenvectors" || (self.class == "angle" && tag.is_angle_style()) {
+            if self.class == "angle" && tag.is_angle_style() {
                 0
-            } else {
+            } else if tag.name == "eigenvectors" {
                 1
+            } else {
+                2
             }
         });
     }
 
-    pub(crate) fn retain(&mut self, mut keep: impl FnMut(&Tag) -> bool) {
+    pub(crate) fn retain(&mut self, mut keep: impl FnMut(&mut Tag) -> bool) {
         self.tags.retain_mut(|tag| {
-            tag.children.retain(&mut keep);
+            tag.children.retain_mut(&mut keep);
             keep(tag)
         });
     }
 
-    /// Detach references to points removed from the edited document.
-    pub fn detach_missing_start_points(&mut self, c: &Construction) {
-        if matches!(
-            self.class.as_str(),
-            "vector" | "button" | "list" | "textfield"
-        ) {
-            self.tags.retain(|tag| {
-                tag.name != "startPoint"
-                    || tag
-                        .start_point_label()
-                        .is_none_or(|label| c.id(label).is_some_and(|id| c.kind(id) == Kind::Point))
-            });
-        }
+    /// Whether this saved presentation has an anchor lost in an edit.
+    pub fn has_missing_start_point(&self, c: &Construction) -> bool {
+        self.tags.iter().any(|tag| tag.missing_start_point(c))
     }
 
-    pub(crate) fn angle_style(&self, initial: AngleStyle) -> Option<AngleStyle> {
-        self.tags
+    /// Detach references to points removed from the edited document.
+    pub fn detach_missing_start_points(&mut self, c: &Construction) {
+        self.tags.retain(|tag| !tag.missing_start_point(c));
+    }
+
+    pub(crate) fn angle_style(&self, initial: AngleStyle) -> AngleStyle {
+        self.tags.iter().fold(initial, Tag::apply_angle_style)
+    }
+
+    /// The reference normalizes a free angle's raw value whenever a bounded
+    /// style is active after reading the value. Switching back to unbounded
+    /// leaves that normalization in place, without the reflex reflection.
+    pub(crate) fn free_angle_raw(&self, raw: f64, value_position: usize) -> f64 {
+        let (before, after) = self.tags.split_at(value_position);
+        let style = before
             .iter()
-            .filter(|tag| tag.is_angle_style())
-            .fold(None, |previous, tag| {
-                let style = previous.unwrap_or(initial);
-                match tag.name {
-                    "angleStyle" => tag
-                        .attr("val")
-                        .and_then(xml::java_int)
-                        .map(AngleStyle::from_xml)
-                        .or(previous),
-                    "allowReflexAngle" => Some(if tag.attr("val") == Some("true") {
-                        AngleStyle::Anticlockwise
-                    } else {
-                        AngleStyle::NotReflex
-                    }),
-                    "forceReflexAngle" => Some(if tag.attr("val") == Some("true") {
-                        AngleStyle::Reflex
-                    } else if style == AngleStyle::Reflex {
-                        AngleStyle::Anticlockwise
-                    } else {
-                        style
-                    }),
-                    _ => previous,
-                }
-            })
+            .fold(AngleStyle::default(), Tag::apply_angle_style);
+        if style != AngleStyle::Unbounded
+            || after
+                .iter()
+                .any(|tag| Tag::apply_angle_style(style, tag) != AngleStyle::Unbounded)
+        {
+            AngleStyle::Anticlockwise.value(raw)
+        } else {
+            raw
+        }
     }
 
     pub(crate) fn for_class(&self, class: &str) -> &[Tag] {
@@ -128,8 +129,53 @@ impl Tag {
         )
     }
 
+    fn apply_angle_style(previous: AngleStyle, tag: &Self) -> AngleStyle {
+        match tag.name {
+            "angleStyle" => tag
+                .attr("val")
+                .and_then(xml::java_int)
+                .map_or(previous, AngleStyle::from_xml),
+            "allowReflexAngle" => {
+                if tag.attr("val") == Some("true") {
+                    AngleStyle::Anticlockwise
+                } else {
+                    AngleStyle::NotReflex
+                }
+            }
+            "forceReflexAngle" if tag.attr("val") == Some("true") => AngleStyle::Reflex,
+            "forceReflexAngle" if previous == AngleStyle::Reflex => AngleStyle::Anticlockwise,
+            _ => previous,
+        }
+    }
+
+    pub(crate) fn validate_import(
+        &mut self,
+        c: &Construction,
+        id: Id,
+        expressions: &mut StyleExpressions,
+    ) -> bool {
+        if self.name != "incrementY" {
+            return self.can_write(c, id, expressions);
+        }
+        let Some((_, val)) = self.attributes.iter_mut().find(|(key, _)| *key == "val") else {
+            return false;
+        };
+        let Ok(normalized) = expressions.number(c, val) else {
+            return false;
+        };
+        *val = normalized;
+        true
+    }
+
     fn start_point_label(&self) -> Option<&str> {
         self.attr("exp").or_else(|| self.attr("label"))
+    }
+
+    fn missing_start_point(&self, c: &Construction) -> bool {
+        self.name == "startPoint"
+            && self
+                .start_point_label()
+                .is_some_and(|label| c.id(label).is_none_or(|id| c.kind(id) != Kind::Point))
     }
 
     pub(crate) fn can_write(
@@ -186,7 +232,7 @@ impl Tag {
             return false;
         }
         match self.attr("key") {
-            Some("barAlpha") => xml::java_double(value).is_some_and(|n| (n as f32).is_finite()),
+            Some("barAlpha") => xml::finite_java_float(value),
             Some("barHatchDistance" | "barHatchAngle") => xml::java_int(value).is_some(),
             Some("barFillType") => xml::java_int(value)
                 .is_some_and(|n| (0..=i32::from(crate::export::Fill::MAX_PATTERN)).contains(&n)),

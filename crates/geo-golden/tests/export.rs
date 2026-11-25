@@ -2003,6 +2003,200 @@ fn malformed_chart_property_is_dropped_before_reference_reload() {
         .any(|tag| tag["key"] == "barFillType"));
 }
 
+fn recorded_legacy_xml(id: &str) -> String {
+    let saved: Value =
+        serde_json::from_str(include_str!("../../../tools/ggb-harness/saved/saved.json")).unwrap();
+    saved["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["id"] == id)
+        .unwrap()["steps"][0]["xml"]
+        .as_str()
+        .unwrap()
+        .to_owned()
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn last_round_free_angle_value_survives_reference_reload() {
+    let id = "saved-property-final-001";
+    let input = recorded_legacy_xml(id);
+    let wb = review_workbench(input.as_bytes());
+    let output = wb.export_ggb(None).unwrap();
+    let reference = saved_review_file(&format!("{id}.xml"));
+    let (source, exported) = review_oracle(&reference, &output);
+    let angle = &source["objects"]["w"];
+    assert_json(angle, &exported["objects"]["w"], "free angle after save");
+    let c = wb.construction();
+    compare_construction_object(&expected_from_json(angle).unwrap(), c, c.id("w").unwrap())
+        .unwrap();
+    let reopened = review_workbench(&output);
+    let c = reopened.construction();
+    compare_construction_object(&expected_from_json(angle).unwrap(), c, c.id("w").unwrap())
+        .unwrap();
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn last_round_free_angles_preserve_the_raw_sweep() {
+    let id = "saved-property-final-006";
+    let input = recorded_legacy_xml(id);
+    let wb = review_workbench(input.as_bytes());
+    let output = wb.export_ggb(None).unwrap();
+    let reference = saved_review_file(&format!("{id}.xml"));
+    let (source, exported) = review_oracle(&reference, &output);
+    let reopened = review_workbench(&output);
+    for label in ["r", "u", "w"] {
+        let angle = &source["objects"][label];
+        assert_json(angle, &exported["objects"][label], label);
+        let expected = source["reloadedTags"][label]["value"][0]["val"]
+            .as_str()
+            .unwrap()
+            .parse::<f64>()
+            .unwrap();
+        for stage in ["elementTags", "reloadedTags"] {
+            let raw = exported[stage][label]["value"][0]["val"]
+                .as_str()
+                .unwrap()
+                .parse::<f64>()
+                .unwrap();
+            assert_json(&json!(expected), &json!(raw), &format!("{label} {stage}"));
+        }
+        for c in [wb.construction(), reopened.construction()] {
+            compare_construction_object(
+                &expected_from_json(angle).unwrap(),
+                c,
+                c.id(label).unwrap(),
+            )
+            .unwrap();
+        }
+    }
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn last_round_undo_restores_vector_anchor_through_save() {
+    let input = saved_review_file("saved-element-properties-003.xml");
+    let mut wb = review_workbench(&input);
+    assert!(wb.delete(wb.construction().id("A").unwrap()));
+    assert!(wb.undo());
+    let reference = saved_review_file("saved-property-final-002.xml");
+    let (source, exported) = review_oracle(&reference, &wb.export_ggb(None).unwrap());
+    assert_json(&source["objects"]["v"], &exported["objects"]["v"], "vector");
+    let anchor = &source["reloadedTags"]["v"]["startPoint"];
+    assert_eq!(anchor[0]["exp"], "A");
+    assert_eq!(*anchor, exported["reloadedTags"]["v"]["startPoint"]);
+
+    assert!(wb.redo());
+    wb.run_line("A = (30, 40)").unwrap();
+    let detached = saved_review_file("saved-property-review-002.xml");
+    let (source, exported) = review_oracle(&detached, &wb.export_ggb(None).unwrap());
+    assert!(source["reloadedTags"]["v"]["startPoint"].is_null());
+    assert_eq!(
+        source["reloadedTags"]["v"]["startPoint"],
+        exported["reloadedTags"]["v"]["startPoint"]
+    );
+}
+
+#[test]
+fn last_round_generated_angle_style_is_charged_to_the_item_limit() {
+    let at_limit = format!(
+        r#"<geogebra><construction><element type="angle" label="w"><value val="1"/>{}</element></construction></geogebra>"#,
+        r#"<coordStyle style="polar"/>"#.repeat(geo_import::xml::MAX_ITEMS - 1)
+    );
+    let wb = review_workbench(at_limit.as_bytes());
+    match wb.export_ggb(None) {
+        Err(error) => assert!(error.to_string().contains("import object limit"), "{error}"),
+        Ok(output) => {
+            geo_import::import(&output).expect("a successfully saved archive must reopen");
+        }
+    }
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn last_round_hex_bar_opacity_survives_reference_reload() {
+    let file = "saved-property-final-003.xml";
+    let input = review_xml(
+        file,
+        &[(
+            r#"key="barAlpha" barNumber="2" value="0.5""#,
+            r#"key="barAlpha" barNumber="2" value="0x1.0p-1""#,
+        )],
+    );
+    let wb = review_workbench(&input);
+    let reference = saved_review_file(file);
+    let (source, exported) = review_oracle(&reference, &wb.export_ggb(None).unwrap());
+    let tags = &source["reloadedTags"]["chart"]["tags/tag"];
+    assert!(tags
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|tag| tag["key"] == "barAlpha" && tag["value"] == "0.5"));
+    assert_eq!(*tags, exported["reloadedTags"]["chart"]["tags/tag"]);
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn last_round_legacy_positions_follow_live_control_moves() {
+    let id = "saved-property-final-004";
+    let input = recorded_legacy_xml(id);
+    let mut wb = review_workbench(input.as_bytes());
+    let reference = saved_review_file(&format!("{id}.xml"));
+    let (source, exported) = review_oracle(&reference, &wb.export_ggb(None).unwrap());
+    assert_eq!(source["styles"]["b"]["label_offset"], json!([90, 110]));
+    assert_eq!(
+        source["styles"]["n"]["slider"]["position"],
+        json!([95.0, 115.0])
+    );
+    assert_eq!(
+        source["styles"]["b"]["label_offset"],
+        exported["styles"]["b"]["label_offset"]
+    );
+    assert_eq!(
+        source["styles"]["n"]["slider"]["position"],
+        exported["styles"]["n"]["slider"]["position"]
+    );
+    let check_box = wb.construction().id("b").unwrap();
+    let slider = wb.construction().id("n").unwrap();
+    assert_eq!(
+        wb.construction().checkbox_position(check_box),
+        Some((90.0, 110.0))
+    );
+    assert_eq!(
+        wb.construction().slider_style(slider).position,
+        Some((95.0, 115.0))
+    );
+    wb.move_checkbox(check_box, [130, 150]);
+    wb.move_slider(slider, (135.0, 155.0));
+    let (_, moved) = review_oracle(&reference, &wb.export_ggb(None).unwrap());
+    assert_eq!(moved["styles"]["b"]["label_offset"], json!([130, 150]));
+    assert_eq!(
+        moved["styles"]["n"]["slider"]["position"],
+        json!([135.0, 155.0])
+    );
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn last_round_vertical_increment_uses_the_validated_expression() {
+    let id = "saved-property-final-005";
+    let input = recorded_legacy_xml(id);
+    let wb = review_workbench(input.as_bytes());
+    let output = wb.export_ggb(None).unwrap();
+    let reference = saved_review_file(&format!("{id}.xml"));
+    let (source, exported) = review_oracle(&reference, &output);
+    assert_eq!(
+        source["reloadedTags"]["P"]["incrementY"],
+        exported["reloadedTags"]["P"]["incrementY"]
+    );
+    assert_eq!(
+        exported["elementTags"]["P"]["incrementY"][0]["val"],
+        "0.25 * 2"
+    );
+}
+
 fn oracle_command(args: &[&str], dir: &std::path::Path) -> Command {
     let root = repo_root();
     let (script, path) = if std::env::var_os("GEOKERNEL_EXPORT_CONTAINER").is_some() {

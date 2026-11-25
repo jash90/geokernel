@@ -14,6 +14,7 @@ use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
 use geo_kernel::algo::polygon::PolygonDef;
+use geo_kernel::kernel::angle::AngleStyle;
 use geo_kernel::kernel::control::{
     encode_scripts, encode_text, visibility_boolean, NumberRounding, SliderLabel,
 };
@@ -214,7 +215,7 @@ pub(crate) fn convert_with_assets(
         let label = quote(&el.label);
         if let Some(properties) = saved_style.preserved.as_deref_mut() {
             properties.retain(|tag| {
-                if tag.can_write(&c.kernel, id, &mut expressions) {
+                if tag.validate_import(&c.kernel, id, &mut expressions) {
                     return true;
                 }
                 c.out.notes.push(format!(
@@ -1457,16 +1458,19 @@ impl Converter {
                         .push(format!("equation style for `{}`: {e}", quote(&el.label))),
                 }
             }
-            if let Some((properties, initial)) = el
-                .object_style
-                .preserved
-                .as_deref()
-                .zip(self.kernel.angle_style(id))
-            {
-                if let Some(style) = properties
-                    .angle_style(initial)
-                    .filter(|&style| style != initial)
-                {
+            if let Some(current) = self.kernel.angle_style(id) {
+                let initial =
+                    if expression.is_none() && matches!(self.kernel.def(id), Def::Angle(_)) {
+                        AngleStyle::default()
+                    } else {
+                        current
+                    };
+                let style = el
+                    .object_style
+                    .preserved
+                    .as_deref()
+                    .map_or(initial, |properties| properties.angle_style(initial));
+                if style != current {
                     let line = format!("$angleStyle({}, {})", el.label, style.xml_code());
                     match exec(&mut self.kernel, &line) {
                         Ok(_) => self.out.script.push(line),
@@ -1939,7 +1943,7 @@ impl Converter {
                 "$implicitCoefficients({label}, {})",
                 el.implicit_coefficients.as_deref().unwrap_or("[]")
             )),
-            "angle" => match el.value.as_deref().and_then(num) {
+            "angle" => match free_angle_raw(el) {
                 Some(radians) if radians.is_finite() => Ok(format!(
                     "{label} = $saved({radians} rad, {}°)",
                     radians.to_degrees()
@@ -2038,6 +2042,14 @@ fn has_saved_literal(el: &Element, exp: &str) -> bool {
         _ => false,
     };
     has_value && is_literal(exp)
+}
+
+fn free_angle_raw(el: &Element) -> Option<f64> {
+    let raw = num(el.value.as_deref()?)?;
+    Some(match el.object_style.preserved.as_deref() {
+        Some(properties) => properties.free_angle_raw(raw, el.angle_value_position),
+        None => AngleStyle::Anticlockwise.value(raw),
+    })
 }
 
 fn exact_literal(el: &Element) -> Option<String> {
@@ -2581,12 +2593,12 @@ fn cross_check(
             .map(|saved| saved_infinity(saved) == Some(n)),
         Value::Number(n) => el.value.as_deref().and_then(num).map(|s| {
             let s = if kind == Kind::Angle {
-                el.object_style
-                    .preserved
-                    .as_deref()
-                    .zip(c.angle_style(id))
-                    .and_then(|(properties, style)| properties.angle_style(style))
-                    .map_or(s, |style| style.value(s))
+                let raw = if expression.is_none() && c.def(id).is_free() {
+                    free_angle_raw(el).unwrap_or(s)
+                } else {
+                    s
+                };
+                c.angle_style(id).map_or(raw, |style| style.value(raw))
             } else {
                 s
             };

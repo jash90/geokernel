@@ -787,6 +787,53 @@ case("property-review", ["a = 3.5", "field = InputBox(a)", 'b = Button("Apply")'
     {"action": "widget_icon", "label": "b", "file": "tile.png"},
 ], archive=True)
 
+def load_xml(elements):
+    return {"action": "load_xml", "xml":
+            '<geogebra format="5.0"><construction>' + elements + '</construction></geogebra>'}
+
+
+case("property-final", [], [load_xml(
+    '<element type="angle" label="w"><value val="7"/>'
+    '<allowReflexAngle val="false"/><angleStyle val="3"/></element>'
+)])
+case("property-final", ["A = (1, 2)", "B = (4, 2)", "C = (3, 5)", "v = (2, 1)",
+                        "s = Segment(A, B)", "p = Polygon(A, B, C)", "n = Slope(Line(A, C))"], [
+    {"action": "style", "label": "A", "point_polar": True, "vertical_increment": "0.25"},
+    {"action": "style", "label": "v", "vector_polar": True, "vector_start": "A"},
+    {"action": "style", "label": "s", "outlying_intersections": True, "keep_type": True},
+    {"action": "style", "label": "p", "mask": True},
+    {"action": "style", "label": "n", "slope_triangle_size": 4},
+    {"action": "delete_and_undo", "label": "A"},
+])
+case("property-final", ["chart = BarChart({2,3,4}, {2,3,4})"], [
+    {"action": "style", "label": "chart", "bar_color": [255, 0, 0], "bar_alpha": "0x1.0p-1"},
+])
+case("property-final", [], [load_xml(
+    '<element type="boolean" label="b"><value val="true"/>'
+    '<show object="true" label="true"/><labelOffset x="40" y="60"/>'
+    '<absoluteScreenLocation x="90" y="110"/></element>'
+    '<element type="numeric" label="n"><value val="2"/>'
+    '<slider min="0" max="5" x="45" y="65" width="120" fixed="false" '
+    'horizontal="true" showAlgebra="true" absoluteScreenLocation="true"/>'
+    '<show object="true" label="true"/><absoluteScreenLocation x="95" y="115"/></element>'
+)])
+
+
+case("property-final", [], [load_xml(
+    '<element type="point" label="P"><coords x="1" y="2" z="1"/>'
+    '<incrementY val=" 0.25 * 2 "/></element>'
+)])
+
+
+case("property-final", [], [load_xml(
+    '<element type="angle" label="r"><value val="7"/>'
+    '<allowReflexAngle val="false"/><angleStyle val="2"/></element>'
+    '<element type="angle" label="u"><angleStyle val="3"/><value val="7"/></element>'
+    '<element type="angle" label="w"><angleStyle val="3"/><value val="7"/>'
+    '<forceReflexAngle val="true"/><angleStyle val="3"/></element>'
+)])
+
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

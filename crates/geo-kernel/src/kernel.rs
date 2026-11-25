@@ -1835,6 +1835,18 @@ impl Construction {
         }
     }
 
+    /// The raw sweep a free angle saves before applying any reflex reflection.
+    pub fn free_angle_raw(&self, id: Id) -> Option<f64> {
+        let AngleSource::Free(raw) = self.angle_source(id)? else {
+            return None;
+        };
+        Some(if self.angle_style(id) == Some(AngleStyle::Unbounded) {
+            raw
+        } else {
+            AngleStyle::Anticlockwise.value(raw)
+        })
+    }
+
     /// The drawable sector of an angle with a finite vertex and nonzero sweep.
     pub fn angle_geometry(&self, id: Id) -> Option<AngleGeometry> {
         let source = self.angle_source(id)?;

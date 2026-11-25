@@ -65,7 +65,13 @@ impl Workbench {
             self.cas = crate::cas::Table::from_file(&self.construction, imported.cas_rows);
             self.file_settings = imported.settings;
             self.file_import_losses = (imported.skipped.len(), imported.mismatched.len());
-            self.file_object_styles = imported.object_styles.into_iter().collect();
+            self.file_object_styles = super::FileObjectStyles::new(
+                imported
+                    .object_styles
+                    .into_iter()
+                    .map(|(label, style)| (label.into(), style.into()))
+                    .collect(),
+            );
             self.file_slider_animation = imported.slider_animation;
             self.file_view = imported.view;
             self.file_cas_visible = imported.cas_visible;
@@ -141,7 +147,7 @@ impl Workbench {
             object_styles: self
                 .file_object_styles
                 .iter()
-                .map(|(label, style)| (label.as_str(), style))
+                .map(|(label, style)| (label.as_ref(), style.as_ref()))
                 .collect(),
             slider_animation: self
                 .file_slider_animation

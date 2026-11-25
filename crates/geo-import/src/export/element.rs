@@ -529,6 +529,7 @@ impl<'a> Writer<'a> {
         }
         if let Some(angle) = self.c.angle_style(id) {
             if !wrote_style || saved.and_then(|s| s.saved_angle_style) != Some(angle) {
+                self.xml.charge_items(1)?;
                 self.xml.val("angleStyle", &angle.xml_code().to_string())?;
             }
         }
@@ -714,7 +715,9 @@ impl<'a> Writer<'a> {
                 self.xml
                     .coords("coords", [y1 - y2, x2 - x1, x1 * y2 - y1 * x2])?;
             }
-            Value::Number(n) => self.xml.val("value", &number(n))?,
+            Value::Number(n) => self
+                .xml
+                .val("value", &number(c.free_angle_raw(id).unwrap_or(n)))?,
             Value::Bool(b) => self.xml.val("value", flag(b))?,
             Value::Undefined
                 if matches!(
