@@ -42,6 +42,6 @@ scenarios = [
          [[3, -0.01]]),
 ]
 
-Path(__file__).with_name("tool_pointer.json").write_text(
+(Path(__file__).parent / "pointer" / "tool_pointer.json").write_text(
     json.dumps({"scenarios": scenarios}, indent=2) + "\n", encoding="utf-8"
 )

@@ -220,7 +220,7 @@ case "$cmd" in
     src="$here/src/main/java/geokernel/harness"
     javac --release 17 -cp "$cp" -d "$probe" "$src/ToolPointer.java" "$src/Session.java" "$src/Json.java" "$src/GiacOracle.java" "$src/ProverOracle.java"
     java "${java_opts[@]}" -cp "$probe:$cp" geokernel.harness.ToolPointer \
-      "$here/cases/tool_pointer.json" "$repo/crates/geo-mcp/tests/fixtures/pointer_scenarios.json" \
+      "$here/cases/pointer/tool_pointer.json" "$repo/crates/geo-mcp/tests/fixtures/pointer_scenarios.json" \
       "$repo/crates/geo-mcp/tests/fixtures/tool_pointer_capture.json" "$GEOGEBRA_REV"
     ;;
   canvas-review)

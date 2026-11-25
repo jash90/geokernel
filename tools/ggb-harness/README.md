@@ -384,7 +384,8 @@ GEOGEBRA_SRC=<checkout> tools/ggb-harness/linux-x86_64.sh tool-pointer
 ```
 
 The recorder invokes the headless Euclidian controller with the pointer
-positions in the two input files. It records construction objects after
+positions in the two input files. Generated pointer inputs live under
+`cases/pointer/`, outside the construction corpus globs. It records construction objects after
 each release, records the dialog calls, and invokes kernel undo to check
 the resulting checkpoints. Fixed Segment and Fixed Angle answers invoke
 the reference's number dialog handlers. The output
