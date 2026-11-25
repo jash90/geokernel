@@ -8,8 +8,7 @@ use eframe::egui::{
 use geo_app_core::text::{label, Label};
 use geo_kernel::spreadsheet::{Address, MAX_COLUMNS, MAX_INPUT_BYTES, MAX_ROWS};
 
-const COLUMN_WIDTH: f32 = 74.0;
-const ROW_HEIGHT: f32 = 24.0;
+const HEADER_HEIGHT: f32 = 24.0;
 const HEADER_WIDTH: f32 = 32.0;
 
 enum GridAction {
@@ -93,6 +92,7 @@ fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridA
     let mut clicked = None;
     let c = app.wb.construction();
     let font = FontId::proportional(13.0);
+    let layout = app.wb.spreadsheet_grid();
     ScrollArea::both()
         .id_salt("spreadsheet_grid")
         .auto_shrink([false, false])
@@ -100,22 +100,20 @@ fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridA
         .show_viewport(ui, |ui, viewport| {
             let origin = ui.cursor().min;
             ui.set_min_size(vec2(
-                HEADER_WIDTH + COLUMN_WIDTH * f32::from(MAX_COLUMNS),
-                ROW_HEIGHT * (1.0 + f32::from(MAX_ROWS)),
+                HEADER_WIDTH + layout.columns.edge(MAX_COLUMNS),
+                HEADER_HEIGHT + layout.rows.edge(MAX_ROWS),
             ));
-            let col_at = |x: f32| ((x - HEADER_WIDTH) / COLUMN_WIDTH).floor().max(0.0) as u16 + 1;
-            let row_at = |y: f32| (y / ROW_HEIGHT).floor().max(1.0) as u16;
-            let cols = col_at(viewport.left())..=col_at(viewport.right()).min(MAX_COLUMNS);
-            let rows = row_at(viewport.top())..=row_at(viewport.bottom()).min(MAX_ROWS);
+            let col_at = |x: f32| layout.columns.cell_at(x - HEADER_WIDTH);
+            let row_at = |y: f32| layout.rows.cell_at(y - HEADER_HEIGHT);
+            let cols = col_at(viewport.left())..=col_at(viewport.right());
+            let rows = row_at(viewport.top())..=row_at(viewport.bottom());
             let cell_rect = |column: u16, row: u16| {
-                Rect::from_min_size(
-                    origin
-                        + vec2(
-                            HEADER_WIDTH + COLUMN_WIDTH * f32::from(column - 1),
-                            ROW_HEIGHT * f32::from(row),
-                        ),
-                    vec2(COLUMN_WIDTH, ROW_HEIGHT),
-                )
+                let left = layout.columns.edge(column - 1);
+                let top = layout.rows.edge(row - 1);
+                let right = layout.columns.edge(column);
+                let bottom = layout.rows.edge(row);
+                let body = origin + vec2(HEADER_WIDTH, HEADER_HEIGHT);
+                Rect::from_min_max(body + vec2(left, top), body + vec2(right, bottom))
             };
             let clip = ui.clip_rect();
             let selected_rect = cell_rect(selected.column, selected.row);
@@ -127,7 +125,10 @@ fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridA
             let header_x = clip.left();
             let painter = ui.painter().clone();
             painter.rect_filled(
-                Rect::from_min_size(pos2(clip.left(), header_y), vec2(clip.width(), ROW_HEIGHT)),
+                Rect::from_min_size(
+                    pos2(clip.left(), header_y),
+                    vec2(clip.width(), HEADER_HEIGHT),
+                ),
                 0.0,
                 theme::TOOLBAR_BG,
             );
@@ -140,8 +141,8 @@ fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridA
                 theme::TOOLBAR_BG,
             );
             for column in cols.clone() {
-                let header = cell_rect(column, 0);
-                let pos = pos2(header.center().x, header_y + ROW_HEIGHT / 2.0);
+                let header = cell_rect(column, 1);
+                let pos = pos2(header.center().x, header_y + HEADER_HEIGHT / 2.0);
                 if pos.x >= header_x + HEADER_WIDTH {
                     painter.text(
                         pos,
@@ -152,23 +153,25 @@ fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridA
                     );
                 }
             }
-            let body = Rect::from_min_max(clip.min + vec2(HEADER_WIDTH, ROW_HEIGHT), clip.max);
+            let body = Rect::from_min_max(clip.min + vec2(HEADER_WIDTH, HEADER_HEIGHT), clip.max);
             let painter = painter.with_clip_rect(body);
             painter.rect_filled(selected_rect, 0.0, theme::TOOLBAR_BG);
             let edge = Stroke::new(1.0, theme::SEPARATOR);
-            for column in cols.clone() {
-                let right = cell_rect(column, 0).right();
-                if body.x_range().contains(right) {
-                    painter.vline(right - 0.5, body.y_range(), edge);
+            if layout.show_lines {
+                for column in cols.clone() {
+                    let right = cell_rect(column, 1).right();
+                    if body.x_range().contains(right) {
+                        painter.vline(right - 0.5, body.y_range(), edge);
+                    }
                 }
             }
             for row in rows {
                 let row_rect = cell_rect(1, row);
-                if body.y_range().contains(row_rect.bottom()) {
+                if layout.show_lines && body.y_range().contains(row_rect.bottom()) {
                     painter.hline(body.x_range(), row_rect.bottom() - 0.5, edge);
                 }
                 let y = row_rect.center().y;
-                if y >= header_y + ROW_HEIGHT {
+                if y >= header_y + HEADER_HEIGHT {
                     ui.painter().text(
                         pos2(header_x + HEADER_WIDTH / 2.0, y),
                         Align2::CENTER_CENTER,
@@ -187,7 +190,7 @@ fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridA
                     let response =
                         ui.interact(hit, ui.make_persistent_id((column, row)), Sense::click());
                     let active = selected == address;
-                    let shown = c.spreadsheet_display(address);
+                    let shown = app.wb.spreadsheet_display(address);
                     response.widget_info(|| {
                         let mut info =
                             WidgetInfo::selected(Role::Button, true, active, address.label());

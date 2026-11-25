@@ -1,0 +1,27 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-viewsettings-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "load",
+          "input": "<geogebra format=\"5.0\"><spreadsheetView><spreadsheetColumn id=\"0\" width=\"200\"/><layout showGrid=\"false\"/></spreadsheetView><construction/></geogebra>",
+          "view": { "show_grid": false, "first_column_width": 200.0 },
+          "cells": {},
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

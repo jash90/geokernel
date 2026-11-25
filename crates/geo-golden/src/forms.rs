@@ -552,9 +552,11 @@ fn call_fits(command: &str, form: &str, args: &[String], kinds: &[Option<Kind>])
             && tokens.iter().zip(args.iter().zip(kinds)).all(
                 |(&token, (arg, kind))| match token {
                     "cell" => is_cell(arg),
-                    "range" => arg
-                        .split_once(':')
-                        .is_some_and(|(a, b)| is_cell(a) && is_cell(b)),
+                    "range" => arg.split_once(':').is_some_and(|(a, b)| is_cell(a) && is_cell(b))
+                        || geo_kernel::script::split_call(arg).is_some_and(|(name, bounds)| {
+                            name == "CellRange"
+                                && matches!(bounds.as_slice(), [a, b] | [a, b, _] if is_cell(a) && is_cell(b))
+                        }),
                     "type" => true,
                     "object" => is_cell(arg) || kind.is_some(),
                     _ => kind.is_some_and(|kind| token_matches(token, kind)),

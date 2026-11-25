@@ -97,6 +97,26 @@ impl Workbench {
         self.file_spreadsheet_view.as_ref()
     }
 
+    pub fn spreadsheet_grid(&self) -> &geo_import::SpreadsheetGrid {
+        self.spreadsheet_view().map_or(
+            &geo_import::SpreadsheetGrid::DEFAULT,
+            geo_import::SpreadsheetView::grid,
+        )
+    }
+
+    pub fn spreadsheet_display(&self, address: geo_kernel::spreadsheet::Address) -> String {
+        if self.file_settings.angle_unit.as_deref() == Some("radiant") {
+            if let Some(id) = self.construction.spreadsheet_cell(address) {
+                if self.construction.kind(id) == Kind::Angle {
+                    if let geo_kernel::Value::Number(radians) = self.construction.value(id) {
+                        return self.construction.format_display_number(radians);
+                    }
+                }
+            }
+        }
+        self.construction.spreadsheet_display(address)
+    }
+
     /// Presentation the document will write to a construction file.
     pub fn export_presentation(&self, view: Option<View>) -> Presentation<'_> {
         let c = self.construction();

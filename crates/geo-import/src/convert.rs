@@ -387,6 +387,26 @@ pub(crate) fn convert_with_assets(
         })
     });
     for (address, input) in doc.spreadsheet_cells {
+        if doc.archive_spreadsheet_cells.contains(&address) {
+            if let Some(id) = c.kernel.spreadsheet_cell(address) {
+                // Older exports could retain the typed literal after a
+                // change in Algebra. Keep the saved construction value.
+                let source = input.strip_prefix('=').unwrap_or(&input).trim();
+                let stale = match c.kernel.def(id) {
+                    Def::Number(saved) => source.parse::<f64>().is_ok_and(|typed| typed != saved),
+                    Def::Angle(saved) => source.strip_suffix('°').is_some_and(|source| {
+                        source
+                            .trim()
+                            .parse::<f64>()
+                            .is_ok_and(|typed| typed.to_radians() != saved)
+                    }),
+                    _ => false,
+                };
+                if stale {
+                    continue;
+                }
+            }
+        }
         let line = geo_kernel::spreadsheet::edit_line(address, &input);
         match geo_kernel::script::exec(&mut c.kernel, &line) {
             Ok(_) => c.out.script.push(line),

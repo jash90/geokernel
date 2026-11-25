@@ -161,6 +161,8 @@ pub struct Document {
     pub cas_visible: Option<bool>,
     pub spreadsheet_view: Option<crate::SpreadsheetView>,
     pub(crate) spreadsheet_cells: crate::spreadsheet::Cells,
+    pub(crate) archive_spreadsheet_cells:
+        std::collections::BTreeSet<geo_kernel::spreadsheet::Address>,
     pub settings: Settings,
     pub view: Option<crate::export::View>,
     /// How many `<construction>` tags the file has. GeoGebra's reader appends
@@ -669,8 +671,15 @@ fn read_cas_expression(
 
 /// Parses the text of a `geogebra.xml`.
 pub fn parse(text: &str) -> Result<Document, ImportError> {
+    parse_with_weight(text, 0)
+}
+
+pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, ImportError> {
     let mut reader = Reader::from_str(text);
-    let mut doc = Document::default();
+    let mut doc = Document {
+        weight,
+        ..Document::default()
+    };
     let mut in_construction = false;
     let mut seen_construction = false;
     let mut command: Option<(String, Vec<String>, Vec<String>)> = None;
@@ -1272,6 +1281,9 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
     }
     if !seen_construction {
         return Err(ImportError::NoConstruction);
+    }
+    if let Some(sheet) = &mut doc.spreadsheet_view {
+        sheet.prepare_grid();
     }
     Ok(doc)
 }

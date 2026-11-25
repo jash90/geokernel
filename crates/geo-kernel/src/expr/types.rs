@@ -641,13 +641,14 @@ fn type_node(
         Node::ItemObject(_) => (Ty::Object, 1, 1, 0),
         Node::CellWatch(_) => (Ty::Num(0), 1, 1, 0),
         Node::CellItem(id) => (object_type(c, id)?, 1, 1, 0),
-        Node::CellRange(first, len) => {
+        Node::CellRange(first, len, template) => {
             let mut elem = Elem::Empty;
             for item in first..first + len {
                 if matches!(nodes[item as usize], Node::CellItem(id) if !c.is_blank_cell(id)) {
                     elem = join_elem(elem, elem_of(state.tys[item as usize]));
                 }
             }
+            let elem = if elem == Elem::Empty { template } else { elem };
             (Ty::List(elem), 2, u64::from(len) + 1, 0)
         }
         Node::CellLookup(a, b, kind) => {

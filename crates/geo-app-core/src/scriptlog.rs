@@ -1105,8 +1105,9 @@ impl Log {
             .flat_map(|entry| entry.labels.iter().map(String::as_str))
             .filter(|&label| !defined.insert(label))
             .collect();
-        if !repeated.is_empty() {
-            // Follow the current graph before replay can see a superseded rule.
+        if !repeated.is_empty() || geo_kernel::spreadsheet::Address::parse(label).is_some() {
+            // Follow the current graph before replay sees a superseded rule
+            // or recreates a removed cell as a blank formula input.
             let mut pending: Vec<_> = labels.iter().filter_map(|label| c.id(label)).collect();
             let mut visited = BTreeSet::new();
             let mut remaining = 1_000_000usize;

@@ -63,6 +63,31 @@ cases.extend([
          command("FillCells(E1:F3, l)")),
 ])
 
+cases.extend([
+    case("algebrareload", edit("A1", "1"), edit("B1", "=A1+1"),
+         command("SetValue(A1, 2)"), {"action": "reload"}),
+    case("directdrag", edit("A1", "1"), edit("A2", "2"), edit("A3", "3"),
+         edit("B1", "=A1"), {"action": "drag", "cell": "B1", "target": "B3"},
+         edit("A2", "8"), edit("A3", "9")),
+    case("cleardependents", edit("A1", "2"), edit("B1", "=A1+1"), edit("A1", "")),
+    case("invalidedit", edit("A1", "2"), edit("B1", "=A1+1"), edit("A1", "=1+")),
+    case("nestedlatecell", command("n = 5", "n"), command("v = Cell(n,1)+1", "v"),
+         edit("E1", "9")),
+    case("unrelatedcellkind", edit("A1", "2"), edit("B1", "3"), command("n = 1", "n"),
+         command("v = Cell(n,1)", "v"), edit("B1", "text")),
+    case("repeatedlookup", command("FillCells(A1:ALL1, {2})"), command("n = 1", "n"),
+         command("v = " + "+".join(["Cell(n,1)"] * 100), "v")),
+    case("fillslider", command("B1 = Slider(0,10)"), command("FillRow(1,{7,8})")),
+    case("inlinefillrange", command("FillCells(CellRange(A1,B2),{4})")),
+    case("typedemptyrange", command('r = CellRange(A1,A2,"text")', "r"),
+         command("v = Element(r,1)", "v")),
+    case("geometrydisplay", {"action": "degree_mode"}, edit("A1", "=Segment((0,0),(3,4))"),
+         edit("B1", "=90°")),
+    case("viewsettings", {"action": "load", "input":
+         '<geogebra format="5.0"><spreadsheetView><spreadsheetColumn id="0" width="200"/>'
+         '<layout showGrid="false"/></spreadsheetView><construction/></geogebra>'}),
+])
+
 Path(__file__).with_name("spreadsheet.json").write_text(
     json.dumps({"cases": cases}, indent=2) + "\n", encoding="utf-8"
 )

@@ -351,4 +351,48 @@ mod tests {
         }
         assert!(start.elapsed() < std::time::Duration::from_secs(2));
     }
+
+    #[test]
+    fn spreadsheet_metadata_shares_the_construction_item_limit() {
+        let xml = format!(
+            "<geogebra><construction>{}</construction></geogebra>",
+            "<cellPair/>".repeat(crate::xml::MAX_ITEMS)
+        );
+        let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
+        let options = zip::write::SimpleFileOptions::default();
+        zip.start_file("geogebra.xml", options).unwrap();
+        zip.write_all(xml.as_bytes()).unwrap();
+        zip.start_file(crate::spreadsheet::METADATA_FILE, options)
+            .unwrap();
+        zip.write_all(br#"<spreadsheetView><cell label="A1" input="1"/></spreadsheetView>"#)
+            .unwrap();
+        let bytes = zip.finish().unwrap().into_inner();
+        assert!(matches!(
+            crate::import(&bytes),
+            Err(ImportError::TooManyItems)
+        ));
+    }
+
+    #[test]
+    fn stale_numeric_editor_input_cannot_replace_a_saved_value() {
+        let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
+        let options = zip::write::SimpleFileOptions::default();
+        zip.start_file("geogebra.xml", options).unwrap();
+        zip.write_all(
+            br#"<geogebra><construction>
+            <element type="numeric" label="A1"><value val="2"/></element>
+            </construction></geogebra>"#,
+        )
+        .unwrap();
+        zip.start_file(crate::spreadsheet::METADATA_FILE, options)
+            .unwrap();
+        zip.write_all(br#"<spreadsheetView><cell label="A1" input="1"/></spreadsheetView>"#)
+            .unwrap();
+        let bytes = zip.finish().unwrap().into_inner();
+        let imported = crate::import(&bytes).unwrap();
+        let c = geo_kernel::script::load(&imported.script.join("\n")).unwrap();
+        let address = geo_kernel::spreadsheet::Address::parse("A1").unwrap();
+        assert_eq!(c.spreadsheet_display(address), "2");
+        assert_eq!(c.spreadsheet_input(address).as_deref(), Some("2"));
+    }
 }

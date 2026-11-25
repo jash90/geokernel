@@ -1586,29 +1586,31 @@ impl Construction {
     pub(crate) fn clear_spreadsheet_cell(&mut self, label: &str) -> Result<(), String> {
         if self.id(label).is_some_and(|id| !self.is_blank_cell(id)) {
             self.write_spreadsheet_cell(label, true, |c| {
-                c.add(label, Def::Number(0.0))
-                    .map(Some)
-                    .map_err(|error| error.to_string())
+                expr::define(c, label, "?", false).map(Some)
             })?;
         }
         Ok(())
     }
 
-    fn is_cell_range_dependency(&self, child: Id, parent: Id) -> bool {
-        matches!(self.def(child), Def::Expr(def) if expr::cell_range_dependency(self, def, parent))
+    fn is_flexible_cell_dependency(&self, child: Id, parent: Id) -> bool {
+        matches!(self.def(child), Def::Expr(def) if expr::flexible_cell_dependency(self, def, parent))
     }
 
     pub(crate) fn check_spreadsheet_replacement(&self, old: Id, new: Id) -> Result<(), String> {
         let refuse = |reason| format!("object `{}` already exists: {reason}", self.label(old));
         let (before, after) = (self.def(old), self.def(new));
         let same_line = before == after && matches!(before, Def::Line(..));
-        if !(same_line || redefinable(before) && redefinable(after)) {
+        let loses_slider = (self.slider_interval(old).is_some()
+            || self.saved_slider_bounds.contains_key(&old))
+            && self.slider_interval(new).is_none()
+            && !self.saved_slider_bounds.contains_key(&new);
+        if loses_slider || !(same_line || redefinable(before) && redefinable(after)) {
             return Err(refuse("this definition cannot be replaced in place"));
         }
         if self.kind(old) != self.kind(new)
             && self
                 .children(old)
-                .any(|child| !self.is_cell_range_dependency(child, old))
+                .any(|child| !self.is_flexible_cell_dependency(child, old))
         {
             return Err(refuse("a dependent object requires the original cell kind"));
         }
@@ -2574,7 +2576,7 @@ impl Construction {
             if def.kind() != old.kind()
                 && self
                     .children(id)
-                    .any(|child| !self.is_cell_range_dependency(child, id))
+                    .any(|child| !self.is_flexible_cell_dependency(child, id))
             {
                 return Err(refuse("a dependent object requires the original kind"));
             }
@@ -3805,6 +3807,7 @@ impl Construction {
         // which changes what reads it even when the value stays.
         let had_decimal = expr::forget_decimal(self, id);
         let had_source = self.construction_sources.remove(&id).is_some();
+        self.cell_inputs.remove(&id);
         // Bit equality: `0` to `-0` is a change (`1/a` flips its sign).
         let old = match def {
             Def::Number(old)

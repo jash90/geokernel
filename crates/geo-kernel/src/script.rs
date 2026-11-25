@@ -811,6 +811,7 @@ fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
     let point_arguments = matches!(
         command,
         "Circle"
+            | "Segment"
             | "Polygon"
             | "PolyLine"
             | "Arc"

@@ -5248,7 +5248,7 @@ cases = ["spreadsheet-range-001"]
 [[form]]
 command = "CellRange"
 form = "cell,cell,type"
-cases = ["spreadsheet-range-001"]
+cases = ["spreadsheet-range-001", "spreadsheet-typedemptyrange-001"]
 
 [[form]]
 command = "Row"
@@ -5266,11 +5266,6 @@ form = "object"
 cases = ["spreadsheet-address-001"]
 
 [[form]]
-command = "FillRow"
-form = "number,list"
-cases = ["spreadsheet-fillrow-001"]
-
-[[form]]
 command = "FillColumn"
 form = "number,list"
 cases = ["spreadsheet-fillcolumn-001"]
@@ -5283,7 +5278,7 @@ cases = ["spreadsheet-fillcells-001"]
 [[form]]
 command = "FillCells"
 form = "range,list"
-cases = ["spreadsheet-fillcells-001", "spreadsheet-matrix-001"]
+cases = ["spreadsheet-fillcells-001", "spreadsheet-matrix-001", "spreadsheet-inlinefillrange-001"]
 
 [[form]]
 command = "FillCells"

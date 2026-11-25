@@ -499,7 +499,10 @@ and the typed text in `input`. A leading equals sign enters a formula.
 An empty input clears the cell. A `command` gives the algebra or scripting
 input and an `observe` array of construction labels to track. A `drag`
 gives the source in `cell` and the destination in `target`. The `undo`
-and `redo` actions need no inputs.
+and `redo` actions need no inputs. A `reload` saves and reopens the
+construction. A `degree_mode` selects degrees before entering cells.
+A `load` opens the XML in `input` and records `view.show_grid` and
+`view.first_column_width` from its spreadsheet settings.
 
 Each action records `cells`, the occupied canonical addresses mapped to
 the strings drawn by the reference spreadsheet. An absent cell is absent

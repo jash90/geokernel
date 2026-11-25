@@ -1744,7 +1744,7 @@ impl<const M: bool> Ctx<'_, M> {
             Node::CellLookup(column, row, kind) => {
                 self.object_list(self.cell_lookup(column, row, kind)?)
             }
-            Node::CellRange(first, len) => {
+            Node::CellRange(first, len, _) => {
                 if !lists.charge(u64::from(len)) {
                     return None;
                 }

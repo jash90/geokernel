@@ -517,6 +517,346 @@
           "observe": []
         }
       ]
+    },
+    {
+      "id": "spreadsheet-algebrareload-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "1"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=A1+1"
+        },
+        {
+          "action": "command",
+          "input": "SetValue(A1, 2)",
+          "observe": []
+        },
+        {
+          "action": "reload"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-directdrag-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "1"
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "A3",
+          "input": "3"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=A1"
+        },
+        {
+          "action": "drag",
+          "cell": "B1",
+          "target": "B3"
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "8"
+        },
+        {
+          "action": "edit",
+          "cell": "A3",
+          "input": "9"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-cleardependents-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=A1+1"
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": ""
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-invalidedit-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=A1+1"
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "=1+"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-nestedlatecell-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "n = 5",
+          "observe": [
+            "n"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "v = Cell(n,1)+1",
+          "observe": [
+            "v"
+          ]
+        },
+        {
+          "action": "edit",
+          "cell": "E1",
+          "input": "9"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-unrelatedcellkind-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "3"
+        },
+        {
+          "action": "command",
+          "input": "n = 1",
+          "observe": [
+            "n"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "v = Cell(n,1)",
+          "observe": [
+            "v"
+          ]
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "text"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-repeatedlookup-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "FillCells(A1:ALL1, {2})",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "n = 1",
+          "observe": [
+            "n"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "v = Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)+Cell(n,1)",
+          "observe": [
+            "v"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-fillslider-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "B1 = Slider(0,10)",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "FillRow(1,{7,8})",
+          "observe": []
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-inlinefillrange-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "FillCells(CellRange(A1,B2),{4})",
+          "observe": []
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-typedemptyrange-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "r = CellRange(A1,A2,\"text\")",
+          "observe": [
+            "r"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "v = Element(r,1)",
+          "observe": [
+            "v"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-geometrydisplay-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "degree_mode"
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "=Segment((0,0),(3,4))"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=90\u00b0"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-viewsettings-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "load",
+          "input": "<geogebra format=\"5.0\"><spreadsheetView><spreadsheetColumn id=\"0\" width=\"200\"/><layout showGrid=\"false\"/></spreadsheetView><construction/></geogebra>"
+        }
+      ]
     }
   ]
 }

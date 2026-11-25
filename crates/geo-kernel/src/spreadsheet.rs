@@ -13,7 +13,7 @@ pub const MAX_COLUMNS: u16 = 9_999;
 pub(crate) const MAX_CELLS_PER_OPERATION: usize = 1_024;
 pub const MAX_INPUT_BYTES: usize = 16_384;
 const MAX_SOURCE_BYTES: usize = MAX_INPUT_BYTES;
-const LIMIT: &str = "spreadsheet limit exceeded";
+pub(crate) const LIMIT: &str = "spreadsheet limit exceeded";
 
 /// One-based spreadsheet coordinates.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -135,6 +135,10 @@ impl Range {
         Ok(range)
     }
 
+    pub(crate) fn cell_count(self) -> usize {
+        self.width() * self.height()
+    }
+
     fn width(self) -> usize {
         usize::from(self.last.column - self.first.column) + 1
     }
@@ -180,7 +184,19 @@ impl Construction {
         if let Some(text) = self.text(id) {
             return text.into();
         }
-        scalar_source(self, self.value(id), true).unwrap_or_else(|_| "?".into())
+        match self.value(id) {
+            Value::Number(value) if self.kind(id) == Kind::Angle => {
+                format!("{}°", self.format_display_number(value.to_degrees()))
+            }
+            Value::Segment { x1, y1, x2, y2 } => {
+                self.format_display_number(crate::algo::measure::segment_length(x1, y1, x2, y2))
+            }
+            Value::PolyLine { length } | Value::Arc { length } => {
+                self.format_display_number(length)
+            }
+            Value::Polygon { area } | Value::Sector { area } => self.format_display_number(area),
+            value => scalar_source(self, value, true).unwrap_or_else(|_| "?".into()),
+        }
     }
 
     /// Apply one grid edit. A leading equals sign introduces a formula.
@@ -205,7 +221,14 @@ impl Construction {
         if script::split_call(&source).is_some_and(|(name, _)| name == "$cell" || is_fill(name)) {
             return Err("a cell formula must return a value".into());
         }
-        script::exec(self, &format!("{label} = {source}"))?;
+        if let Err(error) = script::exec(self, &format!("{label} = {source}")) {
+            if !input.starts_with('=')
+                || !(error.starts_with("unexpected ") || error == "empty expression")
+            {
+                return Err(error);
+            }
+            script::exec(self, &format!("{label} = ?"))?;
+        }
         let id = self.id(&label).ok_or("the edit did not create a cell")?;
         self.remember_cell_input(id, input);
         self.request_hidden(id);
@@ -291,6 +314,13 @@ pub fn drag_line(c: &Construction, from: Address, to: Address) -> Result<Option<
         first.column as i16 - from.column as i16,
         first.row as i16 - from.row as i16,
     )?;
+    // A bare reference is the drag's formula. Group it to distinguish it from
+    // the named source object of a user-entered FillCells command.
+    let source = if Reference::parse(&source).is_some() {
+        format!("({source})")
+    } else {
+        source
+    };
     Ok(Some(format!(
         "FillCells({}:{}, {source})",
         first.label(),
@@ -463,20 +493,19 @@ fn plan_fill(
     source: &str,
 ) -> Result<Vec<(Address, String)>, String> {
     let range = if command == "FillCells" {
-        let bounds = if let Some(bounds) = target.split_once(':') {
-            Some(bounds)
-        } else if let Some(id) = c.id(target) {
-            c.construction_source(id).and_then(|source| {
-                source.split_once(':').or_else(|| {
-                    let ("CellRange", args) = script::split_call(source)? else {
-                        return None;
-                    };
-                    Some((*args.first()?, *args.get(1)?))
-                })
-            })
-        } else {
-            None
-        };
+        let target = c
+            .id(target)
+            .and_then(|id| c.construction_source(id))
+            .unwrap_or(target);
+        let bounds = target.split_once(':').or_else(|| {
+            let ("CellRange", args) = script::split_call(target)? else {
+                return None;
+            };
+            match args.as_slice() {
+                [first, last] | [first, last, _] => Some((*first, *last)),
+                _ => None,
+            }
+        });
         bounds
             .map(|(a, b)| Range::parse(a.trim(), b.trim()))
             .transpose()?
@@ -643,7 +672,7 @@ fn matrix_columns(list: expr::List<'_>, budget: &mut usize) -> Result<Option<usi
         .then_some(columns))
 }
 
-fn charge(budget: &mut usize, amount: usize) -> Result<(), String> {
+pub(crate) fn charge(budget: &mut usize, amount: usize) -> Result<(), String> {
     *budget = budget.checked_sub(amount).ok_or(LIMIT)?;
     Ok(())
 }
@@ -756,13 +785,7 @@ pub(crate) fn prepare(
         _ => None,
     };
     let mut addresses = std::collections::BTreeSet::new();
-    if let Some(("Cell", args)) = script::split_call(source) {
-        if let [column, row] = args.as_slice() {
-            if let (Some(column), Some(row)) = (c.numeric_value(column), c.numeric_value(row)) {
-                addresses.extend(Address::from_numbers(column, row));
-            }
-        }
-    }
+    let mut coordinate_work = MAX_SOURCE_BYTES;
     let mut remaining = MAX_CELLS_PER_OPERATION;
     let add_range = |addresses: &mut std::collections::BTreeSet<_>,
                      remaining: &mut usize,
@@ -819,19 +842,31 @@ pub(crate) fn prepare(
                     }
                 }
                 "Cell" => {
-                    if let Some(
-                        [Token {
-                            tok: Tok::Num(col), ..
-                        }, Token {
-                            tok: Tok::Comma, ..
-                        }, Token {
-                            tok: Tok::Num(row), ..
-                        }, Token {
-                            tok: Tok::RParen, ..
-                        }],
-                    ) = tokens.get(i + 2..i + 6)
-                    {
-                        addresses.extend(Address::from_numbers(*col, *row));
+                    let mut depth = 0;
+                    for end in tokens.iter().skip(i + 1) {
+                        charge(&mut coordinate_work, 1)?;
+                        match end.tok {
+                            Tok::LParen => depth += 1,
+                            Tok::RParen => {
+                                depth -= 1;
+                                if depth == 0 {
+                                    let call = &source[token.start..end.end];
+                                    if let Some((_, args)) = script::split_call(call) {
+                                        if let [column, row] = args.as_slice() {
+                                            if let (Some(column), Some(row)) = (
+                                                coordinate_value(c, column, &mut coordinate_work)?,
+                                                coordinate_value(c, row, &mut coordinate_work)?,
+                                            ) {
+                                                addresses
+                                                    .extend(Address::from_numbers(column, row));
+                                            }
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                            _ => {}
+                        }
                     }
                 }
                 _ => (),
@@ -853,6 +888,20 @@ pub(crate) fn prepare(
         }
     }
     Ok(())
+}
+
+fn coordinate_value(
+    c: &Construction,
+    source: &str,
+    budget: &mut usize,
+) -> Result<Option<f64>, String> {
+    charge(budget, source.len())?;
+    if needs_preparation("", source) {
+        // The normal parser evaluates nested spreadsheet commands after
+        // preparation; do not recurse through them during the reservation pass.
+        return Ok(None);
+    }
+    expr::spreadsheet_coordinate(c, source, budget)
 }
 
 fn shift(source: &str, columns: i16, rows: i16) -> Result<String, String> {

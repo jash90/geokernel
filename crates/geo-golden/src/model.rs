@@ -44,12 +44,23 @@ pub struct SpreadsheetStep {
     pub observe: Option<BTreeSet<String>>,
     pub cells: BTreeMap<String, String>,
     pub outputs: BTreeMap<String, Expected>,
+    pub view: Option<SpreadsheetViewSnapshot>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpreadsheetViewSnapshot {
+    pub show_grid: bool,
+    pub first_column_width: f64,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum SpreadsheetAction {
     Command,
+    Reload,
+    DegreeMode,
+    Load,
     Edit,
     Drag,
     Undo,
@@ -1339,7 +1350,7 @@ fn validate_case(case: &Case) -> Result<(), String> {
             geo_kernel::spreadsheet::Address::parse(label).is_some_and(|a| a.label() == label)
         };
         let mut observed = BTreeSet::new();
-        for step in actions {
+        for (index, step) in actions.iter().enumerate() {
             let cell = step.cell.as_deref().is_some_and(valid_address);
             let valid = match step.action {
                 SpreadsheetAction::Edit => {
@@ -1354,13 +1365,26 @@ fn validate_case(case: &Case) -> Result<(), String> {
                             .as_ref()
                             .is_some_and(|input| !input.trim().is_empty())
                 }
+                SpreadsheetAction::Load => {
+                    step.cell.is_none()
+                        && step.target.is_none()
+                        && step.observe.is_none()
+                        && step.input.as_ref().is_some_and(|xml| !xml.is_empty())
+                }
                 SpreadsheetAction::Drag => {
                     cell && step.target.as_deref().is_some_and(valid_address)
                         && step.input.is_none()
                         && step.observe.is_none()
                         && step.cell != step.target
                 }
-                SpreadsheetAction::Undo | SpreadsheetAction::Redo => {
+                SpreadsheetAction::DegreeMode => {
+                    index == 0
+                        && step.cell.is_none()
+                        && step.input.is_none()
+                        && step.target.is_none()
+                        && step.observe.is_none()
+                }
+                SpreadsheetAction::Undo | SpreadsheetAction::Redo | SpreadsheetAction::Reload => {
                     step.cell.is_none()
                         && step.target.is_none()
                         && step.input.is_none()
@@ -1371,6 +1395,7 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 observed.extend(labels.iter());
             }
             if !valid
+                || (step.action == SpreadsheetAction::Load) != step.view.is_some()
                 || !step.cells.keys().all(|label| valid_address(label))
                 || !step.outputs.keys().eq(observed.iter().copied())
             {

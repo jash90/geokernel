@@ -152,3 +152,34 @@ fn a_lookup_observes_the_initial_address_even_when_created_later() {
     script::exec(&mut c, "E1 = 12").unwrap();
     assert_number(&c, "w", 13.0);
 }
+
+#[test]
+fn fill_refusing_a_slider_replacement_leaves_the_sheet_unchanged() {
+    let mut c = script::load("B1 = Slider(0,10)").unwrap();
+    assert!(script::exec(&mut c, "FillRow(1,{7,8})").is_err());
+    assert!(c.id("A1").is_none());
+    assert_number(&c, "B1", 0.0);
+}
+
+#[test]
+fn range_and_dynamic_lookup_share_the_cell_budget() {
+    let mut c = script::load("FillCells(A1:A1000, 1)\nn = 1").unwrap();
+    let error = script::exec(&mut c, "v = Cell(n,1) + Sum(A1:A25)").unwrap_err();
+    assert!(error.contains("spreadsheet limit"), "{error}");
+    assert!(c.id("v").is_none());
+}
+
+#[test]
+fn reserving_lookup_coordinates_charges_expanded_function_work() {
+    use std::fmt::Write as _;
+
+    let mut source = String::from("f0(x) = x\n");
+    for i in 1..=13 {
+        writeln!(source, "f{i}(x) = f{}(x) + f{}(x)", i - 1, i - 1).unwrap();
+    }
+    let mut c = script::load(&source).unwrap();
+    let error = script::exec(&mut c, "v = Cell(f13(1) / 8192, 1)").unwrap_err();
+    assert!(error.contains("spreadsheet limit"), "{error}");
+    assert!(c.id("v").is_none());
+    assert!(c.id("A1").is_none());
+}

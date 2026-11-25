@@ -705,6 +705,29 @@ impl Workbench {
         self.rebuilds += 1;
     }
 
+    pub fn edit_spreadsheet_cell(
+        &mut self,
+        address: geo_kernel::spreadsheet::Address,
+        input: &str,
+    ) -> Result<(), String> {
+        if input.is_empty() {
+            let Some(id) = self.construction.spreadsheet_cell(address) else {
+                return Ok(());
+            };
+            let label = self.construction.label(id);
+            // A fill can own multiple cells in a single journal entry.
+            if self
+                .log
+                .define_entry(label)
+                .is_some_and(|(_, labels)| labels.len() == 1)
+                && self.delete(id)
+            {
+                return Ok(());
+            }
+        }
+        self.run_line(&geo_kernel::spreadsheet::edit_line(address, input))
+    }
+
     /// Deletes an object and everything that depends on it, as one undo step.
     /// A line that created several objects (such as `Tangent`) is deleted as a
     /// whole: the kernel cannot keep one output of it.

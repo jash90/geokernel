@@ -315,17 +315,42 @@ fn replay_spreadsheet(
             Address::parse(cell.expect("validated address")).expect("validated address")
         };
         let applied = match step.action {
-            SpreadsheetAction::Command => document.run_line(step.input.as_deref().unwrap()),
-            SpreadsheetAction::Edit => document.run_line(&geo_kernel::spreadsheet::edit_line(
+            SpreadsheetAction::Command => {
+                let line = step.input.as_deref().unwrap();
+                if let Some(("SetValue", args)) = script::split_call(line) {
+                    match args.as_slice() {
+                        [label, value] => document.construction().id(label)
+                            .zip(document.construction().numeric_value(value))
+                            .filter(|&(id, value)| document.set_number(id, value))
+                            .map(|_| ())
+                            .ok_or_else(|| "cannot set the cell value".into()),
+                        _ => Err("SetValue needs a cell and a number".into()),
+                    }
+                } else {
+                    document.run_line(line)
+                }
+            }
+            SpreadsheetAction::Edit => document.edit_spreadsheet_cell(
                 address(step.cell.as_deref()),
                 step.input.as_deref().unwrap(),
-            )),
+            ),
             SpreadsheetAction::Drag => geo_kernel::spreadsheet::drag_line(
                 document.construction(),
                 address(step.cell.as_deref()),
                 address(step.target.as_deref()),
             )
             .and_then(|line| document.run_line(&line.ok_or("empty drag source")?)),
+            SpreadsheetAction::Reload => document
+                .export_ggb(None)
+                .map_err(|e| e.to_string())
+                .and_then(|bytes| document.load_bytes(&bytes, "Spreadsheet round trip")),
+            SpreadsheetAction::DegreeMode => document.load_bytes(
+                br#"<geogebra><kernel><angleUnit val="degree"/></kernel><construction/></geogebra>"#,
+                "Spreadsheet degree mode",
+            ),
+            SpreadsheetAction::Load => {
+                document.load_bytes(step.input.as_deref().unwrap().as_bytes(), "Spreadsheet file")
+            }
             SpreadsheetAction::Undo => document
                 .undo()
                 .then_some(())
@@ -340,10 +365,23 @@ fn replay_spreadsheet(
                 .push(failure(i, "spreadsheet", "the action applies", error));
             return;
         }
+        if let Some(view) = &step.view {
+            let actual = document.spreadsheet_view().map(|sheet| sheet.grid());
+            let expected = (view.show_grid, view.first_column_width);
+            let actual = actual.map(|grid| (grid.show_lines, f64::from(grid.columns.edge(1))));
+            if actual != Some(expected) {
+                out.mismatches.push(failure(
+                    i,
+                    "view",
+                    &format!("{expected:?}"),
+                    format!("{actual:?}"),
+                ));
+            }
+        }
         let c = document.construction();
         let cells: BTreeMap<_, _> = c
             .spreadsheet_cells()
-            .map(|(address, _)| (address.label(), c.spreadsheet_display(address)))
+            .map(|(address, _)| (address.label(), document.spreadsheet_display(address)))
             .collect();
         for (label, expected) in &step.cells {
             if cells.get(label) != Some(expected) {

@@ -164,6 +164,8 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
             None
         },
         cas_variables: Vec::new(),
+        watching_cells: false,
+        cell_work: Some(crate::spreadsheet::MAX_CELLS_PER_OPERATION),
         locals: match mode {
             Mode::System(names) | Mode::ScopedEquation(names) => {
                 names.iter().map(|n| (n.to_string(), Elem::Num)).collect()
@@ -174,7 +176,13 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
     if p.toks.is_empty() {
         return Err("empty expression".into());
     }
-    let root = p.expression()?;
+    let root = p.expression();
+    // Speculative command parsing may fall back after an error. A work
+    // budget that was exhausted still rejects the whole operation.
+    if p.cell_work.is_none() {
+        return Err(crate::spreadsheet::LIMIT.into());
+    }
+    let root = root?;
     let root = if let Mode::System(names) | Mode::ScopedEquation(names) = mode {
         p.push(Node::SystemFunction(names.len() as u8, root))
     } else {
@@ -235,6 +243,8 @@ pub(super) struct Parser<'a> {
     /// The variables of the `Sequence`s being parsed, outermost first.
     pub(super) locals: Vec<(String, Elem)>,
     cas_variables: Vec<String>,
+    watching_cells: bool,
+    cell_work: Option<usize>,
 }
 
 impl Parser<'_> {
@@ -882,7 +892,7 @@ impl Parser<'_> {
             }
             Tok::Name { text, call: false } if self.eat(&Tok::Colon) => {
                 let end = self.cell_address()?;
-                self.cell_range(&text, &end)
+                self.cell_range(&text, &end, Elem::Empty)
             }
             Tok::Name { text, call } => self.name(&text, call),
             _ => Err(format!(
@@ -900,8 +910,9 @@ impl Parser<'_> {
         Ok(text)
     }
 
-    fn cell_range(&mut self, first: &str, last: &str) -> Result<u32, String> {
+    fn cell_range(&mut self, first: &str, last: &str, template: Elem) -> Result<u32, String> {
         let range = crate::spreadsheet::Range::parse(first, last)?;
+        self.charge_cells(range.cell_count())?;
         let start = self.nodes.len() as u32;
         for address in range.column_major() {
             let label = address.label();
@@ -912,11 +923,22 @@ impl Parser<'_> {
             self.read(id, true);
             self.push(Node::CellItem(id));
         }
-        Ok(self.push(Node::CellRange(start, self.nodes.len() as u32 - start)))
+        Ok(self.push(Node::CellRange(
+            start,
+            self.nodes.len() as u32 - start,
+            template,
+        )))
+    }
+
+    fn charge_cells(&mut self, count: usize) -> Result<(), String> {
+        self.cell_work = self.cell_work.and_then(|budget| budget.checked_sub(count));
+        self.cell_work
+            .map(|_| ())
+            .ok_or_else(|| crate::spreadsheet::LIMIT.into())
     }
 
     fn spreadsheet_command(&mut self, name: &str) -> Result<Option<u32>, String> {
-        use crate::spreadsheet::{Address, MAX_CELLS_PER_OPERATION};
+        use crate::spreadsheet::Address;
 
         let result = match name {
             "CellRange" => {
@@ -924,11 +946,22 @@ impl Parser<'_> {
                 let first = self.cell_address()?;
                 self.expect(&Tok::Comma, ",")?;
                 let last = self.cell_address()?;
+                let mut template = Elem::Empty;
                 if self.eat(&Tok::Comma) {
-                    self.expression()?;
+                    let arg = self.expression()?;
+                    if matches!(self.node(arg), Node::Text) {
+                        template = match self.literal_text(arg) {
+                            Some("text") => Elem::Text,
+                            Some("point" | "vector") => Elem::Vec,
+                            Some("boolean") => Elem::Bool,
+                            Some("list") => Elem::List,
+                            Some("function") => Elem::Function,
+                            _ => Elem::Empty,
+                        };
+                    }
                 }
                 self.expect(&Tok::RParen, ")")?;
-                self.cell_range(&first, &last)?
+                self.cell_range(&first, &last, template)?
             }
             "Row" | "Column" | "ColumnName" => {
                 let [arg] = self.arguments()?[..] else {
@@ -964,22 +997,18 @@ impl Parser<'_> {
                 let kind = selected.map_or(Kind::Number, |id| self.c.kind(id));
                 if constant(column).is_some() && constant(row).is_some() {
                     if let Some(id) = address.and_then(|a| self.c.id(&a.label())) {
+                        self.charge_cells(1)?;
                         self.read(id, true);
                         self.push(Node::CellWatch(id));
                     }
-                } else {
-                    let slots: Vec<_> = self
-                        .c
-                        .spreadsheet_slots()
-                        .filter_map(|(a, id)| (self.c.id(&a.label()) == Some(id)).then_some(id))
-                        .take(MAX_CELLS_PER_OPERATION + 1)
-                        .collect();
-                    if slots.len() > MAX_CELLS_PER_OPERATION {
-                        return Err("spreadsheet limit exceeded".into());
-                    }
-                    for id in slots {
-                        self.read(id, true);
-                        self.push(Node::CellWatch(id));
+                } else if !self.watching_cells {
+                    self.watching_cells = true;
+                    for (address, id) in self.c.spreadsheet_slots() {
+                        self.charge_cells(1)?;
+                        if self.c.id(&address.label()) == Some(id) {
+                            self.read(id, true);
+                            self.push(Node::CellWatch(id));
+                        }
                     }
                 }
                 self.push(Node::CellLookup(column, row, kind))
@@ -1339,12 +1368,7 @@ impl Parser<'_> {
         takes_function: bool,
         form: impl FnOnce(&mut Self, &[u32], &[bool]) -> Result<Option<Node>, String>,
     ) -> Result<Option<u32>, String> {
-        let saved = (
-            self.pos,
-            self.parents.len(),
-            self.inputs.len(),
-            self.uses_var,
-        );
+        let saved = self.saved();
         // On an error the script parser reports what is wrong.
         let args = self.parse_arguments(takes_function).unwrap_or_default();
         let lists: Vec<bool> = args.iter().map(|&a| self.is_list(a)).collect();
@@ -1357,10 +1381,7 @@ impl Parser<'_> {
             Some(node) => Ok(Some(self.push(node))),
             None => {
                 // not a list: the script parser's command
-                self.pos = saved.0;
-                self.parents.truncate(saved.1);
-                self.inputs.truncate(saved.2);
-                self.uses_var = saved.3;
+                self.reset(saved);
                 Ok(None)
             }
         }
@@ -1369,21 +1390,23 @@ impl Parser<'_> {
     /// The state a command that read its arguments leaves behind (see
     /// [`Parser::reset`]), so that a command that takes no part of them
     /// can hand them to the script parser untouched.
-    pub(super) fn saved(&self) -> (usize, usize, usize, bool) {
+    pub(super) fn saved(&self) -> (usize, usize, usize, bool, bool) {
         (
             self.pos,
             self.parents.len(),
             self.inputs.len(),
             self.uses_var,
+            self.watching_cells,
         )
     }
 
     /// Puts the parser back to a [`Parser::saved`] state.
-    pub(super) fn reset(&mut self, saved: (usize, usize, usize, bool)) {
+    pub(super) fn reset(&mut self, saved: (usize, usize, usize, bool, bool)) {
         self.pos = saved.0;
         self.parents.truncate(saved.1);
         self.inputs.truncate(saved.2);
         self.uses_var = saved.3;
+        self.watching_cells = saved.4;
     }
 
     /// Whether the subtree at `i` is a list.
@@ -1590,4 +1613,23 @@ pub(super) fn list_form(
 /// The error of a list command with `n` arguments of the wrong kind.
 pub(super) fn list_arity(text: &str, n: usize) -> String {
     format!("`{text}` of a list does not take {n} arguments")
+}
+
+#[cfg(test)]
+mod spreadsheet_tests {
+    use super::*;
+
+    #[test]
+    fn repeated_dynamic_lookups_share_one_set_of_watchers() {
+        let c = crate::script::load("FillCells(A1:A1000, 2)\nn = 1").unwrap();
+        let formula = vec!["Cell(n,1)"; 100].join("+");
+        let expr = parse(&c, &formula).unwrap();
+        assert_eq!(
+            expr.nodes
+                .iter()
+                .filter(|node| matches!(node, Node::CellWatch(_)))
+                .count(),
+            1000
+        );
+    }
 }

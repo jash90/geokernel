@@ -3778,14 +3778,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3864"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Segment` does not take 3 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3865"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Segment` does not take 4 argument(s)"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `4`"
 mismatches = ["step"]
 
 [[gap]]

@@ -1,6 +1,7 @@
 //! Selection and editing for the spreadsheet view.
 
 use crate::app::App;
+
 use geo_kernel::spreadsheet::{self, Address, MAX_ROWS};
 
 #[derive(Debug)]
@@ -60,7 +61,7 @@ impl App {
             }
             _ => self
                 .wb
-                .run_line(&spreadsheet::edit_line(editor.selected, &editor.draft)),
+                .edit_spreadsheet_cell(editor.selected, &editor.draft),
         };
         match result {
             Ok(()) => {

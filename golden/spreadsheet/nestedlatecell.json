@@ -1,0 +1,53 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-nestedlatecell-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "n = 5",
+          "observe": [
+            "n"
+          ],
+          "cells": {},
+          "outputs": {
+            "n": { "type": "number", "defined": true, "value": 5.0 }
+          }
+        },
+        {
+          "action": "command",
+          "input": "v = Cell(n,1)+1",
+          "observe": [
+            "v"
+          ],
+          "cells": {},
+          "outputs": {
+            "n": { "type": "number", "defined": true, "value": 5.0 },
+            "v": { "type": "number", "defined": false }
+          }
+        },
+        {
+          "action": "edit",
+          "cell": "E1",
+          "input": "9",
+          "cells": { "E1": "9" },
+          "outputs": {
+            "n": { "type": "number", "defined": true, "value": 5.0 },
+            "v": { "type": "number", "defined": true, "value": 10.0 }
+          }
+        }
+      ]
+    }
+  ]
+}

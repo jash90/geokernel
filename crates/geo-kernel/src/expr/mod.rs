@@ -333,7 +333,7 @@ pub(crate) enum Node {
     /// index on, as many as the second says, one after the other.
     List(u32, u32),
     /// The cell slots in a rectangular range in column-major order.
-    CellRange(u32, u32),
+    CellRange(u32, u32, Elem),
     CellItem(Id),
     CellWatch(Id),
     CellLookup(u32, u32, Kind),
@@ -1220,7 +1220,7 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         Node::Financial(_, args) => fixed.copy_from_slice(&args),
         Node::CellLookup(a, b, _) => fixed[..2].copy_from_slice(&[a, b]),
         Node::List(first, len)
-        | Node::CellRange(first, len)
+        | Node::CellRange(first, len, _)
         | Node::TextCmd(_, first, len)
         | Node::Call(_, first, len) => run = first..first.saturating_add(len),
         _ => {}
@@ -1297,7 +1297,7 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
             shift(b);
         }
         Node::List(first, _)
-        | Node::CellRange(first, _)
+        | Node::CellRange(first, ..)
         | Node::TextCmd(_, first, _)
         | Node::Call(_, first, _) => shift(first),
         Node::Financial(_, args) => args.iter_mut().for_each(shift),
@@ -1346,12 +1346,37 @@ pub(crate) fn is_expression_command(name: &str) -> bool {
         || matches!(name, "Cell" | "CellRange" | "Row" | "Column" | "ColumnName")
 }
 
-pub(crate) fn cell_range_dependency(c: &Construction, def: ExprDef, parent: Id) -> bool {
+pub(crate) fn flexible_cell_dependency(c: &Construction, def: ExprDef, parent: Id) -> bool {
     let e = entry(c, def);
-    matches!(e.nodes[e.root as usize], Node::CellRange(..))
-        && e.nodes
-            .iter()
-            .any(|node| matches!(node, Node::CellItem(id) if *id == parent))
+    let range = matches!(e.nodes[e.root as usize], Node::CellRange(..));
+    let mut watches = false;
+    for node in &e.nodes {
+        match *node {
+            Node::CellWatch(id) if id == parent => watches = true,
+            Node::CellItem(id) if id == parent && range => watches = true,
+            Node::Obj(id)
+            | Node::ItemObject(id)
+            | Node::FunctionObject(id)
+            | Node::Apply(id, _)
+            | Node::Apply2(id, ..)
+            | Node::Side(id, _)
+            | Node::ObjectDefined(id)
+                if id == parent =>
+            {
+                return false
+            }
+            Node::Cmd(def, _) if def.parents().as_slice().contains(&parent) => return false,
+            Node::Relation {
+                objects,
+                count,
+                list,
+            } if list == Some(parent) || objects[..usize::from(count)].contains(&parent) => {
+                return false;
+            }
+            _ => {}
+        }
+    }
+    watches
 }
 
 fn entry(c: &Construction, d: ExprDef) -> &Entry {
@@ -2535,6 +2560,21 @@ pub(crate) fn value_of_tree(c: &Construction, parsed: &parse::Parsed) -> Option<
 }
 
 /// Reads the current value of a numeric argument without adding an object.
+pub(crate) fn spreadsheet_coordinate(
+    c: &Construction,
+    text: &str,
+    budget: &mut usize,
+) -> Result<Option<f64>, String> {
+    let Ok(parsed) = parse::parse_argument(c, text) else {
+        return Ok(None);
+    };
+    if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {
+        return Ok(None);
+    }
+    crate::spreadsheet::charge(budget, parsed.cost as usize)?;
+    Ok(value_of_tree(c, &parsed))
+}
+
 pub(crate) fn argument_number(c: &Construction, text: &str) -> Option<f64> {
     let parsed = parse::parse_argument(c, text).ok()?;
     if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {

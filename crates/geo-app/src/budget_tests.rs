@@ -1446,3 +1446,43 @@ fn a_thousand_spreadsheet_cells_fit_the_frame_budget() {
         assert!(mean_ms <= 4.0, "{mean_ms:.2} ms exceeds the 4 ms budget");
     }
 }
+
+#[test]
+fn spreadsheet_grid_uses_saved_column_width_and_line_visibility() {
+    let xml = |show_grid| {
+        format!(
+            r#"<geogebra><spreadsheetView><spreadsheetColumn id="0" width="200"/>
+        <layout showGrid="{show_grid}"/></spreadsheetView><construction/></geogebra>"#
+        )
+    };
+    let load = |show_grid| {
+        let mut w = Window::with("", String::new());
+        w.app
+            .wb
+            .load_bytes(xml(show_grid).as_bytes(), "Sheet")
+            .unwrap();
+        w.app.show_spreadsheet = true;
+        let counts = w.settled(5);
+        (w, counts)
+    };
+    let (_, with_lines) = load(true);
+    let (w, without_lines) = load(false);
+    assert!(without_lines.shapes + 15 < with_lines.shapes);
+
+    let mut window = headless::Headless::new(
+        w.app.wb,
+        None,
+        headless::Profile::Desktop,
+        (1400.0, 850.0),
+        1.0,
+    );
+    window.app.show_spreadsheet = true;
+    window.frame(DT, Vec::new());
+    window.frame(DT, Vec::new());
+    let a1 = window
+        .widgets()
+        .into_iter()
+        .find(|w| w.visible && w.label == "A1")
+        .unwrap();
+    assert_eq!(a1.rect.width(), 200.0);
+}

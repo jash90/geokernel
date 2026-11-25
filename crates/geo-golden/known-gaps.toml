@@ -3289,3 +3289,8 @@ mismatches = ["0:output", "0:latex"]
 id = "cascell-lastcommands-001"
 reason = 'The default build returns "Numeric requires a CAS build" with empty LaTeX (crates/geo-kernel/src/expr/cas/row.rs:62). GeoGebra prints 9 and \mathbf{9}.'
 mismatches = ["0:output", "0:latex"]
+
+[[gap]]
+id = "spreadsheet-fillslider-001"
+reason = "GeoGebra fills A1 with 7 and replaces slider B1 with 8. The kernel requires an existing slider to keep its bounds on replacement and rejects the fill before writing A1."
+mismatches = ["1:spreadsheet"]

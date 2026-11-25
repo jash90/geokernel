@@ -77,7 +77,7 @@ pub struct CasOutputOptions {
 }
 
 mod spreadsheet;
-pub use spreadsheet::SpreadsheetView;
+pub use spreadsheet::{SpreadsheetGrid, SpreadsheetView};
 
 /// The result of importing a file.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -270,10 +270,13 @@ pub fn import_for_replay(bytes: &[u8]) -> Result<Imported, ImportError> {
             let metadata =
                 std::str::from_utf8(&bytes).map_err(|e| ImportError::Xml(e.to_string()))?;
             let wrapped = format!("<geogebra>{metadata}<construction/></geogebra>");
-            for (address, input) in xml::parse(&wrapped)?.spreadsheet_cells {
+            let metadata = xml::parse_with_weight(&wrapped, doc.weight)?;
+            doc.weight = metadata.weight;
+            for (address, input) in metadata.spreadsheet_cells {
                 if doc.spreadsheet_cells.insert(address, input).is_some() {
                     return Err(ImportError::DuplicateLabel(address.label()));
                 }
+                doc.archive_spreadsheet_cells.insert(address);
             }
         }
     }

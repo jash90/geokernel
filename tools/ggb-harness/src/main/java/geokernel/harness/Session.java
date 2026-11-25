@@ -376,6 +376,15 @@ final class Session {
                         }
                         app.storeUndoInfo();
                     }
+                    case "reload" -> reloadGgb();
+                    case "degree_mode" -> kernel.setAngleUnit(Kernel.ANGLE_DEGREE);
+                    case "load" -> {
+                        try {
+                            app.getXMLio().processXMLString(source, true, false);
+                        } catch (org.geogebra.common.io.XMLParseException error) {
+                            throw new IllegalArgumentException(error);
+                        }
+                    }
                     case "undo" -> kernel.undo();
                     case "redo" -> kernel.redo();
                     default -> throw new IllegalArgumentException("unknown spreadsheet action: " + action);
@@ -389,6 +398,13 @@ final class Session {
                     outputs.put(label, describe(geo, schemaType(geo)));
                 }
                 Map<Object, Object> step = new LinkedHashMap<>(action);
+                if ("load".equals(action.get("action"))) {
+                    var view = app.getSettings().getSpreadsheet();
+                    Map<String, Object> settings = new LinkedHashMap<>();
+                    settings.put("show_grid", view.showGrid());
+                    settings.put("first_column_width", view.getColumnWidths().get(0));
+                    step.put("view", settings);
+                }
                 step.put("cells", spreadsheetCells(kernel.getConstruction()));
                 step.put("outputs", outputs);
                 steps.add(step);
