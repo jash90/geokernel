@@ -334,12 +334,24 @@ impl Workbench {
             return Err(EditError::InvalidValue);
         }
         use Field::*;
-        // Charge the full construction per target for the shared property
-        // path. Visibility and input-box length only change keyed records.
-        let charge_construction = !matches!(field, Visible | InputLength);
-        if charge_construction
-            && labels.len().saturating_mul(self.construction.len()) > MAX_PROPAGATION
-        {
+        // Graph edits, formula preparation and playback can revisit unrelated
+        // objects. Keyed appearance records only need the target-count limit.
+        let charged_targets = match field {
+            AngleInterval | LineEquation | ConicEquation | SliderMin | SliderMax | Condition
+            | Animating | AnimationSpeed | AnimationMode | DynamicRed | DynamicGreen
+            | DynamicBlue | DynamicAlpha | Anchor | TextSize | TextBold | TextItalic
+            | TextLatex => labels.len(),
+            Absolute | PositionX | PositionY => labels
+                .iter()
+                .filter(|label| {
+                    self.construction
+                        .id(label)
+                        .is_some_and(|id| self.construction.kind(id) == Kind::Text)
+                })
+                .count(),
+            _ => 0,
+        };
+        if charged_targets.saturating_mul(self.construction.len()) > MAX_PROPAGATION {
             return Err(EditError::SelectionTooLarge);
         }
         if self.tool_use.is_some() {

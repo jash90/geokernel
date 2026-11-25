@@ -697,8 +697,8 @@ fn dragging_a_label_replaces_the_dialog_offset() {
 }
 
 #[test]
-fn point_size_batch_charges_protocol_work_before_editing() {
-    use geo_app_core::properties::{EditError, Field, MAX_EDIT_TARGETS};
+fn point_size_batch_remains_available_with_unrelated_protocol_objects() {
+    use geo_app_core::properties::{Field, MAX_EDIT_TARGETS};
     let points: Vec<_> = (0..MAX_EDIT_TARGETS)
         .map(|i| format!("P_{{{i}}}"))
         .collect();
@@ -708,17 +708,15 @@ fn point_size_batch_charges_protocol_work_before_editing() {
         .chain((0..1000).map(|i| format!("c_{{{i}}} = ConstructionStep()\n")))
         .collect();
     let mut wb = Workbench::from_script(&script).unwrap();
-    assert_eq!(
-        wb.edit_property(&points, Field::PointSize, "8", None),
-        Err(EditError::SelectionTooLarge)
-    );
-    assert_eq!(wb.undo_depth(), (0, 0));
+    wb.edit_property(&points, Field::PointSize, "8", None)
+        .unwrap();
+    assert_eq!(wb.undo_depth(), (1, 0));
     for label in points {
         assert_eq!(
             wb.construction()
                 .appearance(wb.construction().id(&label).unwrap())
                 .point_size,
-            None
+            Some(8)
         );
     }
 }

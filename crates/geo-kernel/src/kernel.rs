@@ -1090,6 +1090,11 @@ impl IntersectionState {
     }
 }
 
+#[cfg(test)]
+thread_local! {
+    static PROTOCOL_CHECKPOINT_VISITS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
 /// A geometric construction.
 #[derive(Default)]
 pub struct Construction {
@@ -2134,11 +2139,11 @@ impl Construction {
     }
 
     fn protocol_checkpoint(&self) -> Option<ProtocolCheckpoint> {
-        if self
-            .protocol
-            .iter()
-            .all(|&i| self.children(Id(i)).next().is_none())
-        {
+        if self.protocol.iter().all(|&i| {
+            #[cfg(test)]
+            PROTOCOL_CHECKPOINT_VISITS.with(|visits| visits.set(visits.get() + 1));
+            self.children(Id(i)).next().is_none()
+        }) {
             return None;
         }
         let mut reference = self
@@ -7049,6 +7054,34 @@ t = AreEqual(k, j)
         assert_eq!(c.point(q), None);
         c.rollback(outer).unwrap();
         assert_eq!(c.point(q), Some(placed));
+    }
+
+    #[test]
+    fn point_appearance_skips_unrelated_protocol_checkpoints() {
+        use std::fmt::Write;
+
+        let mut script = String::new();
+        let labels: Vec<_> = (0..512).map(|i| format!("P_{{{i}}}")).collect();
+        for label in &labels {
+            writeln!(script, "{label} = (2, 1)").unwrap();
+        }
+        for i in 0..1000 {
+            writeln!(script, "c_{{{i}}} = ConstructionStep()").unwrap();
+        }
+        let mut c = crate::script::load(&script).unwrap();
+        let before = PROTOCOL_CHECKPOINT_VISITS.with(std::cell::Cell::get);
+        for label in labels {
+            let point = c.id(&label).unwrap();
+            let style = appearance::Appearance {
+                point_size: Some(8),
+                ..Default::default()
+            };
+            c.set_appearance(point, style).unwrap();
+        }
+        assert_eq!(
+            PROTOCOL_CHECKPOINT_VISITS.with(std::cell::Cell::get),
+            before
+        );
     }
 
     #[test]
