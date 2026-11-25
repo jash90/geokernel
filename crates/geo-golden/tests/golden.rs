@@ -5,7 +5,7 @@ use geo_kernel::{script, Construction, Def, Error, Kind, Value};
 
 /// Number of cases recorded by `ggb-harness` so far. Raise it when adding cases,
 /// so that losing a file is noticed.
-const MIN_GOLDEN_CASES: usize = 7413;
+const MIN_GOLDEN_CASES: usize = 7416;
 
 #[test]
 fn homogeneous_point_cases_agree() {

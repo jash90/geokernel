@@ -258,6 +258,42 @@
       "cascell": "Solve(x^2/x = sqrt(0))"
     },
     {
+      "id": "cascell-closing-012",
+      "group": "cascell",
+      "script": [
+        "a = 1/3",
+        "b = a + 0"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "3*b"
+    },
+    {
+      "id": "cascell-closing-013",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "1.234"
+    },
+    {
+      "id": "cascell-closing-014",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "{1.234, 2}"
+    },
+    {
       "id": "cascell-display-001",
       "group": "cascell",
       "script": [],

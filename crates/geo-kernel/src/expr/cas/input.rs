@@ -141,11 +141,10 @@ fn read_at<const DEFINITIONS: bool>(
         Node::SystemFunction(arity, root) if arity <= 3 => args(root, work),
         Node::Obj(id) => {
             if DEFINITIONS && matches!(c.value(id), Value::Number(_)) {
-                if let Def::Expr(def) = c.def(id) {
-                    let definition = entry(c, def);
+                if let Some(definition) = number_definition(c, id) {
                     if let Some(value) = read_at::<DEFINITIONS>(
                         c,
-                        definition,
+                        &definition,
                         definition.root,
                         vars,
                         work,
