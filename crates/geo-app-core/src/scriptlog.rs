@@ -1121,7 +1121,11 @@ impl Log {
                         return false;
                     };
                     remaining = next;
-                    pending.push(child);
+                    match c.spreadsheet_watch_only(child, id, &mut remaining) {
+                        Ok(false) => pending.push(child),
+                        Ok(true) => {}
+                        Err(_) => return false,
+                    }
                 }
             }
             if let Some(compacted) = self.compact_removed_inputs(c, &labels, &repeated) {

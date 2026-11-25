@@ -326,6 +326,19 @@ fn replay_spreadsheet(
                             .ok_or_else(|| "cannot set the cell value".into()),
                         _ => Err("SetValue needs a cell and a number".into()),
                     }
+                } else if let Some(("SetCoords", args)) = script::split_call(line) {
+                    match args.as_slice() {
+                        [label, x, y] => {
+                            let c = document.construction();
+                            c.id(label)
+                                .zip(c.numeric_value(x))
+                                .zip(c.numeric_value(y))
+                                .filter(|&((id, x), y)| document.move_point(id, x, y))
+                                .map(|_| ())
+                                .ok_or_else(|| "cannot move the cell point".into())
+                        }
+                        _ => Err("SetCoords needs a cell and two coordinates".into()),
+                    }
                 } else {
                     document.run_line(line)
                 }

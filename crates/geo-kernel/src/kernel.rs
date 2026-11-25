@@ -2014,6 +2014,22 @@ impl Construction {
         self.children(id)
     }
 
+    /// Whether a graph edge only refreshes a spreadsheet lookup. The
+    /// caller's deletion traversal also pays for inspecting the formula.
+    pub fn spreadsheet_watch_only(
+        &self,
+        child: Id,
+        parent: Id,
+        remaining: &mut usize,
+    ) -> Result<bool, String> {
+        match self.def(child) {
+            Def::Expr(def) if crate::spreadsheet::Address::parse(self.label(parent)).is_some() => {
+                expr::spreadsheet_watch_only(self, def, parent, remaining)
+            }
+            _ => Ok(false),
+        }
+    }
+
     /// Checks a definition and computes the value it would have if it were
     /// added now, without adding it.
     pub(crate) fn evaluate(&self, def: Def) -> Result<Value, Error> {
@@ -3666,6 +3682,7 @@ impl Construction {
             return Ok(0);
         }
         self.construction_sources.remove(&id);
+        self.cell_inputs.remove(&id);
         self.defs[id.0] = def;
         self.values[id.0] = self.store_point_coordinates(id.0, new);
         Ok(self.propagate(id))
@@ -3700,6 +3717,7 @@ impl Construction {
                 continue;
             }
             self.construction_sources.remove(&id);
+            self.cell_inputs.remove(&id);
             self.defs[id.0] = Def::FreePoint { x, y };
             self.values[id.0] = self.store_point_coordinates(id.0, Value::Point { x, y });
             first = first.min(self.evaluation_rank(id));
@@ -3728,6 +3746,7 @@ impl Construction {
         if new.same(&self.paths[slot].1) {
             return Ok(0);
         }
+        self.cell_inputs.remove(&id);
         self.paths[slot].1 = new;
         self.values[id.0] = PathDef::value(&new);
         Ok(self.propagate(id))

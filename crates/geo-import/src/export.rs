@@ -381,8 +381,9 @@ pub fn ggb<'a>(
         }
     }
     writer.xml.buffer.push_str("</construction>\n</geogebra>\n");
+    let spreadsheet = spreadsheet_metadata(construction, writer.xml.items)?;
     if writer.xml.buffer.len() as u64 > archive::MAX_XML_BYTES
-        || writer.images.len() + 1 > archive::MAX_ZIP_ENTRIES
+        || writer.images.len() + 1 + usize::from(spreadsheet.is_some()) > archive::MAX_ZIP_ENTRIES
     {
         return Err(failure("construction exceeds the import archive limits"));
     }
@@ -398,11 +399,7 @@ pub fn ggb<'a>(
     for (name, asset) in writer.images.values() {
         write(name, asset.bytes())?;
     }
-    let spreadsheet = spreadsheet_metadata(construction)?;
     if let Some(metadata) = spreadsheet {
-        if writer.images.len() + 2 > archive::MAX_ZIP_ENTRIES {
-            return Err(failure("construction exceeds the import archive limits"));
-        }
         write(crate::spreadsheet::METADATA_FILE, metadata.as_bytes())?;
     }
     write(archive::XML_FILE, writer.xml.buffer.as_bytes())?;
@@ -411,8 +408,11 @@ pub fn ggb<'a>(
         .map_err(|e| failure(e.to_string()))
 }
 
-fn spreadsheet_metadata(c: &Construction) -> Result<Option<String>, ExportError> {
-    let mut xml = Xml::default();
+fn spreadsheet_metadata(c: &Construction, items: usize) -> Result<Option<String>, ExportError> {
+    let mut xml = Xml {
+        items,
+        ..Xml::default()
+    };
     for (address, id) in c.spreadsheet_cells() {
         let Some(input) = c.spreadsheet_editor_input(id) else {
             continue;
@@ -544,6 +544,7 @@ impl Writer<'_> {
         if let Some(sheet) = sheet {
             self.xml.open("spreadsheetView", &[])?;
             for entry in &sheet.settings {
+                self.xml.charge_items(1)?;
                 let attributes: Vec<_> = entry
                     .attributes
                     .iter()
@@ -791,21 +792,26 @@ impl Xml {
         self.attributes_with_limit(name, attrs, crate::xml::MAX_ATTRIBUTE_BYTES)
     }
 
+    fn charge_items(&mut self, count: usize) -> Result<(), ExportError> {
+        self.items += count;
+        if self.items > crate::xml::MAX_ITEMS {
+            return Err(failure("construction exceeds the import object limit"));
+        }
+        Ok(())
+    }
+
     fn attributes_with_limit(
         &mut self,
         name: &str,
         attrs: &[(&str, &str)],
         limit: usize,
     ) -> Result<(), ExportError> {
-        self.items += match name {
+        self.charge_items(match name {
             "command" | "element" | "cellPair" | "cell" => 1,
             "expression" if attrs.iter().any(|(key, _)| *key == "label") => 1,
             "output" => attrs.len(),
             _ => 0,
-        };
-        if self.items > crate::xml::MAX_ITEMS {
-            return Err(failure("construction exceeds the import object limit"));
-        }
+        })?;
         self.buffer.push('<');
         self.buffer.push_str(name);
         for (key, value) in attrs {
@@ -949,6 +955,52 @@ impl Xml {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn export_counts_spreadsheet_metadata_with_the_main_document() {
+        let mut c = Construction::new();
+        let address = geo_kernel::spreadsheet::Address::parse("A1").unwrap();
+        c.edit_spreadsheet_cell(address, "1").unwrap();
+        let outputs = ["A1".to_owned()];
+        let mut presentation = Presentation {
+            cas_rows: vec![crate::SavedCasRow::default(); crate::xml::MAX_ITEMS - 3],
+            ..Presentation::default()
+        };
+        let export = |presentation: &Presentation<'_>| {
+            ggb(
+                &c,
+                [Definition {
+                    line: "A1 = 1",
+                    outputs: &outputs,
+                }],
+                presentation,
+            )
+        };
+
+        let bytes = export(&presentation).unwrap();
+        assert!(crate::import(&bytes).is_ok());
+        let limit_error = |presentation: &Presentation<'_>| {
+            export(presentation)
+                .map(|_| ())
+                .expect_err("export budget")
+                .to_string()
+        };
+
+        presentation.cas_rows.push(crate::SavedCasRow::default());
+        assert_eq!(
+            limit_error(&presentation),
+            "construction exceeds the import object limit",
+        );
+        presentation.cas_rows.pop();
+
+        let mut sheet = crate::SpreadsheetView::default();
+        sheet.set_selected(address);
+        presentation.spreadsheet_view = Some(sheet);
+        assert_eq!(
+            limit_error(&presentation),
+            "construction exceeds the import object limit",
+        );
+    }
 
     #[test]
     fn coordinates_use_reference_spellings_for_nonfinite_numbers() {

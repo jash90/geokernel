@@ -3294,3 +3294,8 @@ mismatches = ["0:output", "0:latex"]
 id = "spreadsheet-fillslider-001"
 reason = "GeoGebra fills A1 with 7 and replaces slider B1 with 8. The kernel requires an existing slider to keep its bounds on replacement and rejects the fill before writing A1."
 mismatches = ["1:spreadsheet"]
+
+[[gap]]
+id = "spreadsheet-labelledfill-001"
+reason = "GeoGebra writes text to A1 and 9 to B1. The kernel refuses to change A1 from a number to text because the labelled result reads it as a number. A1 stays 3, B1 remains absent, and no result is created."
+mismatches = ["1:spreadsheet"]

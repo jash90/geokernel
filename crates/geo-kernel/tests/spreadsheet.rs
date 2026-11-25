@@ -80,6 +80,7 @@ fn rejects_oversized_ranges_and_fills_without_creating_cells() {
         "v = CellRange(A1, NTO9999)",
         "FillCells(A1:NTO9999, 1)",
         "FillCells(A1:NTO9999, {1,2})",
+        "$spreadsheetDrag(A1:A1025, 1)",
         "FillCells(NTO9999, {1,2})",
         "FillRow(1, Sequence(n,n,1,5000))",
         "FillColumn(1, Sequence(n,n,1,5000))",
@@ -189,4 +190,26 @@ fn a_range_keeps_its_budget_when_command_parsing_backtracks() {
     let c = script::load("FillCells(A1:A600, {1})\nv = Sum(A1:A600)\nn = Length(A1:A600)").unwrap();
     assert_number(&c, "v", 600.0);
     assert_number(&c, "n", 600.0);
+}
+
+#[test]
+fn a_labelled_fill_that_cannot_keep_its_result_changes_no_cells() {
+    let mut c = script::load("A1 = 3").unwrap();
+    assert!(script::exec(&mut c, r#"r = FillRow(1,{"text",A1^2})"#).is_err());
+    assert_number(&c, "A1", 3.0);
+    assert!(c.id("B1").is_none());
+    assert!(c.id("r").is_none());
+}
+
+#[test]
+fn spreadsheet_watch_classification_spends_the_deletion_budget() {
+    let c = script::load("A1 = 1\nB1 = 2\nn = 1\nv = Cell(n,1)\nw = Cell(n,1)+B1").unwrap();
+    let b1 = c.id("B1").unwrap();
+    let v = c.id("v").unwrap();
+    let w = c.id("w").unwrap();
+    let mut remaining = 100;
+    assert!(c.spreadsheet_watch_only(v, b1, &mut remaining).unwrap());
+    assert!(remaining < 100);
+    assert!(!c.spreadsheet_watch_only(w, b1, &mut remaining).unwrap());
+    assert!(c.spreadsheet_watch_only(v, b1, &mut 0).is_err());
 }

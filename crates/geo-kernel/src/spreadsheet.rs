@@ -223,7 +223,11 @@ impl Construction {
         }
         if let Err(error) = script::exec(self, &format!("{label} = {source}")) {
             if !input.starts_with('=')
-                || !(error.starts_with("unexpected ") || error == "empty expression")
+                || !(error.starts_with("unexpected ")
+                    || matches!(
+                        error.as_str(),
+                        "empty expression" | "expected `)`" | "expected `}`" | "expected `|`"
+                    ))
             {
                 return Err(error);
             }
@@ -314,15 +318,8 @@ pub fn drag_line(c: &Construction, from: Address, to: Address) -> Result<Option<
         first.column as i16 - from.column as i16,
         first.row as i16 - from.row as i16,
     )?;
-    // A bare reference is the drag's formula. Group it to distinguish it from
-    // the named source object of a user-entered FillCells command.
-    let source = if Reference::parse(&source).is_some() {
-        format!("({source})")
-    } else {
-        source
-    };
     Ok(Some(format!(
-        "FillCells({}:{}, {source})",
+        "$spreadsheetDrag({}:{}, {source})",
         first.label(),
         last.label()
     )))
@@ -367,7 +364,10 @@ pub fn is_fill_line(line: &str) -> bool {
 }
 
 pub(crate) fn is_fill(name: &str) -> bool {
-    matches!(name, "FillRow" | "FillColumn" | "FillCells")
+    matches!(
+        name,
+        "FillRow" | "FillColumn" | "FillCells" | "$spreadsheetDrag"
+    )
 }
 
 pub(crate) fn fill(
@@ -392,23 +392,41 @@ pub(crate) fn fill(
         }
     }
     let checkpoint = c.checkpoint();
-    let order = stage_fill(c, &plan);
-    c.discard_since(checkpoint);
-    for index in order? {
+    // Define the labelled result before preflighting replacements, so the
+    // stage also checks that those replacements preserve its inputs.
+    let result = (|| {
+        let result = if matches!(command, "FillRow" | "FillColumn") {
+            output
+                .map(|label| {
+                    prepare(c, source, Some(label))?;
+                    let id = expr::define(c, label, source, false)?;
+                    c.remember_construction_source(id, source);
+                    Ok::<_, String>(id)
+                })
+                .transpose()?
+        } else {
+            None
+        };
+        let staged = c.checkpoint();
+        let order = stage_fill(c, &plan);
+        c.discard_since(staged);
+        Ok::<_, String>((order?, result))
+    })();
+    let (order, result) = match result {
+        Ok(staged) => staged,
+        Err(error) => {
+            c.discard_since(checkpoint);
+            return Err(error);
+        }
+    };
+    for index in order {
         let (address, formula) = &plan[index];
         let label = address.label();
         if let Some(id) = script::exec(c, &format!("{label} = {formula}"))? {
             c.request_hidden(id);
         }
     }
-    if command != "FillCells" {
-        if let Some(output) = output {
-            let id = expr::define(c, output, source, false)?;
-            c.remember_construction_source(id, source);
-            return Ok(Some(id));
-        }
-    }
-    Ok(None)
+    Ok(result)
 }
 
 /// Stage the new dependencies together so a multi-cell cycle is refused
@@ -492,9 +510,14 @@ fn plan_fill(
     target: &str,
     source: &str,
 ) -> Result<Vec<(Address, String)>, String> {
-    let range = if command == "FillCells" {
+    if command == "$spreadsheetDrag" {
+        let (first, last) = target.split_once(':').ok_or("expected a drag range")?;
+        return shifted_fill(Range::parse(first, last)?, source);
+    }
+    let range = if command == "FillCells" && Address::parse(target).is_none() {
         let target = c
             .id(target)
+            .filter(|&id| c.kind(id) == Kind::List)
             .and_then(|id| c.construction_source(id))
             .unwrap_or(target);
         let bounds = target.split_once(':').or_else(|| {
@@ -618,15 +641,7 @@ fn plan_fill(
             } else {
                 source.to_owned()
             };
-            for address in range.row_major() {
-                let shifted = shift(
-                    &formula,
-                    address.column as i16 - range.first.column as i16,
-                    address.row as i16 - range.first.row as i16,
-                )?;
-                charge(&mut budget, shifted.len())?;
-                plan.push((address, shifted));
-            }
+            return shifted_fill(range, &formula);
         }
     } else {
         let start = Address::parse(target).ok_or("expected a cell or range to fill")?;
@@ -677,6 +692,21 @@ pub(crate) fn charge(budget: &mut usize, amount: usize) -> Result<(), String> {
     Ok(())
 }
 
+fn shifted_fill(range: Range, formula: &str) -> Result<Vec<(Address, String)>, String> {
+    let mut plan = Vec::with_capacity(range.cell_count());
+    let mut budget = MAX_SOURCE_BYTES * 4;
+    for address in range.row_major() {
+        let shifted = shift(
+            formula,
+            address.column as i16 - range.first.column as i16,
+            address.row as i16 - range.first.row as i16,
+        )?;
+        charge(&mut budget, shifted.len())?;
+        plan.push((address, shifted));
+    }
+    Ok(plan)
+}
+
 fn list_source(
     c: &Construction,
     list: expr::List<'_>,
@@ -707,8 +737,17 @@ fn element_source(
             charge(budget, text.len().saturating_mul(2) + 2)?;
             Ok(quoted(text))
         }
-        expr::Element::Value(_, value) => {
-            let source = scalar_source(c, value, display)?;
+        expr::Element::Value(kind, value) => {
+            let source = match value {
+                Value::Number(n) if kind == Kind::Angle && n.is_finite() => {
+                    if display {
+                        format!("{}°", c.format_display_number(n.to_degrees()))
+                    } else {
+                        format!("{}°", literal_number(n.to_degrees()))
+                    }
+                }
+                _ => scalar_source(c, value, display)?,
+            };
             charge(budget, source.len())?;
             Ok(source)
         }
@@ -896,11 +935,6 @@ fn coordinate_value(
     budget: &mut usize,
 ) -> Result<Option<f64>, String> {
     charge(budget, source.len())?;
-    if needs_preparation("", source) {
-        // The normal parser evaluates nested spreadsheet commands after
-        // preparation; do not recurse through them during the reservation pass.
-        return Ok(None);
-    }
     expr::spreadsheet_coordinate(c, source, budget)
 }
 

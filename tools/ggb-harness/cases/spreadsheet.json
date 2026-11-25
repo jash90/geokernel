@@ -917,6 +917,325 @@
           "input": "<geogebra format=\"5.0\"><spreadsheetView><spreadsheetColumn id=\"0\" width=\"200\"/><layout showGrid=\"false\"/></spreadsheetView><construction/></geogebra>"
         }
       ]
+    },
+    {
+      "id": "spreadsheet-clearwatcher-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "7"
+        },
+        {
+          "action": "command",
+          "input": "n = 1",
+          "observe": [
+            "n"
+          ]
+        },
+        {
+          "action": "edit",
+          "cell": "C1",
+          "input": "=Cell(n,1)"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": ""
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-clearselectedlookup-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "7"
+        },
+        {
+          "action": "command",
+          "input": "n = 1",
+          "observe": [
+            "n"
+          ]
+        },
+        {
+          "action": "edit",
+          "cell": "C1",
+          "input": "=Cell(n,1)"
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": ""
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-pointreload-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "=(1,2)"
+        },
+        {
+          "action": "command",
+          "input": "SetCoords(A1,3,4)",
+          "observe": []
+        },
+        {
+          "action": "reload"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-unbalancededit-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=A1+1"
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "=(1+2"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-listdrag-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "={1,2}"
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "={3,4}"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=A1"
+        },
+        {
+          "action": "drag",
+          "cell": "B1",
+          "target": "B2"
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "={5,6}"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-nestedcoordinate-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "5"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=Cell(Cell(1,1),1)+1"
+        },
+        {
+          "action": "edit",
+          "cell": "E1",
+          "input": "9"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-conditionaltexttarget-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "hello"
+        },
+        {
+          "action": "command",
+          "input": "n = 1",
+          "observe": [
+            "n"
+          ]
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=Cell(If(n>0,1,2),1)"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-labelledfill-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "3"
+        },
+        {
+          "action": "command",
+          "input": "r = FillRow(1,{\"text\",A1^2})",
+          "observe": []
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-labelledfillrange-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "r = FillRow(1,{Length(A1:A1)})",
+          "observe": []
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-fillformuladestination-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "3"
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "=Sum(B1:B2)"
+        },
+        {
+          "action": "command",
+          "input": "FillCells(A1,{7,8})",
+          "observe": []
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-fillangle-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "degree_mode"
+        },
+        {
+          "action": "command",
+          "input": "FillRow(2,{90\u00b0})",
+          "observe": []
+        },
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "={90\u00b0}"
+        }
+      ]
     }
   ]
 }

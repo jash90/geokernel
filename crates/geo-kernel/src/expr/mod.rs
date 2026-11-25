@@ -1348,13 +1348,32 @@ pub(crate) fn is_expression_command(name: &str) -> bool {
 
 pub(crate) fn flexible_cell_dependency(c: &Construction, def: ExprDef, parent: Id) -> bool {
     let e = entry(c, def);
-    let range = matches!(e.nodes[e.root as usize], Node::CellRange(..));
+    flexible_cell_read(
+        e,
+        parent,
+        matches!(e.nodes[e.root as usize], Node::CellRange(..)),
+    )
+}
+
+pub(crate) fn spreadsheet_watch_only(
+    c: &Construction,
+    def: ExprDef,
+    parent: Id,
+    remaining: &mut usize,
+) -> Result<bool, String> {
+    let e = entry(c, def);
+    crate::spreadsheet::charge(remaining, e.nodes.len())?;
+    Ok(flexible_cell_read(e, parent, false))
+}
+
+fn flexible_cell_read(e: &Entry, parent: Id, range: bool) -> bool {
     let mut watches = false;
     for node in &e.nodes {
         match *node {
             Node::CellWatch(id) if id == parent => watches = true,
             Node::CellItem(id) if id == parent && range => watches = true,
-            Node::Obj(id)
+            Node::CellItem(id)
+            | Node::Obj(id)
             | Node::ItemObject(id)
             | Node::FunctionObject(id)
             | Node::Apply(id, _)
@@ -2565,7 +2584,7 @@ pub(crate) fn spreadsheet_coordinate(
     text: &str,
     budget: &mut usize,
 ) -> Result<Option<f64>, String> {
-    let Ok(parsed) = parse::parse_argument(c, text) else {
+    let Some(parsed) = parse::parse_spreadsheet_coordinate(c, text, budget)? else {
         return Ok(None);
     };
     if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {

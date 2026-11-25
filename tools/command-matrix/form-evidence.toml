@@ -5273,7 +5273,7 @@ cases = ["spreadsheet-fillcolumn-001"]
 [[form]]
 command = "FillCells"
 form = "cell,list"
-cases = ["spreadsheet-fillcells-001"]
+cases = ["spreadsheet-fillcells-001", "spreadsheet-fillformuladestination-001"]
 
 [[form]]
 command = "FillCells"

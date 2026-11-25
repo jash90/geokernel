@@ -1,0 +1,41 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-nestedcoordinate-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "5",
+          "cells": { "A1": "5" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=Cell(Cell(1,1),1)+1",
+          "cells": { "A1": "5", "B1": "?" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "E1",
+          "input": "9",
+          "cells": { "A1": "5", "B1": "10", "E1": "9" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

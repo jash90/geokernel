@@ -400,6 +400,14 @@ pub(crate) fn convert_with_assets(
                             .parse::<f64>()
                             .is_ok_and(|typed| typed.to_radians() != saved)
                     }),
+                    Def::FreePoint { x, y } => source
+                        .strip_prefix('(')
+                        .and_then(|s| s.strip_suffix(')'))
+                        .and_then(|s| s.split_once(','))
+                        .and_then(|(a, b)| {
+                            Some((a.trim().parse::<f64>().ok()?, b.trim().parse::<f64>().ok()?))
+                        })
+                        .is_some_and(|typed| typed != (x, y)),
                     _ => false,
                 };
                 if stale {

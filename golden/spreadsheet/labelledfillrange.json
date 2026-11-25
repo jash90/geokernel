@@ -1,0 +1,27 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-labelledfillrange-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "r = FillRow(1,{Length(A1:A1)})",
+          "observe": [],
+          "cells": { "A1": "0" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

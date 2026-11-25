@@ -92,6 +92,28 @@ cases.extend([
          '<layout showGrid="false"/></spreadsheetView><construction/></geogebra>'}),
 ])
 
+cases.extend([
+    case("clearwatcher", edit("A1", "2"), edit("B1", "7"), command("n = 1", "n"),
+         edit("C1", "=Cell(n,1)"), edit("B1", "")),
+    case("clearselectedlookup", edit("A1", "2"), edit("B1", "7"), command("n = 1", "n"),
+         edit("C1", "=Cell(n,1)"), edit("A1", "")),
+    case("pointreload", edit("A1", "=(1,2)"), command("SetCoords(A1,3,4)"),
+         {"action": "reload"}),
+    case("unbalancededit", edit("A1", "2"), edit("B1", "=A1+1"), edit("A1", "=(1+2")),
+    case("listdrag", edit("A1", "={1,2}"), edit("A2", "={3,4}"), edit("B1", "=A1"),
+         {"action": "drag", "cell": "B1", "target": "B2"}, edit("A2", "={5,6}")),
+    case("nestedcoordinate", edit("A1", "5"), edit("B1", "=Cell(Cell(1,1),1)+1"),
+         edit("E1", "9")),
+    case("conditionaltexttarget", edit("A1", "hello"), command("n = 1", "n"),
+         edit("B1", "=Cell(If(n>0,1,2),1)")),
+    case("labelledfill", edit("A1", "3"), command('r = FillRow(1,{"text",A1^2})')),
+    case("labelledfillrange", command("r = FillRow(1,{Length(A1:A1)})")),
+    case("fillformuladestination", edit("B1", "2"), edit("B2", "3"),
+         edit("A1", "=Sum(B1:B2)"), command("FillCells(A1,{7,8})")),
+    case("fillangle", {"action": "degree_mode"}, command("FillRow(2,{90°})"),
+         edit("B2", "={90°}")),
+])
+
 Path(__file__).with_name("spreadsheet.json").write_text(
     json.dumps({"cases": cases}, indent=2) + "\n", encoding="utf-8"
 )

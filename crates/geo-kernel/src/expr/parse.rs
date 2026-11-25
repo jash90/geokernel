@@ -67,11 +67,18 @@ impl Default for CellBudget {
 impl CellBudget {
     fn charge(&mut self, count: usize) -> Result<(), String> {
         self.remaining = self.remaining.and_then(|budget| budget.checked_sub(count));
-        self.visits = self.visits.and_then(|budget| budget.checked_sub(count));
+        self.charge_visits(count)?;
         if self.exhausted() {
             return Err(crate::spreadsheet::LIMIT.into());
         }
         Ok(())
+    }
+
+    fn charge_visits(&mut self, count: usize) -> Result<(), String> {
+        self.visits = self.visits.and_then(|budget| budget.checked_sub(count));
+        self.visits
+            .map(|_| ())
+            .ok_or_else(|| crate::spreadsheet::LIMIT.into())
     }
 
     fn exhausted(&self) -> bool {
@@ -161,6 +168,29 @@ enum Mode<'a> {
 }
 
 fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, String> {
+    parse_in_with_work(c, src, mode, &mut Some(MAX_CELL_VISITS))
+}
+
+pub(super) fn parse_spreadsheet_coordinate(
+    c: &Construction,
+    src: &str,
+    budget: &mut usize,
+) -> Result<Option<Parsed>, String> {
+    let mut work = Some(*budget);
+    let parsed = parse_in_with_work(c, src, Mode::Argument, &mut work);
+    *budget = work.ok_or(crate::spreadsheet::LIMIT)?;
+    match parsed {
+        Err(error) if error == crate::spreadsheet::LIMIT => Err(error),
+        result => Ok(result.ok()),
+    }
+}
+
+fn parse_in_with_work(
+    c: &Construction,
+    src: &str,
+    mode: Mode<'_>,
+    work: &mut Option<usize>,
+) -> Result<Parsed, String> {
     let equation = matches!(
         mode,
         Mode::Equation | Mode::EquationLeft | Mode::ScopedEquation(_)
@@ -203,7 +233,10 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
         },
         cas_variables: Vec::new(),
         watching_cells: false,
-        cell_work: CellBudget::default(),
+        cell_work: CellBudget {
+            visits: *work,
+            ..CellBudget::default()
+        },
         locals: match mode {
             Mode::System(names) | Mode::ScopedEquation(names) => {
                 names.iter().map(|n| (n.to_string(), Elem::Num)).collect()
@@ -215,6 +248,7 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
         return Err("empty expression".into());
     }
     let root = p.expression();
+    *work = p.cell_work.visits;
     // Speculative command parsing may fall back after an error. A work
     // budget that was exhausted still rejects the whole operation.
     if p.cell_work.exhausted() {
@@ -715,6 +749,36 @@ impl Parser<'_> {
         })
     }
 
+    fn cell_coordinate(&mut self, root: u32) -> Result<Option<f64>, String> {
+        if let Some(value) = self.scalar_value(root, 0, true) {
+            return Ok(Some(value));
+        }
+        let nodes = &self.nodes[..=root as usize];
+        self.cell_work.charge_visits(nodes.len())?;
+        let Ok((tys, depth, cost, vars)) = check(self.c, nodes, root) else {
+            return Ok(None);
+        };
+        let r = root as usize;
+        if !matches!(tys[r], Ty::Num(_)) || depth[r] > MAX_DEPTH || vars[r] != 0 {
+            return Ok(None);
+        }
+        self.cell_work.charge_visits(cost[r] as usize)?;
+        let parsed = Parsed {
+            root,
+            depth: depth[r],
+            cost: cost[r],
+            vars: vars[r],
+            nodes: nodes.to_vec(),
+            lits: self.lits[..=r].to_vec(),
+            tys,
+            parents: Vec::new(),
+            inputs: Vec::new(),
+            uses_var: false,
+            uses_y: false,
+        };
+        Ok(super::value_of_tree(self.c, &parsed))
+    }
+
     /// `ExpressionNode.isConstantDouble(f, Kernel.PI_180)`.
     fn is_degree(&self, i: u32) -> bool {
         match self.node(i) {
@@ -1021,12 +1085,14 @@ impl Parser<'_> {
                 let [column, row] = self.arguments()?[..] else {
                     return Err("`Cell` takes two arguments".into());
                 };
-                let constant = |i| self.constant_value(i, 0);
-                let current = |i| self.scalar_value(i, 0, true);
-                let address = (|| Address::from_numbers(current(column)?, current(row)?))();
+                let address = self
+                    .cell_coordinate(column)?
+                    .zip(self.cell_coordinate(row)?)
+                    .and_then(|(column, row)| Address::from_numbers(column, row));
                 let selected = address.and_then(|a| self.c.spreadsheet_cell(a));
                 let kind = selected.map_or(Kind::Number, |id| self.c.kind(id));
-                if constant(column).is_some() && constant(row).is_some() {
+                if self.constant_value(column, 0).is_some() && self.constant_value(row, 0).is_some()
+                {
                     if let Some(id) = address.and_then(|a| self.c.id(&a.label())) {
                         self.cell_work.charge(1)?;
                         self.read(id, true);
@@ -1664,6 +1730,16 @@ mod spreadsheet_tests {
                 .count(),
             1000
         );
+    }
+
+    #[test]
+    fn lookup_coordinate_probes_share_the_parse_work_budget() {
+        let c = crate::script::load("A1 = 2").unwrap();
+        let unit = "Cell(If(true,1,2),1)";
+        let short = format!("{unit}+1");
+        assert_eq!(c.numeric_value(&short), Some(3.0));
+        let source = std::iter::repeat_n(unit, 100).collect::<Vec<_>>().join("+");
+        assert!(matches!(parse(&c, &source), Err(error) if error == crate::spreadsheet::LIMIT));
     }
 
     #[test]

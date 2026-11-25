@@ -395,4 +395,28 @@ mod tests {
         assert_eq!(c.spreadsheet_display(address), "2");
         assert_eq!(c.spreadsheet_input(address).as_deref(), Some("2"));
     }
+
+    #[test]
+    fn stale_point_editor_input_cannot_replace_saved_coordinates() {
+        let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
+        let options = zip::write::SimpleFileOptions::default();
+        zip.start_file("geogebra.xml", options).unwrap();
+        zip.write_all(
+            br#"<geogebra><construction>
+            <element type="point" label="A1"><coords x="3" y="4" z="1"/></element>
+            </construction></geogebra>"#,
+        )
+        .unwrap();
+        zip.start_file(crate::spreadsheet::METADATA_FILE, options)
+            .unwrap();
+        zip.write_all(br#"<spreadsheetView><cell label="A1" input="=(1,2)"/></spreadsheetView>"#)
+            .unwrap();
+        let bytes = zip.finish().unwrap().into_inner();
+        let imported = crate::import(&bytes).unwrap();
+        let c = geo_kernel::script::load(&imported.script.join("\n")).unwrap();
+        let address = geo_kernel::spreadsheet::Address::parse("A1").unwrap();
+        assert_eq!(c.spreadsheet_display(address), "(3, 4)");
+        assert!(c.spreadsheet_editor_input(c.id("A1").unwrap()).is_none());
+        assert_eq!(c.spreadsheet_input(address).as_deref(), Some("=(3, 4)"));
+    }
 }
