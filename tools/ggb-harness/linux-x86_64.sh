@@ -50,5 +50,6 @@ exec "$runtime" run --rm --platform linux/amd64 \
   -e "GEOGEBRA_REV=$(git -C "$ggb" rev-parse HEAD)" \
   -e "GGB_HARNESS_CP_SED=s|$ggb|/geogebra|g; s|$gradle|/gradle|g" \
   -e "GGB_HARNESS_JAVA_OPTS=${GGB_HARNESS_JAVA_OPTS:--Djava.awt.headless=true}" \
+  ${GGB_HARNESS_TOPICS:+-e GGB_HARNESS_TOPICS} \
   ${GGB_HARNESS_CAS:+-e GGB_HARNESS_CAS} \
   "$image" bash tools/ggb-harness/harness.sh "$@"

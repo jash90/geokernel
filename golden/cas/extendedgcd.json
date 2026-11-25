@@ -1,0 +1,43 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-extendedgcd-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "ExtendedGCD(240, 46)", "output": "{-9, 47, 2}", "latex": "\\mathbf{ \\left\\{ -9, 47, 2 \\right\\} }" }
+    },
+    {
+      "id": "cas-extendedgcd-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "ExtendedGCD(x^2-1, x^2-3x+2)", "output": "{1, -1, 3x - 3}", "latex": "\\mathbf{ \\left\\{ 1, -1, 3 \\; x - 3 \\right\\} }" }
+    },
+    {
+      "id": "cas-extendedgcd-003",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "ExtendedGCD(1)", "output": "Sorry, something went wrong. Please check your input", "latex": "" }
+    }
+  ]
+}

@@ -268,6 +268,20 @@ recorded case that may call each done form against its profile.
 Desktop feature checks run in `giac-linux`, `giac-macos` and `giac-windows`
 (.github/workflows/ci.yml).
 
+## CAS view rows
+
+`Construction::evaluate_cas_row` evaluates an independent row against
+the current construction. It gives the cell's output text, its LaTeX and,
+for exact results, an expression in CAS syntax. The default build evaluates
+rationals and polynomials using the kernel's exact arithmetic. The CAS-view
+command forms listed in the matrix require Giac.
+
+The headless harness records standalone rows in `golden/cascell` and
+CAS-view commands in `golden/cas`. GeoGebra's `Ggb2giac` table supplies
+the CAS-view translations. The algebra input bar uses `CAScmdProcessor`
+to report that these commands belong in the CAS view. `SolveQuartic` is
+a disabled preview feature in the pinned reference.
+
 ## Crate layout and feature
 
 - `crates/geo-giac`: the loader, the JNI table and the protocol. Without its

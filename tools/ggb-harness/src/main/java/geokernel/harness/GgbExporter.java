@@ -67,6 +67,9 @@ public final class GgbExporter {
                 continue;
             }
             Map<?, ?> input = (Map<?, ?>) cases.get(n);
+            if (input.containsKey("cascell")) {
+                continue;
+            }
             String id = (String) input.get("id");
             String group = (String) input.get("group");
             Session session = new Session();

@@ -21,15 +21,23 @@ impl Op {
     }
 }
 
-pub(in crate::expr::cas) fn input(op: Op, argument: &str) -> Option<String> {
-    let template = match op {
+fn template(op: Op) -> Option<&'static str> {
+    Some(match op {
         Op::Simplify => SIMPLIFY,
         Op::Expand => EXPAND,
         Op::Factor => FACTOR,
         Op::IFactor => IFACTOR,
         _ => return None,
-    };
-    row_fill(template, &[argument])
+    })
+}
+
+fn input(op: Op, argument: &str) -> Option<String> {
+    row_fill(template(op)?, &[argument])
+}
+
+pub(in crate::expr::cas) fn row_input(op: Op, argument: &str, index: usize) -> Option<String> {
+    let template = template(op)?.replace("ggbsimparg01", &format!("ggbsimparg0{index}"));
+    row_fill(&template, &[argument])
 }
 
 /// CmdSimplify converts a line, segment or conic to a function. An

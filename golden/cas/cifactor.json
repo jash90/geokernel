@@ -1,0 +1,43 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-cifactor-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "CIFactor(x^2-2)", "output": "(x - sqrt(2)) (x + sqrt(2))", "latex": "\\mathbf{\\left(x - \\sqrt{2} \\right) \\; \\left(x + \\sqrt{2} \\right)}" }
+    },
+    {
+      "id": "cas-cifactor-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "CIFactor(y^2-2, y)", "output": "(y - sqrt(2)) (y + sqrt(2))", "latex": "\\mathbf{\\left(y - \\sqrt{2} \\right) \\; \\left(y + \\sqrt{2} \\right)}" }
+    },
+    {
+      "id": "cas-cifactor-003",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "CIFactor(1,2,3)", "output": "Sorry, something went wrong. Please check your input", "latex": "" }
+    }
+  ]
+}

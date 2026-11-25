@@ -1296,11 +1296,12 @@ fn validate_case(case: &Case) -> Result<(), String> {
     if case.id.is_empty() {
         return Err("empty id".into());
     }
-    if (case.group == "cascell") != case.cascell.is_some()
-        || case
-            .cascell
-            .as_ref()
-            .is_some_and(|row| row.input.trim().is_empty() || case.steps.len() != 1)
+    if case.group == "cascell" && case.cascell.is_none()
+        || case.cascell.as_ref().is_some_and(|row| {
+            !matches!(case.group.as_str(), "cas" | "cascell")
+                || row.input.trim().is_empty()
+                || case.steps.len() != 1
+        })
     {
         return Err("a cascell case needs one input and only the initial step".into());
     }

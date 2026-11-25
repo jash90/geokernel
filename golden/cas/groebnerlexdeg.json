@@ -1,0 +1,43 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-groebnerlexdeg-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "GroebnerLexDeg({x+y, y^2-1})", "output": "{y² - 1, x + y}", "latex": "\\mathbf{ \\left\\{ y^{2} - 1, x + y \\right\\} }" }
+    },
+    {
+      "id": "cas-groebnerlexdeg-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "GroebnerLexDeg({x+y, y^2-1}, {x,y})", "output": "{y² - 1, x + y}", "latex": "\\mathbf{ \\left\\{ y^{2} - 1, x + y \\right\\} }" }
+    },
+    {
+      "id": "cas-groebnerlexdeg-003",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "GroebnerLexDeg(1,2,3)", "output": "Sorry, something went wrong. Please check your input", "latex": "" }
+    }
+  ]
+}

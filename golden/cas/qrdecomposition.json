@@ -1,0 +1,31 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-qrdecomposition-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "QRDecomposition({{1,0},{0,2}})", "output": "{{{1, 0}, {0, 1}}, {{1, 0}, {0, 2}}}", "latex": "\\mathbf{ \\left\\{ \\left(\\begin{array}{rr}1&0\\\\0&1\\\\\\end{array}\\right), \\left(\\begin{array}{rr}1&0\\\\0&2\\\\\\end{array}\\right) \\right\\} }" }
+    },
+    {
+      "id": "cas-qrdecomposition-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "QRDecomposition(1,2)", "output": "Sorry, something went wrong. Please check your input", "latex": "" }
+    }
+  ]
+}

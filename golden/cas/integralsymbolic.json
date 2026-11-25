@@ -1,0 +1,43 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-integralsymbolic-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "IntegralSymbolic(x^2)", "output": "1 / 3 x³ + c_{1}", "latex": "\\mathbf{\\frac{1}{3} \\; x^{3} + c_{1}}" }
+    },
+    {
+      "id": "cas-integralsymbolic-002",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "IntegralSymbolic(cos(t), t)", "output": "sin(t) + c_{1}", "latex": "\\mathbf{\\operatorname{sin} \\left( t \\right) + c_{1}}" }
+    },
+    {
+      "id": "cas-integralsymbolic-003",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "IntegralSymbolic(1,2,3)", "output": "Sorry, something went wrong. Please check your input", "latex": "" }
+    }
+  ]
+}

@@ -260,3 +260,29 @@ Solve,algebra,10,"function | line | conic | implicit | list | function,any | lin
 Solutions,algebra,10,"function | line | conic | implicit | list | function,any | line,any | conic,any | implicit,any | list,any"
 NSolve,algebra,10,"function | line | conic | implicit | list | function,any | line,any | conic,any | implicit,any | list,any"
 NSolutions,algebra,10,"function | line | conic | implicit | list | function,any | line,any | conic,any | implicit,any | list,any"
+Assume,cas,1,"condition,expression"
+CFactor,cas,2,"expression | expression,variable"
+CIFactor,cas,2,"expression | expression,variable"
+IntegralSymbolic,cas,2,"expression | expression,variable"
+Eliminate,cas,1,"list,list"
+GroebnerLex,cas,2,"list | list,list"
+GroebnerDegRevLex,cas,2,"list | list,list"
+GroebnerLexDeg,cas,2,"list | list,list"
+Numeric,cas,2,"expression | expression,number"
+MixedNumber,cas,1,number
+Rationalize,cas,1,expression
+SolveCubic,cas,2,polynomial | equation
+SolveQuartic,cas,1,polynomial
+JordanDiagonalization,cas,1,matrix
+Eigenvectors,cas,1,matrix
+Eigenvalues,cas,1,matrix
+Laplace,cas,3,"expression | expression,variable | expression,variable,variable"
+InverseLaplace,cas,3,"expression | expression,variable | expression,variable,variable"
+Substitute,cas,5,"expression,equation | expression,list | expression,variable,expression | expression,equation,equation,equation,... | expression"
+ToExponential,cas,1,expression
+ExtendedGCD,cas,2,"number,number | polynomial,polynomial"
+ModularExponent,cas,1,"number,number,number"
+CharacteristicPolynomial,cas,1,matrix
+MinimalPolynomial,cas,1,matrix
+LUDecomposition,cas,1,matrix
+QRDecomposition,cas,1,matrix

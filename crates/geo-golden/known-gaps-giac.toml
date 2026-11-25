@@ -1673,6 +1673,317 @@ agrees = true
 id = "cas-curve-024"
 agrees = true
 
+# The CAS view row fixtures use the native symbolic backend.
+
+[[gap]]
+id = "cas-assume-001"
+agrees = true
+
+[[gap]]
+id = "cas-assume-002"
+agrees = true
+
+[[gap]]
+id = "cas-cfactor-001"
+agrees = true
+
+[[gap]]
+id = "cas-cfactor-002"
+agrees = true
+
+[[gap]]
+id = "cas-cfactor-003"
+agrees = true
+
+[[gap]]
+id = "cas-cifactor-001"
+agrees = true
+
+[[gap]]
+id = "cas-cifactor-002"
+agrees = true
+
+[[gap]]
+id = "cas-cifactor-003"
+agrees = true
+
+[[gap]]
+id = "cas-integralsymbolic-001"
+agrees = true
+
+[[gap]]
+id = "cas-integralsymbolic-002"
+agrees = true
+
+[[gap]]
+id = "cas-integralsymbolic-003"
+agrees = true
+
+[[gap]]
+id = "cas-eliminate-001"
+agrees = true
+
+[[gap]]
+id = "cas-eliminate-002"
+agrees = true
+
+[[gap]]
+id = "cas-groebnerlex-001"
+agrees = true
+
+[[gap]]
+id = "cas-groebnerlex-002"
+agrees = true
+
+[[gap]]
+id = "cas-groebnerlex-003"
+agrees = true
+
+[[gap]]
+id = "cas-groebnerdegrevlex-001"
+agrees = true
+
+[[gap]]
+id = "cas-groebnerdegrevlex-002"
+agrees = true
+
+[[gap]]
+id = "cas-groebnerdegrevlex-003"
+agrees = true
+
+[[gap]]
+id = "cas-groebnerlexdeg-001"
+agrees = true
+
+[[gap]]
+id = "cas-groebnerlexdeg-002"
+agrees = true
+
+[[gap]]
+id = "cas-groebnerlexdeg-003"
+agrees = true
+
+[[gap]]
+id = "cas-numeric-001"
+agrees = true
+
+[[gap]]
+id = "cas-numeric-002"
+agrees = true
+
+[[gap]]
+id = "cas-numeric-003"
+agrees = true
+
+[[gap]]
+id = "cas-mixednumber-001"
+agrees = true
+
+[[gap]]
+id = "cas-mixednumber-002"
+agrees = true
+
+[[gap]]
+id = "cas-rationalize-001"
+agrees = true
+
+[[gap]]
+id = "cas-rationalize-002"
+agrees = true
+
+[[gap]]
+id = "cas-solvecubic-001"
+agrees = true
+
+[[gap]]
+id = "cas-solvecubic-002"
+agrees = true
+
+[[gap]]
+id = "cas-solvecubic-003"
+agrees = true
+
+[[gap]]
+id = "cas-solvequartic-001"
+agrees = true
+
+[[gap]]
+id = "cas-solvequartic-002"
+agrees = true
+
+[[gap]]
+id = "cas-jordandiagonalization-001"
+agrees = true
+
+[[gap]]
+id = "cas-jordandiagonalization-002"
+agrees = true
+
+[[gap]]
+id = "cas-eigenvectors-001"
+agrees = true
+
+[[gap]]
+id = "cas-eigenvectors-002"
+agrees = true
+
+[[gap]]
+id = "cas-eigenvalues-001"
+agrees = true
+
+[[gap]]
+id = "cas-eigenvalues-002"
+agrees = true
+
+[[gap]]
+id = "cas-laplace-001"
+agrees = true
+
+[[gap]]
+id = "cas-laplace-002"
+agrees = true
+
+[[gap]]
+id = "cas-laplace-003"
+agrees = true
+
+[[gap]]
+id = "cas-laplace-004"
+agrees = true
+
+[[gap]]
+id = "cas-inverselaplace-001"
+agrees = true
+
+[[gap]]
+id = "cas-inverselaplace-002"
+agrees = true
+
+[[gap]]
+id = "cas-inverselaplace-003"
+agrees = true
+
+[[gap]]
+id = "cas-inverselaplace-004"
+agrees = true
+
+[[gap]]
+id = "cas-substitute-001"
+agrees = true
+
+[[gap]]
+id = "cas-substitute-002"
+agrees = true
+
+[[gap]]
+id = "cas-substitute-003"
+agrees = true
+
+[[gap]]
+id = "cas-substitute-004"
+agrees = true
+
+[[gap]]
+id = "cas-substitute-005"
+agrees = true
+
+[[gap]]
+id = "cas-toexponential-001"
+agrees = true
+
+[[gap]]
+id = "cas-toexponential-002"
+agrees = true
+
+[[gap]]
+id = "cas-extendedgcd-001"
+agrees = true
+
+[[gap]]
+id = "cas-extendedgcd-002"
+agrees = true
+
+[[gap]]
+id = "cas-extendedgcd-003"
+agrees = true
+
+[[gap]]
+id = "cas-modularexponent-001"
+agrees = true
+
+[[gap]]
+id = "cas-modularexponent-002"
+agrees = true
+
+[[gap]]
+id = "cas-characteristicpolynomial-001"
+agrees = true
+
+[[gap]]
+id = "cas-characteristicpolynomial-002"
+agrees = true
+
+[[gap]]
+id = "cas-minimalpolynomial-001"
+agrees = true
+
+[[gap]]
+id = "cas-minimalpolynomial-002"
+agrees = true
+
+[[gap]]
+id = "cas-ludecomposition-001"
+agrees = true
+
+[[gap]]
+id = "cas-ludecomposition-002"
+agrees = true
+
+[[gap]]
+id = "cas-qrdecomposition-001"
+agrees = true
+
+[[gap]]
+id = "cas-qrdecomposition-002"
+agrees = true
+
 [[gap]]
 id = "cascell-closing-004"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-001"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-002"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-003"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-004"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-005"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-006"
+agrees = true
+
+[[gap]]
+id = "cascell-stackclose-007"
+mismatches = ["0:latex", "0:output"]
+reason = "The 64 KiB template limit in crates/geo-kernel/src/expr/cas/giac.rs:48 rejects the four copies of the 20,000-digit integer before assembly. The kernel returns \"Sorry, something went wrong. Please check your input\" and empty LaTeX. The reference prints {1, 0, ?} and \\mathbf{ \\left\\{ 1, 0, ? \\right\\} }."
+
+[[gap]]
+id = "cascell-stackclose-008"
+agrees = true
+
+[[gap]]
+id = "cascell-lastcommands-001"
 agrees = true
