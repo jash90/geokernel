@@ -11,6 +11,9 @@
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawRay.java
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawVector.java
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawConic.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawConicPart.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawLocus.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawPieChart.java
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawPolygon.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/DefaultGeoPriorityComparator.java
 //   source/shared/common/src/main/java/org/geogebra/common/plugin/GeoClass.java
@@ -51,7 +54,7 @@ use crate::interact::ViewTransform;
 use crate::metrics::Metrics;
 use geo_kernel::algo::{arc::ArcData, vector};
 use geo_kernel::kernel::{Construction, Id, Kind, Value};
-use geo_kernel::{ConicData, ConicType};
+use geo_kernel::{ConicData, ConicType, LocusPoint};
 use std::f64::consts::TAU;
 
 /// The width the window draws curves with (`draw::CURVE_WIDTH` in the
@@ -270,7 +273,11 @@ pub fn hit(
         // Degenerate parts may have drawable rays despite an infinite measure.
         Value::Arc { .. } | Value::Sector { .. } | Value::Undefined => {
             let part = c.arc(id)?;
-            boundary(part_meets_square(&part, tr, p, t + CURVE_STROKE / 2.0))
+            if part_meets_square(&part, tr, p, t + CURVE_STROKE / 2.0) {
+                Some(HitType::Boundary)
+            } else {
+                sector_contains(&part, tr.screen_to_world(p.0, p.1)).then_some(HitType::Filling)
+            }
         }
         Value::Conic { .. } => {
             let d = c.conic(id)?;
@@ -302,6 +309,37 @@ pub fn hit(
             } else {
                 boundary(slider_track_hit(c, id, slider, p, t))
             }
+        }
+        Value::Text => {
+            let [x0, y0, x1, y1] = c.text_pixel_rect(id, to_screen)?.map(f64::from);
+            ((x0..x1).contains(&p.0) && (y0..y1).contains(&p.1)).then_some(HitType::Filling)
+        }
+        Value::Image => {
+            let image = c.image(id)?;
+            image.source_rect()?;
+            if image.style.background {
+                return None;
+            }
+            let quad = c.image_quad_with_scales(id, tr.xscale(), tr.yscale())?;
+            let positions = quad.map(|[x, y]| {
+                if image.placement.is_screen() {
+                    (x, y)
+                } else {
+                    to_screen(x, y)
+                }
+            });
+            crate::shape::contains(&positions, p).then_some(HitType::Filling)
+        }
+        Value::PieChart => {
+            let pie = c.chart(id)?.pie.as_ref()?;
+            let (x, y) = tr.screen_to_world(p.0, p.1);
+            let (cx, cy) = pie.center;
+            ((x - cx).hypot(y - cy) <= pie.radius).then_some(HitType::Filling)
+        }
+        Value::Locus { .. } => {
+            let locus = c.locus(id)?;
+            let half = t + f64::from(c.drawing_style(id).line_thickness) * 0.25;
+            boundary(locus_meets_square(&locus.points, to_screen, p, half))
         }
         Value::InputBox => {
             let [x, y, width, height] = c.input_box_rect(id);
@@ -464,6 +502,61 @@ pub fn part_axis_crossings(part: &ArcData, axis: usize, offset: f64) -> impl Ite
     })
 }
 
+const MAX_LOCUS_PICK_EDGES: usize = 10_000;
+
+fn locus_meets_square(
+    points: &[LocusPoint],
+    to_screen: impl Fn(f64, f64) -> (f64, f64),
+    p: (f64, f64),
+    half: f64,
+) -> bool {
+    points.windows(2).take(MAX_LOCUS_PICK_EDGES).any(|pair| {
+        let a = pair[0];
+        let b = pair[1];
+        b.line_to
+            && [a.x, a.y, b.x, b.y].into_iter().all(f64::is_finite)
+            && segment_meets_square(to_screen(a.x, a.y), to_screen(b.x, b.y), p, half)
+    })
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_remaining_locus_picking_stops_at_the_edge_limit() {
+    let points: Vec<_> = (0..=MAX_LOCUS_PICK_EDGES + 1)
+        .map(|i| LocusPoint {
+            x: i as f64 * 10.0,
+            y: 0.0,
+            line_to: true,
+        })
+        .collect();
+    let end = MAX_LOCUS_PICK_EDGES as f64 * 10.0;
+    assert!(locus_meets_square(
+        &points,
+        |x, y| (x, y),
+        (end - 5.0, 0.0),
+        1.0
+    ));
+    assert!(!locus_meets_square(
+        &points,
+        |x, y| (x, y),
+        (end + 5.0, 0.0),
+        1.0
+    ));
+}
+
+fn sector_contains(part: &ArcData, (x, y): (f64, f64)) -> bool {
+    if !part.sector || !part.defined || !part.is_curved() {
+        return false;
+    }
+    let [mx, my] = part.conic.midpoint;
+    let [[ux, uy], [vx, vy]] = part.conic.eigenvec;
+    let [a, b] = part.conic.half_axes;
+    let (x, y) = (x - mx, y - my);
+    let u = (ux * x + uy * y) / a;
+    let v = (vx * x + vy * y) / b;
+    u.hypot(v) < 1.0 && (v.atan2(u) - part.start).rem_euclid(TAU) < part.extent
+}
+
 fn part_meets_square(part: &ArcData, tr: &ViewTransform, p: (f64, f64), t: f64) -> bool {
     if !part.defined {
         return false;
@@ -501,13 +594,13 @@ fn part_meets_square(part: &ArcData, tr: &ViewTransform, p: (f64, f64), t: f64) 
     // Intersections of the ellipse with each edge x = k or y = k satisfy
     // A cos(angle) + B sin(angle) = k, relative to the ellipse's centre.
     let (px, py) = tr.screen_to_world(p.0, p.1);
-    let h = t / (tr.xscale() * tr.yscale()).sqrt();
-    for (axis, d, other) in [(0, px - mx, py), (1, py - my, px)] {
+    let (hx, hy) = (t / tr.xscale(), t / tr.yscale());
+    for (axis, d, other, h, other_h) in [(0, px - mx, py, hx, hy), (1, py - my, px, hy, hx)] {
         for k in [d - h, d + h] {
             if part_axis_crossings(part, axis, k).any(|angle| {
                 let (x, y) = part_at(part, angle);
                 let coordinate = if axis == 0 { y } else { x };
-                (coordinate - other).abs() <= h
+                (coordinate - other).abs() <= other_h
             }) {
                 return true;
             }
@@ -786,7 +879,7 @@ pub fn pick_with_text(
             choice.add(c, id, id.index(), HitType::Filling, Some(id) == selected);
         }
         for (index, id) in c.ids().enumerate() {
-            if Some(id) == text || !accept(id) {
+            if c.kind(id) == Kind::Text || !accept(id) {
                 continue;
             }
             if let Some(how) = hit(c, id, t, position, threshold, reach) {
@@ -1182,4 +1275,61 @@ fn canvas_list_hits_member_shapes() {
     assert_eq!(test("l", 1.5, 0.0), Some(HitType::Boundary));
     assert_eq!(test("l", 1.5, 2.0), None);
     assert_eq!(test("n", 0.0, 0.0), None);
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_remaining_sector_chart_and_locus_hits_use_their_shapes() {
+    let c = geo_kernel::script::load(
+        "A = (0, 0)\nB = (2, 0)\nC = (0, 2)\na = CircularArc(A, B, C)\ns = CircularSector(A, B, C)\n\
+         chart = PieChart({1, 2}, (4, 0), 2)\nk = Circle(A, B)\nP = Point(k)\nQ = Midpoint(P, A)\nl = Locus(Q, P)",
+    )
+    .unwrap();
+    let view = ViewTransform::new(geo_kernel::svg::View::fit(&c), 800.0, 600.0);
+    let reach = Reach::square(3.0);
+    let at = |label, x, y| {
+        hit(
+            &c,
+            c.id(label).unwrap(),
+            &view,
+            view.world_to_screen(x, y),
+            3.0,
+            &reach,
+        )
+    };
+    assert_eq!(at("a", 0.5, 0.5), None);
+    assert_eq!(at("s", 0.5, 0.5), Some(HitType::Filling));
+    assert_eq!(at("chart", 4.5, 0.5), Some(HitType::Filling));
+    assert_eq!(at("chart", 6.1, 0.0), None);
+    assert_eq!(at("l", 0.0, 1.0), Some(HitType::Boundary));
+    assert_eq!(at("l", 0.0, 0.0), None);
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_remaining_image_picking_uses_the_raster_quad() {
+    let file = include_bytes!("../../../golden/ggb/saved/saved-images-001.ggb");
+    let imported = geo_import::import(file).unwrap();
+    let c = geo_kernel::script::load(&imported.script.join("\n")).unwrap();
+    let view = ViewTransform::new(geo_kernel::svg::View::fit(&c), 800.0, 600.0);
+    let reach = Reach::square(3.0);
+    let mut checked = false;
+    for (id, image) in c.images() {
+        if image.style.background {
+            continue;
+        }
+        let Some([a, _, b, _]) = c.image_quad_with_scales(id, view.xscale(), view.yscale()) else {
+            continue;
+        };
+        let (x, y) = (0.5 * (a[0] + b[0]), 0.5 * (a[1] + b[1]));
+        let pos = if image.placement.is_screen() {
+            (x, y)
+        } else {
+            view.world_to_screen(x, y)
+        };
+        assert_eq!(hit(&c, id, &view, pos, 3.0, &reach), Some(HitType::Filling));
+        assert_eq!(hit(&c, id, &view, (-10000.0, -10000.0), 3.0, &reach), None);
+        checked = true;
+    }
+    assert!(checked);
 }

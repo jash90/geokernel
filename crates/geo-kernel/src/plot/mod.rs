@@ -16,6 +16,8 @@
 pub mod conic;
 pub mod function;
 pub mod implicit;
+pub mod inequality;
+pub use crate::algo::curve::plot as cartesian;
 
 #[cfg(test)]
 mod conic_tests;
@@ -28,6 +30,10 @@ use crate::svg::View;
 /// `GeneralPathClipped`'s padding for GeoGebra's default line thickness 5
 /// (`lineThickness + 5`), more than half of any stroke drawn.
 pub const PAD: f64 = 10.0;
+
+pub(crate) const MAX_DRAW_WORK: u64 = 65_536;
+// An evaluator checks the deadline before running each node.
+pub(crate) const DRAW_DEADLINE: u64 = MAX_DRAW_WORK - 128;
 
 /// World coordinates beyond this are pulled in before cutting, so that the
 /// differences of two coordinates stay finite. The visible part of a path

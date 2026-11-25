@@ -381,6 +381,7 @@ fn control_dialog(app: &mut App, ctx: &egui::Context) {
     let tool = app.tool.tool();
     let slider = tool == crate::tools::Tool::Slider;
     let input_box = tool == crate::tools::Tool::InputBox;
+    let text = tool == crate::tools::Tool::Text;
     let mut confirm = false;
     let mut cancel = false;
     let mut numbers = None;
@@ -408,6 +409,17 @@ fn control_dialog(app: &mut App, ctx: &egui::Context) {
             if numbers.is_none() {
                 ui.colored_label(theme::ERROR, "Podaj rosnący zakres i dodatni krok.");
             }
+        } else if text {
+            let caption = ui.label("Treść");
+            let editor = ui
+                .add(
+                    egui::TextEdit::singleline(&mut app.control_fields[0])
+                        .char_limit(crate::tools::MAX_PLACED_TEXT_CHARS),
+                )
+                .labelled_by(caption.id);
+            if std::mem::take(&mut app.control_focus) {
+                editor.request_focus();
+            }
         } else {
             let caption = ui.label("Podpis");
             let editor = egui::TextEdit::singleline(&mut app.control_fields[0]);
@@ -430,7 +442,8 @@ fn control_dialog(app: &mut App, ctx: &egui::Context) {
             cancel = ui.button("Anuluj").clicked();
             let link = app.control_fields[1].trim();
             let enabled = (!slider || numbers.is_some())
-                && (!input_box || link.is_empty() || app.wb.construction().id(link).is_some());
+                && (!input_box || link.is_empty() || app.wb.construction().id(link).is_some())
+                && (!text || !app.control_fields[0].trim().is_empty());
             confirm = ui.add_enabled(enabled, egui::Button::new("OK")).clicked()
                 || (enabled && ui.input(|i| i.key_pressed(egui::Key::Enter)));
         });
@@ -440,6 +453,8 @@ fn control_dialog(app: &mut App, ctx: &egui::Context) {
         let taken = |label: &str| c.id(label).is_some();
         let outcome = if let Some((min, max, step)) = numbers {
             app.tool.finish_slider(min, max, step, taken)
+        } else if text {
+            app.tool.finish_text(&app.control_fields[0], taken)
         } else if input_box {
             let link = app.control_fields[1].trim();
             app.tool.finish_input_box(

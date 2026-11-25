@@ -112,6 +112,23 @@ pub(super) fn paint(
     let mut text_rects = scene.text_rects.map(|r| r.borrow_mut());
     let mut formulas = None;
     for id in texts {
+        if c.kind(id) == geo_kernel::Kind::InputBox {
+            let caption = c.input_box_caption(id);
+            let [x, y] = c.input_box_style(id).position.map(|v| v as f32);
+            if caption.is_empty() || x > rect.width() || y > rect.height() || y < -30.0 {
+                continue;
+            }
+            let entry = cache
+                .entries
+                .entry(id)
+                .or_insert_with(|| Layout::new(painter, caption, LABEL_FONT, false));
+            if entry.galley.text() != caption {
+                *entry = Layout::new(painter, caption, LABEL_FONT, false);
+            }
+            let at = rect.min + eframe::egui::vec2(x, y + 15.0 - entry.galley.size().y / 2.0);
+            painter.galley(at, entry.galley.clone(), color(id));
+            continue;
+        }
         let Some((text, style)) = c
             .text(id)
             .filter(|text| !text.is_empty())

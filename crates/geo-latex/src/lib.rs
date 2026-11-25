@@ -111,6 +111,13 @@ pub fn layout(source: &str, size: f32, style: Style, face: Face) -> Layout {
     layout::layout(&parser::parse(source), size, style, face)
 }
 
+/// The widest line of plain text in the bundled face.
+pub fn plain_width(text: &str, size: f32, face: Face) -> f32 {
+    text.lines()
+        .map(|line| font::measure(line, size, face).0)
+        .fold(0.0, f32::max)
+}
+
 /// Measures plain (non-math) text with the same bundled font metrics the
 /// renderer uses: one `(width, height, depth)` per line, as a [`Layout`]
 /// has them. Callers that place plain text next to formulas (the SVG

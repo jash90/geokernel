@@ -39,6 +39,7 @@ fn every_tool_works_with_real_clicks() {
             Tool::Translate => vec![c, u],
             Tool::Polygon | Tool::Polyline | Tool::VectorPolygon => vec![a, b, c, a],
             Tool::RegularPolygon => vec![a, b],
+            Tool::Locus => vec![(1.0, 0.0), (2.0, 0.0)],
             _ => vec![a, c],
         }
     };
@@ -78,6 +79,7 @@ fn every_tool_works_with_real_clicks() {
             Tool::Slope => ("m", Kind::Number, "Slope(f)"),
             Tool::VectorFromPoint => ("v", Kind::Vector, "Vector(C, C')"),
             Tool::VectorPolygon => ("t1", Kind::Polygon, "Polygon(A, B, C)"),
+            Tool::Locus => ("locus1", Kind::Locus, "Locus(Q, P)"),
             Tool::Angle => ("α", Kind::Angle, "Angle(A, C, B)"),
             Tool::Distance => ("a", Kind::Number, "Distance(A, C)"),
             Tool::ReflectLine => ("C'", Kind::Point, "Reflect(C, f)"),
@@ -91,10 +93,10 @@ fn every_tool_works_with_real_clicks() {
     };
     let mut failures = Vec::new();
     for tool in Tool::all().filter(|t| !t.is_direct()) {
-        let scene = if tool == Tool::VectorPolygon {
-            "A = (-6, -3)\nB = (-2, -3)\nC = (-4, 1)\n"
-        } else {
-            TOOL_SCENE
+        let scene = match tool {
+            Tool::VectorPolygon => "A = (-6, -3)\nB = (-2, -3)\nC = (-4, 1)\n",
+            Tool::Locus => "A=(0,0)\nB=(2,0)\nk=Circle(A,B)\nP=Point(k)\nQ=Midpoint(P,A)",
+            _ => TOOL_SCENE,
         };
         let mut h = harness(scene);
         h.state_mut().select_tool(tool);
@@ -504,32 +506,36 @@ fn vector_polygon_copies_an_existing_polygon_with_its_own_anchor() {
 }
 
 #[test]
-fn move_picks_only_the_nearby_outline_of_conics_parts_and_functions() {
+fn move_picks_nearby_outlines_and_the_filled_sector() {
     let cases = [
         (
             "A=(-2,0)\nB=(2,0)\nC=(0,3)\nc=Ellipse(A,B,C)",
             "c",
             (-13.0_f64.sqrt(), 0.0),
             (0.0, 1.0),
+            false,
         ),
         (
             "A=(-3,0)\nB=(3,0)\nc=Semicircle(A,B)",
             "c",
             (0.0, 3.0),
             (0.0, -3.0),
+            false,
         ),
         (
             "A=(0,0)\nB=(3,0)\nC=(0,3)\nc=CircularSector(A,B,C)",
             "c",
             (1.5, 0.0),
             (1.5, 1.0),
+            true,
         ),
-        ("f(x)=x^2", "f", (1.0, 1.0), (1.0, 2.0)),
+        ("f(x)=x^2", "f", (1.0, 1.0), (1.0, 2.0), false),
     ];
-    for (script, label, near, far) in cases {
+    for (script, label, near, far, fills) in cases {
         let mut h = harness(script);
         click(&mut h, world(far.0, far.1));
-        assert_eq!(h.state().wb.selected, None, "{script}");
+        let expected = fills.then(|| h.state().wb.construction().id(label).unwrap());
+        assert_eq!(h.state().wb.selected, expected, "{script}");
         let mut pos = world(near.0, near.1);
         pos.y -= 3.0;
         click(&mut h, pos);

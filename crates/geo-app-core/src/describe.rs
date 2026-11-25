@@ -136,9 +136,33 @@ pub fn object_text(c: &Construction, id: Id) -> String {
         Value::Text => c.text(id).unwrap_or_default().to_owned(),
         // `GeoLocusStroke.toString` gives the label
         Value::Image | Value::PenStroke { .. } => c.label(id).to_owned(),
+        Value::Arc { length } => n2(length),
+        Value::Sector { area } => n2(area),
+        Value::Locus { .. } => locus_text(c, id),
         Value::PieChart => "PieChart".into(),
         Value::Number(value) if c.has_slider_bounds(id) => c.format_display_number(value),
         v => value_text(&v),
+    }
+}
+
+fn locus_text(c: &Construction, id: Id) -> String {
+    use geo_kernel::{Def, LocusDef};
+    if let Some(source) = c.construction_source(id) {
+        return source.to_owned();
+    }
+    let label = |id| c.label(id);
+    match c.def(id) {
+        Def::Locus(LocusDef::Path { point, mover }) => {
+            format!("Locus({}, {})", label(point), label(mover))
+        }
+        Def::Locus(LocusDef::Slider { point, slider }) => {
+            format!("Locus({}, {})", label(point), label(slider))
+        }
+        Def::Locus(LocusDef::Ode { point, source }) => {
+            format!("SolveODE({}, {})", label(source), label(point))
+        }
+        Def::Locus(LocusDef::SlopeField(source)) => format!("SlopeField({})", label(source)),
+        _ => c.label(id).to_owned(),
     }
 }
 
@@ -216,6 +240,9 @@ pub fn is_known(v: &Value) -> bool {
             | Value::Polygon { .. }
             | Value::PolyLine { .. }
             | Value::Conic { .. }
+            | Value::Arc { .. }
+            | Value::Sector { .. }
+            | Value::Locus { .. }
             | Value::Function
             | Value::FunctionNVar
             | Value::ImplicitCurve
@@ -365,4 +392,17 @@ fn canvas_list_algebra_formats_members_as_values() {
         object_text(&c, c.id("l").unwrap()),
         "{(1, 2), (3, 4), 3, {false, \"text\"}}"
     );
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_remaining_conic_parts_and_locus_have_algebra_values() {
+    let c = geo_kernel::script::load(
+        "A = (0, 0)\nB = (2, 0)\nC = (0, 2)\na = CircularArc(A, B, C)\ns = CircularSector(A, B, C)\n\
+         k = Circle(A, B)\nP = Point(k)\nQ = Midpoint(P, A)\nl = Locus(Q, P)",
+    )
+    .unwrap();
+    assert_eq!(object_text(&c, c.id("a").unwrap()), "3.14");
+    assert_eq!(object_text(&c, c.id("s").unwrap()), "3.14");
+    assert_eq!(object_text(&c, c.id("l").unwrap()), "Locus(Q, P)");
 }

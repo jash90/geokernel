@@ -15,7 +15,9 @@
         "flag = $inputBox(b, _)",
         "words = $inputBox(note, _)",
         "point = $inputBox(A, _)",
-        "empty = $inputBox(, _)"
+        "empty = $inputBox(, _)",
+        "ang = 30°",
+        "anglefield = $inputBox(ang, _)"
       ],
       "steps": [
         { "action": "initial" },
@@ -31,7 +33,9 @@
           "flag": { "type": "input_box", "defined": true, "text": "true" },
           "words": { "type": "input_box", "defined": true, "text": "x < y" },
           "point": { "type": "input_box", "defined": true, "text": "(2, 3)" },
-          "empty": { "type": "input_box", "defined": true, "text": "" }
+          "empty": { "type": "input_box", "defined": true, "text": "" },
+          "ang": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "anglefield": { "type": "input_box", "defined": true, "text": "30°" }
         },
         {
           "a": { "type": "number", "defined": true, "value": 3.5 },
@@ -42,7 +46,9 @@
           "flag": { "type": "input_box", "defined": true, "text": "true" },
           "words": { "type": "input_box", "defined": true, "text": "x < y" },
           "point": { "type": "input_box", "defined": true, "text": "(2, 3)" },
-          "empty": { "type": "input_box", "defined": true, "text": "" }
+          "empty": { "type": "input_box", "defined": true, "text": "" },
+          "ang": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "anglefield": { "type": "input_box", "defined": true, "text": "30°" }
         }
       ]
     }

@@ -300,6 +300,7 @@ fn render_geometry(
     let mut texts = String::new();
     let mut controls = String::new();
     let mut list_items_left = 4096;
+    let mut regions_left = 8;
 
     // Used to draw an "infinite" line as a segment longer than the view.
     let (mx, my) = (0.5 * (view.xmin + view.xmax), 0.5 * (view.ymin + view.ymax));
@@ -595,6 +596,33 @@ fn render_geometry(
                     }
                 }
             }
+            Value::Curve { .. } => {
+                for path in crate::plot::cartesian(c, id, &frame) {
+                    let mut points = String::new();
+                    for (x, y) in path {
+                        let _ = write!(points, "{x:.2},{y:.2} ");
+                    }
+                    let _ = writeln!(
+                        segments,
+                        r#"<polyline points="{}" fill="none"/>"#,
+                        points.trim_end()
+                    );
+                }
+            }
+            Value::FunctionNVar if regions_left > 0 && c.is_plane_inequality(id) => {
+                regions_left -= 1;
+                let tiles = crate::plot::inequality::tiles(c, id, &frame);
+                if !tiles.is_empty() {
+                    let _ = write!(polygons, r#"<path class="inequality" d=""#);
+                    for [left, top, right, bottom] in tiles {
+                        let _ = write!(
+                            polygons,
+                            "M{left:.2},{top:.2}H{right:.2}V{bottom:.2}H{left:.2}Z"
+                        );
+                    }
+                    let _ = writeln!(polygons, r#""/>"#);
+                }
+            }
             Value::List { .. } => {
                 use std::ops::ControlFlow;
                 if let Some(list) = c.elements(id) {
@@ -627,7 +655,9 @@ fn render_geometry(
             }
             Value::InputBox => {
                 let [x, y, width, height] = c.input_box_rect(id);
-                let (x, y) = label_offset(id).unwrap_or((x, y));
+                let box_position = c.input_box_style(id).position.map(f64::from);
+                let (label_x, y) = label_offset(id).unwrap_or((box_position[0], y));
+                let x = label_x + (x - box_position[0]);
                 let caption = escape(c.input_box_caption(id));
                 let text = escape(&c.input_box_text(id));
                 let _ = writeln!(
@@ -642,8 +672,8 @@ fn render_geometry(
                     let _ = writeln!(
                         controls,
                         r#"<text x="{:.2}" y="{:.2}">{caption}</text>"#,
-                        x,
-                        y - 4.0
+                        label_x,
+                        y + 20.0
                     );
                 }
             }
@@ -720,7 +750,6 @@ fn render_geometry(
             | Value::FunctionNVar
             | Value::HomogeneousPoint { .. }
             | Value::NormalizedPointAtInfinity { .. }
-            | Value::Curve { .. }
             | Value::Button
             | Value::Image
             | Value::PieChart
@@ -1059,7 +1088,9 @@ fn input_box_svg_draws_at_saved_position_with_escaped_text() {
         |_| true,
         |object| (object == id).then_some((48.0, 64.0)),
     );
-    assert!(svg.contains("<rect x=\"48.00\" y=\"64.00\""));
+    let x = 48.0 + c.input_box_rect(id)[0] - 30.0;
+    assert!(svg.contains(&format!("<rect x=\"{x:.2}\" y=\"64.00\"")));
+    assert!(svg.contains("<text x=\"48.00\" y=\"84.00\">field</text>"));
     assert!(svg.contains(">x &lt; y</text>"));
 }
 
@@ -1073,4 +1104,17 @@ fn canvas_list_svg_draws_anonymous_points_only() {
     assert_eq!(render(&["A", "l", "n"]).matches("<circle ").count(), 3);
     assert_eq!(render(&["l"]).matches("<circle ").count(), 2);
     assert_eq!(render(&["n"]).matches("<circle ").count(), 0);
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_remaining_svg_draws_a_cartesian_curve_and_a_boolean_region() {
+    let c =
+        crate::script::load("curve = Curve(t, t^2, t, -2, 2)\nregion(x,y) = y > x\nf(x,y) = x + y")
+            .unwrap();
+    let view = View::fit(&c);
+    let svg = |label: &str| render_visible(&c, view, 400, 300, |id| c.label(id) == label);
+    assert!(svg("curve").contains("<polyline"));
+    assert!(svg("region").contains("class=\"inequality\""));
+    assert!(!svg("f").contains("class=\"inequality\""));
 }

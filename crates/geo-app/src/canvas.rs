@@ -329,10 +329,27 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             | Tool::Checkbox
             | Tool::InputBox
             | Tool::CreateList
+            | Tool::Text
+            | Tool::PenStroke
     );
     // The show/hide tool shows hidden objects faintly and lets them be picked.
     let show_all = tool == Tool::ShowHide;
     let t = cam.transform(w, h);
+    if tool == Tool::PenStroke {
+        let finish = fed.late_release.or(fed.early_release);
+        if let Some(at) = fed.owned {
+            app.pen_samples.clear();
+            add_pen_sample(&mut app.pen_samples, &t, to_local(at));
+        }
+        if !app.pen_samples.is_empty() {
+            if let Some(at) = finish.or(response.hover_pos()) {
+                add_pen_sample(&mut app.pen_samples, &t, to_local(at));
+            }
+            if finish.is_some() {
+                finish_pen_stroke(app);
+            }
+        }
+    }
     // How far a pointer reaches (`App.getCapturingThreshold` by the
     // pointer's type): the hover is the mouse's; a press is its pointer's.
     let hover_reach = hit::Reach::of(&app.metrics, false);
@@ -489,6 +506,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let intents = gesture.end_frame(|origin| {
         let ((sx, sy), pt) = at_press(app, origin.egui());
         let c = app.wb.construction();
+        if tool == Tool::PenStroke {
+            return Grab::Nothing;
+        }
         if tool == Tool::CreateList {
             rect_from = Some((sx, sy));
             return Grab::Rect;
@@ -720,7 +740,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                                 _ => false,
                             }
                     })
-                    .take(257)
+                    .take(MAX_LIST_TOOL_MEMBERS + 1)
                     .collect();
                 create_list(app, hits);
             } else {
@@ -761,7 +781,14 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             // rule; the reference stores it when the tool is left).
             Tool::ZoomIn => zoom_click(app, &mut cam, ZOOM_TOOL, local, w, h),
             Tool::ZoomOut => zoom_click(app, &mut cam, 1.0 / ZOOM_TOOL, local, w, h),
-            Tool::MoveView => {}
+            Tool::MoveView | Tool::PenStroke => {}
+            Tool::Text => {
+                if app.tool.control_request().is_none() {
+                    app.control_fields = Default::default();
+                    app.control_focus = true;
+                    app.tool.begin_control(t.screen_to_world(local.0, local.1));
+                }
+            }
             Tool::CreateList => {
                 let c = app.wb.construction();
                 let hits = c
@@ -771,7 +798,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                             && hit::hit(c, id, &t, local, press_reach.threshold, &press_reach)
                                 .is_some()
                     })
-                    .take(257)
+                    .take(MAX_LIST_TOOL_MEMBERS + 1)
                     .collect();
                 create_list(app, hits);
             }
@@ -950,6 +977,17 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         },
     );
     input_box_editor(app, ui, rect);
+    if app.pen_samples.len() >= 2 {
+        let samples = app
+            .pen_samples
+            .iter()
+            .map(|&(x, y)| {
+                let (x, y) = t.world_to_screen(x, y);
+                rect.min + vec2(x as f32, y as f32)
+            })
+            .collect();
+        painter.add(egui::Shape::line(samples, Stroke::new(2.0, theme::TEXT)));
+    }
     preview(app, &painter, rect, &t, response.hover_pos());
     // The rectangle the zoom in tool drags out, snapped to the view's ratio
     // when it is near it (`updateSelectionRectangle`).
@@ -1300,7 +1338,9 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
             };
             let editable = matches!(
                 c.def(link),
-                geo_kernel::Def::Number(_) | geo_kernel::Def::Boolean(_)
+                geo_kernel::Def::Number(_)
+                    | geo_kernel::Def::Angle(_)
+                    | geo_kernel::Def::Boolean(_)
             ) || c.is_independent_text(link);
             editable.then(|| {
                 (
@@ -1336,10 +1376,41 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     app.apply_outcome(outcome);
 }
 
+const MAX_PEN_SAMPLES: usize = 512;
+
+fn add_pen_sample(samples: &mut Vec<(f64, f64)>, t: &ViewTransform, (x, y): (f64, f64)) {
+    if samples.len() == MAX_PEN_SAMPLES {
+        return;
+    }
+    let (wx, wy) = t.screen_to_world(x, y);
+    if samples.last().is_none_or(|&(last_x, last_y)| {
+        let (last_x, last_y) = t.world_to_screen(last_x, last_y);
+        (x - last_x).hypot(y - last_y) >= 1.0
+    }) {
+        samples.push((wx, wy));
+    }
+}
+
+fn finish_pen_stroke(app: &mut App) {
+    use std::fmt::Write as _;
+    let c = app.wb.construction();
+    let label = geo_app_core::labels::next_label(Kind::PenStroke, |label| c.id(label).is_some());
+    let mut line = format!("{label} = PenStroke(");
+    for (i, (x, y)) in app.pen_samples.drain(..).enumerate() {
+        if i != 0 {
+            line.push_str(", ");
+        }
+        let _ = write!(line, "({x}, {y})");
+    }
+    line.push(')');
+    app.apply_outcome(crate::tools::Outcome::Run(vec![line]));
+}
+
+const MAX_LIST_TOOL_MEMBERS: usize = 256;
+
 fn create_list(app: &mut App, mut ids: Vec<Id>) {
     use geo_kernel::Def;
-    const MAX_TOOL_MEMBERS: usize = 256;
-    if !(2..=MAX_TOOL_MEMBERS).contains(&ids.len()) {
+    if !(2..=MAX_LIST_TOOL_MEMBERS).contains(&ids.len()) {
         return;
     }
     let c = app.wb.construction();
@@ -1408,13 +1479,20 @@ fn input_box_editor(app: &mut App, ui: &mut Ui, canvas: Rect) {
                     app.wb.set_number(link, value);
                 }
             }
+            geo_kernel::Def::Angle(_) => {
+                let value = text.trim().trim_end_matches('°');
+                if let Some(value) = crate::app::parse_number(value) {
+                    app.wb.set_number(link, value.to_radians());
+                }
+            }
             geo_kernel::Def::Boolean(_) => {
                 if let Ok(value) = text.trim().parse::<bool>() {
                     app.wb.set_boolean(link, value);
                 }
             }
             _ if c.is_independent_text(link) && text != c.input_box_text(id) => {
-                let _: Result<(), _> = app.wb.run_line(&format!("{} = {text:?}", c.label(link)));
+                let literal = geo_kernel::script::text::literal(&text);
+                let _: Result<(), _> = app.wb.run_line(&format!("{} = {literal}", c.label(link)));
             }
             _ => {}
         }
@@ -1672,4 +1750,24 @@ fn style_bar(app: &mut App, ui: &mut Ui, rect: Rect, cam: &mut Camera) {
             }
         }
     }
+}
+
+#[cfg(test)]
+#[test]
+fn canvas_remaining_pen_sample_count_is_bounded() {
+    let mut samples = Vec::new();
+    let view = ViewTransform::new(
+        geo_kernel::svg::View {
+            xmin: -5.0,
+            ymin: -5.0,
+            xmax: 5.0,
+            ymax: 5.0,
+        },
+        600.0,
+        400.0,
+    );
+    for i in 0..(MAX_PEN_SAMPLES * 3) {
+        add_pen_sample(&mut samples, &view, (i as f64, 0.0));
+    }
+    assert_eq!(samples.len(), MAX_PEN_SAMPLES);
 }

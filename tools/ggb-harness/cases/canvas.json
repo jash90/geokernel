@@ -1,0 +1,6 @@
+{
+  "cases": [
+    {"id": "canvas-parts-001", "group": "canvas", "script": ["A = (0, 0)", "B = (2, 0)", "C = (0, 2)", "a = CircularArc(A, B, C)", "s = CircularSector(A, B, C)", "k = Circle(A, B)", "P = Point(k)", "Q = Midpoint(P, A)", "l = Locus(Q, P)", "chart = PieChart({1, 2}, (4, 0), 2)"], "steps": [{"action": "initial"}]},
+    {"id": "canvas-drawing-001", "group": "canvas", "script": ["curve = Curve(t, t^2, t, -2, 2)", "region(x,y) = y > x", "f(x,y) = x + y", "text1 = \"Placed text\"", "stroke1 = PenStroke((0, 0), (1, -1))"], "steps": [{"action": "initial"}]}
+  ]
+}

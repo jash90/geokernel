@@ -246,13 +246,19 @@ impl Construction {
         let style = self.input_box_style(id);
         let [x, y] = style.position.map(f64::from);
         let width = (16.0 * 0.81 * f64::from(style.length.clamp(1, 100))).round();
-        [x, y, width, 30.0]
+        let label_width =
+            geo_latex::plain_width(self.input_box_caption(id), 16.0, geo_latex::Face::default());
+        [x + f64::from(label_width) + 2.0, y, width, 30.0]
     }
 
     pub fn input_box_caption(&self, id: Id) -> &str {
         if self.drawing_style(id).show_label {
-            self.control(id)
-                .map_or("", |control| bounded_input_box_text(&control.caption))
+            let caption = self
+                .control(id)
+                .map(|control| control.caption.as_str())
+                .filter(|caption| !caption.is_empty())
+                .unwrap_or_else(|| self.label(id));
+            bounded_input_box_text(caption)
         } else {
             ""
         }
@@ -263,6 +269,9 @@ impl Construction {
             return "".into();
         };
         match self.value(link) {
+            crate::Value::Number(n) if self.kind(link) == Kind::Angle => {
+                format!("{}°", self.format_display_number(n.to_degrees())).into()
+            }
             crate::Value::Number(n) => n.to_string().into(),
             crate::Value::Bool(b) => if b { "true" } else { "false" }.into(),
             crate::Value::Point { x, y } | crate::Value::Vector { x, y } => {
@@ -507,6 +516,22 @@ mod tests {
     }
 
     #[test]
+    fn input_box_caption_leaves_room_to_the_left_of_the_field() {
+        let c = crate::script::load("field = $inputBox(, _56616c7565)\nempty = $inputBox(, _)")
+            .unwrap();
+        let id = c.id("field").unwrap();
+        assert_eq!(c.input_box_caption(id), "Value");
+        assert!(c.input_box_rect(id)[0] > 30.0);
+        assert_eq!(c.input_box_caption(c.id("empty").unwrap()), "empty");
+    }
+
+    #[test]
+    fn input_box_shows_a_linked_angle_in_degrees() {
+        let c = crate::script::load("a = 30°\nfield = $inputBox(a, _)").unwrap();
+        assert_eq!(c.input_box_text(c.id("field").unwrap()), "30°");
+    }
+
+    #[test]
     fn input_box_bounds_limit_large_saved_widths() {
         let c = crate::script::load(
             "field = $inputBox(, _)\n$inputBoxStyle(_6669656c64, 40, 50, 2147483647)",
@@ -514,6 +539,8 @@ mod tests {
         .unwrap();
         let field = c.id("field").unwrap();
         assert_eq!(c.input_box_style(field).length, i32::MAX);
-        assert_eq!(c.input_box_rect(field), [40.0, 50.0, 1296.0, 30.0]);
+        let [x, y, width, height] = c.input_box_rect(field);
+        assert!(x > 40.0);
+        assert_eq!([y, width, height], [50.0, 1296.0, 30.0]);
     }
 }

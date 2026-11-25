@@ -61,6 +61,7 @@ pub enum Tool {
     Distance,
     Area,
     Slope,
+    Locus,
     CreateList,
     ReflectLine,
     ReflectPoint,
@@ -71,6 +72,8 @@ pub enum Tool {
     Slider,
     Checkbox,
     InputBox,
+    Text,
+    PenStroke,
     MoveView,
     ZoomIn,
     ZoomOut,
@@ -122,6 +125,7 @@ pub const GROUPS: &[&[Tool]] = &[
         Tool::Area,
         Tool::Slope,
         Tool::CreateList,
+        Tool::Locus,
     ],
     &[
         Tool::ReflectLine,
@@ -131,7 +135,13 @@ pub const GROUPS: &[&[Tool]] = &[
         Tool::Translate,
         Tool::Dilate,
     ],
-    &[Tool::Slider, Tool::Checkbox, Tool::InputBox],
+    &[
+        Tool::Slider,
+        Tool::Checkbox,
+        Tool::InputBox,
+        Tool::Text,
+        Tool::PenStroke,
+    ],
     &[
         Tool::MoveView,
         Tool::ZoomIn,
@@ -171,6 +181,8 @@ impl Tool {
                 | Tool::Checkbox
                 | Tool::InputBox
                 | Tool::CreateList
+                | Tool::Text
+                | Tool::PenStroke
                 | Tool::MoveView
                 | Tool::ZoomIn
                 | Tool::ZoomOut
@@ -179,6 +191,21 @@ impl Tool {
         )
     }
 }
+
+pub(crate) fn locus_pick_is_valid(
+    c: &geo_kernel::Construction,
+    first: Option<&Pick>,
+    id: geo_kernel::Id,
+) -> bool {
+    match first {
+        Some(first) => c
+            .id(first.label())
+            .is_some_and(|point| c.can_trace_locus(point, id)),
+        None => c.kind(id) == Kind::Point && !c.def(id).is_free(),
+    }
+}
+
+pub const MAX_PLACED_TEXT_CHARS: usize = 4096;
 
 /// One click's contribution to a tool: an object of the construction (a
 /// point placed by the click is added before it is picked).
@@ -357,8 +384,10 @@ impl ToolState {
     }
 
     pub fn begin_control(&mut self, at: (f64, f64)) {
-        if matches!(self.tool, Tool::Slider | Tool::Checkbox | Tool::InputBox)
-            && self.control_at.is_none()
+        if matches!(
+            self.tool,
+            Tool::Slider | Tool::Checkbox | Tool::InputBox | Tool::Text
+        ) && self.control_at.is_none()
         {
             self.control_at = Some(at);
         }
@@ -445,6 +474,34 @@ impl ToolState {
             },
         };
         Outcome::Run(vec![definition, style.to_string()])
+    }
+
+    pub fn finish_text(&mut self, text: &str, taken: impl Fn(&str) -> bool) -> Outcome {
+        use geo_kernel::kernel::text::{TextOverrides, TextPosition};
+        use geo_kernel::script::text::{literal, Properties};
+
+        if self.tool != Tool::Text || text.trim().is_empty() {
+            return Outcome::Ignored;
+        }
+        let Some((x, y)) = self.control_at.take() else {
+            return Outcome::Ignored;
+        };
+        let label = next_label(Kind::Text, taken);
+        let text = text
+            .char_indices()
+            .nth(MAX_PLACED_TEXT_CHARS)
+            .map_or(text, |(at, _)| &text[..at]);
+        let properties = Properties {
+            label: &label,
+            overrides: TextOverrides {
+                position: Some(TextPosition::World { x, y }),
+                ..TextOverrides::default()
+            },
+        };
+        Outcome::Run(vec![
+            format!("{label} = {}", literal(text)),
+            properties.to_string(),
+        ])
     }
 
     fn picked(&self, label: &str) -> bool {

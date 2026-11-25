@@ -991,9 +991,14 @@ fn a_nearby_track_press_advances_one_notch_and_then_drags_the_value() {
 #[test]
 fn input_box_canvas_updates_slider_and_dependents() {
     let mut h = harness("a = Slider(0, 8, 0.5)\nb = 2 a\nfield = $inputBox(a, _)\n$inputBoxStyle(_6669656c64, 124, 88, 12)");
-    let pos = at(ALGEBRA_WIDTH + SPLITTER + 140.0, TOOLBAR_HEIGHT + 101.0);
+    let c = h.state().wb.construction();
+    let field = c.id("field").unwrap();
+    let [x, y, ..] = c.input_box_rect(field);
+    let pos = at(
+        ALGEBRA_WIDTH + SPLITTER + x as f32 + 10.0,
+        TOOLBAR_HEIGHT + y as f32 + 13.0,
+    );
     click(&mut h, pos);
-    let field = h.state().wb.construction().id("field").unwrap();
     assert_eq!(h.state().wb.selected, Some(field));
     h.input_mut().events.push(Event::Text("3.5".into()));
     h.step();
@@ -1006,24 +1011,32 @@ fn input_box_canvas_updates_slider_and_dependents() {
 
 #[test]
 fn input_box_tool_places_a_control() {
-    let mut h = harness("a = 1");
-    let tool = Tool::all()
-        .find(|tool| tool.caption() == "Pole tekstowe")
-        .expect("input box tool");
-    h.state_mut().select_tool(tool);
-    click(
-        &mut h,
-        at(ALGEBRA_WIDTH + SPLITTER + 124.0, TOOLBAR_HEIGHT + 88.0),
-    );
-    h.get_by_label("OK").click();
-    h.run();
-    let c = h.state().wb.construction();
-    let field = c
-        .ids()
-        .find(|&id| c.kind(id) == geo_kernel::Kind::InputBox)
-        .unwrap();
-    assert!(matches!(c.def(field), geo_kernel::Def::InputBox(None)));
-    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    for link in [None, Some("a")] {
+        let mut h = harness("a = 1");
+        h.state_mut().select_tool(Tool::InputBox);
+        click(
+            &mut h,
+            at(ALGEBRA_WIDTH + SPLITTER + 124.0, TOOLBAR_HEIGHT + 88.0),
+        );
+        if let Some(link) = link {
+            h.get_by_label("Powiązany obiekt").click();
+            h.step();
+            h.input_mut().events.push(Event::Text(link.into()));
+            h.step();
+        }
+        h.get_by_label("OK").click();
+        h.run();
+        let c = h.state().wb.construction();
+        let field = c
+            .ids()
+            .find(|&id| c.kind(id) == geo_kernel::Kind::InputBox)
+            .unwrap();
+        assert_eq!(
+            c.def(field),
+            geo_kernel::Def::InputBox(link.and_then(|label| c.id(label)))
+        );
+        assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    }
 }
 
 #[test]
@@ -1049,10 +1062,15 @@ fn input_box_canvas_edits_a_boolean_and_a_text_literal() {
          $inputBoxStyle(_666c6167, 124, 128, 8)\n\
          $inputBoxStyle(_776f726473, 124, 168, 20)",
     );
-    for (label, y, data) in [("flag", 140.0, "false"), ("words", 180.0, "two \"quotes\"")] {
+    for (label, data) in [("flag", "false"), ("words", "two \"quotes\"")] {
+        let c = h.state().wb.construction();
+        let [x, y, ..] = c.input_box_rect(c.id(label).unwrap());
         click(
             &mut h,
-            at(ALGEBRA_WIDTH + SPLITTER + 144.0, TOOLBAR_HEIGHT + y),
+            at(
+                ALGEBRA_WIDTH + SPLITTER + x as f32 + 10.0,
+                TOOLBAR_HEIGHT + y as f32 + 13.0,
+            ),
         );
         assert_eq!(
             h.state().input_box_edit.as_ref().map(|e| e.0.as_str()),
@@ -1100,4 +1118,73 @@ fn canvas_list_tool_creates_a_live_list_from_the_selection_rectangle() {
         geo_app_core::describe::object_text(c, c.id("l1").unwrap()),
         "{(1, 1), (2, 2)}"
     );
+}
+
+#[test]
+fn canvas_remaining_text_tool_creates_text_at_the_click() {
+    let mut h = harness("");
+    let tool = Tool::all()
+        .find(|tool| tool.caption() == "Tekst")
+        .expect("text tool");
+    h.state_mut().select_tool(tool);
+    click(&mut h, world(2.0, 1.0));
+    h.input_mut().events.push(Event::Text("Placed text".into()));
+    h.step();
+    h.get_by_label("OK").click();
+    h.run();
+    let c = h.state().wb.construction();
+    let text = c.id("text1").unwrap();
+    assert_eq!(c.text(text), Some("Placed text"));
+    assert_eq!(
+        c.text_position(text),
+        Some(geo_kernel::kernel::text::TextPosition::World { x: 2.0, y: 1.0 })
+    );
+    let rect = h
+        .state()
+        .text_rects
+        .borrow()
+        .iter()
+        .find(|(id, _)| *id == text)
+        .unwrap()
+        .1;
+    h.state_mut().select_tool(Tool::Move);
+    click(
+        &mut h,
+        at(
+            ALGEBRA_WIDTH + SPLITTER + (rect.min.x + rect.max.x) * 0.5,
+            TOOLBAR_HEIGHT + (rect.min.y + rect.max.y) * 0.5,
+        ),
+    );
+    assert_eq!(h.state().wb.selected, Some(text));
+}
+
+#[test]
+fn canvas_remaining_pen_tool_tracks_drag_and_is_one_undo_step() {
+    let mut h = harness("");
+    let tool = Tool::all()
+        .find(|tool| tool.caption() == "Pióro")
+        .expect("pen tool");
+    h.state_mut().select_tool(tool);
+    drag(&mut h, world(0.0, 0.0), world(1.0, -1.0));
+    let c = h.state().wb.construction();
+    let points = c.stroke(c.id("stroke1").unwrap()).unwrap();
+    assert!(points.defined_points().count() >= 2);
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+}
+
+#[test]
+fn canvas_remaining_locus_tool_uses_the_dependent_point_then_its_driver() {
+    let mut h =
+        harness("A = (0, 0)\nB = (4, 0)\nk = Circle(A, B)\nP = Point(k)\nQ = Midpoint(A, P)");
+    let tool = Tool::all()
+        .find(|tool| tool.caption() == "Miejsce geometryczne")
+        .expect("locus tool");
+    h.state_mut().select_tool(tool);
+    let (x, y) = point(&h, "Q");
+    click(&mut h, world(x, y));
+    let (x, y) = point(&h, "P");
+    click(&mut h, world(x, y));
+    let c = h.state().wb.construction();
+    assert!(c.locus(c.id("locus1").unwrap()).unwrap().defined);
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
 }

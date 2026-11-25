@@ -1465,7 +1465,7 @@ fn a_thousand_canvas_input_boxes_fit_the_frame_budget() {
     elapsed.sort_by(f64::total_cmp);
     let median = elapsed[elapsed.len() / 2];
     println!("input boxes: {median:.3} ms, hidden {before:?}, visible {shown:?}");
-    assert_eq!(shown.texts - before.texts, 1000, "{shown:?}");
+    assert_eq!(shown.texts - before.texts, 2000, "{shown:?}");
     assert!(
         shown.vertices > before.vertices
             && shown.vertices <= 60_000
@@ -1492,9 +1492,50 @@ fn canvas_list_points_are_drawn_with_a_frame_limit() {
         String::new(),
     )
     .settled(2);
+    println!("list: hidden {hidden:?}, drawn {drawn:?}");
     assert!(drawn.vertices > hidden.vertices, "{drawn:?}");
     assert!(
         drawn.vertices <= 60_000 && drawn.shapes <= 4700,
         "{drawn:?}"
     );
+}
+
+#[test]
+fn canvas_remaining_curve_and_region_drawings_fit_the_frame_budget() {
+    for (definition, name) in [
+        ("curve = Curve(t, t^2, t, -2, 2)", "curve"),
+        ("region(x,y) = y > x", "region"),
+    ] {
+        let (mut script, mid) = grid(83);
+        script.push_str(definition);
+        script.push('\n');
+        let mut window = Window::with(&script, mid.clone());
+        let visible = window.settled(2);
+        script.push_str(&format!("SetVisibleInView({name}, 1, false)"));
+        let hidden = Window::with(&script, mid).settled(2);
+        println!("{name}: hidden {hidden:?}, visible {visible:?}");
+        assert!(
+            visible.vertices > hidden.vertices,
+            "{name}: {visible:?} {hidden:?}"
+        );
+        assert!(
+            visible.vertices <= hidden.vertices + 5_000,
+            "{name}: {visible:?}"
+        );
+        assert!(visible.allocs <= hidden.allocs + 64, "{name}: {visible:?}");
+        if !cfg!(debug_assertions) {
+            let mut elapsed = [0.0_f64; 21];
+            for ms in &mut elapsed {
+                let start = std::time::Instant::now();
+                window.step(Vec::new());
+                *ms = start.elapsed().as_secs_f64() * 1000.0;
+            }
+            elapsed.sort_by(f64::total_cmp);
+            assert!(
+                elapsed[10] <= 4.0,
+                "{name}: {:.3} ms (budget 4 ms)",
+                elapsed[10]
+            );
+        }
+    }
 }

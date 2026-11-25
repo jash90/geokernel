@@ -180,6 +180,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     let charts = charts::Frame::new(painter, rect, c, t, scene.generation);
     let mut curves = None;
     let mut list_items_left = 512;
+    let mut regions_left = 2;
     for layer in c.drawing_layers() {
         if c.images().len() != 0 {
             image::paint(painter, rect, c, t, Some(layer), scene.visible, scene.ghost);
@@ -191,7 +192,12 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             t,
             scene,
             layer,
-            (&mut curves, charts.as_ref(), &mut list_items_left),
+            (
+                &mut curves,
+                charts.as_ref(),
+                &mut list_items_left,
+                &mut regions_left,
+            ),
         );
     }
 }
@@ -203,9 +209,10 @@ fn paint_layer<'c>(
     t: &ViewTransform,
     scene: &Scene,
     layer: u8,
-    (curves, charts, list_items_left): (
+    (curves, charts, list_items_left, regions_left): (
         &mut Option<crate::curves::Curves>,
         Option<&charts::Frame<'_>>,
+        &mut usize,
         &mut usize,
     ),
 ) {
@@ -265,6 +272,7 @@ fn paint_layer<'c>(
     let mut labels: Vec<Label<'c>> = Vec::new();
     // Curved outlines are tessellated and kept between frames.
     let is_curve = |id: Id| match c.value(id) {
+        Value::Curve { .. } => true,
         Value::Function => !matches!(c.def(id), geo_kernel::Def::Chart(_)),
         Value::Conic { .. } | Value::Arc { .. } | Value::Sector { .. } | Value::ImplicitCurve => {
             true
@@ -726,6 +734,23 @@ fn paint_layer<'c>(
                     ));
                 }
             }
+        } else if let Value::FunctionNVar = value {
+            if *regions_left > 0 && c.is_plane_inequality(id) {
+                *regions_left -= 1;
+                let frame = geo_kernel::plot::Frame::fit(v, w, h);
+                let place = |sx, sy| {
+                    let (x, y) = frame.screen_to_world(sx, sy);
+                    p(x, y)
+                };
+                let mut mesh = Mesh::default();
+                let fill = color(id).gamma_multiply(0.18);
+                for [x0, y0, x1, y1] in geo_kernel::plot::inequality::tiles(c, id, &frame) {
+                    mesh.add_colored_rect(Rect::from_min_max(place(x0, y0), place(x1, y1)), fill);
+                }
+                if !mesh.is_empty() {
+                    painter.add(mesh);
+                }
+            }
         } else if let Value::List { .. } = value {
             use std::ops::ControlFlow;
             if let Some(list) = c.elements(id).filter(|_| *list_items_left > 0) {
@@ -748,6 +773,7 @@ fn paint_layer<'c>(
                 });
             }
         } else if let Value::InputBox = value {
+            has_text |= !c.input_box_caption(id).is_empty();
             let [x, y, width, height] = c.input_box_rect(id).map(|v| v as f32);
             let widget = Rect::from_min_size(origin + vec2(x, y), vec2(width, height));
             if rect.intersects(widget) {
@@ -765,16 +791,6 @@ fn paint_layer<'c>(
                     FontId::proportional(LABEL_FONT),
                     color(id),
                 );
-                let caption = c.input_box_caption(id);
-                if !caption.is_empty() {
-                    painter.text(
-                        widget.left_top() - vec2(0.0, 3.0),
-                        Align2::LEFT_BOTTOM,
-                        caption,
-                        FontId::proportional(LABEL_FONT),
-                        color(id),
-                    );
-                }
             }
         } else if let Value::Bool(checked) = value {
             if let Some((x, y)) = c.checkbox_position(id) {
@@ -844,7 +860,10 @@ fn paint_layer<'c>(
         }
     }
     if has_text {
-        let texts = ids.iter().copied().filter(|&id| c.value(id) == Value::Text);
+        let texts = ids
+            .iter()
+            .copied()
+            .filter(|&id| matches!(c.value(id), Value::Text | Value::InputBox));
         text::paint(painter, rect, c, t, texts, color, scene);
     }
     let font = FontId::proportional(LABEL_FONT);

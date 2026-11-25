@@ -632,6 +632,35 @@ impl<'a> Cartesian<'a> {
     }
 }
 
+/// Samples a Cartesian curve with one shared expression allowance and clips
+/// each continuous run to the frame.
+pub fn plot(c: &Construction, id: Id, frame: &crate::plot::Frame) -> Vec<crate::plot::Path> {
+    let deadline = crate::expr::work_done().saturating_add(crate::plot::DRAW_DEADLINE);
+    crate::expr::with_work_deadline(deadline, || {
+        const STEPS: u32 = 256;
+        let Some(curve) = Cartesian::new(c, id) else {
+            return Vec::new();
+        };
+        if !frame.resolves() {
+            return Vec::new();
+        }
+        let sample = |i: u32| {
+            let f = f64::from(i) / f64::from(2 * STEPS);
+            curve.value(curve.start * (1.0 - f) + curve.end * f)
+        };
+        let mut cutter = crate::plot::Cutter::new(frame);
+        cutter.move_to(sample(0));
+        for i in 1..=STEPS {
+            if crate::expr::work_done() >= deadline || !curve.has_budget() {
+                break;
+            }
+            cutter.line_to(sample(2 * i - 1));
+            cutter.line_to(sample(2 * i));
+        }
+        cutter.finish()
+    })
+}
+
 impl Construction {
     /// Evaluates a Cartesian curve at its parameter and keeps finite points.
     pub fn curve_point(&self, id: Id, parameter: f64) -> Option<(f64, f64)> {

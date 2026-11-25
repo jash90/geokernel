@@ -274,7 +274,57 @@ fn indexed_advance(text: &str, size: f64) -> f64 {
     width.round()
 }
 
+#[cfg(test)]
+#[test]
+fn text_pixel_bounds_measure_only_the_bounded_unicode_prefix() {
+    let prefix = "x".repeat(4095);
+    let c = crate::script::load(&format!(
+        "head = \"{prefix}\"\nfull = \"{prefix}é{}\"",
+        "x".repeat(4096)
+    ))
+    .unwrap();
+    let bounds = |label| {
+        c.text_pixel_rect(c.id(label).unwrap(), |x, y| (x, y))
+            .unwrap()
+    };
+    assert_eq!(bounds("head"), bounds("full"));
+}
+
 impl Construction {
+    /// Painted text bounds in pixels for callers without a text layout cache.
+    pub fn text_pixel_rect(
+        &self,
+        id: Id,
+        to_pixels: impl Fn(f64, f64) -> (f64, f64),
+    ) -> Option<[f32; 4]> {
+        let source = self.text(id).filter(|text| !text.is_empty())?;
+        let source = &source[..source.floor_char_boundary(source.len().min(4096))];
+        let style = self.text_presentation(id)?;
+        let (x, y) = style.pixel_anchor(self, to_pixels)?;
+        let size = style.drawing_size(16.0);
+        let face = geo_latex::Face {
+            bold: style.bold,
+            italic: style.italic,
+            monospace: false,
+        };
+        let (extent, baseline) = if style.latex {
+            (
+                geo_latex::layout(source, size, geo_latex::Style::Display, face).size(),
+                0.0,
+            )
+        } else {
+            let lines = geo_latex::plain_lines(source, size, face);
+            let width = lines
+                .iter()
+                .map(|(width, ..)| *width)
+                .fold(0.0_f32, f32::max);
+            ([width, size * 1.2 * lines.len() as f32], size * 1.2)
+        };
+        let [x, y] = style.aligned_top_left([x as f32, y as f32], extent, baseline, 0.0);
+        let [width, height] = extent;
+        (width > 0.0 && height > 0.0).then_some([x, y, x + width, y + height])
+    }
+
     /// How to display a text. An anchor point is read from the live construction.
     pub fn text_presentation(&self, id: Id) -> Option<TextPresentation> {
         if self.defs.get(id.0)?.kind() != Kind::Text {

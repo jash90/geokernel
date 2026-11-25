@@ -56,7 +56,7 @@ impl Closure {
             .chain(
                 ids.iter()
                     .copied()
-                    .filter(|&a| matches!(c.value(a), Value::Function)),
+                    .filter(|&a| matches!(c.value(a), Value::Function | Value::Curve { .. })),
             )
             .map(|a| fingerprint(c, a, &ids, id))
             .collect();
@@ -252,6 +252,7 @@ fn feed_value(v: &Value, out: &mut dyn FnMut(u64)) {
         Value::PolyLine { length } => all(10, &[length]),
         // Its definition is in the fingerprints.
         Value::Function => all(12, &[]),
+        Value::Curve { start, end } => all(22, &[start, end]),
         Value::Undefined => all(13, &[]),
         Value::Arc { length } => all(19, &[length]),
         Value::Sector { area } => all(20, &[area]),

@@ -152,6 +152,8 @@ pub struct App {
     /// The text of the number dialog.
     pub number_text: String,
     pub control_fields: [String; 3],
+    pub control_focus: bool,
+    pub pen_samples: Vec<(f64, f64)>,
     /// The label and current contents of the active canvas editor.
     pub input_box_edit: Option<(String, String, bool)>,
     /// Where the regions were in the last frame.
@@ -249,6 +251,8 @@ impl App {
             style_bar: false,
             number_text: String::new(),
             control_fields: Default::default(),
+            control_focus: false,
+            pen_samples: Vec::new(),
             input_box_edit: None,
             regions: Regions::new(Rect::ZERO, false, &Metrics::desktop()),
             overlays: Overlays::new(),
@@ -345,6 +349,7 @@ impl App {
     /// tool switch, a cancelled number dialog, a failed final step;
     /// `Kernel.restoreStateForInitNewMode`).
     pub fn reset_tool(&mut self) {
+        self.pen_samples.clear();
         self.tool.reset();
         self.tool_press = None;
         self.wb.cancel_tool_use();

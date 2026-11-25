@@ -156,6 +156,22 @@ impl LocusData {
 }
 
 impl Construction {
+    /// Checks the live inputs a graphics tool can use for a tracing locus.
+    pub fn can_trace_locus(&self, point: Id, driver: Id) -> bool {
+        let def = match self.kind(driver) {
+            Kind::Point => LocusDef::Path {
+                point,
+                mover: driver,
+            },
+            Kind::Number => LocusDef::Slider {
+                point,
+                slider: driver,
+            },
+            _ => return false,
+        };
+        def.check(self).is_ok()
+    }
+
     /// The points of the locus `id`; `None` for any other object.
     pub fn locus(&self, id: Id) -> Option<&LocusData> {
         let id = self.conditional_source(id)?;

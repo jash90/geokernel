@@ -35,6 +35,14 @@ const LANDED: &[(u8, &[&str])] = &[
     (16, &["tool_input_box_places_empty_widget"]),
     (17, &["tool_create_list_from_rectangle"]),
     (
+        18,
+        &[
+            "tool_text_places_literal",
+            "tool_pen_records_drag",
+            "tool_locus_uses_path_point",
+        ],
+    ),
+    (
         1,
         &[
             "time_gate_early_move_ignored",
@@ -353,12 +361,14 @@ fn tool_name(mode: i64) -> Option<&'static str> {
         11 => "circle3",
         15 => "segment",
         16 => "polygon",
+        17 => "text",
         18 => "ray",
         19 => "midpoint",
         36 => "angle",
         40 => "move_view",
         41 => "zoom_in",
         42 => "zoom_out",
+        47 => "locus",
         12 => "conic5",
         20 => "circular_arc",
         21 => "circular_sector",
@@ -373,6 +383,7 @@ fn tool_name(mode: i64) -> Option<&'static str> {
         56 => "hyperbola",
         57 => "parabola",
         61 => "input_box",
+        62 => "pen_stroke",
         65 => "polyline",
         70 => "vector_polygon",
         71 => "create_list",
@@ -427,6 +438,7 @@ fn frame_events(
             t["id"] = json!(id);
             vec![t]
         }
+        "text" => vec![json!({"type": "text", "text": e["text"]})],
         "key" => {
             let key = e["key"].as_str().ok_or("a key event names no key")?;
             vec![json!({"type": "key", "key": key})]
@@ -1160,7 +1172,7 @@ fn the_observed_pointer_scenarios_replay() {
         count += 1;
     }
     assert_eq!(count, names.len());
-    assert_eq!((replayed, ours), (95, 3), "scenarios replayed");
+    assert_eq!((replayed, ours), (98, 3), "scenarios replayed");
     assert_eq!(
         skipped.into_iter().collect::<Vec<_>>(),
         [(5, 1), (6, 1), (8, 1)],

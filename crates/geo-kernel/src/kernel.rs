@@ -5292,6 +5292,11 @@ impl Construction {
         expr::relation_reports(self, id)
     }
 
+    /// Whether a function of two coordinates defines a filled plane region.
+    pub fn is_plane_inequality(&self, id: Id) -> bool {
+        expr::inequality::is_inequality(self, id)
+    }
+
     /// Evaluates a two-variable function at the given coordinates.
     pub fn function_value_xy(&self, id: Id, x: f64, y: f64) -> Option<f64> {
         if !matches!(self.value(id), Value::FunctionNVar) {

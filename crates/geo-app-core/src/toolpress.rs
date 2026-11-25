@@ -174,6 +174,17 @@ impl App {
 
     /// Whether the object can participate in the active tool's next pick.
     pub fn accepts_tool_hit(&self, id: Id) -> bool {
+        let c = self.wb.construction();
+        if self.tool.tool() == Tool::Locus {
+            let possible = if self.tool.picks().is_empty() {
+                c.kind(id) == Kind::Point && !c.def(id).is_free()
+            } else {
+                c.path_state(id).is_some() || c.has_slider_bounds(id)
+            };
+            if !possible {
+                return false;
+            }
+        }
         self.tool
             .accepts_object(self.wb.construction().label(id), self.tool_pick_kind(id))
     }
@@ -186,7 +197,12 @@ impl App {
         let accepts = |id| self.accepts_tool_hit(id);
         if matches!(
             tool,
-            Tool::Area | Tool::Slope | Tool::Intersect | Tool::Parabola | Tool::VectorFromPoint
+            Tool::Area
+                | Tool::Slope
+                | Tool::Intersect
+                | Tool::Parabola
+                | Tool::VectorFromPoint
+                | Tool::Locus
         ) && id.is_none_or(|id| !accepts(id))
         {
             id = hit::pick(c, t, pos, reach, None, |id| {
@@ -237,6 +253,11 @@ impl App {
             {
                 return Outcome::Ignored;
             }
+        }
+        if tool == Tool::Locus
+            && id.is_some_and(|id| !crate::tools::locus_pick_is_valid(c, picks.first(), id))
+        {
+            return Outcome::Ignored;
         }
         let hit = id.map(|id| (c.label(id).to_owned(), self.tool_pick_kind(id)));
         let new_point = if self.tool.accepts_new_point()

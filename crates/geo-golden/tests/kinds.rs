@@ -59,7 +59,7 @@ use geo_app_core::interact::ViewTransform;
 use geo_golden::table::Table;
 use geo_golden::{gaps, model, repo_root};
 use geo_kernel::svg::{self, View};
-use geo_kernel::{script, Construction, Id, Value};
+use geo_kernel::{script, Construction, Id, Kind, Value};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
@@ -1064,6 +1064,8 @@ fn has_something_to_draw(lines: &[String]) -> bool {
     };
     c.ids().filter(|id| !before.contains(id)).all(|id| {
         stroke_has_points(&c, id)
+            && (c.kind(id) != Kind::Text || c.text(id).is_some_and(|text| !text.is_empty()))
+            && (c.kind(id) != Kind::Angle || c.angle_geometry(id).is_some())
             && (!matches!(c.value(id), Value::Function)
                 || (0..400).any(|i| inside(id, i) && inside(id, i + 1)))
     })
@@ -1082,11 +1084,28 @@ fn object(lines: &[String], label: &str) -> (Construction, Id) {
     (c, id)
 }
 
-/// Whether a pointer anywhere on a 400 x 300 view (probed every 3 pixels)
-/// hits the object.
+/// Whether a pointer hits the object. Most shapes are probed on a 400 x 300
+/// view. Text and angle markers are probed at their geometry because a very
+/// small marker can fall between pixels of the grid.
 fn pointer_hits(c: &Construction, id: Id) -> bool {
     let tr = ViewTransform::new(View::fit(c), 400.0, 300.0);
     let reach = Reach::square(3.0);
+    let point = if let Some(angle) = c.angle_geometry(id) {
+        let radius = 0.5 * angle.radius(tr.xscale());
+        let theta = angle.start + 0.5 * angle.sweep;
+        let (x, y) = tr.world_to_screen(angle.center.0, angle.center.1);
+        Some((x + radius * theta.cos(), y - radius * theta.sin()))
+    } else if c.kind(id) == Kind::Text {
+        let [x0, y0, x1, y1] = c
+            .text_pixel_rect(id, |x, y| tr.world_to_screen(x, y))
+            .unwrap_or([0.0; 4]);
+        Some((f64::from((x0 + x1) * 0.5), f64::from((y0 + y1) * 0.5)))
+    } else {
+        None
+    };
+    if let Some(p) = point {
+        return hit::hit(c, id, &tr, p, 3.0, &reach).is_some();
+    }
     (0..134).any(|i| {
         (0..100).any(|j| {
             let p = (3.0 * i as f64, 3.0 * j as f64);
@@ -1296,6 +1315,11 @@ fn checked_cells_agree_with_the_code() {
                 objects
                     .iter()
                     .filter(|(c, id)| stroke_has_points(c, *id))
+                    .filter(|(c, id)| {
+                        c.kind(*id) != Kind::Text
+                            || c.text(*id).is_some_and(|text| !text.is_empty())
+                    })
+                    .filter(|(c, id)| c.kind(*id) != Kind::Angle || c.angle_geometry(*id).is_some())
                     .map(|(c, id)| pointer_hits(c, *id)),
             ),
         );

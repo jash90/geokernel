@@ -215,8 +215,20 @@ fn every_offered_tool_combination_runs_in_the_kernel() {
     candidates.extend(objects.iter().cloned().map(Some));
     let mut failures = Vec::new();
     let mut ran = std::collections::HashMap::new();
-    let n = candidates.len();
+    const LOCUS_SCRIPT: &str =
+        "A = (0, 0)\nB = (2, 0)\nk = Circle(A, B)\nP = Point(k)\nQ = Midpoint(A, P)";
+    let locus_candidates = [
+        None,
+        Some(("P".to_owned(), Kind::Point)),
+        Some(("Q".to_owned(), Kind::Point)),
+    ];
     for tool in Tool::all().filter(|t| !t.is_direct()) {
+        let (script, candidates) = if tool == Tool::Locus {
+            (LOCUS_SCRIPT, locus_candidates.as_slice())
+        } else {
+            (SCRIPT, candidates.as_slice())
+        };
+        let n = candidates.len();
         for code in 0..n * n * n {
             let picks = [
                 &candidates[code % n],
@@ -224,7 +236,7 @@ fn every_offered_tool_combination_runs_in_the_kernel() {
                 &candidates[code / n / n],
             ];
             let mut state = ToolState::new(tool);
-            let w = Workbench::from_script(SCRIPT).unwrap();
+            let w = Workbench::from_script(script).unwrap();
             let is_taken = |l: &str| w.construction().id(l).is_some();
             let mut outcome = Outcome::Ignored;
             let mut placed = Vec::new();
@@ -236,7 +248,15 @@ fn every_offered_tool_combination_runs_in_the_kernel() {
                 }
                 let hit = pick.as_ref().map(|(l, k)| (l.as_str(), *k));
                 let allowed = match &hit {
-                    Some((l, k)) => state.accepts_object(l, *k),
+                    Some((l, k)) => {
+                        state.accepts_object(l, *k)
+                            && (tool != Tool::Locus
+                                || locus_pick_is_valid(
+                                    w.construction(),
+                                    state.picks().first(),
+                                    w.construction().id(l).unwrap(),
+                                ))
+                    }
                     None => state.accepts_new_point(),
                 };
                 if !allowed {
