@@ -1010,6 +1010,37 @@ fn input_box_canvas_updates_slider_and_dependents() {
 }
 
 #[test]
+fn input_box_accepting_an_unchanged_angle_keeps_its_value() {
+    let mut h = harness("a = 33.33333333333333°\nfield = $inputBox(a, _)");
+    let c = h.state().wb.construction();
+    let angle = c.id("a").unwrap();
+    let original = c.value(angle);
+    let [x, y, ..] = c.input_box_rect(c.id("field").unwrap());
+    let pos = at(
+        ALGEBRA_WIDTH + SPLITTER + x as f32 + 10.0,
+        TOOLBAR_HEIGHT + y as f32 + 13.0,
+    );
+
+    click(&mut h, pos);
+    assert_eq!(h.state().input_box_edit.as_ref().unwrap().1, "33.33°");
+    h.key_press(egui::Key::Enter);
+    h.run();
+    assert_eq!(h.state().wb.construction().value(angle), original);
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
+
+    click(&mut h, pos);
+    h.input_mut().events.push(Event::Text("42°".into()));
+    h.step();
+    h.key_press(egui::Key::Enter);
+    h.run();
+    assert_eq!(
+        h.state().wb.construction().value(angle),
+        Value::Number(42.0_f64.to_radians()),
+    );
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+}
+
+#[test]
 fn input_box_tool_places_a_control() {
     for link in [None, Some("a")] {
         let mut h = harness("a = 1");

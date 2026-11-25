@@ -1479,7 +1479,7 @@ fn input_box_editor(app: &mut App, ui: &mut Ui, canvas: Rect) {
                     app.wb.set_number(link, value);
                 }
             }
-            geo_kernel::Def::Angle(_) => {
+            geo_kernel::Def::Angle(_) if text != c.input_box_text(id) => {
                 let value = text.trim().trim_end_matches('°');
                 if let Some(value) = crate::app::parse_number(value) {
                     app.wb.set_number(link, value.to_radians());
