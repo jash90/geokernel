@@ -1599,3 +1599,32 @@ fn spreadsheet_grid_uses_saved_column_width_and_line_visibility() {
         .unwrap();
     assert_eq!(a1.rect.width(), 200.0);
 }
+
+#[test]
+fn anonymous_list_conics_fit_the_frame_budget() {
+    let (mut script, mid) = grid(83);
+    script.push_str(&format!(
+        "q: x^2 + 4*y^2 = 1\nbase = {{{}}}\n",
+        ["q"; 40].join(", ")
+    ));
+    for i in 0..20 {
+        script.push_str(&format!("L{i} = Dilate(base, 2)\n"));
+    }
+    let mut w = Window::with(&script, mid.clone());
+    let drawn = w.settled(2);
+    for i in 0..20 {
+        script.push_str(&format!("SetVisibleInView(L{i}, 1, false)\n"));
+    }
+    let hidden = Window::with(&script, mid).settled(2);
+    println!("list conics: hidden {hidden:?}, drawn {drawn:?}");
+    assert!(drawn.vertices > hidden.vertices, "{drawn:?}");
+    assert!(drawn.vertices <= hidden.vertices + 5_000, "{drawn:?}");
+    assert!(drawn.shapes <= hidden.shapes + 32, "{drawn:?}");
+    let start = std::time::Instant::now();
+    assert_eq!(w.frames(60), drawn);
+    let mean_ms = start.elapsed().as_secs_f64() * 1000.0 / 60.0;
+    println!("List conic idle frame: {mean_ms:.2} ms");
+    if !cfg!(debug_assertions) {
+        assert!(mean_ms <= 4.0, "{mean_ms:.2} ms exceeds the 4 ms budget");
+    }
+}

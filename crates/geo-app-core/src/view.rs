@@ -145,9 +145,9 @@ pub fn visible_content_bounds_with_list_budget(
             }
             Value::List { .. } if *list_items_left > 0 => {
                 if let Some(list) = c.elements(id) {
-                    list.canvas_members(list_items_left, |object, value| {
-                        if object.is_none() {
-                            if let Value::Point { x, y } = value {
+                    list.canvas_members(list_items_left, |member| {
+                        if let Some(ends) = member.bounds(c) {
+                            for (x, y) in ends {
                                 add(&mut b, x, y);
                             }
                         }

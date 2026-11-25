@@ -1537,8 +1537,9 @@ final class Session {
             return ((GeoConicPart) geo).getConicPartType()
                     == GeoConicNDConstants.CONIC_PART_SECTOR ? "sector" : "arc";
         }
-        if (geo instanceof GeoConic) {
-            return "circle";
+        if (geo instanceof GeoConic conic) {
+            return isCircleType(conic) || !Double.isFinite(conic.getHalfAxis(0))
+                    ? "circle" : "conic";
         }
         if (geo instanceof GeoPoint) {
             return "point";

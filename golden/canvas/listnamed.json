@@ -1,0 +1,34 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "canvas-listnamed-001",
+      "group": "canvas",
+      "script": [
+        "A = (-1, 1)",
+        "B = (1, 1)",
+        "s = Segment(A, B)",
+        "L = {s}"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": -1.0, "y1": 1.0, "x2": 1.0, "y2": 1.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "segment", "defined": true, "x1": -1.0, "y1": 1.0, "x2": 1.0, "y2": 1.0 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

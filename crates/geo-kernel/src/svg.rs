@@ -115,9 +115,9 @@ impl View {
                 }
                 Value::List { .. } if list_items_left > 0 => {
                     if let Some(list) = c.elements(id) {
-                        list.canvas_members(&mut list_items_left, |object, value| {
-                            if object.is_none() {
-                                if let Value::Point { x, y } = value {
+                        list.canvas_members(&mut list_items_left, |member| {
+                            if let Some(ends) = member.bounds(c) {
+                                for (x, y) in ends {
                                     grow(x, y);
                                 }
                             }
@@ -306,6 +306,37 @@ fn render_geometry(
     // Used to draw an "infinite" line as a segment longer than the view.
     let (mx, my) = (0.5 * (view.xmin + view.xmax), 0.5 * (view.ymin + view.ymax));
     let reach = vw.hypot(vh);
+    let write_line = |out: &mut String, [(x1, y1), (x2, y2)]: [(f64, f64); 2]| {
+        let _ = writeln!(
+            out,
+            r#"<line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>"#,
+            sx(x1),
+            sy(y1),
+            sx(x2),
+            sy(y2),
+        );
+    };
+    let write_circle = |out: &mut String, cx, cy, r: f64| {
+        let _ = writeln!(
+            out,
+            r#"<circle cx="{:.2}" cy="{:.2}" r="{:.2}"/>"#,
+            sx(cx),
+            sy(cy),
+            r * scale,
+        );
+    };
+    let write_conic = |out: &mut String, d: &crate::ConicData| {
+        let drawn = crate::plot::conic::plot(d, &frame);
+        write_paths(out, &drawn.paths);
+        for (point, radius) in [(drawn.point, 4), (drawn.dot, 1)] {
+            if let Some((px, py)) = point {
+                let _ = writeln!(
+                    out,
+                    r##"<circle cx="{px:.2}" cy="{py:.2}" r="{radius}" fill="#202124" stroke="none"/>"##,
+                );
+            }
+        }
+    };
     for id in ids {
         if c.chart(id).is_some() {
             if c.kind(id) == Kind::Function {
@@ -329,25 +360,8 @@ fn render_geometry(
                     sy(fy - reach * a),
                 );
             }
-            Value::Segment { x1, y1, x2, y2 } => {
-                let _ = writeln!(
-                    segments,
-                    r##"<line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>"##,
-                    sx(x1),
-                    sy(y1),
-                    sx(x2),
-                    sy(y2),
-                );
-            }
-            Value::Circle { cx, cy, r } if r.is_finite() => {
-                let _ = writeln!(
-                    circles,
-                    r##"<circle cx="{:.2}" cy="{:.2}" r="{:.2}"/>"##,
-                    sx(cx),
-                    sy(cy),
-                    r * scale,
-                );
-            }
+            Value::Segment { x1, y1, x2, y2 } => write_line(&mut segments, [(x1, y1), (x2, y2)]),
+            Value::Circle { cx, cy, r } if r.is_finite() => write_circle(&mut circles, cx, cy, r),
             Value::Point { x, y } if x.is_finite() && y.is_finite() => {
                 let free = c.def(id).is_free();
                 let (fill, radius) = if free {
@@ -434,21 +448,7 @@ fn render_geometry(
                 let Some(d) = c.conic(id) else {
                     continue;
                 };
-                let drawn = crate::plot::conic::plot(&d, &frame);
-                write_paths(&mut segments, &drawn.paths);
-                if let Some((px, py)) = drawn.point {
-                    let _ = writeln!(
-                        segments,
-                        r##"<circle cx="{px:.2}" cy="{py:.2}" r="4" fill="#202124" stroke="none"/>"##,
-                    );
-                }
-                // A dot of the stroke width (2).
-                if let Some((px, py)) = drawn.dot {
-                    let _ = writeln!(
-                        segments,
-                        r##"<circle cx="{px:.2}" cy="{py:.2}" r="1" fill="#202124" stroke="none"/>"##,
-                    );
-                }
+                write_conic(&mut segments, &d);
             }
             Value::ImplicitCurve => {
                 if let Some(coefficients) = c.implicit_coefficients(id) {
@@ -627,27 +627,30 @@ fn render_geometry(
             Value::List { .. } => {
                 use std::ops::ControlFlow;
                 if let Some(list) = c.elements(id) {
-                    list.canvas_members(list_items_left, |object, value| {
-                        if object.is_none() {
-                            match value {
-                                Value::Point { x, y } => {
-                                    let (x, y) = (sx(x), sy(y));
-                                    let _ = writeln!(
-                                        points,
-                                        r#"<circle cx="{x:.2}" cy="{y:.2}" r="4"/>"#
-                                    );
+                    list.canvas_members(list_items_left, |member| {
+                        if member.object.is_some() {
+                            return ControlFlow::Continue(());
+                        }
+                        match member.value {
+                            Value::Point { x, y } if x.is_finite() && y.is_finite() => {
+                                let (x, y) = (sx(x), sy(y));
+                                let _ =
+                                    writeln!(points, r#"<circle cx="{x:.2}" cy="{y:.2}" r="4"/>"#);
+                            }
+                            Value::Circle { cx, cy, r }
+                                if [cx, cy, r].into_iter().all(f64::is_finite) =>
+                            {
+                                write_circle(&mut circles, cx, cy, r);
+                            }
+                            Value::Conic { .. } => {
+                                if let Some(d) = member.conic(c) {
+                                    write_conic(&mut segments, &d);
                                 }
-                                Value::Vector { x, y } => {
-                                    let _ = writeln!(
-                                        segments,
-                                        r#"<line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>"#,
-                                        sx(0.0),
-                                        sy(0.0),
-                                        sx(x),
-                                        sy(y)
-                                    );
+                            }
+                            _ => {
+                                if let Some(ends) = member.straight_endpoints(frame.visible(0.0)) {
+                                    write_line(&mut segments, ends);
                                 }
-                                _ => {}
                             }
                         }
                         ControlFlow::Continue(())

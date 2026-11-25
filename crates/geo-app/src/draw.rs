@@ -769,19 +769,54 @@ fn paint_layer<'c>(
         } else if let Value::List { .. } = value {
             use std::ops::ControlFlow;
             if let Some(list) = c.elements(id).filter(|_| *list_items_left > 0) {
-                list.canvas_members(list_items_left, |object, value| {
-                    if object.is_none() {
-                        match value {
-                            Value::Point { x, y } => {
-                                let pos = p(x, y);
-                                if rect.expand(DEPENDENT_POINT_RADIUS).contains(pos) {
-                                    point_shape(painter, pos, color(id), DEPENDENT_POINT_RADIUS);
+                list.canvas_members(list_items_left, |member| {
+                    if member.object.is_some() {
+                        return ControlFlow::Continue(());
+                    }
+                    match member.value {
+                        Value::Point { x, y } => {
+                            let pos = p(x, y);
+                            if rect.expand(DEPENDENT_POINT_RADIUS).contains(pos) {
+                                point_shape(painter, pos, color(id), DEPENDENT_POINT_RADIUS);
+                            }
+                        }
+                        Value::Vector { x, y } => {
+                            painter.arrow(p(0.0, 0.0), p(x, y) - p(0.0, 0.0), curve(id));
+                        }
+                        Value::Circle { cx, cy, r } => {
+                            paint_circle(painter, rect, t, (cx, cy, r), curve(id), &mut |_| {});
+                        }
+                        Value::Conic { .. } => {
+                            if let Some(conic) = member.conic(c) {
+                                let frame = geo_kernel::plot::Frame::fit(t.view(), w, h);
+                                let plot = geo_kernel::plot::conic::plot(&conic, &frame);
+                                let place = |(x, y)| {
+                                    let (wx, wy) = frame.screen_to_world(x, y);
+                                    p(wx, wy)
+                                };
+                                for path in plot.paths {
+                                    painter.add(Shape::line(
+                                        path.into_iter().map(place).collect(),
+                                        curve(id),
+                                    ));
+                                }
+                                if let Some(at) = plot.point {
+                                    point_shape(
+                                        painter,
+                                        place(at),
+                                        color(id),
+                                        DEPENDENT_POINT_RADIUS,
+                                    );
+                                }
+                                if let Some(at) = plot.dot {
+                                    painter.circle_filled(place(at), 0.5 * CURVE_WIDTH, color(id));
                                 }
                             }
-                            Value::Vector { x, y } => {
-                                painter.arrow(p(0.0, 0.0), p(x, y) - p(0.0, 0.0), curve(id));
+                        }
+                        _ => {
+                            if let Some(ends) = member.straight_endpoints(t.view()) {
+                                painter.line_segment(ends.map(|(x, y)| p(x, y)), curve(id));
                             }
-                            _ => {}
                         }
                     }
                     ControlFlow::Continue(())

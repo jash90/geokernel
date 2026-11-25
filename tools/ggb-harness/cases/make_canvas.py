@@ -56,4 +56,22 @@ cases.case("reviewstretch", [
     *[f"v{k} = UnitVector(v{k - 1})" for k in range(1, 71)],
     *[f"p{k} = Stretch(p, v70)" for k in range(1, 71)],
 ], [])
+# Anonymous geometry is painted by the list itself.
+cases.case("listpoints", ["L = {(1, 2), (-1, 2)}"], [])
+cases.case("listnumbers", ["L = {1, 2, 3}"], [])
+cases.case("listsegments", [
+    "A = (-1, 1)", "B = (1, 1)", "s = Segment(A, B)", "base = {s}", "L = Dilate(base, 2)",
+], [])
+cases.case("listlines", ["g: y = 1", "base = {g}", "L = Dilate(base, 2)"], [])
+cases.case("listcircles", ["A = (0, 0)", "c = Circle(A, 1)", "base = {c}", "L = Dilate(base, 2)"], [])
+cases.case("listconicmembers", [
+    "A = (-1, 0)", "B = (1, 0)", "C = (2, 0)",
+    "q = Ellipse(A, B, C)", "base = {q}", "L = Dilate(base, 2)",
+], [])
+cases.case("listrays", [
+    "A = (-1, 1)", "B = (1, 1)", "g = Ray(A, B)", "base = {g}", "L = Dilate(base, 2)",
+], [])
+cases.case("listnamed", [
+    "A = (-1, 1)", "B = (1, 1)", "s = Segment(A, B)", "L = {s}",
+], [])
 cases.write()

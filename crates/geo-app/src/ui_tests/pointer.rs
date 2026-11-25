@@ -488,3 +488,16 @@ fn formula_text_and_functions_paint_on_their_normal_surfaces() {
         "the algebra row paints the denominator as a glyph run"
     );
 }
+
+#[test]
+fn move_view_picks_the_x_axis_and_rescales_only_x() {
+    let mut h = harness("A = (1, 2)");
+    h.state_mut().select_tool(Tool::MoveView);
+    let before = h.state().camera.unwrap();
+    let from = on_screen(&h, 3.0, 0.0);
+    let to = on_screen(&h, 4.0, 0.0);
+    drag(&mut h, from, to);
+    let after = h.state().camera.unwrap();
+    assert!(after.xscale > before.xscale);
+    assert_eq!(after.yscale, before.yscale);
+}
