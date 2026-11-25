@@ -169,9 +169,10 @@ For a document opened from a file the test snapshots three archives: the
 source file, the export of its import, and the export of the same document
 without its saved styles. The first two must agree in every property of every
 object. The third gives what the reader makes of an object without the saved
-tag: `WITNESSES` in the test names, per kind, the objects of the style
-fixtures that may prove a property, and a property is proven by the first of
-them whose source value differs from that. The test compares the result with
+tag. This control archive restores the original baseline for label visibility
+and thickness, which the journal now mirrors for editing. `WITNESSES` names
+the fixture objects checked for each kind. The first object whose source
+value differs from the control proves the property. The test compares the result with
 `crates/geo-golden/tests/fixtures/export-proof.json` and fails when the file
 is stale; `GEOKERNEL_EXPORT_BLESS=1` rewrites it. A normal `cargo test` reads
 that file and derives the `export` column of `docs/kinds.csv` from it.
@@ -468,3 +469,26 @@ the entries of `crates/geo-import/known-import-gaps.toml` were checked: for
 `conic-diameter-009.xml` and `d` it prints `1.7888543819998317`, the value the
 importer gives, not the `0.8944271909999159` that GeoGebra computed before saving.
 
+
+### Classic editor tools
+
+```sh
+python3 -I tools/ggb-harness/cases/make_editor_tools.py
+GEOGEBRA_SRC=<checkout> tools/ggb-harness/linux-x86_64.sh editor-tools
+```
+
+The probe compiles against the existing harness classpath and the reference
+test fixtures. It writes `crates/geo-mcp/tests/fixtures/editor_tool_scenarios.json`
+and leaves the construction golden corpus alone. It observes the controller's
+pointer sequences, modes, construction changes and undo history. The inspector
+boundary records the selected function and its initial nine table rows. The
+image chooser boundary supplies the generated PNG from the input fixture and
+forwards the hit point to the reference image placement helper. The headless
+probe does not run either native dialog, so the image observation checks the
+anchor and return to Move. The Rust replay opens the same PNG through its file
+prompt and the UI test checks undo and redo.
+
+The `regressions` entries record reference outcomes for dedicated Rust tests.
+They cover inspector endpoints, styled zoom, rotation about a dependent
+centre, copied style after reload, labels, cancellation and freehand fits.
+They remain separate from the two-cadence pointer replay counts.

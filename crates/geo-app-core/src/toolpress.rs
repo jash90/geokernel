@@ -391,6 +391,16 @@ impl App {
     pub fn accepts_tool_hit(&self, id: Id) -> bool {
         let c = self.wb.construction();
         let tool = self.tool.tool();
+        if tool == Tool::MoveRotate {
+            return match self
+                .rotation_center
+                .as_deref()
+                .and_then(|label| c.id(label))
+            {
+                Some(center) => id == center || interact::can_rotate(c, id, center),
+                None => c.kind(id) == Kind::Point,
+            };
+        }
         if tool == Tool::AngleFixed
             && self.tool.picks().is_empty()
             && c.segment_endpoints(id).is_some()

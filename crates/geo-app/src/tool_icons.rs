@@ -395,6 +395,63 @@ pub fn paint(painter: &Painter, tool: Tool, c: Pos2, half: f32) {
                 ink.line((-2.0, -6.0), (-2.0, 2.0));
             }
         }
+        Tool::ShowHideLabel => {
+            ink.poly(&[(-9.0, 3.0), (-4.0, -7.0), (9.0, -7.0), (9.0, 3.0)], true);
+            ink.dot(-4.0, -2.0, 1.4, POINT);
+            red.line((-8.0, 9.0), (10.0, -9.0));
+        }
+        Tool::CopyVisualStyle => {
+            ink.poly(&[(-9.0, -7.0), (3.0, -7.0), (3.0, 0.0), (-9.0, 0.0)], true);
+            red.poly(
+                &[(3.0, -4.0), (8.0, -4.0), (8.0, 4.0), (0.0, 4.0), (0.0, 9.0)],
+                false,
+            );
+        }
+        Tool::MoveRotate => {
+            ink.poly(&Pen::arc(0.0, 0.0, 8.0, 20.0, 300.0), false);
+            ink.dot(0.0, 0.0, 2.2, POINT);
+            red.poly(&[(8.0, -7.0), (4.0, -7.0), (4.0, -11.0)], false);
+        }
+        Tool::Image => {
+            ink.poly(
+                &[(-10.0, -8.0), (10.0, -8.0), (10.0, 8.0), (-10.0, 8.0)],
+                true,
+            );
+            ink.poly(
+                &[
+                    (-10.0, 6.0),
+                    (-3.0, -1.0),
+                    (1.0, 3.0),
+                    (5.0, 0.0),
+                    (10.0, 5.0),
+                ],
+                false,
+            );
+            ink.dot(4.0, -4.0, 1.6, RESULT);
+        }
+        Tool::FunctionInspector => {
+            ink.poly(&[(-9.0, -8.0), (9.0, -8.0), (9.0, 8.0), (-9.0, 8.0)], true);
+            ink.line((-9.0, -3.0), (9.0, -3.0));
+            ink.line((-9.0, 2.0), (9.0, 2.0));
+            red.line((0.0, -8.0), (0.0, 8.0));
+        }
+        Tool::FreehandShape => {
+            ink.poly(&[(-9.0, 7.0), (-3.0, -7.0), (9.0, -3.0), (5.0, 7.0)], true);
+            ink.dot(-3.0, -7.0, 1.8, RESULT);
+        }
+        Tool::FreehandFunction => {
+            ink.poly(
+                &[
+                    (-9.0, 5.0),
+                    (-5.0, 1.0),
+                    (-1.0, 2.0),
+                    (3.0, 0.0),
+                    (9.0, -7.0),
+                ],
+                false,
+            );
+            ink.dot(3.0, 0.0, 2.0, RESULT);
+        }
         Tool::ShowHide => {
             let top = Pen::arc(0.0, 6.0, 12.0, 30.0, 150.0);
             let bottom = Pen::arc(0.0, -6.0, 12.0, 210.0, 330.0);

@@ -32,6 +32,7 @@
 #          the reports are recorded in the snapshot and loading goes on.
 # `tpairs` replays the upstream test methods of golden/t-pairs/scripts.jsonl and
 #          writes what GeoGebra returns for every step to golden/t-pairs/verified.jsonl.
+# `editor-tools` records the Classic pointer editor-tool replay fixture.
 # `text-canvas` checks text pointer interaction and integer placement.
 # `chain`  times the bench() chain (see README.md); extra arguments are passed on.
 # `fetch-giac` downloads and checks the Giac library of this system's platform, or of
@@ -252,6 +253,14 @@ case "$cmd" in
     java "${java_opts[@]}" -cp "$build/classes:$(classpath)" \
       geokernel.harness.Reload "$@"
     ;;
+  editor-tools)
+    probe="$(mktemp -d)"
+    trap 'rm -rf "$probe"' EXIT
+    cp="$build/classes:$(classpath):$ggb/source/shared/common-jre/build/libs/common-jre-test-fixtures.jar"
+    src="$here/src/main/java/geokernel/harness"
+    javac --release 17 -cp "$cp" -d "$probe" "$src/Json.java" "$src/EditorTools.java"
+    java "${java_opts[@]}" -cp "$probe:$cp" geokernel.harness.EditorTools       "$here/cases/editor_tools/inputs.json" "$repo/crates/geo-mcp/tests/fixtures/editor_tool_scenarios.json"
+    ;;
   text-canvas)
     java "${java_opts[@]}" -cp "$build/classes:$(classpath)" \
       geokernel.harness.TextCanvas
@@ -269,7 +278,7 @@ case "$cmd" in
     echo "$giac_dir/$giac_member"
     ;;
   *)
-    echo "usage: GEOGEBRA_SRC=<checkout> $0 build|golden|chain|ggb|saved|export-snapshot|reload|tpairs|text-canvas|cas-smoke|fetch-giac" >&2
+    echo "usage: GEOGEBRA_SRC=<checkout> $0 build|golden|chain|ggb|saved|export-snapshot|reload|tpairs|editor-tools|text-canvas|cas-smoke|fetch-giac" >&2
     exit 2
     ;;
 esac

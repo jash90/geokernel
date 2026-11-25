@@ -88,7 +88,12 @@ impl Writer<'_> {
         // left out stays out, so the reader keeps the same default.
         let saved = self.presentation.object_styles.get(label).copied();
         let shown = !self.presentation.hidden.contains(label);
-        let label_shown = saved.and_then(|style| style.show_label);
+        let label_shown = if style.label_edited {
+            style.show_label
+        } else {
+            saved.and_then(|s| s.show_label).unwrap_or(style.show_label)
+        };
+
         // A free number is a slider when it has a bound, or when its file
         // placed one for it.
         let numeric = c.slider_bound_sources(id);
@@ -132,7 +137,7 @@ impl Writer<'_> {
         }
         let reader_decides = match saved {
             // The file had no tag and the object is still visible.
-            Some(saved) => saved.untagged && shown,
+            Some(saved) => saved.untagged && shown && !style.label_edited,
             // The canvas draws nothing for a free number without bounds. Shown,
             // the reference would make it a slider and clamp its value.
             None => shown && !bounded && matches!(c.def(id), Def::Number(_)),
@@ -142,10 +147,7 @@ impl Writer<'_> {
                 .and_then(|style| style.views)
                 .filter(|&views| views != 0)
                 .map(|views| views.to_string());
-            let mut attrs = vec![
-                ("object", flag(shown)),
-                ("label", flag(label_shown.unwrap_or(style.show_label))),
-            ];
+            let mut attrs = vec![("object", flag(shown)), ("label", flag(label_shown))];
             if let Some(views) = &views {
                 attrs.push(("ev", views));
             }
@@ -166,7 +168,7 @@ impl Writer<'_> {
                 ],
             )?;
         }
-        if saved.is_none_or(|saved| saved.layer.is_some()) {
+        if saved.is_none_or(|saved| saved.layer.is_some()) || style.color.is_some() {
             self.xml.val("layer", &style.layer.to_string())?;
         }
         let default_mode = i32::from(object_kind == Kind::Number && bounded);
@@ -216,7 +218,14 @@ impl Writer<'_> {
         }
         match saved {
             Some(saved) => {
-                if let Some(line) = saved.line {
+                let line = if style.color.is_some() {
+                    let mut line = saved.line.unwrap_or_default();
+                    line.thickness = Some(i32::from(style.line_thickness));
+                    Some(line)
+                } else {
+                    saved.line
+                };
+                if let Some(line) = line {
                     // A tag the reader left early is written as far as it got.
                     let mut attrs = vec![("type", line.kind.to_string())];
                     if let Some(thickness) = line.thickness {
@@ -466,7 +475,7 @@ impl Writer<'_> {
     fn color(&mut self, id: Id, saved: Option<&ObjectStyle>) -> Result<(), ExportError> {
         let c = self.c;
         let label = c.label(id);
-        let rgb = match saved {
+        let rgb = c.drawing_style(id).color.or_else(|| match saved {
             Some(saved) => saved.color,
             None => Some(
                 self.presentation
@@ -475,7 +484,7 @@ impl Writer<'_> {
                     .copied()
                     .unwrap_or([0; 3]),
             ),
-        };
+        });
         // Without a colour the reference reader skips the whole tag.
         let Some([r, g, b]) = rgb else { return Ok(()) };
         let mut attrs = vec![

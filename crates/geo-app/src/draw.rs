@@ -19,7 +19,7 @@ use eframe::egui::epaint::{CircleShape, PathShape, TessellationOptions, Tessella
 use eframe::egui::{vec2, Align2, Color32, FontId, Mesh, Painter, Pos2, Rect, Shape, Stroke};
 use geo_app_core::geom;
 use geo_kernel::algo::vector;
-use geo_kernel::kernel::{Construction, Id, Kind, Value};
+use geo_kernel::kernel::{Construction, DrawingStyle, Id, Kind, Value};
 use geo_kernel::{ConicType, LocusPoint};
 use std::borrow::Cow;
 use std::cell::RefCell;
@@ -32,6 +32,11 @@ pub use crate::style::FREE_POINT_RADIUS;
 const DEPENDENT_POINT_RADIUS: f32 = 4.0;
 /// Line thickness 5, drawn half as wide.
 pub const CURVE_WIDTH: f32 = 2.5;
+
+pub(crate) fn line_width(c: &Construction, id: Id, default: f32) -> f32 {
+    let thickness = f32::from(c.drawing_style(id).line_thickness);
+    default * (thickness / f32::from(DrawingStyle::GRAPHICS_THICKNESS))
+}
 /// The chords each cubic piece of a pen stroke is drawn with.
 const STROKE_STEPS: usize = 16;
 const LABEL_FONT: f32 = 16.0;
@@ -247,7 +252,7 @@ fn paint_layer<'c>(
             c
         }
     };
-    let curve = |id: Id| Stroke::new(CURVE_WIDTH, color(id));
+    let curve = |id: Id| Stroke::new(line_width(c, id, CURVE_WIDTH), color(id));
 
     // Used to draw an "infinite" line as a segment longer than the view.
     let v = t.view();
@@ -388,7 +393,7 @@ fn paint_layer<'c>(
         let vertex = p(angle.center.0, angle.center.1);
         let col = color(id);
         let fill = col.gamma_multiply(FILL_OPACITY as f32);
-        let stroke = Stroke::new(1.5, col);
+        let stroke = Stroke::new(line_width(c, id, 1.5), col);
         let at = |direction: f64, distance: f32| {
             let (sin, cos) = direction.sin_cos();
             vertex + vec2(cos as f32, -(sin as f32)) * distance
@@ -482,7 +487,7 @@ fn paint_layer<'c>(
                 mesh.add_triangle(a as u32, b as u32, d as u32);
             }
             painter.add(Shape::mesh(mesh));
-            painter.add(Shape::closed_line(points, Stroke::new(CURVE_WIDTH, col)));
+            painter.add(Shape::closed_line(points, curve(id)));
         } else {
             // An undefined vertex leaves a gap.
             let mut run: Vec<Pos2> = Vec::new();
@@ -556,7 +561,7 @@ fn paint_layer<'c>(
             }
             // An ellipse smaller than a pixel: a dot of the stroke width.
             if let Some(at) = drawn.dot {
-                painter.circle_filled(at, 0.5 * CURVE_WIDTH, color(id));
+                painter.circle_filled(at, 0.5 * line_width(c, id, CURVE_WIDTH), color(id));
             }
             if let Some(pos) = drawn.label {
                 labels.push(label(
@@ -922,6 +927,9 @@ fn paint_layer<'c>(
     let font = FontId::proportional(LABEL_FONT);
     let mut rects = scene.label_rects.map(RefCell::borrow_mut);
     for (id, text, (sx, sy), color, align) in labels {
+        if !c.drawing_style(id).show_label {
+            continue;
+        }
         // `labelOffsetX/Y` of the object, added to where its label goes.
         let (sx, sy) = match (scene.label_offset)(id) {
             Some((ox, oy)) => (sx + ox as f32, sy + oy as f32),

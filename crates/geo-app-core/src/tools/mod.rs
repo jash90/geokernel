@@ -15,6 +15,7 @@
 //! a number (a radius, an angle, a factor) first return
 //! [`Outcome::AskNumber`]; the answer goes to [`ToolState::finish_number`].
 
+pub mod freehand;
 mod recipe;
 
 pub(crate) use recipe::intersection_pair;
@@ -82,6 +83,13 @@ pub enum Tool {
     InputBox,
     Text,
     PenStroke,
+    FreehandShape,
+    FreehandFunction,
+    FunctionInspector,
+    Image,
+    MoveRotate,
+    ShowHideLabel,
+    CopyVisualStyle,
     MoveView,
     ZoomIn,
     ZoomOut,
@@ -89,9 +97,14 @@ pub enum Tool {
     Delete,
 }
 
-/// The tool groups of the toolbar.
+/// The tool groups of the toolbar, in the order of the reference toolbar.
 pub const GROUPS: &[&[Tool]] = &[
-    &[Tool::Move],
+    &[
+        Tool::Move,
+        Tool::MoveRotate,
+        Tool::FreehandShape,
+        Tool::FreehandFunction,
+    ],
     &[
         Tool::Point,
         Tool::PointOnObject,
@@ -145,6 +158,7 @@ pub const GROUPS: &[&[Tool]] = &[
         Tool::Slope,
         Tool::CreateList,
         Tool::Locus,
+        Tool::FunctionInspector,
     ],
     &[
         Tool::ReflectLine,
@@ -159,6 +173,7 @@ pub const GROUPS: &[&[Tool]] = &[
         Tool::Checkbox,
         Tool::InputBox,
         Tool::Text,
+        Tool::Image,
         Tool::PenStroke,
     ],
     &[
@@ -166,6 +181,8 @@ pub const GROUPS: &[&[Tool]] = &[
         Tool::ZoomIn,
         Tool::ZoomOut,
         Tool::ShowHide,
+        Tool::ShowHideLabel,
+        Tool::CopyVisualStyle,
         Tool::Delete,
     ],
 ];
@@ -190,6 +207,13 @@ impl Tool {
         crate::text::tool_caption(self)
     }
 
+    pub fn draws_stroke(self) -> bool {
+        matches!(
+            self,
+            Self::PenStroke | Self::FreehandShape | Self::FreehandFunction
+        )
+    }
+
     /// Tools that act on the view or on whole objects instead of building
     /// something from picks.
     pub fn is_direct(self) -> bool {
@@ -207,6 +231,13 @@ impl Tool {
                 | Tool::ZoomOut
                 | Tool::ShowHide
                 | Tool::Delete
+                | Tool::MoveRotate
+                | Tool::FreehandShape
+                | Tool::FreehandFunction
+                | Tool::FunctionInspector
+                | Tool::Image
+                | Tool::ShowHideLabel
+                | Tool::CopyVisualStyle
                 | Tool::AttachDetach
                 | Tool::Relation
         )
@@ -576,7 +607,9 @@ impl ToolState {
     pub fn accepts_object(&self, label: &str, kind: Kind) -> bool {
         match self.tool {
             Tool::Move | Tool::MoveView | Tool::ZoomIn | Tool::ZoomOut => false,
-            Tool::Delete | Tool::ShowHide => true,
+            Tool::Delete | Tool::ShowHide | Tool::ShowHideLabel | Tool::CopyVisualStyle => true,
+            Tool::FunctionInspector => kind == Kind::Function,
+            Tool::Image | Tool::MoveRotate => kind == Kind::Point,
             _ if self.asking.is_some() => false,
             _ if self.picked(label) => true,
             tool => recipe::accepts(tool, &self.kinds(), Some(kind)),

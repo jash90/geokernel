@@ -1625,3 +1625,24 @@ fn list_import_restores_named_and_anonymous_members() {
         ))
     ));
 }
+
+#[test]
+fn editor_tool_cells_match_the_toolbar() {
+    use geo_app_core::tools::Tool;
+    let rows = table();
+    let tools: BTreeSet<_> = Tool::all().map(|tool| format!("{tool:?}")).collect();
+    for (kind, makers) in [
+        ("Image", &["Image"][..]),
+        ("Function", &["FunctionInspector", "FreehandFunction"][..]),
+        ("Number", &["Slider"][..]),
+        ("Segment", &["Segment", "FreehandShape"][..]),
+        ("Conic", &["Ellipse", "FreehandShape"][..]),
+        ("Polygon", &["Polygon", "FreehandShape"][..]),
+    ] {
+        let row = rows.iter().find(|row| row["kind"] == kind).unwrap();
+        assert_eq!(row["tool"], "yes", "{kind}.tool");
+        for maker in makers {
+            assert!(tools.contains(*maker), "{kind}.tool requires {maker}");
+        }
+    }
+}

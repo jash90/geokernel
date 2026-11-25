@@ -19,6 +19,9 @@ pub struct Definition<'a> {
     pub outputs: &'a [String],
 }
 
+/// Raster entries that fit beside the construction and spreadsheet metadata.
+pub const MAX_INSERTED_IMAGE_ASSETS: usize = archive::MAX_ZIP_ENTRIES - 2;
+
 /// The primary graphics view in file coordinates (origin relative to the view).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct View {

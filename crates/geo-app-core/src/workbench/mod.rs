@@ -15,9 +15,10 @@ pub use file::{import_notice, rejected_notice, SNAPSHOT_VERSION};
 pub use geo_import::export::View as FileView;
 use geo_kernel::kernel::text::{TextOverrides, TextPosition};
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
+use geo_kernel::script::saved::Property;
 use geo_kernel::script::text::Properties as TextProperties;
 use geo_kernel::script::{find_top_level, BoundaryOutputs};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::OnceLock;
 
 /// What the algebra list shows for one object.
@@ -82,7 +83,7 @@ pub struct Workbench {
     boundary_outputs: BoundaryOutputs,
     file_settings: geo_import::Settings,
     file_import_losses: (usize, usize),
-    file_object_styles: BTreeMap<String, geo_import::export::ObjectStyle>,
+    file_object_styles: HashMap<String, geo_import::export::ObjectStyle>,
     file_slider_animation: BTreeMap<String, geo_import::export::SliderAnimation>,
     file_view: Option<geo_import::export::View>,
     file_cas_visible: Option<bool>,
@@ -95,6 +96,7 @@ pub struct Workbench {
     pub history: History,
     undo: Undo<UndoState>,
     gesture: Option<Gesture>,
+    style_before: Option<UndoState>,
     tool_use: Option<ToolUse>,
     /// The camera of the drawing, as the window last reported it for the
     /// undo steps (see `set_camera`).
@@ -151,7 +153,7 @@ impl Workbench {
         if !self.cas.submit(&self.construction, index, input) {
             return false;
         }
-        self.undo.record(before);
+        self.record_undo(before);
         true
     }
 
@@ -162,7 +164,7 @@ impl Workbench {
         if !self.cas.delete(index) {
             return false;
         }
-        self.undo.record(before);
+        self.record_undo(before);
         true
     }
 
@@ -213,7 +215,7 @@ impl Workbench {
         let sides = self
             .sides
             .get_or_init(|| Sides::of(&self.construction, key));
-        Palette::new(&self.construction, sides, key)
+        Palette::new(&self.construction, sides, key).with_file_styles(&self.file_object_styles)
     }
 
     /// A copy of `log` for an undo step: shares its storage (see
@@ -281,8 +283,8 @@ impl Workbench {
         self.sides = OnceLock::new();
     }
 
-    #[cfg(test)]
-    pub fn version(&self) -> u64 {
+    /// Revision of the construction and its edited properties.
+    pub(crate) fn version(&self) -> u64 {
         self.version
     }
 
@@ -315,6 +317,7 @@ impl Workbench {
         self.label_offsets.clear();
         self.file_settings = geo_import::Settings::default();
         self.file_import_losses = (0, 0);
+        self.style_before = None;
         self.file_object_styles.clear();
         self.file_slider_animation.clear();
         self.file_view = None;
@@ -437,6 +440,7 @@ impl Workbench {
         &mut self,
         change: impl FnOnce(&mut Self) -> Result<T, String>,
     ) -> Result<T, String> {
+        self.finish_style_edits();
         let Some(t) = self.tool_use.take() else {
             return change(self);
         };
@@ -459,6 +463,7 @@ impl Workbench {
     /// the completed use, or go with it when it is cancelled. If one fails,
     /// nothing of these lines stays (what earlier picks placed does).
     pub fn run_tool_lines(&mut self, lines: &[String]) -> Result<(), String> {
+        self.finish_style_edits();
         self.begin_tool_use();
         self.exec_lines(lines, true)
     }
@@ -484,7 +489,7 @@ impl Workbench {
     pub fn end_tool_use(&mut self) {
         if let Some(t) = self.tool_use.take() {
             if t.changed {
-                self.undo.record(self.state(t.snapshot));
+                self.record_undo(self.state(t.snapshot));
             }
         }
     }
@@ -626,7 +631,7 @@ impl Workbench {
                         Some(t) if in_tool => t.changed = true,
                         _ => {
                             let state = self.state(snapshot);
-                            self.undo.record(state);
+                            self.record_undo(state);
                         }
                     }
                     self.version += 1;
@@ -791,7 +796,7 @@ impl Workbench {
     /// Whether `undo` does something: a step to go back to, or the pending
     /// points of a tool use to take away.
     pub fn can_undo(&self) -> bool {
-        self.tool_use_pending() || self.undo.can_undo()
+        self.style_before.is_some() || self.tool_use_pending() || self.undo.can_undo()
     }
 
     pub fn can_redo(&self) -> bool {
@@ -807,6 +812,7 @@ impl Workbench {
     /// points away and is no real undo (`Kernel.undo` calls
     /// `restoreStateForModeStarting`).
     pub fn undo(&mut self) -> bool {
+        self.finish_style_edits();
         if self.tool_use.is_some() {
             return self.cancel_tool_use();
         }
@@ -872,6 +878,7 @@ impl Workbench {
     /// reference (the point's `storeUndoInfo` and the drag's update action
     /// at the release, `wrapMouseReleasedND`).
     pub fn begin_gesture(&mut self) {
+        self.finish_style_edits();
         self.cancel_tool_use();
         self.gesture = Some(Gesture {
             snapshot: self.copy(&self.log),
@@ -918,6 +925,7 @@ impl Workbench {
     /// step. A run of them never evicts a construction step
     /// (`Undo::record_view`).
     pub fn record_view_step(&mut self, before: Camera) {
+        self.finish_style_edits();
         if self.camera.is_some_and(|now| now != before) {
             let mut state = self.state(self.copy(&self.log));
             state.camera = Some(before);
@@ -964,7 +972,7 @@ impl Workbench {
             Some(g) if !g.committed => {
                 let snapshot = self.copy(&g.snapshot);
                 let state = self.state(snapshot);
-                self.undo.record(state);
+                self.record_undo(state);
                 if let Some(g) = &mut self.gesture {
                     g.committed = true;
                 }
@@ -972,7 +980,7 @@ impl Workbench {
             Some(_) => {}
             None => {
                 let before = self.state(before(self));
-                self.undo.record(before);
+                self.record_undo(before);
             }
         }
     }
@@ -1018,13 +1026,66 @@ impl Workbench {
         let _ = self.outside_tool_use(|w| {
             // An object the open tool use placed went with it.
             if w.construction.id(&label).is_some() {
-                w.undo.record(w.state(w.copy(&w.log)));
+                w.record_undo(w.state(w.copy(&w.log)));
                 if !w.log.hidden.remove(&label) {
                     w.log.hidden.insert(label);
                 }
             }
             Ok(())
         });
+    }
+
+    pub fn toggle_label(&mut self, id: Id) {
+        self.toggle_label_in_mode(id);
+        self.finish_style_edits();
+    }
+
+    pub(crate) fn toggle_label_in_mode(&mut self, id: Id) {
+        let c = self.construction();
+        if id.index() >= c.len()
+            || matches!(c.kind(id), Kind::Image | Kind::Locus | Kind::PenStroke)
+        {
+            return;
+        }
+        let mut style = c.drawing_style(id);
+        style.show_label = !style.show_label;
+        style.label_edited = true;
+        self.edit_drawing_style(id, style);
+    }
+
+    pub(crate) fn copy_drawing_style(&mut self, source: Id, target: Id) {
+        let mut style = self.construction.drawing_style(source);
+        let color = self.palette().color(source);
+        style.color = Some([color.r, color.g, color.b]);
+        style.label_edited = true;
+        style.sector_outline_only = self.construction.drawing_style(target).sector_outline_only;
+        self.edit_drawing_style(target, style);
+    }
+
+    fn edit_drawing_style(&mut self, id: Id, style: geo_kernel::kernel::DrawingStyle) {
+        if style == self.construction.drawing_style(id) {
+            return;
+        }
+        if self.style_before.is_none() {
+            self.style_before = Some(self.state(self.copy(&self.log)));
+            self.undo.clear_redo();
+        }
+        let label = self.construction.label(id).to_owned();
+        self.construction.set_drawing_style(id, style);
+        self.log
+            .record_saved_property(Property::DrawingStyle { label, style });
+        self.version += 1;
+    }
+
+    pub(crate) fn finish_style_edits(&mut self) {
+        if let Some(before) = self.style_before.take() {
+            self.undo.record(before);
+        }
+    }
+
+    fn record_undo(&mut self, before: UndoState) {
+        self.finish_style_edits();
+        self.undo.record(before);
     }
 
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> bool {
@@ -1155,14 +1216,44 @@ impl Workbench {
                 positions.push((id, x1, y1));
             }
         }
+        self.move_free_points(&positions)
+    }
+
+    pub fn rotate(&mut self, id: Id, center: (f64, f64), angle: f64) -> bool {
+        if angle == 0.0 || !angle.is_finite() {
+            return false;
+        }
+        let c = self.construction();
+        let Some(points) = crate::interact::rotation_points(c, id) else {
+            return false;
+        };
+        let (sin, cos) = angle.sin_cos();
+        let positions: Vec<_> = points
+            .into_iter()
+            .filter_map(|point| {
+                let Value::Point { x, y } = c.value(point) else {
+                    return None;
+                };
+                let dx = x - center.0;
+                let dy = y - center.1;
+                let nx = center.0 + dx * cos - dy * sin;
+                let ny = center.1 + dx * sin + dy * cos;
+                (nx.is_finite() && ny.is_finite() && (nx != x || ny != y))
+                    .then_some((point, nx, ny))
+            })
+            .collect();
+        self.move_free_points(&positions)
+    }
+
+    fn move_free_points(&mut self, positions: &[(Id, f64, f64)]) -> bool {
         if positions.is_empty() {
             return false;
         }
-        let Ok(recomputed) = self.construction.move_points(&positions) else {
+        let Ok(recomputed) = self.construction.move_points(positions) else {
             return false;
         };
         self.note_change();
-        self.log.record_move_points(&self.construction, &positions);
+        self.log.record_move_points(&self.construction, positions);
         if recomputed > 0 {
             self.grow_boundary_outputs(positions.iter().map(|&(id, _, _)| id));
         }
@@ -1376,6 +1467,7 @@ impl Workbench {
     }
 }
 
+mod editor;
 mod file;
 mod rows;
 #[cfg(test)]

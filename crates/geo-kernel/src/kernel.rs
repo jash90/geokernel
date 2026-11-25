@@ -1460,9 +1460,17 @@ impl DirtySet {
 pub struct DrawingStyle {
     pub layer: u8,
     pub show_label: bool,
+    /// An edit should override the label flag of the original file.
+    pub label_edited: bool,
     pub line_thickness: u8,
+    pub color: Option<[u8; 3]>,
     /// A saved sector with no opacity or fill pattern has no interior hit.
     pub sector_outline_only: bool,
+}
+
+impl DrawingStyle {
+    /// Standard stroke thickness for objects drawn in the graphics view.
+    pub const GRAPHICS_THICKNESS: u8 = 5;
 }
 
 impl Default for DrawingStyle {
@@ -1470,7 +1478,9 @@ impl Default for DrawingStyle {
         Self {
             layer: 0,
             show_label: true,
+            label_edited: false,
             line_thickness: 3,
+            color: None,
             sector_outline_only: false,
         }
     }
@@ -1947,9 +1957,22 @@ impl Construction {
     pub fn drawing_style(&self, id: Id) -> DrawingStyle {
         self.drawing_styles.get(&id).copied().unwrap_or_else(|| {
             let mut style = DrawingStyle::default();
-            if self.exists(id) && self.kind(id) == Kind::PieChart {
-                style.show_label = false;
-                style.line_thickness = 0;
+            if self.exists(id) {
+                match self.kind(id) {
+                    Kind::PieChart => {
+                        style.show_label = false;
+                        style.line_thickness = 0;
+                    }
+                    Kind::Text => style.show_label = false,
+                    Kind::Point
+                    | Kind::Number
+                    | Kind::Boolean
+                    | Kind::Button
+                    | Kind::InputBox
+                    | Kind::Image => {}
+                    Kind::Function if matches!(self.def(id), Def::Chart(_)) => {}
+                    _ => style.line_thickness = DrawingStyle::GRAPHICS_THICKNESS,
+                }
             }
             style
         })

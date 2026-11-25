@@ -46,7 +46,8 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Test
-        run: cargo test --workspace
+        # Match the desktop matrix's test concurrency for the wall-clock budgets.
+        run: cargo test --workspace -- --test-threads=2
       - name: Check reference corpus input layout
         run: python3 -I tools/ggb-harness/cases/test_corpus_layout.py
       - uses: actions/setup-java@v4

@@ -197,14 +197,11 @@ pub(crate) fn convert_with_assets(
             layer: el.layer,
             ..default_style
         };
-        // Layers affect draw order. Only charts use saved thickness and
-        // label visibility in the renderer. Keep the other styles for export
-        // outside the script so they do not change the editor's drawing.
+        // Labels and thickness can be edited on the canvas. The other
+        // saved properties still retain their original export representation.
         let mut saved_style = el.object_style.clone();
-        if c.kernel.chart(id).is_some() {
-            style.show_label = el.label_shown.unwrap_or(style.show_label);
-            style.line_thickness = el.thickness.map_or(style.line_thickness, |t| t.min(13));
-        }
+        style.show_label = el.label_shown.unwrap_or(style.show_label);
+        style.line_thickness = el.thickness.map_or(style.line_thickness, |t| t.min(13));
         saved_style.show_label = el.label_shown;
         saved_style.untagged = el.shown.is_none();
         if c.kernel.control(id).is_none() {

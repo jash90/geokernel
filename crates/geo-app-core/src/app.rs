@@ -164,6 +164,12 @@ pub struct App {
     pub number_text: String,
     pub control_fields: [String; 3],
     pub control_focus: bool,
+    pub inspector: Option<crate::editor::Inspector>,
+    pub image_request: Option<crate::editor::ImageRequest>,
+    pub image_path: String,
+    pub(crate) style_source: Option<String>,
+    pub rotation_center: Option<String>,
+    pub press_rotation: Option<Drag>,
     pub pen_samples: Vec<(f64, f64)>,
     /// The label and current contents of the active canvas editor.
     pub input_box_edit: Option<InputBoxEdit>,
@@ -272,6 +278,12 @@ impl App {
             number_text: String::new(),
             control_fields: Default::default(),
             control_focus: false,
+            inspector: None,
+            image_request: None,
+            image_path: String::new(),
+            style_source: None,
+            rotation_center: None,
+            press_rotation: None,
             pen_samples: Vec::new(),
             input_box_edit: None,
             regions: Regions::new(Rect::ZERO, false, &Metrics::desktop()),
@@ -361,6 +373,11 @@ impl App {
     pub fn select_tool(&mut self, tool: Tool) {
         self.reset_tool();
         self.tool.set_tool(tool);
+        if tool == Tool::ShowHideLabel {
+            if let Some(id) = self.wb.selected.take() {
+                self.wb.toggle_label_in_mode(id);
+            }
+        }
         self.group_tools[tool.group()] = tool;
         self.tool_error = None;
     }
@@ -370,6 +387,11 @@ impl App {
     /// tool switch, a cancelled number dialog, a failed final step;
     /// `Kernel.restoreStateForInitNewMode`).
     pub fn reset_tool(&mut self) {
+        self.wb.finish_style_edits();
+        self.style_source = None;
+        self.rotation_center = None;
+        self.press_rotation = None;
+        self.image_request = None;
         self.pen_samples.clear();
         self.relation_report = None;
         self.tool.reset();
@@ -446,6 +468,7 @@ impl App {
         !self.tool.picks().is_empty()
             || self.tool.asking().is_some()
             || self.tool.control_request().is_some()
+            || self.image_request.is_some()
     }
 
     /// Leaves the active tool for the move tool, clears the selection and

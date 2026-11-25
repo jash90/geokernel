@@ -330,7 +330,7 @@ fn render_geometry(
         write_paths(out, &drawn.paths);
         for (point, radius) in [(drawn.point, 4), (drawn.dot, 1)] {
             if let Some((px, py)) = point {
-                let _ = writeln!(
+                let _ = write!(
                     out,
                     r##"<circle cx="{px:.2}" cy="{py:.2}" r="{radius}" fill="#202124" stroke="none"/>"##,
                 );
@@ -371,13 +371,21 @@ fn render_geometry(
                 };
                 let _ = writeln!(
                     points,
-                    r##"<circle cx="{px:.2}" cy="{py:.2}" r="{radius}" fill="{fill}" stroke="#ffffff" stroke-width="1"/><text x="{tx:.2}" y="{ty:.2}">{label}</text>"##,
+                    r##"<circle cx="{px:.2}" cy="{py:.2}" r="{radius}" fill="{fill}" stroke="#ffffff" stroke-width="1"/>"##,
                     px = sx(x),
                     py = sy(y),
-                    tx = sx(x) + 8.0,
-                    ty = sy(y) - 8.0,
-                    label = escape(c.label(id)),
                 );
+                if c.drawing_style(id).show_label {
+                    let _ = writeln!(
+                        points,
+                        r#"<text x="{:.2}" y="{:.2}">{}</text>"#,
+                        sx(x) + 8.0,
+                        sy(y) - 8.0,
+                        escape(c.label(id)),
+                    );
+                } else {
+                    points.push('\n');
+                }
             }
             Value::Ray { x, y, a, b, .. } => {
                 // A half-line from the start point along (b, -a), long

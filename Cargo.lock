@@ -1199,6 +1199,7 @@ dependencies = [
  "geo-kernel",
  "geo-latex",
  "image",
+ "libc",
  "serde",
  "toml 0.8.23",
  "vello_cpu",

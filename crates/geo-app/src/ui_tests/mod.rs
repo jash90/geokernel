@@ -1703,3 +1703,280 @@ fn last_round_input_box_commits_before_the_linked_slider_click() {
         assert_eq!(h.state().wb.undo_depth(), (2, 0));
     }
 }
+
+#[test]
+fn label_tool_toggles_hits_and_groups_changes_until_mode_exit() {
+    let mut h = harness("A = (2, 1)\nB = (4, 1)");
+    h.state_mut().select_tool(Tool::ShowHideLabel);
+    click(&mut h, world(2.0, 1.0));
+    click(&mut h, world(4.0, 1.0));
+    let shown = |app: &App, label| {
+        let c = app.wb.construction();
+        c.drawing_style(c.id(label).unwrap()).show_label
+    };
+    assert!(!shown(h.state(), "A"));
+    assert!(!shown(h.state(), "B"));
+    assert_eq!(h.state().wb.undo_depth().0, 0);
+    h.state_mut().select_tool(Tool::Move);
+    assert!(h.state_mut().undo());
+    assert!(shown(h.state(), "A"));
+    assert!(shown(h.state(), "B"));
+}
+
+#[test]
+fn copy_style_uses_the_same_source_until_it_is_clicked_again() {
+    let mut h = harness("A = (2, 1)\nB = (4, 1)\nC = (6, 1)\n$drawingStyle(_41, 2, false, 7)");
+    h.state_mut().select_tool(Tool::CopyVisualStyle);
+    for x in [2.0, 4.0, 6.0, 2.0] {
+        click(&mut h, world(x, 1.0));
+    }
+    let style = |app: &App, label| {
+        let c = app.wb.construction();
+        c.drawing_style(c.id(label).unwrap())
+    };
+    let source = style(h.state(), "A");
+    for label in ["B", "C"] {
+        let target = style(h.state(), label);
+        assert_eq!(
+            source,
+            geo_kernel::kernel::DrawingStyle {
+                color: None,
+                label_edited: false,
+                ..target
+            }
+        );
+        assert!(target.color.is_some());
+    }
+    assert!(h.state_mut().undo());
+    assert_ne!(style(h.state(), "A"), style(h.state(), "B"));
+    assert_ne!(style(h.state(), "A"), style(h.state(), "C"));
+}
+
+#[test]
+fn move_rotate_picks_existing_center_and_rotates_in_place_as_one_step() {
+    let mut h = harness("A = (2, 1)\nB = (4, 1)");
+    h.state_mut().select_tool(Tool::MoveRotate);
+    click(&mut h, world(2.0, 1.0));
+    button(&mut h, world(4.0, 1.0), true);
+    moved(&mut h, world(3.0, 2.0));
+    moved(&mut h, world(2.0, 3.0));
+    button(&mut h, world(2.0, 3.0), false);
+    let at = |app: &App| {
+        let c = app.wb.construction();
+        c.value(c.id("B").unwrap())
+    };
+    let Value::Point { x, y } = at(h.state()) else {
+        panic!("point disappeared")
+    };
+    assert!((x - 2.0).abs() < 1e-9 && (y - 3.0).abs() < 1e-9);
+    assert_eq!(h.state().wb.undo_depth().0, 1);
+    assert!(h.state_mut().undo());
+    assert_eq!(at(h.state()), Value::Point { x: 4.0, y: 1.0 });
+}
+
+#[test]
+fn function_inspector_selects_a_graph_and_returns_to_move_without_undo() {
+    let mut h = harness("f(x) = x^2");
+    h.state_mut().select_tool(Tool::FunctionInspector);
+    click(&mut h, world(1.0, 1.0));
+    let app = h.state();
+    assert_eq!(app.tool.tool(), Tool::Move);
+    let inspector = app.inspector.as_ref().unwrap();
+    assert_eq!(inspector.label, "f");
+    assert_eq!(
+        inspector.rows(&app.wb, 0.0, 2.0, 1.0),
+        vec![(0.0, 0.0), (1.0, 1.0), (2.0, 4.0)]
+    );
+    assert!(inspector.rows(&app.wb, 0.0, 1e100, 0.001).len() <= 256);
+    assert_eq!(app.wb.undo_depth().0, 0);
+}
+
+#[test]
+fn image_tool_opens_placement_request_and_inserts_one_undo_step() {
+    let mut h = harness("A = (2, 1)");
+    h.state_mut().select_tool(Tool::Image);
+    click(&mut h, world(2.0, 1.0));
+    let app = h.state_mut();
+    assert!(app.image_request.is_some());
+    use image::ImageEncoder as _;
+    let mut png = Vec::new();
+    image::codecs::png::PngEncoder::new(&mut png)
+        .write_image(&[0, 0, 0, 255], 1, 1, image::ExtendedColorType::Rgba8)
+        .unwrap();
+    app.finish_image(png).unwrap();
+    let c = app.wb.construction();
+    let (id, _) = c.images().next().unwrap();
+    let quad = c.image_quad(id, 50.0).unwrap();
+    assert_eq!(quad[3], [2.0, 1.0]);
+    assert!(app.undo());
+    assert_eq!(app.wb.construction().images().count(), 0);
+    assert!(app.redo());
+    assert_eq!(app.wb.construction().images().count(), 1);
+}
+
+#[test]
+fn freehand_shape_recognizes_the_reference_diagonal_as_a_segment() {
+    let mut h = harness("");
+    h.state_mut().select_tool(Tool::FreehandShape);
+    button(&mut h, at(500.0, 400.0), true);
+    moved(&mut h, at(505.0, 405.0));
+    moved(&mut h, at(510.0, 410.0));
+    button(&mut h, at(510.0, 410.0), false);
+    assert!(h
+        .state()
+        .wb
+        .object_ids()
+        .any(|id| h.state().wb.construction().kind(id) == geo_kernel::Kind::Segment));
+    assert!(h.state_mut().undo());
+    assert!(labels(&h).is_empty());
+}
+
+#[test]
+fn freehand_function_interpolates_the_reference_diagonal_as_one_step() {
+    let mut h = harness("");
+    h.state_mut().select_tool(Tool::FreehandFunction);
+    button(&mut h, world(1.0, 1.0), true);
+    moved(&mut h, world(2.0, 2.0));
+    moved(&mut h, world(3.0, 3.0));
+    button(&mut h, world(3.0, 3.0), false);
+    let c = h.state().wb.construction();
+    let f = c.id("f").unwrap();
+    assert_eq!(c.function_value(f, 2.5), Some(2.5));
+    assert!(h.state_mut().undo());
+    assert!(labels(&h).is_empty());
+}
+
+#[test]
+fn round_one_imported_line_thickness_uses_the_reference_baseline() {
+    use crate::draw::{line_width, CURVE_WIDTH};
+
+    let mut wb = Workbench::default();
+    wb.load_bytes(
+        br#"<geogebra><construction>
+          <expression label="l" exp="y = 1"/>
+          <element type="line" label="l"><coords x="0" y="1" z="-1"/>
+            <lineStyle thickness="5" type="0"/></element>
+          <expression label="m" exp="y = x - 1"/>
+          <element type="line" label="m"><coords x="-1" y="1" z="1"/>
+            <lineStyle thickness="10" type="0"/></element>
+        </construction></geogebra>"#,
+        "line widths",
+    )
+    .unwrap();
+    let widths = |wb: &Workbench| {
+        let c = wb.construction();
+        ["l", "m"].map(|label| line_width(c, c.id(label).unwrap(), CURVE_WIDTH))
+    };
+    assert_eq!(widths(&wb), [CURVE_WIDTH, 2.0 * CURVE_WIDTH]);
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&wb.snapshot_text())
+        .unwrap()
+        .is_empty());
+    assert_eq!(widths(&restored), widths(&wb));
+    let native = Workbench::from_script("l: y = 1\nm: y = x - 1").unwrap();
+    assert_eq!(widths(&native), [CURVE_WIDTH; 2]);
+    let archive = native.export_ggb(None).unwrap();
+    let mut round_trip = Workbench::default();
+    round_trip.load_bytes(&archive, "native export").unwrap();
+    assert_eq!(widths(&round_trip), widths(&native));
+}
+
+#[test]
+fn round_one_inspector_keeps_a_nearly_equal_endpoint() {
+    let mut h = harness("f(x) = 0");
+    h.state_mut().select_tool(Tool::FunctionInspector);
+    let t = geo_app_core::view::Camera::STANDARD.transform(1400.0, 900.0);
+    let app = h.state_mut();
+    let f = app.wb.construction().id("f").unwrap();
+    app.editor_click(Some(f), &t, t.world_to_screen(-7.88, 0.0));
+    let inspector = app.inspector.as_mut().unwrap();
+    assert_eq!(
+        inspector
+            .rows(&app.wb, -8.879999999999999, -6.88, 0.25)
+            .len(),
+        9
+    );
+}
+
+#[test]
+fn round_one_inspector_limits_work_across_the_table() {
+    let mut h = harness("h(x) = x + x + x + x\ng(x) = h(h(h(h(h(h(h(h(x))))))))");
+    h.state_mut().select_tool(Tool::FunctionInspector);
+    let t = geo_app_core::view::Camera::STANDARD.transform(1400.0, 900.0);
+    let app = h.state_mut();
+    let g = app.wb.construction().id("g").unwrap();
+    app.editor_click(Some(g), &t, t.world_to_screen(0.0, 0.0));
+    let inspector = app.inspector.as_mut().unwrap();
+    let rows = inspector.rows(&app.wb, 1.0, 256.0, 1.0);
+    assert!(rows.len() < 256 || rows.iter().any(|row| row.1.is_nan()));
+    let before = geo_kernel::expr::work_done();
+    assert_eq!(inspector.rows(&app.wb, 1.0, 256.0, 1.0).len(), rows.len());
+    assert_eq!(geo_kernel::expr::work_done(), before);
+}
+
+#[test]
+fn round_one_rotate_refuses_a_parent_of_its_center() {
+    let mut h = harness("A = (2, 1)\nB = (4, 1)\nM = Midpoint(A, B)");
+    h.state_mut().select_tool(Tool::MoveRotate);
+    click(&mut h, world(3.0, 1.0));
+    button(&mut h, world(2.0, 1.0), true);
+    moved(&mut h, world(3.0, 2.0));
+    button(&mut h, world(3.0, 2.0), false);
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("A").unwrap()), Value::Point { x: 2.0, y: 1.0 });
+    assert_eq!(c.value(c.id("M").unwrap()), Value::Point { x: 3.0, y: 1.0 });
+    assert_eq!(h.state().wb.undo_depth().0, 0);
+}
+
+#[test]
+fn round_one_freehand_vertical_keeps_an_undefined_function() {
+    let mut h = harness("");
+    h.state_mut().select_tool(Tool::FreehandFunction);
+    button(&mut h, world(1.0, 1.0), true);
+    moved(&mut h, world(1.0, 2.0));
+    moved(&mut h, world(1.0, 3.0));
+    button(&mut h, world(1.0, 3.0), false);
+    let c = h.state().wb.construction();
+    let f = c.id("f").expect("vertical stroke creates a function");
+    assert_eq!(c.kind(f), geo_kernel::Kind::Function);
+    assert!(!c.value(f).is_defined());
+    assert!(h.state_mut().undo());
+    assert!(labels(&h).is_empty());
+}
+
+#[test]
+fn round_one_image_cancel_with_enter_does_not_insert() {
+    let mut h = harness("A = (2, 1)");
+    h.state_mut().select_tool(Tool::Image);
+    click(&mut h, world(2.0, 1.0));
+    let path =
+        std::env::temp_dir().join(format!("geokernel-image-cancel-{}.png", std::process::id()));
+    std::fs::write(
+        &path,
+        include_bytes!("../../../../tools/ggb-harness/cases/editor_tools/fixture.png"),
+    )
+    .unwrap();
+    h.state_mut().image_path = path.to_string_lossy().into_owned();
+    h.run();
+    h.key_press(egui::Key::Tab);
+    h.run();
+    h.key_press(egui::Key::Tab);
+    h.run();
+    h.key_press(egui::Key::Enter);
+    h.run();
+    std::fs::remove_file(path).unwrap();
+    assert!(h.state().image_request.is_none());
+    assert_eq!(h.state().wb.construction().images().count(), 0);
+    assert_eq!(h.state().wb.undo_depth().0, 0);
+}
+
+#[test]
+fn round_one_rotate_previews_an_eligible_segment_after_choosing_a_center() {
+    let mut h = harness("A = (-2, 1)\nB = (2, 1)\nC = (0, -2)\ns = Segment(A, B)");
+    h.state_mut().select_tool(Tool::MoveRotate);
+    click(&mut h, world(0.0, -2.0));
+    moved(&mut h, world(0.0, 1.0));
+    let app = h.state();
+    assert_eq!(app.hovered, app.wb.construction().id("s"));
+}
