@@ -462,3 +462,8 @@ forwards the hit point to the reference image placement helper. The headless
 probe does not run either native dialog, so the image observation checks the
 anchor and return to Move. The Rust replay opens the same PNG through its file
 prompt and the UI test checks undo and redo.
+
+The `regressions` entries record reference outcomes for dedicated Rust tests.
+They cover inspector endpoints, styled zoom, rotation about a dependent
+centre, copied style after reload, labels, cancellation and freehand fits.
+They remain separate from the two-cadence pointer replay counts.

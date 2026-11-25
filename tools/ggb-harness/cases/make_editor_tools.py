@@ -2,6 +2,7 @@
 """Pointer inputs for the Classic editor-tool probe."""
 
 import json
+import math
 import struct
 import zlib
 from pathlib import Path
@@ -54,6 +55,30 @@ cases += [
          thicknesses={"m": 10}, labels=["l", "m"], style=True, regression=True),
     case("label_then_cas_undo", 28, point_script[:1], click(2, 1),
          cas_then_undo="1 + 2", regression=True),
+]
+cases += [
+    case("inspector_negative_endpoint", 68, ["f(x) = 0"], click(-7.88, 0), inspector=True, regression=True),
+    case("rotate_parent_of_center", 39, point_script[:2] + ["M = Midpoint(A, B)"],
+         click(3, 1) + [("mouse_down", 2, 1.01), ("mouse_move", 3, 2.01),
+                        ("mouse_up", 3, 2.01)], points=["A", "M"], regression=True),
+    case("copy_style_reload", 35, point_script[:2] + ["$drawingStyle(_41, 2, false, 7, rgb285aa0)"],
+         click(2, 1) + click(4, 1), labels=["B"], style=True, reload=True, regression=True),
+    case("image_cancel", 26, point_script[:1], click(2, 1), image=True, cancel_image=True, regression=True),
+    case("freehand_vertical", 74, [],
+         [("mouse_down", 1, 1.01), ("mouse_move", 1, 2.01), ("mouse_move", 1, 3.01),
+          ("mouse_up", 1, 3.01)], function_defined=True, regression=True),
+]
+hyperbola = [(2 + math.cosh(i / 8), math.sinh(i / 8)) for i in range(-15, 16)]
+cases += [
+    case("freehand_hyperbola", 73, [],
+         [("mouse_down", *hyperbola[0])] + [("mouse_move", *p) for p in hyperbola[1:]]
+         + [("mouse_up", *hyperbola[-1])], conic_type=True, regression=True),
+    case("text_label_visibility", 28, ["A = (2, 1)", 't = Text("Canvas text", A)'],
+         click(2, 1) + [("select_tool", 0)], text_hit="t", labels=["t"], regression=True),
+]
+cases += [
+    case("styled_curve_zoom", 0, ["c: x^2 + 4y^2 = 16"], [],
+         thicknesses={"c": 10}, labels=["c"], style=True, zoom=True, regression=True),
 ]
 directory = Path(__file__).with_name("editor_tools")
 directory.mkdir(exist_ok=True)

@@ -18,6 +18,7 @@ enum Shape {
     Polygon(Vec<Point>),
     Circle(Point, f64),
     Ellipse([Point; 3]),
+    Hyperbola([Point; 3]),
 }
 
 fn distance(a: Point, b: Point) -> f64 {
@@ -149,7 +150,7 @@ fn polygon(stroke: &[Point], length: f64) -> Option<Vec<Point>> {
 /// Fit the ten reference samples to an ellipse. The stroke is normalized
 /// before solving the least-squares normal equations with partial pivoting.
 /// The fit with unit constant is sufficient when the origin is inside the ellipse.
-fn ellipse(stroke: &[Point], center: Point, scale: f64) -> Option<[Point; 3]> {
+fn conic(stroke: &[Point], center: Point, scale: f64) -> Option<Shape> {
     let count = 10;
     if stroke.len() < count || scale <= 0.0 {
         return None;
@@ -187,19 +188,63 @@ fn ellipse(stroke: &[Point], center: Point, scale: f64) -> Option<[Point; 3]> {
     }
     let [a, b, c, d, e] = matrix.map(|row| row[5]);
     let determinant = a * c - 0.25 * b * b;
-    if determinant <= 0.0 || a <= 0.0 {
+    if determinant.abs() <= 1e-10 {
         return None;
     }
     let x0 = (b * e * 0.5 - c * d) / (2.0 * determinant);
     let y0 = (b * d * 0.5 - a * e) / (2.0 * determinant);
     let rhs = 1.0 - 0.5 * (d * x0 + e * y0);
     let separation = (a - c).hypot(b);
+    let angle = 0.5 * (-b).atan2(c - a);
+    if determinant < 0.0 {
+        let low = 0.5 * (a + c - separation);
+        let high = 0.5 * (a + c + separation);
+        let (along, across, angle) = if rhs > 0.0 {
+            (high, low, angle + std::f64::consts::FRAC_PI_2)
+        } else {
+            (low, high, angle)
+        };
+        let transverse = (rhs / along).sqrt();
+        let conjugate = (-rhs / across).sqrt();
+        if !(transverse.is_finite() && transverse > 0.0 && conjugate.is_finite() && conjugate > 0.0)
+        {
+            return None;
+        }
+        let (sin, cos) = angle.sin_cos();
+        let error = stroke
+            .iter()
+            .map(|&point| {
+                let (x, y) = normalized(point);
+                let (x, y) = (x - x0, y - y0);
+                let a = (x * cos + y * sin) / transverse;
+                let b = (y * cos - x * sin) / conjugate;
+                (a * a - b * b - 1.0).abs()
+            })
+            .sum::<f64>()
+            / stroke.len() as f64;
+        if !(error.is_finite() && error <= 0.15) {
+            return None;
+        }
+        let focus = transverse.hypot(conjugate);
+        let points = [-focus, focus, transverse].map(|offset| {
+            (
+                center.0 + scale * (x0 + offset * cos),
+                center.1 + scale * (y0 + offset * sin),
+            )
+        });
+        return points
+            .iter()
+            .all(|&(x, y)| x.is_finite() && y.is_finite())
+            .then_some(Shape::Hyperbola(points));
+    }
+    if a <= 0.0 {
+        return None;
+    }
     let minor = (rhs / (0.5 * (a + c + separation))).sqrt();
     let major = (rhs / (0.5 * (a + c - separation))).sqrt();
     if !(major.is_finite() && minor > 0.0) {
         return None;
     }
-    let angle = 0.5 * (-b).atan2(c - a);
     let (sin, cos) = angle.sin_cos();
     let error = stroke
         .iter()
@@ -216,12 +261,12 @@ fn ellipse(stroke: &[Point], center: Point, scale: f64) -> Option<[Point; 3]> {
         return None;
     }
     let focus = (major * major - minor * minor).sqrt();
-    Some([-focus, focus, major].map(|offset| {
+    Some(Shape::Ellipse([-focus, focus, major].map(|offset| {
         (
             center.0 + scale * (x0 + offset * cos),
             center.1 + scale * (y0 + offset * sin),
         )
-    }))
+    })))
 }
 
 fn shape(stroke: &[Point], view: &ViewTransform) -> Option<Shape> {
@@ -249,7 +294,7 @@ fn shape(stroke: &[Point], view: &ViewTransform) -> Option<Shape> {
     }
     let world_stroke: Vec<_> = stroke.iter().copied().map(world).collect();
     let radius = radius / view.xscale().min(view.yscale());
-    ellipse(&world_stroke, world(center), radius).map(Shape::Ellipse)
+    conic(&world_stroke, world(center), radius)
 }
 
 /// First y in each integer pixel column wins. Missing columns are interpolated
@@ -267,7 +312,7 @@ fn function_data(stroke: &[Point], view: &ViewTransform) -> Option<Vec<f64>> {
     let min = xs.clone().min()?;
     let max = xs.max()?;
     let width = usize::try_from(max.checked_sub(min)?).ok()?;
-    if !(1..MAX_FUNCTION_COLUMNS).contains(&width) {
+    if width >= MAX_FUNCTION_COLUMNS {
         return None;
     }
     let world_x = |x| crate::snap::check_decimal_fraction(view.screen_to_world(x, 0.0).0);
@@ -362,7 +407,12 @@ pub(crate) fn recognize(
             hidden.push(center.clone());
             format!("{name} = Circle({center}, {radius})")
         }
-        Shape::Ellipse([a, b, p]) => {
+        Shape::Ellipse([a, b, p]) | Shape::Hyperbola([a, b, p]) => {
+            let command = if matches!(detected, Shape::Hyperbola(_)) {
+                "Hyperbola"
+            } else {
+                "Ellipse"
+            };
             let (a, b, p) = (add(a), add(b), add(p));
             let name = next_label(Kind::Conic, |name| c.id(name).is_some());
             hidden.extend([a.clone(), b.clone(), p.clone()]);
@@ -370,10 +420,11 @@ pub(crate) fn recognize(
                 label: name.clone(),
                 style: geo_kernel::kernel::DrawingStyle {
                     show_label: false,
+                    line_thickness: geo_kernel::kernel::DrawingStyle::GRAPHICS_THICKNESS,
                     ..Default::default()
                 },
             };
-            lines.push(format!("{name} = Ellipse({a}, {b}, {p})"));
+            lines.push(format!("{name} = {command}({a}, {b}, {p})"));
             style.to_string()
         }
     };
@@ -427,4 +478,24 @@ mod tests {
         }
         assert!(recognize(&c, &[(0.0, 0.0), (1.0, 1.0), (0.0, 0.0)], &view, true).is_none());
     }
+}
+
+#[cfg(test)]
+#[test]
+fn round_one_freehand_fits_an_open_hyperbola() {
+    let view = crate::view::Camera::STANDARD.transform(892.0, 747.0);
+    let points: Vec<_> = (-15..=15)
+        .map(|i| {
+            let t = f64::from(i) / 8.0;
+            (2.0 + t.cosh(), t.sinh())
+        })
+        .collect();
+    let mut wb = crate::workbench::Workbench::default();
+    wb.recognize_stroke(&points, &view, false).unwrap();
+    let c = wb.construction();
+    assert!(c.ids().any(|id| c
+        .conic(id)
+        .is_some_and(|d| d.ty == geo_kernel::ConicType::Hyperbola)));
+    assert!(wb.undo());
+    assert!(wb.construction().is_empty());
 }

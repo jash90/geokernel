@@ -1961,10 +1961,10 @@ impl Construction {
                         style.show_label = false;
                         style.line_thickness = 0;
                     }
+                    Kind::Text => style.show_label = false,
                     Kind::Point
                     | Kind::Number
                     | Kind::Boolean
-                    | Kind::Text
                     | Kind::Button
                     | Kind::InputBox
                     | Kind::Image => {}

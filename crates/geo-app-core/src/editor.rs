@@ -4,14 +4,25 @@ use crate::app::App;
 use crate::interact::ViewTransform;
 use crate::tools::Tool;
 use crate::workbench::Workbench;
-use geo_kernel::{Id, Kind, Value};
+use geo_kernel::{expr, Id, Kind, Value};
+use std::cell::RefCell;
 
 pub const MAX_INSPECTOR_ROWS: usize = 256;
+const MAX_INSPECTOR_WORK: u64 = 65_536;
 
 #[derive(Clone, Debug)]
 pub struct Inspector {
     pub label: String,
     pub interval: [f64; 3],
+    cached: RefCell<Option<InspectorRows>>,
+}
+
+#[derive(Clone, Debug)]
+struct InspectorRows {
+    object: Id,
+    version: u64,
+    interval: [u64; 3],
+    values: Vec<(f64, f64)>,
 }
 
 impl Inspector {
@@ -23,11 +34,40 @@ impl Inspector {
         if !(min.is_finite() && max.is_finite() && step.is_finite() && min <= max && step > 0.0) {
             return Vec::new();
         }
-        (0..MAX_INSPECTOR_ROWS)
-            .map(|index| min + index as f64 * step)
-            .take_while(|&x| x <= max)
-            .map(|x| (x, c.function_value(id, x).unwrap_or(f64::NAN)))
-            .collect()
+        let interval = [min, max, step].map(f64::to_bits);
+        let version = wb.version();
+        let mut cached = self.cached.borrow_mut();
+        if let Some(rows) = cached.as_ref().filter(|rows| {
+            rows.object == id && rows.version == version && rows.interval == interval
+        }) {
+            return rows.values.clone();
+        }
+        let start = expr::work_done();
+        let values = expr::with_evaluation_budget(MAX_INSPECTOR_WORK, || {
+            let mut values = Vec::new();
+            for index in 0..MAX_INSPECTOR_ROWS {
+                let x = min + index as f64 * step;
+                // The final multiply/add can round one representable number
+                // past the endpoint. Keep the endpoint once.
+                if x > max.next_up() || !x.is_finite() {
+                    break;
+                }
+                let x = x.min(max);
+                let y = c.function_value(id, x).unwrap_or(f64::NAN);
+                values.push((x, y));
+                if x == max || expr::work_done() - start >= MAX_INSPECTOR_WORK {
+                    break;
+                }
+            }
+            values
+        });
+        *cached = Some(InspectorRows {
+            object: id,
+            version,
+            interval,
+            values: values.clone(),
+        });
+        values
     }
 }
 
@@ -84,6 +124,7 @@ impl App {
                     let inspector = Inspector {
                         label: c.label(id).to_owned(),
                         interval: [center - 4.0 * step, center + 4.0 * step, step],
+                        cached: RefCell::default(),
                     };
                     self.select_tool(Tool::Move);
                     self.inspector = Some(inspector);

@@ -277,13 +277,19 @@ fn image_dialog(app: &mut App, ctx: &egui::Context) {
     let response = egui::Modal::new(egui::Id::unique("open-image")).show(ctx, |ui| {
         ui.heading(crate::tools::Tool::Image.caption());
         let caption = ui.label("Ścieżka do obrazu PNG, JPEG lub GIF");
+        let field_id = ui.make_persistent_id("image-path");
+        let submit = ui.memory(|memory| memory.has_focus(field_id))
+            && ui.input(|input| input.key_pressed(egui::Key::Enter));
         let field = ui
-            .add(egui::TextEdit::singleline(&mut app.image_path).desired_width(320.0))
+            .add(
+                egui::TextEdit::singleline(&mut app.image_path)
+                    .id(field_id)
+                    .desired_width(320.0),
+            )
             .labelled_by(caption.id);
         if !ui.memory(|memory| memory.focused().is_some()) {
             field.request_focus();
         }
-        let submit = ui.input(|input| input.key_pressed(egui::Key::Enter));
         ui.horizontal(|ui| {
             let ready = !app.image_path.trim().is_empty();
             let open = ui.add_enabled(ready, egui::Button::new("Otwórz")).clicked();
@@ -293,30 +299,44 @@ fn image_dialog(app: &mut App, ctx: &egui::Context) {
         .inner
     });
     let (open, cancel) = response.inner;
-    if open {
+    if cancel || response.should_close() {
+        app.select_tool(crate::tools::Tool::Move);
+    } else if open {
         let result =
             read_image(Path::new(app.image_path.trim())).and_then(|bytes| app.finish_image(bytes));
         if let Err(error) = result {
             app.select_tool(crate::tools::Tool::Move);
             app.load_error = Some(format!("Nie można wstawić obrazu: {error}"));
         }
-    } else if cancel || response.should_close() {
-        app.select_tool(crate::tools::Tool::Move);
     }
 }
 
 fn read_image(path: &Path) -> Result<Vec<u8>, String> {
+    let regular_file = |metadata: std::fs::Metadata| {
+        if metadata.is_file() {
+            Ok(())
+        } else {
+            Err("expected a regular image file".to_owned())
+        }
+    };
+    regular_file(std::fs::metadata(path).map_err(|error| error.to_string())?)?;
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt as _;
+        // The path can be replaced by a pipe between metadata and open.
+        options.custom_flags(libc::O_NONBLOCK);
+    }
+    let file = options.open(path).map_err(|error| error.to_string())?;
+    regular_file(file.metadata().map_err(|error| error.to_string())?)?;
+    read_image_bytes(file)
+}
+
+fn read_image_bytes(file: impl std::io::Read) -> Result<Vec<u8>, String> {
     use geo_kernel::kernel::image::MAX_ASSET_BYTES;
     use std::io::Read as _;
-    let file = std::fs::File::open(path).map_err(|error| error.to_string())?;
-    if !file
-        .metadata()
-        .map_err(|error| error.to_string())?
-        .is_file()
-    {
-        return Err("expected a regular image file".into());
-    }
-    let file = std::fs::File::open(path).map_err(|error| error.to_string())?;
+
     let mut bytes = Vec::new();
     file.take(MAX_ASSET_BYTES + 1)
         .read_to_end(&mut bytes)
@@ -680,4 +700,17 @@ mod export_path_tests {
         );
         assert_eq!(ggb_path(Path::new("my.GGB")), Path::new("my.GGB"));
     }
+}
+
+#[cfg(test)]
+#[test]
+fn image_reader_stops_at_the_compressed_byte_limit() {
+    use geo_kernel::kernel::image::MAX_ASSET_BYTES;
+    use std::io::Read as _;
+    let mut input = std::io::repeat(0).take(MAX_ASSET_BYTES + 4096);
+    assert_eq!(
+        read_image_bytes(&mut input).unwrap_err(),
+        "image asset is too large"
+    );
+    assert_eq!(input.limit(), 4095);
 }

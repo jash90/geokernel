@@ -376,6 +376,525 @@
       ],
       "cas_then_undo": "1 + 2",
       "regression": true
+    },
+    {
+      "name": "tool_inspector_negative_endpoint",
+      "tool_mode": 68,
+      "initial_script": [
+        "f(x) = 0"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            -7.88,
+            0.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            -7.88,
+            0.01
+          ]
+        }
+      ],
+      "inspector": true,
+      "regression": true
+    },
+    {
+      "name": "tool_rotate_parent_of_center",
+      "tool_mode": 39,
+      "initial_script": [
+        "A = (2, 1)",
+        "B = (4, 1)",
+        "M = Midpoint(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            3,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            1.01
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_move",
+          "pos": [
+            3,
+            2.01
+          ]
+        },
+        {
+          "t": 240,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            2.01
+          ]
+        }
+      ],
+      "points": [
+        "A",
+        "M"
+      ],
+      "regression": true
+    },
+    {
+      "name": "tool_copy_style_reload",
+      "tool_mode": 35,
+      "initial_script": [
+        "A = (2, 1)",
+        "B = (4, 1)",
+        "$drawingStyle(_41, 2, false, 7, rgb285aa0)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            1.01
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            1.01
+          ]
+        }
+      ],
+      "labels": [
+        "B"
+      ],
+      "style": true,
+      "reload": true,
+      "regression": true
+    },
+    {
+      "name": "tool_image_cancel",
+      "tool_mode": 26,
+      "initial_script": [
+        "A = (2, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        }
+      ],
+      "image": true,
+      "cancel_image": true,
+      "regression": true
+    },
+    {
+      "name": "tool_freehand_vertical",
+      "tool_mode": 74,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_move",
+          "pos": [
+            1,
+            2.01
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_move",
+          "pos": [
+            1,
+            3.01
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            3.01
+          ]
+        }
+      ],
+      "function_defined": true,
+      "regression": true
+    },
+    {
+      "name": "tool_freehand_hyperbola",
+      "tool_mode": 73,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            5.337087043587521,
+            -3.183732076742592
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_move",
+          "pos": [
+            4.964188309728088,
+            -2.7904143662776426
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_move",
+          "pos": [
+            4.637665356192137,
+            -2.4407536809879433
+          ]
+        },
+        {
+          "t": 180,
+          "type": "mouse_move",
+          "pos": [
+            4.352409615243247,
+            -2.1292794550948173
+          ]
+        },
+        {
+          "t": 240,
+          "type": "mouse_move",
+          "pos": [
+            4.103958159362662,
+            -1.8511185635579153
+          ]
+        },
+        {
+          "t": 300,
+          "type": "mouse_move",
+          "pos": [
+            3.888423877161016,
+            -1.6019190803008256
+          ]
+        },
+        {
+          "t": 360,
+          "type": "mouse_move",
+          "pos": [
+            3.7024346581381904,
+            -1.3777821907798407
+          ]
+        },
+        {
+          "t": 420,
+          "type": "mouse_move",
+          "pos": [
+            3.5430806348152437,
+            -1.1752011936438014
+          ]
+        },
+        {
+          "t": 480,
+          "type": "mouse_move",
+          "pos": [
+            3.407868656822803,
+            -0.9910066371442947
+          ]
+        },
+        {
+          "t": 540,
+          "type": "mouse_move",
+          "pos": [
+            3.294683284676845,
+            -0.82231673193583
+          ]
+        },
+        {
+          "t": 600,
+          "type": "mouse_move",
+          "pos": [
+            3.2017536929756063,
+            -0.6664922644566161
+          ]
+        },
+        {
+          "t": 660,
+          "type": "mouse_move",
+          "pos": [
+            3.1276259652063807,
+            -0.5210953054937474
+          ]
+        },
+        {
+          "t": 720,
+          "type": "mouse_move",
+          "pos": [
+            3.0711403467045866,
+            -0.38385106791361456
+          ]
+        },
+        {
+          "t": 780,
+          "type": "mouse_move",
+          "pos": [
+            3.031413099879573,
+            -0.2526123168081683
+          ]
+        },
+        {
+          "t": 840,
+          "type": "mouse_move",
+          "pos": [
+            3.007822677825711,
+            -0.12532577524111546
+          ]
+        },
+        {
+          "t": 900,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            0.0
+          ]
+        },
+        {
+          "t": 960,
+          "type": "mouse_move",
+          "pos": [
+            3.007822677825711,
+            0.12532577524111546
+          ]
+        },
+        {
+          "t": 1020,
+          "type": "mouse_move",
+          "pos": [
+            3.031413099879573,
+            0.2526123168081683
+          ]
+        },
+        {
+          "t": 1080,
+          "type": "mouse_move",
+          "pos": [
+            3.0711403467045866,
+            0.38385106791361456
+          ]
+        },
+        {
+          "t": 1140,
+          "type": "mouse_move",
+          "pos": [
+            3.1276259652063807,
+            0.5210953054937474
+          ]
+        },
+        {
+          "t": 1200,
+          "type": "mouse_move",
+          "pos": [
+            3.2017536929756063,
+            0.6664922644566161
+          ]
+        },
+        {
+          "t": 1260,
+          "type": "mouse_move",
+          "pos": [
+            3.294683284676845,
+            0.82231673193583
+          ]
+        },
+        {
+          "t": 1320,
+          "type": "mouse_move",
+          "pos": [
+            3.407868656822803,
+            0.9910066371442947
+          ]
+        },
+        {
+          "t": 1380,
+          "type": "mouse_move",
+          "pos": [
+            3.5430806348152437,
+            1.1752011936438014
+          ]
+        },
+        {
+          "t": 1440,
+          "type": "mouse_move",
+          "pos": [
+            3.7024346581381904,
+            1.3777821907798407
+          ]
+        },
+        {
+          "t": 1500,
+          "type": "mouse_move",
+          "pos": [
+            3.888423877161016,
+            1.6019190803008256
+          ]
+        },
+        {
+          "t": 1560,
+          "type": "mouse_move",
+          "pos": [
+            4.103958159362662,
+            1.8511185635579153
+          ]
+        },
+        {
+          "t": 1620,
+          "type": "mouse_move",
+          "pos": [
+            4.352409615243247,
+            2.1292794550948173
+          ]
+        },
+        {
+          "t": 1680,
+          "type": "mouse_move",
+          "pos": [
+            4.637665356192137,
+            2.4407536809879433
+          ]
+        },
+        {
+          "t": 1740,
+          "type": "mouse_move",
+          "pos": [
+            4.964188309728088,
+            2.7904143662776426
+          ]
+        },
+        {
+          "t": 1800,
+          "type": "mouse_move",
+          "pos": [
+            5.337087043587521,
+            3.183732076742592
+          ]
+        },
+        {
+          "t": 1860,
+          "type": "mouse_up",
+          "pos": [
+            5.337087043587521,
+            3.183732076742592
+          ]
+        }
+      ],
+      "conic_type": true,
+      "regression": true
+    },
+    {
+      "name": "tool_text_label_visibility",
+      "tool_mode": 28,
+      "initial_script": [
+        "A = (2, 1)",
+        "t = Text(\"Canvas text\", A)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            1.01
+          ]
+        },
+        {
+          "t": 120,
+          "type": "select_tool",
+          "mode": 0
+        }
+      ],
+      "text_hit": "t",
+      "labels": [
+        "t"
+      ],
+      "regression": true
+    },
+    {
+      "name": "tool_styled_curve_zoom",
+      "tool_mode": 0,
+      "initial_script": [
+        "c: x^2 + 4y^2 = 16"
+      ],
+      "events": [],
+      "thicknesses": {
+        "c": 10
+      },
+      "labels": [
+        "c"
+      ],
+      "style": true,
+      "zoom": true,
+      "regression": true
     }
   ]
 }

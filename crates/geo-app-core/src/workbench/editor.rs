@@ -33,6 +33,9 @@ impl Workbench {
         bytes: Vec<u8>,
     ) -> Result<Id, String> {
         let c = self.construction();
+        if c.image_asset_count() >= geo_import::export::MAX_INSERTED_IMAGE_ASSETS {
+            return Err("too many image assets to save this construction".into());
+        }
         let label = next_numbered("pic", |name| {
             c.id(name).is_some() || c.has_image_asset(name)
         });

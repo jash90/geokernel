@@ -302,6 +302,7 @@ fn text_drag_origin(c: &Construction, id: Id) -> Option<TextMove> {
 
 /// Limit the number of free parents a rotate gesture can update in one move.
 const MAX_ROTATION_INPUTS: usize = 256;
+const MAX_ROTATION_DEPENDENCIES: usize = 2048;
 
 pub(crate) fn rotation_points(c: &Construction, id: Id) -> Option<Vec<Id>> {
     if free_point(c, id) {
@@ -315,6 +316,33 @@ pub(crate) fn rotation_points(c: &Construction, id: Id) -> Option<Vec<Id>> {
     Some(free_input_points(c, id))
 }
 
+/// Refuse a rotation if any point it would move can change the centre.
+pub(crate) fn can_rotate(c: &Construction, id: Id, center: Id) -> bool {
+    let Some(mut pending) = rotation_points(c, id) else {
+        return false;
+    };
+    pending.retain(|&point| point != center);
+    // Walk the existing dependency graph, charging edges before adding them
+    // to the queue. A centre whose independence cannot be proved stays put.
+    let mut seen = std::collections::HashSet::new();
+    let mut remaining = MAX_ROTATION_DEPENDENCIES;
+    while let Some(point) = pending.pop() {
+        if point == center {
+            return false;
+        }
+        if seen.insert(point) {
+            for dependent in c.direct_dependents(point) {
+                if remaining == 0 {
+                    return false;
+                }
+                remaining -= 1;
+                pending.push(dependent);
+            }
+        }
+    }
+    !seen.is_empty()
+}
+
 impl Drag {
     pub fn rotation(
         c: &Construction,
@@ -323,8 +351,7 @@ impl Drag {
         center: (f64, f64),
         at: (f64, f64),
     ) -> Option<Drag> {
-        let points = rotation_points(c, id)?;
-        if points.iter().all(|&point| point == center_id) {
+        if !can_rotate(c, id, center_id) {
             return None;
         }
         Some(Drag {

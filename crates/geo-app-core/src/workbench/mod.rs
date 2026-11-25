@@ -18,7 +18,7 @@ use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use geo_kernel::script::saved::Property;
 use geo_kernel::script::text::Properties as TextProperties;
 use geo_kernel::script::{find_top_level, BoundaryOutputs};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::OnceLock;
 
 /// What the algebra list shows for one object.
@@ -83,7 +83,7 @@ pub struct Workbench {
     boundary_outputs: BoundaryOutputs,
     file_settings: geo_import::Settings,
     file_import_losses: (usize, usize),
-    file_object_styles: BTreeMap<String, geo_import::export::ObjectStyle>,
+    file_object_styles: HashMap<String, geo_import::export::ObjectStyle>,
     file_slider_animation: BTreeMap<String, geo_import::export::SliderAnimation>,
     file_view: Option<geo_import::export::View>,
     file_cas_visible: Option<bool>,
@@ -215,7 +215,7 @@ impl Workbench {
         let sides = self
             .sides
             .get_or_init(|| Sides::of(&self.construction, key));
-        Palette::new(&self.construction, sides, key)
+        Palette::new(&self.construction, sides, key).with_file_styles(&self.file_object_styles)
     }
 
     /// A copy of `log` for an undo step: shares its storage (see
@@ -283,8 +283,8 @@ impl Workbench {
         self.sides = OnceLock::new();
     }
 
-    #[cfg(test)]
-    pub fn version(&self) -> u64 {
+    /// Revision of the construction and its edited properties.
+    pub(crate) fn version(&self) -> u64 {
         self.version
     }
 
@@ -1043,10 +1043,7 @@ impl Workbench {
     pub(crate) fn toggle_label_in_mode(&mut self, id: Id) {
         let c = self.construction();
         if id.index() >= c.len()
-            || matches!(
-                c.kind(id),
-                Kind::Text | Kind::Image | Kind::Locus | Kind::PenStroke
-            )
+            || matches!(c.kind(id), Kind::Image | Kind::Locus | Kind::PenStroke)
         {
             return;
         }
@@ -1059,14 +1056,7 @@ impl Workbench {
     pub(crate) fn copy_drawing_style(&mut self, source: Id, target: Id) {
         let mut style = self.construction.drawing_style(source);
         let color = self.palette().color(source);
-        style.color = style
-            .color
-            .or_else(|| {
-                self.file_object_styles
-                    .get(self.construction.label(source))
-                    .and_then(|style| style.color)
-            })
-            .or(Some([color.r, color.g, color.b]));
+        style.color = Some([color.r, color.g, color.b]);
         style.label_edited = true;
         style.sector_outline_only = self.construction.drawing_style(target).sector_outline_only;
         self.edit_drawing_style(target, style);

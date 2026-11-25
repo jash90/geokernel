@@ -242,6 +242,12 @@ fn placed_runs(mesh: &Mesh, runs: &[Run], fours: bool, at: Placing, near: Rect) 
     if quads && !fours {
         return None;
     }
+    Some(copy_runs(mesh, runs, quads, at, near))
+}
+
+/// Copies a cached stroke, scaling its width as well when its vertex
+/// layout cannot preserve the width and the frame has spent its budget.
+fn copy_runs(mesh: &Mesh, runs: &[Run], quads: bool, at: Placing, near: Rect) -> Mesh {
     let len = mesh.vertices.len() as u32;
     let grow = if at.scale == Vec2::splat(1.0) {
         0.0
@@ -298,7 +304,11 @@ fn placed_runs(mesh: &Mesh, runs: &[Run], fours: bool, at: Placing, near: Rect) 
             if !quads {
                 out.vertices.extend(src.iter().map(|v| {
                     let mut v = *v;
-                    v.pos += d;
+                    v.pos = if at.scale == Vec2::splat(1.0) {
+                        v.pos + d
+                    } else {
+                        at.point(v.pos)
+                    };
                     v
                 }));
             } else {
@@ -320,7 +330,7 @@ fn placed_runs(mesh: &Mesh, runs: &[Run], fours: bool, at: Placing, near: Rect) 
                 .map(|&i| i - from + base),
         );
     }
-    Some(out)
+    out
 }
 
 /// The stroke of the polylines `paths` (in the coordinates of the area
@@ -563,12 +573,16 @@ impl Curves {
     /// Whether the frame may still plot the curve `id` because of the view;
     /// if so, it is counted.
     fn may_plot(&self, c: &Construction, id: Id) -> bool {
+        self.charge_replot(plot_cost(c, id))
+    }
+
+    fn charge_replot(&self, cost: usize) -> bool {
         let cap = if self.panning {
             REPLOTS_PER_PAN_FRAME
         } else {
             REPLOTS_PER_FRAME
         };
-        let n = self.replots.get() + plot_cost(c, id);
+        let n = self.replots.get() + cost;
         let may = n <= cap;
         if may {
             self.replots.set(n);
@@ -774,14 +788,15 @@ impl Curves {
                 origin,
                 scale,
             };
-            let kept = (
-                &*p.mesh,
-                &*p.runs,
-                p.points_of_four && p.width == crate::draw::CURVE_WIDTH,
-            );
-            let scaled = placed_stroke(kept, &p.paths, at, area, |pieces| {
-                self.tessellate(pieces.into_iter(), entry.color, p.width).0
-            });
+            let scaled = if scale != Vec2::splat(1.0) && !p.points_of_four && !self.charge_replot(1)
+            {
+                copy_runs(&p.mesh, &p.runs, false, at, area.expand(1.0))
+            } else {
+                let kept = (&*p.mesh, &*p.runs, p.points_of_four);
+                placed_stroke(kept, &p.paths, at, area, |pieces| {
+                    self.tessellate(pieces.into_iter(), entry.color, p.width).0
+                })
+            };
             (Arc::new(scaled), TSTransform::IDENTITY)
         };
         Some(Arc::new(Drawn {

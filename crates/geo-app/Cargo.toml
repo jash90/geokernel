@@ -34,6 +34,9 @@ vello_cpu = { version = "0.2.0", default-features = false, features = ["std"] }
 [target.'cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))'.dependencies]
 eframe = { version = "0.37.0", default-features = false, features = ["accesskit"] }
 
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 # Both Linux window systems, on Linux only: Cargo merges these features with
 # the ones above, and other targets (macOS, Windows, later Android) build
 # without them.

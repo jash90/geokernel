@@ -14,6 +14,7 @@ import org.geogebra.common.awt.GPoint;
 import org.geogebra.common.euclidian.event.PointerEventType;
 import org.geogebra.common.euclidian.EuclidianConstants;
 import org.geogebra.common.euclidian.EuclidianView;
+import org.geogebra.common.euclidian.draw.DrawText;
 import org.geogebra.common.factories.AwtFactoryCommon;
 import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.DialogManagerNoGui;
@@ -23,6 +24,7 @@ import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.kernel.Kernel;
 import org.geogebra.common.kernel.ModeSetter;
 import org.geogebra.common.kernel.geos.GeoCasCell;
+import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoImage;
@@ -75,7 +77,7 @@ public final class EditorTools {
             return fixtureGui;
         }
 
-        void allowFixtureImage(Path imageFile) throws java.io.IOException {
+        void allowFixtureImage(Path imageFile, boolean cancel) throws java.io.IOException {
             var fixture = ImageIO.read(imageFile.toFile());
             int width = fixture.getWidth();
             int height = fixture.getHeight();
@@ -85,7 +87,7 @@ public final class EditorTools {
             fixtureGui = (GuiManagerInterface) Proxy.newProxyInstance(
                     GuiManagerInterface.class.getClassLoader(),
                     new Class<?>[] { GuiManagerInterface.class }, (proxy, method, args) -> {
-                        if (method.getName().equals("loadImage")) {
+                        if (method.getName().equals("loadImage") && !cancel) {
                             if (args[0] instanceof GeoPoint anchor) {
                                 getSelectionManager().addSelectedGeo(anchor);
                             }
@@ -166,7 +168,7 @@ public final class EditorTools {
             controller.wrapMousePressed(at);
             controller.wrapMouseReleased(at);
             view.setHits(new GPoint(at.getX(), at.getY()), PointerEventType.MOUSE);
-            app.allowFixtureImage(fixture);
+            app.allowFixtureImage(fixture, Boolean.TRUE.equals(spec.get("cancel_image")));
         }
         view.setMode(mode, ModeSetter.TOOLBAR);
         if (mode == EuclidianConstants.MODE_FREEHAND_FUNCTION) {
@@ -177,16 +179,22 @@ public final class EditorTools {
                 var event = (Map<?, ?>) item;
                 switch ((String) event.get("type")) {
                     case "mouse_down" -> {
-                        var pointer = pointer(view, event);
+                        var pointer = pointer(view, event, hitText(view, kernel, spec));
                         controller.wrapMouseMoved(pointer);
                         controller.wrapMousePressed(pointer);
                     }
                     case "mouse_move" -> controller.wrapMouseDragged(pointer(view, event), true);
-                    case "mouse_up" -> controller.wrapMouseReleased(pointer(view, event));
+                    case "mouse_up" -> controller.wrapMouseReleased(pointer(view, event, hitText(view, kernel, spec)));
                     case "select_tool" -> view.setMode(((Long) event.get("mode")).intValue(), ModeSetter.TOOLBAR);
                     default -> throw new IllegalArgumentException("unknown pointer event");
                 }
             }
+        }
+        if (Boolean.TRUE.equals(spec.get("zoom"))) {
+            view.setCoordSystem(446, 373.5, 62.5, 62.5);
+        }
+        if (Boolean.TRUE.equals(spec.get("reload"))) {
+            app.setXML(app.getXML(), true);
         }
         var expected = new LinkedHashMap<String, Object>();
         expected.put("tool_mode_after", controller.getMode());
@@ -225,7 +233,20 @@ public final class EditorTools {
         if (Boolean.TRUE.equals(spec.get("inspector"))) {
             expected.put("inspector", app.inspector);
         }
-        if (image) {
+        if (Boolean.TRUE.equals(spec.get("conic_type"))) {
+            var types = con.getGeoSetConstructionOrder().stream()
+                    .filter(GeoConic.class::isInstance)
+                    .map(object -> ((GeoConic) object).getType()).toList();
+            expected.put("conic_types", types);
+        }
+        if (spec.containsKey("function_defined")) {
+            var object = kernel.lookupLabel("f");
+            expected.put("function_present", object != null);
+            expected.put("function_defined", object != null && object.isDefined());
+        }
+        if (Boolean.TRUE.equals(spec.get("cancel_image"))) {
+            expected.put("image_created", app.raster != null);
+        } else if (image) {
             if (app.raster == null) {
                 throw new IllegalStateException("image chooser was not invoked");
             }
@@ -270,7 +291,25 @@ public final class EditorTools {
         return state;
     }
 
+    private static GPoint hitText(EuclidianView view, Kernel kernel, Map<?, ?> spec) {
+        if (!(spec.get("text_hit") instanceof String label)) {
+            return null;
+        }
+        var object = kernel.lookupLabel(label);
+        object.setEuclidianVisible(true);
+        object.updateRepaint();
+        var box = ((DrawText) view.getDrawableFor(object)).getBounds();
+        return new GPoint((int) box.getX() + 20, (int) (box.getY() + box.getHeight() / 2));
+    }
+
     private static TestEvent pointer(EuclidianView view, Map<?, ?> event) {
+        return pointer(view, event, null);
+    }
+
+    private static TestEvent pointer(EuclidianView view, Map<?, ?> event, GPoint point) {
+        if (point != null) {
+            return new TestEvent(point.getX(), point.getY());
+        }
         var xy = (List<?>) event.get("pos");
         return new TestEvent(view.toScreenCoordX(((Number) xy.get(0)).doubleValue()),
                 view.toScreenCoordY(((Number) xy.get(1)).doubleValue()));

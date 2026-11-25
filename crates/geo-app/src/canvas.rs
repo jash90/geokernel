@@ -367,9 +367,18 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // What the pointer is over (for highlighting and for picking).
     let pick_at = |app: &App, pos: (f64, f64)| -> Option<Id> {
         let c = app.wb.construction();
-        let accept = |id| shown(app, id) && (move_tool || app.accepts_tool_hit(id));
+        let accept = |id| {
+            shown(app, id)
+                && (move_tool
+                    || if tool == Tool::MoveRotate {
+                        app.rotation_center.is_some() || c.kind(id) == Kind::Point
+                    } else {
+                        app.accepts_tool_hit(id)
+                    })
+        };
         let text = app.text_at(pos, app.wb.selected, accept);
         hit::pick_with_text(c, &t, pos, &hover_reach, app.wb.selected, text, accept)
+            .filter(|&id| tool != Tool::MoveRotate || app.accepts_tool_hit(id))
     };
     // What a press of the move tool at `pos` (in the area as it was, with
     // the transform `pt`) takes hold of.

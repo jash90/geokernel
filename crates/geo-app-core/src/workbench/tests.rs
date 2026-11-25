@@ -2736,3 +2736,97 @@ fn round_one_style_undo_precedes_changes_outside_the_tool() {
     assert!(wb.undo());
     assert_eq!(state(&wb), (false, 1, (2.0, 1.0)));
 }
+
+#[test]
+fn round_one_copied_color_survives_opening_the_export() {
+    let mut wb = Workbench::from_script(
+        "A = (2, 1)\nB = (4, 1)\n$drawingStyle(_41, 2, false, 7, rgb285aa0)",
+    )
+    .unwrap();
+    let c = wb.construction();
+    wb.copy_drawing_style(c.id("A").unwrap(), c.id("B").unwrap());
+    let file = wb.export_ggb(None).unwrap();
+    let mut restored = Workbench::default();
+    restored.load_bytes(&file, "copied color").unwrap();
+    let c = restored.construction();
+    assert_eq!(
+        restored.palette().color(c.id("B").unwrap()),
+        crate::geom::Rgba::from_rgb(40, 90, 160)
+    );
+}
+
+#[test]
+fn round_one_image_insertion_reserves_archive_entries() {
+    let bytes = include_bytes!("../../../../tools/ggb-harness/cases/editor_tools/fixture.png");
+    let mut wb = Workbench::default();
+    let asset = std::sync::Arc::new(
+        geo_kernel::kernel::image::RasterAsset::decode(bytes.to_vec()).unwrap(),
+    );
+    for i in 0..4094 {
+        wb.construction
+            .register_image_asset(format!("asset{i}").into(), asset.clone())
+            .unwrap();
+    }
+    let request = crate::editor::ImageRequest {
+        anchor: None,
+        at: (0.0, 0.0),
+        scale: 50.0,
+        xmax: 8.0,
+        ymax: 6.0,
+    };
+    assert!(wb.insert_image(&request, bytes.to_vec()).is_err());
+    assert!(wb.construction().is_empty());
+    assert_eq!(wb.undo_depth().0, 0);
+}
+
+#[test]
+fn round_one_point_label_visibility_reaches_svg() {
+    let mut wb = Workbench::from_script("A = (2, 1)").unwrap();
+    let view = geo_kernel::svg::View {
+        xmin: 0.0,
+        xmax: 4.0,
+        ymin: 0.0,
+        ymax: 2.0,
+    };
+    let visible = geo_kernel::svg::render(wb.construction(), view, 400, 200);
+    assert!(visible.contains(">A</text>"));
+    wb.toggle_label(wb.construction().id("A").unwrap());
+    let hidden = geo_kernel::svg::render(wb.construction(), view, 400, 200);
+    assert!(!hidden.contains(">A</text>"));
+    assert!(hidden.contains("<circle"));
+}
+
+#[test]
+fn round_one_label_tool_toggles_the_stored_flag_on_text() {
+    let mut wb = Workbench::from_script("A = (2, 1)\nt = \"Canvas text\"").unwrap();
+    let t = wb.construction().id("t").unwrap();
+    let was_shown = wb.construction().drawing_style(t).show_label;
+    wb.toggle_label(t);
+    assert_ne!(wb.construction().drawing_style(t).show_label, was_shown);
+}
+
+#[test]
+fn round_one_rotation_dependency_search_is_bounded() {
+    use std::fmt::Write as _;
+    let mut script = String::from("A = (0, 0)\nB = (1, 0)\nC = (0, 1)\n");
+    for i in 0..2050 {
+        writeln!(script, "M_{{{i}}} = Midpoint(A, B)").unwrap();
+    }
+    let wb = Workbench::from_script(&script).unwrap();
+    let c = wb.construction();
+    let c_id = c.id("C").unwrap();
+    assert!(
+        crate::interact::Drag::rotation(c, c.id("A").unwrap(), c_id, (0.0, 1.0), (0.0, 0.0))
+            .is_none()
+    );
+}
+
+#[test]
+fn image_dimension_limit_applies_below_the_raster_memory_limit() {
+    let mut png =
+        include_bytes!("../../../../tools/ggb-harness/cases/editor_tools/fixture.png").to_vec();
+    // A 4097-by-1 image only needs about 16 KiB of pixels.
+    png[16..20].copy_from_slice(&4097_u32.to_be_bytes());
+    let error = geo_kernel::kernel::image::RasterAsset::decode(png).unwrap_err();
+    assert_eq!(error, "image dimensions exceed the limit");
+}

@@ -128,6 +128,7 @@ impl Sides {
 pub struct Palette<'a> {
     c: &'a Construction,
     sides: Option<&'a Sides>,
+    file_styles: Option<&'a std::collections::HashMap<String, geo_import::export::ObjectStyle>>,
 }
 
 impl<'a> Palette<'a> {
@@ -137,11 +138,30 @@ impl<'a> Palette<'a> {
         Palette {
             c,
             sides: fresh.then_some(sides),
+            file_styles: None,
         }
     }
 
-    /// The colour of `id`, as [`color`] gives it.
+    pub(crate) fn with_file_styles(
+        mut self,
+        styles: &'a std::collections::HashMap<String, geo_import::export::ObjectStyle>,
+    ) -> Self {
+        self.file_styles = (!styles.is_empty()).then_some(styles);
+        self
+    }
+
+    /// The edited or saved colour, with the usual palette as a fallback.
     pub fn color(&self, id: Id) -> Rgba {
+        if let Some(styles) = self.file_styles {
+            let rgb = self
+                .c
+                .drawing_style(id)
+                .color
+                .or_else(|| styles.get(self.c.label(id)).and_then(|style| style.color));
+            if let Some([r, g, b]) = rgb {
+                return Rgba::from_rgb(r, g, b);
+            }
+        }
         match self.sides {
             Some(s) => color_with(self.c, id, |a, b| s.contains(a, b)),
             None => color(self.c, id),

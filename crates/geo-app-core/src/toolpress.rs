@@ -175,6 +175,16 @@ impl App {
     /// Whether the object can participate in the active tool's next pick.
     pub fn accepts_tool_hit(&self, id: Id) -> bool {
         let c = self.wb.construction();
+        if self.tool.tool() == Tool::MoveRotate {
+            return match self
+                .rotation_center
+                .as_deref()
+                .and_then(|label| c.id(label))
+            {
+                Some(center) => id == center || crate::interact::can_rotate(c, id, center),
+                None => c.kind(id) == Kind::Point,
+            };
+        }
         if self.tool.tool() == Tool::Locus {
             let point = c.kind(id) == Kind::Point && !c.def(id).is_free();
             let on_path = |id| {

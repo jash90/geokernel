@@ -1628,3 +1628,43 @@ fn anonymous_list_conics_fit_the_frame_budget() {
         assert!(mean_ms <= 4.0, "{mean_ms:.2} ms exceeds the 4 ms budget");
     }
 }
+
+#[test]
+fn round_one_styled_curves_share_the_zoom_budget() {
+    use std::fmt::Write as _;
+    for thickness in [10, 1] {
+        let mut script = String::new();
+        for i in 0..64 {
+            let label = format!("f_{{{i}}}");
+            writeln!(script, "{label}(x) = sin(x) + {}", f64::from(i) / 64.0).unwrap();
+            let prop = geo_kernel::script::saved::Property::DrawingStyle {
+                label,
+                style: geo_kernel::kernel::DrawingStyle {
+                    line_thickness: thickness,
+                    ..Default::default()
+                },
+            };
+            writeln!(script, "{prop}").unwrap();
+        }
+        let mut w = Window::with(&script, String::new());
+        let c = w.app.wb.construction();
+        assert!(c
+            .ids()
+            .all(|id| c.drawing_style(id).line_thickness == thickness));
+        w.settled(1);
+        let r = w.app.view.unwrap().0;
+        let (aw, ah) = (r.width() as f64, r.height() as f64);
+        let mut cam = w.app.camera.unwrap();
+        cam.zoom_at(1.25, aw / 2.0, ah / 2.0, aw, ah, view::ScaleLimits::OURS);
+        cam.yscale *= 1.25;
+        w.app.camera = Some(cam);
+        let zoom = curve_step(&mut w, Vec::new());
+        assert!(zoom.plotted > 0);
+        assert!(zoom.cost <= crate::curves::REPLOTS_PER_FRAME as u64);
+        assert_eq!(zoom.plotted, zoom.tessellated, "thickness {thickness}");
+        assert!(
+            zoom.moved > 0,
+            "the remaining styled curves must reuse their meshes"
+        );
+    }
+}

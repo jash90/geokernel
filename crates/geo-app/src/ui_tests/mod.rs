@@ -1881,3 +1881,102 @@ fn round_one_imported_line_thickness_uses_the_reference_baseline() {
     round_trip.load_bytes(&archive, "native export").unwrap();
     assert_eq!(widths(&round_trip), widths(&native));
 }
+
+#[test]
+fn round_one_inspector_keeps_a_nearly_equal_endpoint() {
+    let mut h = harness("f(x) = 0");
+    h.state_mut().select_tool(Tool::FunctionInspector);
+    let t = geo_app_core::view::Camera::STANDARD.transform(1400.0, 900.0);
+    let app = h.state_mut();
+    let f = app.wb.construction().id("f").unwrap();
+    app.editor_click(Some(f), &t, t.world_to_screen(-7.88, 0.0));
+    let inspector = app.inspector.as_mut().unwrap();
+    assert_eq!(
+        inspector
+            .rows(&app.wb, -8.879999999999999, -6.88, 0.25)
+            .len(),
+        9
+    );
+}
+
+#[test]
+fn round_one_inspector_limits_work_across_the_table() {
+    let mut h = harness("h(x) = x + x + x + x\ng(x) = h(h(h(h(h(h(h(h(x))))))))");
+    h.state_mut().select_tool(Tool::FunctionInspector);
+    let t = geo_app_core::view::Camera::STANDARD.transform(1400.0, 900.0);
+    let app = h.state_mut();
+    let g = app.wb.construction().id("g").unwrap();
+    app.editor_click(Some(g), &t, t.world_to_screen(0.0, 0.0));
+    let inspector = app.inspector.as_mut().unwrap();
+    let rows = inspector.rows(&app.wb, 1.0, 256.0, 1.0);
+    assert!(rows.len() < 256 || rows.iter().any(|row| row.1.is_nan()));
+    let before = geo_kernel::expr::work_done();
+    assert_eq!(inspector.rows(&app.wb, 1.0, 256.0, 1.0).len(), rows.len());
+    assert_eq!(geo_kernel::expr::work_done(), before);
+}
+
+#[test]
+fn round_one_rotate_refuses_a_parent_of_its_center() {
+    let mut h = harness("A = (2, 1)\nB = (4, 1)\nM = Midpoint(A, B)");
+    h.state_mut().select_tool(Tool::MoveRotate);
+    click(&mut h, world(3.0, 1.0));
+    button(&mut h, world(2.0, 1.0), true);
+    moved(&mut h, world(3.0, 2.0));
+    button(&mut h, world(3.0, 2.0), false);
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("A").unwrap()), Value::Point { x: 2.0, y: 1.0 });
+    assert_eq!(c.value(c.id("M").unwrap()), Value::Point { x: 3.0, y: 1.0 });
+    assert_eq!(h.state().wb.undo_depth().0, 0);
+}
+
+#[test]
+fn round_one_freehand_vertical_keeps_an_undefined_function() {
+    let mut h = harness("");
+    h.state_mut().select_tool(Tool::FreehandFunction);
+    button(&mut h, world(1.0, 1.0), true);
+    moved(&mut h, world(1.0, 2.0));
+    moved(&mut h, world(1.0, 3.0));
+    button(&mut h, world(1.0, 3.0), false);
+    let c = h.state().wb.construction();
+    let f = c.id("f").expect("vertical stroke creates a function");
+    assert_eq!(c.kind(f), geo_kernel::Kind::Function);
+    assert!(!c.value(f).is_defined());
+    assert!(h.state_mut().undo());
+    assert!(labels(&h).is_empty());
+}
+
+#[test]
+fn round_one_image_cancel_with_enter_does_not_insert() {
+    let mut h = harness("A = (2, 1)");
+    h.state_mut().select_tool(Tool::Image);
+    click(&mut h, world(2.0, 1.0));
+    let path =
+        std::env::temp_dir().join(format!("geokernel-image-cancel-{}.png", std::process::id()));
+    std::fs::write(
+        &path,
+        include_bytes!("../../../../tools/ggb-harness/cases/editor_tools/fixture.png"),
+    )
+    .unwrap();
+    h.state_mut().image_path = path.to_string_lossy().into_owned();
+    h.run();
+    h.key_press(egui::Key::Tab);
+    h.run();
+    h.key_press(egui::Key::Tab);
+    h.run();
+    h.key_press(egui::Key::Enter);
+    h.run();
+    std::fs::remove_file(path).unwrap();
+    assert!(h.state().image_request.is_none());
+    assert_eq!(h.state().wb.construction().images().count(), 0);
+    assert_eq!(h.state().wb.undo_depth().0, 0);
+}
+
+#[test]
+fn round_one_rotate_previews_an_eligible_segment_after_choosing_a_center() {
+    let mut h = harness("A = (-2, 1)\nB = (2, 1)\nC = (0, -2)\ns = Segment(A, B)");
+    h.state_mut().select_tool(Tool::MoveRotate);
+    click(&mut h, world(0.0, -2.0));
+    moved(&mut h, world(0.0, 1.0));
+    let app = h.state();
+    assert_eq!(app.hovered, app.wb.construction().id("s"));
+}

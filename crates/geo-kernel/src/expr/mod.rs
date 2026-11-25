@@ -2262,6 +2262,11 @@ pub(crate) fn store(c: &mut Construction, d: ExprDef, out: Outcome) -> bool {
     changed
 }
 
+/// Runs several evaluations under one work limit on the current thread.
+pub fn with_evaluation_budget<T>(units: u64, evaluate: impl FnOnce() -> T) -> T {
+    with_work_deadline(work_done().saturating_add(units), evaluate)
+}
+
 /// `GeoFunction.value`: the value of the function `f` at `x`, `None` when
 /// `f` is not a defined function.
 pub(crate) fn function_value(c: &Construction, f: Id, x: f64) -> Option<f64> {
