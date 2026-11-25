@@ -168,7 +168,15 @@ pub fn movable(c: &Construction, id: Id) -> bool {
 /// (`GeoPoint.isPointOnPath`, `MoveMode.POINT`; the kernel projects the
 /// position, `Path.pointChanged`). Spec C5.
 fn on_path(c: &Construction, id: Id) -> bool {
-    matches!(c.def(id), Def::Path(PathDef::On { .. }))
+    matches!(
+        c.def(id),
+        Def::Path(
+            PathDef::On { .. }
+                | PathDef::InRegion { .. }
+                | PathDef::FixedEndpoint { .. }
+                | PathDef::RigidEndpoint { .. }
+        )
+    )
 }
 
 /// The owner's choice where the reference app is not followed (it refuses

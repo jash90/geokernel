@@ -376,6 +376,28 @@ A partial run (a sample step above 1) never deletes a file. A full run (sample
 step 1) removes the files of the group directories it did not produce (for
 example the archives of another zip step) and prints each one as `pruned <path>`.
 
+### Toolbar pointer recordings
+
+```sh
+python3 -I tools/ggb-harness/cases/make_tool_pointer.py
+GEOGEBRA_SRC=<checkout> tools/ggb-harness/linux-x86_64.sh tool-pointer
+```
+
+The recorder invokes the headless Euclidian controller with the pointer
+positions in the two input files. It records construction objects after
+each release, records the dialog calls, and invokes kernel undo to check
+the resulting checkpoints. Fixed Segment and Fixed Angle answers invoke
+the reference's number dialog handlers. The output
+`crates/geo-mcp/tests/fixtures/tool_pointer_capture.json` is separate from
+the kernel golden corpus.
+
+The five earlier desktop scenarios are passed in with the same scripts
+and events. The Pen and Locus recordings produce construction objects.
+The Create List case does not produce a list with that drag sequence.
+Text and Input Box reach their headless dialog hooks. Those hooks have no
+editable control to submit, so the desktop regressions still verify the
+submitted result.
+
 ### Canvas review observations
 
 ```sh

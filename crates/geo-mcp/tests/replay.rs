@@ -23,6 +23,7 @@ use geo_mcp::protocol::Server;
 use serde_json::{json, Value};
 
 const FIXTURE: &str = include_str!("fixtures/pointer_scenarios.json");
+const TOOL_CAPTURE: &str = include_str!("fixtures/tool_pointer_capture.json");
 
 /// The graphics view of the observations, and where the standard view puts
 /// the world origin in it.
@@ -359,7 +360,15 @@ fn tool_name(mode: i64) -> Option<&'static str> {
         7 => "vector",
         10 => "circle",
         11 => "circle3",
+        14 => "relation",
         15 => "segment",
+        45 => "segment_fixed",
+        46 => "angle_fixed",
+        64 => "rigid_polygon",
+        67 => "attach_detach",
+        75 => "extremum",
+        76 => "roots",
+        501 => "point_on_object",
         16 => "polygon",
         17 => "text",
         18 => "ray",
@@ -676,6 +685,17 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
             call(&mut w.server, "select_tool", json!({ "tool": tool }))?;
             continue;
         }
+        // The recorded dialog edit targets a ready text field. Give the
+        // modal time to take keyboard focus after the canvas release.
+        let dt = if matches!(mode, 45 | 46) && e["type"] == "text" && dt > 2.0 / 60.0 {
+            frames.extend(std::iter::repeat_n(
+                json!({"dt": 1.0 / 60.0, "events": []}),
+                2,
+            ));
+            dt - 2.0 / 60.0
+        } else {
+            dt
+        };
         frames.push(json!({"dt": dt, "events": frame_events(&w, e, &mut fingers)?}));
         let after_1 = ["objects_after_event_1", "after_first_click"];
         if i == 1 && after_1.iter().any(|k| expected.get(k).is_some()) {
@@ -1069,6 +1089,75 @@ fn ours_expected(name: &str) -> Value {
     }
 }
 
+fn compare_tool_capture(capture: &Value, out: &Outcome) -> Vec<String> {
+    let initial = capture["initial"].as_object().unwrap();
+    let frames = capture["frames"].as_array().unwrap();
+    let final_objects = frames.last().unwrap()["objects"].as_object().unwrap();
+    let mut diffs = out.diffs.clone();
+    let mut created = created_labels(&out.before, &out.after);
+    created.sort_unstable();
+    let mut expected_created: Vec<_> = final_objects
+        .keys()
+        .filter(|label| !initial.contains_key(*label))
+        .map(String::as_str)
+        .collect();
+    expected_created.sort_unstable();
+    if created != expected_created {
+        diffs.push(format!(
+            "created {created:?}, reference created {expected_created:?}"
+        ));
+    }
+    for (label, geo) in final_objects {
+        if initial.get(label) == Some(geo) {
+            continue;
+        }
+        let Some(actual) = object(&out.after, label) else {
+            diffs.push(format!("missing {label}"));
+            continue;
+        };
+        let kind = geo["type"].as_str().unwrap();
+        if actual["type"] != kind || actual["defined"] != geo["defined"] {
+            diffs.push(format!(
+                "{label} has type {} and definedness {}, reference has {kind} and {}",
+                actual["type"], actual["defined"], geo["defined"]
+            ));
+        }
+        if geo["defined"] == true {
+            let fields: &[&str] = match kind {
+                "point" => &["x", "y"],
+                "segment" => &["x1", "y1", "x2", "y2"],
+                "angle" => &["value"],
+                "polygon" => &["area"],
+                _ => &[],
+            };
+            for &field in fields {
+                let actual = &actual["coords"][field];
+                if !same(num(actual), num(&geo[field])) {
+                    diffs.push(format!(
+                        "{label} {field} is {actual}, reference recorded {}",
+                        geo[field]
+                    ));
+                }
+            }
+        }
+    }
+    let expected_undo = capture["undo"].as_array().unwrap().len() as i64;
+    if out.undo_added != expected_undo {
+        diffs.push(format!(
+            "{} undo steps, reference recorded {expected_undo}",
+            out.undo_added
+        ));
+    }
+    if capture["tool_mode"] == 14
+        && out.after["tool"]["relation"]
+            .as_array()
+            .is_none_or(Vec::is_empty)
+    {
+        diffs.push("missing relation report".to_owned());
+    }
+    diffs
+}
+
 #[test]
 fn the_observed_pointer_scenarios_replay() {
     let fixture: Value = serde_json::from_str(FIXTURE).unwrap();
@@ -1093,6 +1182,35 @@ fn the_observed_pointer_scenarios_replay() {
         }
         diffs
     };
+    let captures: Value = serde_json::from_str(TOOL_CAPTURE).unwrap();
+    let captures = captures["scenarios"].as_array().unwrap();
+    let scenarios = fixture["scenarios"].as_array().unwrap();
+    let mut captured_passes = 0;
+    let mut recaptured = 0;
+    for capture in captures {
+        let name = capture["name"].as_str().unwrap();
+        if let Some(existing) = scenarios.iter().find(|scenario| scenario["name"] == name) {
+            for key in ["tool_mode", "initial_script", "events"] {
+                assert_eq!(capture[key], existing[key], "{name} {key}");
+            }
+            recaptured += 1;
+            continue;
+        }
+        let diffs = both(capture, "ours", &|out| compare_tool_capture(capture, out));
+        if !diffs.is_empty() {
+            failed.push(name.to_owned());
+        }
+        table.push(format!(
+            "{name}: {}",
+            if diffs.is_empty() {
+                "pass".to_owned()
+            } else {
+                diffs.join("; ")
+            }
+        ));
+        captured_passes += 1;
+    }
+    assert_eq!((captured_passes, recaptured), (9, 5));
     for s in fixture["scenarios"].as_array().unwrap() {
         let name = s["name"].as_str().unwrap();
         assert!(

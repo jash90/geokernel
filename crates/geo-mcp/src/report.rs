@@ -277,6 +277,9 @@ pub fn state(h: &Headless, verbose: bool) -> Json {
             "picks": app.tool.picks().iter().map(|p| p.label()).collect::<Vec<_>>(),
             "hint": app.tool.hint(),
             "asking": asking,
+            "relation": app.relation_report.as_ref().map(|reports| reports.iter()
+                .map(|report| json!({"check": report.check, "outcome": report.outcome}))
+                .collect::<Vec<_>>()),
         },
         "camera": camera,
         "view": view,

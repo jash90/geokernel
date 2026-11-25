@@ -1406,7 +1406,9 @@ impl Group for PathDef {
         let path = |label: &str| -> Result<Id, String> {
             let id = object(c, label)?;
             if PATH.contains(&c.kind(id))
-                || (c.kind(id) == Kind::Function && matches!(c.def(id), Def::Chart(_)))
+                || (c.kind(id) == Kind::Function
+                    && (matches!(c.def(id), Def::Chart(_))
+                        || crate::expr::function_signature(c, id).is_some_and(|sig| !sig.boolean)))
             {
                 Ok(id)
             } else {

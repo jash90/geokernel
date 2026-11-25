@@ -249,6 +249,17 @@ pub(super) fn spline_degree(c: &Construction, input: SplineInput) -> Option<usiz
 }
 
 impl AnalysisDef {
+    pub(crate) fn tool_output_count(c: &Construction, function: Id, extremum: bool) -> usize {
+        let mode = if extremum {
+            Mode::Extremum(None)
+        } else {
+            Mode::Polynomial
+        };
+        c.analysis.roots(c, RootInput { function, mode }, |points| {
+            points.len().max(1)
+        })
+    }
+
     pub(crate) fn outputs(c: &Construction, function: Id, mode: Mode) -> Vec<Def> {
         let input = RootInput { function, mode };
         let count = c.analysis.roots(c, input, |points| points.len()).max(1);

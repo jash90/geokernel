@@ -452,3 +452,15 @@ is needed.
 | Labelled FillRow changing an input's kind | `r = FillRow(1,{"text",A1^2})` with A1 initially 3 writes text to A1 and 9 to B1. | The fill is refused before writing. A1 stays 3, B1 stays absent, and r is absent. | Changing A1 to text would invalidate the numeric dependency of the labelled result. |
 | Spreadsheet selection | Row and column headers select their whole axis, and dragging the fill handle selects the filled range. | Header labels do not select an axis. A drag leaves the active source cell selected. Preferred sizes, row and column sizes, and grid-line visibility are applied. Widths below 32 and heights below 16 points are clamped. | The editor stores one active cell. A minimum cell size keeps the number of visible widgets bounded. |
 | Spreadsheet value strings | Defined geometric and angle objects use their own value strings. | The grid displays segment, polyline and arc lengths and polygon and sector areas. Degree angles use a degree suffix. Lists in radian mode append `rad` to angle elements. Equations of lines, circles and conics and degrees-minutes-seconds formatting remain unsupported in the grid. | The grid has scalar formatters and does not reuse the algebra equation renderer. |
+
+
+## Construction tools
+
+| Tool | GeoGebra | geokernel | Reason |
+| --- | --- | --- | --- |
+| Relation | Numerical report with symbolic follow-up where available. | Numerical report with no construction change. | The toolbar uses the existing bounded numerical predicates. |
+| Fixed Angle | Accepts a segment, including a side produced by a polygon algorithm. | A segment pick needs two named point endpoints. Two point picks work independently. | Computed segments without two endpoint IDs have no point objects for the angle's dependencies. |
+| Rigid Polygon | A copy rotates when its second point moves. | The copy follows edits to its source's shape and can be translated by its anchor. Its bearing is fixed when created. | The kernel's rigid copy stores the initial bearing. The three-point construction uses the existing rigid endpoint for rotation. |
+| Rigid Polygon preview | Fills the preview up to the controller's polygon limit. | At most 1,000 vertices can be picked or copied. The preview outlines all picks and fills at most 48 vertices. A copy must fit the 4,096-unit shape query. | Bounds vertex allocation, shape preparation and per-frame triangulation. |
+| Point on Object | Handles the full set of visible paths and regions, including Cartesian curves and filled conics. | Handles pickable kernel paths and polygon or conic-part regions. Conic fills and Cartesian curves are outside the current canvas hit support. | Uses the existing canvas hit geometry. |
+| Attach or Detach | Can merge a dragged point into an existing point and uses Alt to prefer a region. | Click or drag redefines the point against a supported path or region. | The desktop preserves the point's identity and its dependents. |

@@ -141,6 +141,7 @@ pub struct App {
     pub input: String,
     pub input_error: Option<String>,
     pub tool_error: Option<String>,
+    pub relation_report: Option<Vec<geo_kernel::algo::predicate::RelationReport>>,
     pub load_error: Option<String>,
     pub save_error: Option<String>,
     /// Path being edited in the Save As dialog.
@@ -256,6 +257,7 @@ impl App {
             input: String::new(),
             input_error: None,
             tool_error: None,
+            relation_report: None,
             load_error,
             save_error: None,
             save_path: None,
@@ -369,6 +371,7 @@ impl App {
     /// `Kernel.restoreStateForInitNewMode`).
     pub fn reset_tool(&mut self) {
         self.pen_samples.clear();
+        self.relation_report = None;
         self.tool.reset();
         self.tool_press = None;
         self.wb.cancel_tool_use();
@@ -474,6 +477,9 @@ impl App {
                         self.wb.move_pending_point(id, x, y);
                     }
                     self.wb.selected = new;
+                    if self.tool.tool() == Tool::SegmentFixed {
+                        self.wb.end_tool_use();
+                    }
                     self.apply_pick(*then);
                 }
                 Err(e) => {
@@ -503,6 +509,14 @@ impl App {
                     }
                 }
             }
+            Outcome::Relation([a, b]) => {
+                let c = self.wb.construction();
+                self.relation_report = c
+                    .id(&a)
+                    .zip(c.id(&b))
+                    .and_then(|(a, b)| c.compare_objects(a, b));
+            }
+            Outcome::RigidCopy(_) => unreachable!("polygon copy resolves its view before applying"),
             Outcome::AskNumber(request) => {
                 self.number_text = crate::describe::n2(request.default);
                 self.tool_error = None;

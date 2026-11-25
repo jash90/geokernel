@@ -120,21 +120,35 @@ pub fn primed(source: &str, kind: Kind, is_taken: impl Fn(&str) -> bool) -> Stri
 /// then `X_{10}` ...; an indexed label is free only when both its forms
 /// (`X_1` and `X_{1}`) are.
 fn next_from(letters: &str, is_taken: impl Fn(&str) -> bool) -> String {
-    for round in 0u32.. {
-        for ch in letters.chars() {
+    free_labels(letters, is_taken)
+        .next()
+        .expect("the label sequence is infinite")
+}
+
+pub(crate) fn free_point_labels<'a>(
+    is_taken: impl Fn(&str) -> bool + 'a,
+) -> impl Iterator<Item = String> + 'a {
+    free_labels(POINT_LETTERS, is_taken)
+}
+
+fn free_labels<'a>(
+    letters: &'a str,
+    is_taken: impl Fn(&str) -> bool + 'a,
+) -> impl Iterator<Item = String> + 'a {
+    (0u32..)
+        .flat_map(move |round| letters.chars().map(move |ch| (round, ch)))
+        .filter_map(move |(round, ch)| {
             if round == 0 {
-                if !is_taken(&ch.to_string()) {
-                    return ch.to_string();
-                }
-                continue;
+                let label = ch.to_string();
+                return (!is_taken(&label)).then_some(label);
             }
             let (plain, braced) = (format!("{ch}_{round}"), format!("{ch}_{{{round}}}"));
-            if !is_taken(&plain) && !is_taken(&braced) {
-                return if round < 10 { plain } else { braced };
-            }
-        }
-    }
-    unreachable!("the label sequence is infinite")
+            (!is_taken(&plain) && !is_taken(&braced)).then_some(if round < 10 {
+                plain
+            } else {
+                braced
+            })
+        })
 }
 
 #[cfg(test)]

@@ -757,6 +757,23 @@ pub fn screen_vertices(c: &Construction, id: Id, t: &ViewTransform) -> Option<Ve
 
 /// `GeoClass` drawing priorities (higher is drawn on top), used by
 /// `DefaultGeoPriorityComparator`.
+pub(crate) fn polygon_boundary(
+    c: &Construction,
+    id: Id,
+    t: &ViewTransform,
+    pos: (f64, f64),
+    reach: &Reach,
+) -> bool {
+    let Some(points) = screen_vertices(c, id, t) else {
+        return false;
+    };
+    let mut pairs = points
+        .iter()
+        .copied()
+        .zip(points.iter().copied().cycle().skip(1));
+    pairs.any(|(a, b)| segment_meets_square(a, b, pos, reach.threshold))
+}
+
 fn type_priority(kind: Kind) -> u8 {
     match kind {
         Kind::Text => 150,

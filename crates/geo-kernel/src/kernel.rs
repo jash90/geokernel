@@ -1984,6 +1984,14 @@ impl Construction {
         (self.drawing_style(id).layer, priority, id)
     }
 
+    /// Endpoints of a segment defined by two point objects.
+    pub fn segment_endpoints(&self, id: Id) -> Option<(Id, Id)> {
+        match self.def(id) {
+            Def::Segment(start, end) => Some((start, end)),
+            _ => None,
+        }
+    }
+
     /// The vertices of a polygon or polyline in order, `None` for a vertex
     /// that is undefined. Nothing for any other object, and nothing for a
     /// regular polygon that is undefined.
@@ -5466,6 +5474,23 @@ impl Construction {
 
     pub fn text(&self, id: Id) -> Option<&str> {
         expr::text_value(self, id)
+    }
+
+    /// Compares two objects for the Relation tool without adding an object.
+    pub fn compare_objects(&self, a: Id, b: Id) -> Option<Vec<algo::predicate::RelationReport>> {
+        if [a, b].iter().any(|id| id.index() >= self.len()) {
+            return None;
+        }
+        expr::compare_objects(self, &[a, b])
+    }
+
+    /// Counts the output slots for a function analysis tool using the
+    /// same cached, metered solve as the construction command.
+    pub fn function_tool_output_count(&self, id: Id, extremum: bool) -> usize {
+        if id.index() >= self.len() || self.kind(id) != Kind::Function {
+            return 0;
+        }
+        algo::analysis::AnalysisDef::tool_output_count(self, id, extremum)
     }
 
     /// The current numerical findings of a Relation command.

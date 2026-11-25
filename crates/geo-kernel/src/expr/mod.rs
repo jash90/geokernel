@@ -2310,7 +2310,7 @@ pub(crate) fn function_signature(c: &Construction, id: Id) -> Option<FunctionSig
 }
 
 pub(crate) use commands::logical::{conditional_branch, conditional_kind, define_geometry_if};
-pub(crate) use commands::relation::{define_relation, relation_reports};
+pub(crate) use commands::relation::{compare_objects, define_relation, relation_reports};
 
 pub(crate) fn is_independent_text(c: &Construction, id: Id) -> bool {
     commands::text::is_independent(c, id)

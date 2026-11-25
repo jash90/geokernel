@@ -213,6 +213,16 @@ case "$cmd" in
     java "${java_opts[@]}" -cp "$build/classes:$(classpath)" \
       geokernel.harness.SavedExporter "$here/saved/saved.json" "$repo/golden/ggb/saved" "$@"
     ;;
+  tool-pointer)
+    probe="$(mktemp -d)"
+    trap 'rm -rf "$probe"' EXIT
+    cp="$build/classes:$(classpath)"
+    src="$here/src/main/java/geokernel/harness"
+    javac --release 17 -cp "$cp" -d "$probe" "$src/ToolPointer.java" "$src/Session.java" "$src/Json.java" "$src/GiacOracle.java" "$src/ProverOracle.java"
+    java "${java_opts[@]}" -cp "$probe:$cp" geokernel.harness.ToolPointer \
+      "$here/cases/tool_pointer.json" "$repo/crates/geo-mcp/tests/fixtures/pointer_scenarios.json" \
+      "$repo/crates/geo-mcp/tests/fixtures/tool_pointer_capture.json" "$GEOGEBRA_REV"
+    ;;
   canvas-review)
     # Compile only the review probes against the existing harness build.
     probe="$(mktemp -d)"
