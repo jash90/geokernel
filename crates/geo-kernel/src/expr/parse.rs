@@ -635,11 +635,19 @@ impl Parser<'_> {
     /// (`isConstant` and `evaluateDouble`); `None` otherwise, and for trees
     /// nested too deep to look at.
     fn constant_value(&self, i: u32, depth: u32) -> Option<f64> {
+        self.scalar_value(i, depth, false)
+    }
+
+    fn scalar_value(&self, i: u32, depth: u32, allow_objects: bool) -> Option<f64> {
         if depth > MAX_NESTING {
             return None;
         }
-        let value = |j: u32| self.constant_value(j, depth + 1);
+        let value = |j: u32| self.scalar_value(j, depth + 1, allow_objects);
         Some(match self.node(i) {
+            Node::Obj(id) if allow_objects => match self.c.value(id) {
+                crate::Value::Number(n) => n,
+                _ => return None,
+            },
             Node::Num(v) => v,
             Node::MinusOne => -1.0,
             Node::Degree => PI_180,
@@ -950,15 +958,7 @@ impl Parser<'_> {
                     return Err("`Cell` takes two arguments".into());
                 };
                 let constant = |i| self.constant_value(i, 0);
-                let current = |i| {
-                    constant(i).or_else(|| match self.node(i) {
-                        Node::Obj(id) => match self.c.value(id) {
-                            crate::Value::Number(n) => Some(n),
-                            _ => None,
-                        },
-                        _ => None,
-                    })
-                };
+                let current = |i| self.scalar_value(i, 0, true);
                 let address = (|| Address::from_numbers(current(column)?, current(row)?))();
                 let selected = address.and_then(|a| self.c.spreadsheet_cell(a));
                 let kind = selected.map_or(Kind::Number, |id| self.c.kind(id));

@@ -122,3 +122,33 @@ fn lookup_limits_the_number_of_dynamic_dependencies() {
     assert!(error.contains("spreadsheet limit"), "{error}");
     assert!(c.id("v").is_none());
 }
+
+#[test]
+fn a_fill_bounds_dependency_walks_and_copied_text() {
+    use std::fmt::Write as _;
+
+    let mut source = String::from("a0 = 1\n");
+    for index in 1..=4_200 {
+        writeln!(source, "a{index} = a{} + 1", index - 1).unwrap();
+    }
+    let mut c = script::load(&source).unwrap();
+    let error = script::exec(&mut c, "FillCells(A1:B1, a4200 + 1)").unwrap_err();
+    assert!(error.contains("spreadsheet limit"), "{error}");
+    assert!(c.spreadsheet_cells().next().is_none());
+
+    let text = "abc".repeat(50);
+    let error = script::exec(&mut c, &format!("FillCells(A1:Y40, \"{text}\")")).unwrap_err();
+    assert!(error.contains("spreadsheet limit"), "{error}");
+    assert!(c.spreadsheet_cells().next().is_none());
+}
+
+#[test]
+fn a_lookup_observes_the_initial_address_even_when_created_later() {
+    let mut c = script::load("n = 4\nv = Cell(n + 1, 1)\nw = v + 1").unwrap();
+    assert_number(&c, "v", f64::NAN);
+    script::exec(&mut c, "E1 = 9").unwrap();
+    assert_number(&c, "v", 9.0);
+    assert_number(&c, "w", 10.0);
+    script::exec(&mut c, "E1 = 12").unwrap();
+    assert_number(&c, "w", 13.0);
+}

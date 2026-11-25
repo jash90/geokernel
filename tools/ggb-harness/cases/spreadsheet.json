@@ -278,6 +278,47 @@
       ]
     },
     {
+      "id": "spreadsheet-latecell-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "3"
+        },
+        {
+          "action": "command",
+          "input": "n = 5",
+          "observe": [
+            "n"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "v = Cell(n, 1)",
+          "observe": [
+            "v"
+          ]
+        },
+        {
+          "action": "edit",
+          "cell": "E1",
+          "input": "9"
+        },
+        {
+          "action": "edit",
+          "cell": "E1",
+          "input": "12"
+        }
+      ]
+    },
+    {
       "id": "spreadsheet-files-001",
       "group": "spreadsheet",
       "script": [],

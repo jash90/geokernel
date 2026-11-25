@@ -154,8 +154,20 @@ fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridA
             }
             let body = Rect::from_min_max(clip.min + vec2(HEADER_WIDTH, ROW_HEIGHT), clip.max);
             let painter = painter.with_clip_rect(body);
+            painter.rect_filled(selected_rect, 0.0, theme::TOOLBAR_BG);
+            let edge = Stroke::new(1.0, theme::SEPARATOR);
+            for column in cols.clone() {
+                let right = cell_rect(column, 0).right();
+                if body.x_range().contains(right) {
+                    painter.vline(right - 0.5, body.y_range(), edge);
+                }
+            }
             for row in rows {
-                let y = cell_rect(1, row).center().y;
+                let row_rect = cell_rect(1, row);
+                if body.y_range().contains(row_rect.bottom()) {
+                    painter.hline(body.x_range(), row_rect.bottom() - 0.5, edge);
+                }
+                let y = row_rect.center().y;
                 if y >= header_y + ROW_HEIGHT {
                     ui.painter().text(
                         pos2(header_x + HEADER_WIDTH / 2.0, y),
@@ -185,13 +197,10 @@ fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridA
                     if response.clicked() {
                         clicked = Some(GridAction::Select(address));
                     }
-                    if active {
-                        painter.rect_filled(rect, 0.0, theme::TOOLBAR_BG);
-                    }
-                    let edge = Stroke::new(1.0, theme::SEPARATOR);
-                    painter.hline(rect.x_range(), rect.bottom() - 0.5, edge);
-                    painter.vline(rect.right() - 0.5, rect.y_range(), edge);
-                    if !shown.is_empty() {
+                    if !shown.is_empty()
+                        && rect.right() <= body.right() + 2.0
+                        && rect.center().y <= body.bottom() - 5.0
+                    {
                         painter.with_clip_rect(hit).text(
                             pos2(rect.right() - 5.0, rect.center().y),
                             Align2::RIGHT_CENTER,

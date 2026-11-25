@@ -361,6 +361,31 @@ pub(crate) fn convert_with_assets(
             );
         }
     }
+    // A spreadsheet lookup can acquire its value when the XML defines a
+    // cell later in the construction. Recheck those results after loading.
+    c.out.mismatched.retain(|mismatch| {
+        let Some(id) = c.kernel.id(&mismatch.label) else {
+            return true;
+        };
+        if !c
+            .kernel
+            .reads(id)
+            .into_iter()
+            .any(|parent| geo_kernel::spreadsheet::Address::parse(c.kernel.label(parent)).is_some())
+        {
+            return true;
+        }
+        elements.get(mismatch.label.as_str()).is_none_or(|element| {
+            cross_check(
+                element,
+                &c.kernel,
+                id,
+                c.expressions.get(&mismatch.label).map(String::as_str),
+                None,
+            )
+            .is_some()
+        })
+    });
     for (address, input) in doc.spreadsheet_cells {
         let line = geo_kernel::spreadsheet::edit_line(address, &input);
         match geo_kernel::script::exec(&mut c.kernel, &line) {
@@ -708,17 +733,30 @@ impl Converter {
     /// writes cannot, and are checked before the run).
     fn run(&mut self, line: &str, expected: &[String]) -> Result<Result<(), String>, ImportError> {
         let before = self.kernel.len();
+        let vacancies: BTreeSet<_> = expected
+            .iter()
+            .filter(|label| {
+                self.kernel
+                    .id(label)
+                    .is_some_and(|id| self.kernel.is_blank_cell(id))
+            })
+            .collect();
         let result = exec(&mut self.kernel, line);
         // Inline arguments can make anonymous objects in addition to the outputs.
         let created = self
             .kernel
             .ids_from(before)
-            .filter(|&id| !self.kernel.label(id).starts_with('\0'))
+            .filter(|&id| {
+                !self.kernel.label(id).starts_with('\0') && !self.kernel.is_blank_cell(id)
+            })
             .count();
-        let matches = created == expected.len()
-            && expected
-                .iter()
-                .all(|l| self.kernel.id(l).is_some_and(|id| id.index() >= before));
+        let matches = created + vacancies.len() == expected.len()
+            && expected.iter().all(|label| {
+                self.kernel.id(label).is_some_and(|id| {
+                    !self.kernel.is_blank_cell(id)
+                        && (id.index() >= before || vacancies.contains(label))
+                })
+            });
         match result {
             Ok(_) if matches => Ok(Ok(())),
             Ok(_) => Err(ImportError::Internal(format!(
@@ -1612,6 +1650,10 @@ impl Converter {
         expression: Option<(&Element, &str)>,
     ) -> Result<(), ImportError> {
         let before = self.kernel.len();
+        let vacancy = self
+            .kernel
+            .id(label)
+            .filter(|&id| self.kernel.is_blank_cell(id));
         let mut checkpoint = Some(self.kernel.checkpoint());
         let result = line.and_then(|(line, kind)| {
             let rhs = line.split_once('=').map_or("", |(_, rhs)| rhs.trim_start());
@@ -1640,12 +1682,13 @@ impl Converter {
             })?;
             let Some(id) = id.filter(|&id| {
                 self.kernel.label(id) == label
-                    && (id.index() == before && self.kernel.len() == before + 1
-                        || kind == Some(Kind::Text)
-                            && id.index() >= before
-                            && self.kernel.ids_from(before).all(|made| {
-                                made == id || self.kernel.label(made).starts_with('\0')
-                            }))
+                    && (id.index() >= before || vacancy == Some(id))
+                    && !self.kernel.is_blank_cell(id)
+                    && self.kernel.ids_from(before).all(|made| {
+                        made == id
+                            || self.kernel.is_blank_cell(made)
+                            || kind == Some(Kind::Text) && self.kernel.label(made).starts_with('\0')
+                    })
             }) else {
                 return Err(
                     "the expression must create exactly one object with the saved label".into(),
@@ -1657,7 +1700,9 @@ impl Converter {
                     "the expression gives a {actual}, expected a {kind}"
                 ));
             }
-            if let Some((el, exp)) = expression.filter(|_| self.kernel.reads(id).is_empty()) {
+            if let Some((el, exp)) =
+                expression.filter(|_| vacancy.is_none() && self.kernel.reads(id).is_empty())
+            {
                 if let Some(literal) = exact_literal(el) {
                     let line = format!("{label} = $saved({literal}, {})", expression_line(exp)?);
                     self.kernel

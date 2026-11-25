@@ -45,6 +45,8 @@ cases = [
 ]
 
 cases.extend([
+    case("latecell", edit("A1", "3"), command("n = 5", "n"),
+         command("v = Cell(n, 1)", "v"), edit("E1", "9"), edit("E1", "12")),
     case("files", edit("A1", "1.250"), edit("B1", "=$A$1 * 2"), edit("A2", "Total"),
          edit("B2", "=0/0"), command("FillCells(A3:B3, {3,4})")),
     case("matrix", command('FillCells(B2:D4, {{1,2},{"label",4}})')),

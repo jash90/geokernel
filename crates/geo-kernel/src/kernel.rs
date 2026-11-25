@@ -1529,6 +1529,13 @@ impl Construction {
             .map(|(&address, &id)| (address, id))
     }
 
+    pub(crate) fn spreadsheet_slot(&self, address: crate::spreadsheet::Address) -> Option<Id> {
+        self.spreadsheet_slots
+            .get(&address)
+            .copied()
+            .filter(|id| Some(*id) != self.replacement_target)
+    }
+
     pub fn is_blank_cell(&self, id: Id) -> bool {
         self.blank_cells.contains(&id)
     }

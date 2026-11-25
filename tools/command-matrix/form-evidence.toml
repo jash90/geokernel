@@ -5293,4 +5293,4 @@ cases = ["spreadsheet-locus-001"]
 [[form]]
 command = "Cell"
 form = "number,number"
-cases = ["spreadsheet-lookup-001", "spreadsheet-textlookup-001"]
+cases = ["spreadsheet-lookup-001", "spreadsheet-textlookup-001", "spreadsheet-latecell-001"]

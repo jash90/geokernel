@@ -914,6 +914,7 @@ fn saved_argument(c: &mut Construction, source: &str, depth: usize) -> Result<St
     if let Some(id) = c.id(source) {
         return Ok(c.label(id).to_owned());
     }
+    crate::spreadsheet::prepare(c, source, None)?;
     let start = c.checkpoint();
     let label = format!("\0arg{}", c.len());
     let call = split_call(source);

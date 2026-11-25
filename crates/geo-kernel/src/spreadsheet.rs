@@ -163,7 +163,7 @@ impl Construction {
     }
 
     pub fn spreadsheet_cell(&self, address: Address) -> Option<Id> {
-        self.id(&address.label())
+        self.spreadsheet_slot(address)
             .filter(|&id| !self.is_blank_cell(id))
     }
 
@@ -185,6 +185,7 @@ impl Construction {
 
     /// Apply one grid edit. A leading equals sign introduces a formula.
     pub fn edit_spreadsheet_cell(&mut self, address: Address, input: &str) -> Result<(), String> {
+        Address::new(address.column, address.row).ok_or("invalid spreadsheet address")?;
         if input.len() > MAX_SOURCE_BYTES {
             return Err(LIMIT.into());
         }
@@ -755,6 +756,13 @@ pub(crate) fn prepare(
         _ => None,
     };
     let mut addresses = std::collections::BTreeSet::new();
+    if let Some(("Cell", args)) = script::split_call(source) {
+        if let [column, row] = args.as_slice() {
+            if let (Some(column), Some(row)) = (c.numeric_value(column), c.numeric_value(row)) {
+                addresses.extend(Address::from_numbers(column, row));
+            }
+        }
+    }
     let mut remaining = MAX_CELLS_PER_OPERATION;
     let add_range = |addresses: &mut std::collections::BTreeSet<_>,
                      remaining: &mut usize,

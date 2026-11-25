@@ -542,6 +542,25 @@ fn call_kinds(
 
 /// Whether a call with these arguments shows `form` exactly.
 fn call_fits(command: &str, form: &str, args: &[String], kinds: &[Option<Kind>]) -> bool {
+    if matches!(
+        command,
+        "CellRange" | "Row" | "Column" | "ColumnName" | "FillCells"
+    ) {
+        let tokens: Vec<_> = form.split(',').collect();
+        let is_cell = |arg: &str| geo_kernel::spreadsheet::Address::parse(arg.trim()).is_some();
+        return tokens.len() == args.len()
+            && tokens.iter().zip(args.iter().zip(kinds)).all(
+                |(&token, (arg, kind))| match token {
+                    "cell" => is_cell(arg),
+                    "range" => arg
+                        .split_once(':')
+                        .is_some_and(|(a, b)| is_cell(a) && is_cell(b)),
+                    "type" => true,
+                    "object" => is_cell(arg) || kind.is_some(),
+                    _ => kind.is_some_and(|kind| token_matches(token, kind)),
+                },
+            );
+    }
     if matches!(form, "inequality" | "interval") {
         return matches!(args, [arg] if inline_inequality(arg));
     }
