@@ -298,7 +298,10 @@ fn reduce(tree: Expr, work: &mut Work<'_>) -> Option<Expr> {
 }
 
 fn quotient(tree: &Expr, work: &mut Work<'_>) -> Option<Quotient> {
-    quotient_with(tree, work, &mut |name, _| {
+    quotient_with(tree, work, &mut |leaf, _| {
+        let Expr::Name(name) = leaf else {
+            return None;
+        };
         let axis = ["x", "y", "z"]
             .iter()
             .position(|variable| name == *variable)?;
@@ -309,7 +312,7 @@ fn quotient(tree: &Expr, work: &mut Work<'_>) -> Option<Quotient> {
 fn quotient_with(
     tree: &Expr,
     work: &mut Work<'_>,
-    name_value: &mut impl FnMut(&str, &mut Work<'_>) -> Option<Quotient>,
+    leaf_value: &mut impl FnMut(&Expr, &mut Work<'_>) -> Option<Quotient>,
 ) -> Option<Quotient> {
     work.spend(1)?;
     Some(match tree {
@@ -317,11 +320,10 @@ fn quotient_with(
             &crate::expr::decimal::Dec::parse(text)?,
         )?),
         Expr::Num(n, None) => input::number(Rat::from_value(*n)?),
-        Expr::Name(n) => name_value(n, work)?,
-        Expr::Neg(a) => input::number(Rat::ZERO).sub(quotient_with(a, work, name_value)?, work)?,
+        Expr::Neg(a) => input::number(Rat::ZERO).sub(quotient_with(a, work, leaf_value)?, work)?,
         Expr::Bin(op, a, b) => {
-            let a = quotient_with(a, work, name_value)?;
-            let b = quotient_with(b, work, name_value)?;
+            let a = quotient_with(a, work, leaf_value)?;
+            let b = quotient_with(b, work, leaf_value)?;
             match op {
                 b'+' => a.add(b, work)?,
                 b'-' => a.sub(b, work)?,
@@ -337,7 +339,7 @@ fn quotient_with(
                 _ => return None,
             }
         }
-        _ => return None,
+        _ => leaf_value(tree, work)?,
     })
 }
 
@@ -378,11 +380,21 @@ fn solve(c: &Construction, name: &str, equation: &Expr, work: &mut Work<'_>) -> 
         equation
     };
     let variable = solve_variable(c, equation);
-    let mut resolve = |name: &str, work: &mut Work<'_>| {
+    let mut resolve_name = |leaf: &Expr, work: &mut Work<'_>| {
+        let Expr::Name(name) = leaf else {
+            return None;
+        };
         if let Some(id) = c.resolve_label(name) {
             return Some(input::number(input::row_number(c, id, work)?));
         }
         (name == variable).then(|| Quotient::polynomial(crate::cas::Poly::variable(0)))
+    };
+    let mut resolve = |leaf: &Expr, work: &mut Work<'_>| match leaf {
+        Expr::Call(..) => {
+            let value = exact(c, leaf.clone(), work)?;
+            quotient_with(&value, work, &mut resolve_name)
+        }
+        _ => resolve_name(leaf, work),
     };
     // Keep the original denominator until roots outside the domain have been removed.
     let polynomial = match equation {

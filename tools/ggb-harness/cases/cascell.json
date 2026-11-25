@@ -236,6 +236,28 @@
       "cascell": "abs(x)"
     },
     {
+      "id": "cascell-closing-010",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Solve(x = sqrt(4))"
+    },
+    {
+      "id": "cascell-closing-011",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Solve(x^2/x = sqrt(0))"
+    },
+    {
       "id": "cascell-display-001",
       "group": "cascell",
       "script": [],

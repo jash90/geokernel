@@ -114,6 +114,30 @@
         {}
       ],
       "cascell": { "input": "abs(x)", "output": "abs(x)", "latex": "\\mathbf{\\left|x\\right|}" }
+    },
+    {
+      "id": "cascell-closing-010",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Solve(x = sqrt(4))", "output": "{x = 2}", "latex": "\\mathbf{ \\left\\{ x = 2 \\right\\} }" }
+    },
+    {
+      "id": "cascell-closing-011",
+      "group": "cascell",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "cascell": { "input": "Solve(x^2/x = sqrt(0))", "output": "{}", "latex": "\\mathbf{\\left\\{ \\right\\}}" }
     }
   ]
 }

@@ -37,6 +37,8 @@ cases = [
     case("closing", 7, "5!"),
     case("closing", 8, "abs(-3)"),
     case("closing", 9, "abs(x)"),
+    case("closing", 10, "Solve(x = sqrt(4))"),
+    case("closing", 11, "Solve(x^2/x = sqrt(0))"),
     case("display", 1, "Factor(x^3-x)"),
     case("display", 2, "Factor(x^4-x^2)"),
     case("display", 3, "Factor((x-2)*(x+1)*(x+3))"),
