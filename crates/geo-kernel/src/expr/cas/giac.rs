@@ -56,6 +56,10 @@ pub(super) fn row_fill(template: &str, args: &[&str]) -> Option<String> {
     Some(input)
 }
 
+pub(super) fn row_solutions(input: &str) -> Option<String> {
+    row_fill(SOLUTIONS_1, &[input])
+}
+
 pub(super) fn row_solve(name: &str, input: &str, variable: &str) -> Option<String> {
     let template = match name {
         "Solve" => SOLVE_2,

@@ -199,7 +199,7 @@ impl Translator<'_> {
             }
             Expr::Eq(a, b) => {
                 let left = match &**a {
-                    Expr::Call(name, args) => {
+                    Expr::Call(name, args) if name != "!" && !BUILTINS.contains(&name.as_str()) => {
                         format!("{}({})", variable(name), self.arguments(args, ",")?)
                     }
                     _ => self.print(a)?,
@@ -257,7 +257,8 @@ impl Translator<'_> {
                 "[[ggbpparg0:={}],if (ggbpparg0>2) then prevprime(ggbpparg0) else 0/0 fi][1]",
                 self.print(arg)?
             )),
-            ("Solve" | "Solutions" | "NSolve" | "NSolutions", [arg]) => {
+            ("Solutions", [arg]) => giac::row_solutions(&self.print(arg)?),
+            ("Solve" | "NSolve" | "NSolutions", [arg]) => {
                 let variable = variable(solve_variable(self.c, arg));
                 giac::row_solve(name, &self.print(arg)?, &variable)
             }

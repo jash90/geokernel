@@ -617,9 +617,12 @@ fn closing_numeric_fallback_uses_the_first_argument() {
 fn closing_assume_translates_both_bounds_of_a_chain() {
     let c = Construction::new();
     let tree = parse("Assume(-pi < x < pi, Solutions(sin(x) = cos(x)))", true).unwrap();
-    assert!(translate(&c, &tree)
-        .unwrap()
-        .starts_with("[[assume((-(pi) < x && x < pi))],"));
+    assert_eq!(
+        translate(&c, &tree).as_deref(),
+        Some(
+            r#"[[assume((-(pi) < x && x < pi))],ggbsort(normal(solve(sin(x)=cos(x),when(type(sin(x)=cos(x))==DOM_LIST,lname(sin(x)=cos(x)),when(contains(lname(sin(x)=cos(x)),x),x,lname(sin(x)=cos(x))[0])),'!=')))][1]"#
+        )
+    );
     let row = read_back(&tree, "{-3/4*pi,1/4*pi}").unwrap();
     assert_eq!(row.text, "{-3 / 4 π, 1 / 4 π}");
     assert_eq!(
