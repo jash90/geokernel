@@ -34,6 +34,7 @@ pub(super) fn relation(op: u8) -> Option<&'static str> {
 
 struct Reader<'a> {
     s: &'a [u8],
+    source: &'a str,
     i: usize,
     nesting: u32,
     input: bool,
@@ -159,6 +160,27 @@ impl Reader<'_> {
         } else {
             self.atom()?
         };
+        let base = if self.eat(b'!') {
+            Expr::Call("!".into(), vec![base])
+        } else {
+            base
+        };
+        if let Some(end) = crate::expr::lex::power_end(self.source, self.i) {
+            let superscript = &self.source[self.i..end];
+            self.i = end;
+            let text: String = superscript
+                .chars()
+                .filter_map(crate::expr::lex::superscript_digit)
+                .map(|digit| char::from(b'0' + digit as u8))
+                .collect();
+            let exponent = Expr::Num(text.parse().ok()?, Some(text));
+            let exponent = if superscript.starts_with('⁻') {
+                Expr::Neg(Box::new(exponent))
+            } else {
+                exponent
+            };
+            return Some(Expr::Bin(b'^', Box::new(base), Box::new(exponent)));
+        }
         if self.eat(b'^') {
             let exponent = self.unary()?;
             return Some(Expr::Bin(b'^', Box::new(base), Box::new(exponent)));
@@ -257,6 +279,7 @@ impl Reader<'_> {
 pub(super) fn parse(s: &str, input: bool) -> Option<Expr> {
     let mut reader = Reader {
         s: s.as_bytes(),
+        source: s,
         i: 0,
         nesting: 0,
         input,

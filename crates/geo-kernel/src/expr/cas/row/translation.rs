@@ -5,7 +5,8 @@ mod command_tests;
 mod commands;
 
 use super::{
-    cell_equation, display, is_feature_command, parse, CasRow, Expr, BUILTINS, MAX_INPUT_BYTES,
+    cell_equation, display, is_feature_command, parse, solve_variable, CasRow, Expr, BUILTINS,
+    MAX_INPUT_BYTES,
 };
 use crate::expr::cas::{giac, Op};
 use crate::Construction;
@@ -119,7 +120,12 @@ fn translate(c: &Construction, tree: &Expr) -> Option<String> {
     };
     let source = printer.print(tree)?;
     let translated = match tree {
-        Expr::Call(name, _) if name != "Substitute" && !BUILTINS.contains(&name.as_str()) => source,
+        Expr::Call(name, _)
+            if !matches!(name.as_str(), "Substitute" | "!")
+                && !BUILTINS.contains(&name.as_str()) =>
+        {
+            source
+        }
         _ => EVALUATE.replace("%0", &source),
     };
     (translated.len() <= MAX_INPUT_BYTES).then_some(translated)
@@ -135,6 +141,32 @@ fn variable(name: &str) -> String {
     }
 }
 
+fn literal(text: &str) -> Option<String> {
+    let Some((mantissa, exponent)) = text.split_once(['e', 'E']) else {
+        return Some(giac::decimal_fraction(text));
+    };
+    let exponent: i64 = exponent.parse().ok()?;
+    let (whole, fraction) = mantissa.split_once('.').unwrap_or((mantissa, ""));
+    let digits = format!("{whole}{fraction}");
+    let digits = digits.trim_start_matches('0');
+    if digits.is_empty() {
+        return Some("0".into());
+    }
+    let exponent = exponent.checked_sub(fraction.len() as i64)?;
+    let zeros = usize::try_from(exponent.unsigned_abs()).ok()?;
+    if digits.len().checked_add(zeros)?.checked_add(4)? > MAX_INPUT_BYTES {
+        return None;
+    }
+    if exponent >= 0 {
+        let mut value = String::with_capacity(digits.len() + zeros);
+        value.push_str(digits);
+        value.extend(std::iter::repeat_n('0', zeros));
+        Some(value)
+    } else {
+        Some(format!("({digits}/1{})", "0".repeat(zeros)))
+    }
+}
+
 struct Translator<'a> {
     c: &'a Construction,
     command_index: usize,
@@ -143,13 +175,7 @@ struct Translator<'a> {
 impl Translator<'_> {
     fn print(&mut self, tree: &Expr) -> Option<String> {
         let text = match tree {
-            Expr::Num(_, Some(text)) => {
-                if text.bytes().all(|byte| byte.is_ascii_digit()) {
-                    text.clone()
-                } else {
-                    giac::decimal_fraction(text)
-                }
-            }
+            Expr::Num(_, Some(text)) => literal(text)?,
             Expr::Num(..) => return None,
             Expr::Name(name) => match self.c.resolve_label(name) {
                 Some(id) => giac::row_object(self.c, id)?,
@@ -205,6 +231,16 @@ impl Translator<'_> {
         self.command_index += 1;
         let index = self.command_index;
         match (name, args) {
+            ("!", [arg]) => {
+                let value = self.print(arg)?;
+                Some(
+                    if matches!(arg, Expr::Num(..) | Expr::Name(_)) && !value.starts_with('(') {
+                        format!("{value}!")
+                    } else {
+                        format!("({value})!")
+                    },
+                )
+            }
             ("Evaluate", [arg]) => Some(EVALUATE.replace("%0", &self.print(arg)?)),
             ("NextPrime", [arg]) => Some(format!("nextprime({})", self.print(arg)?)),
             ("PreviousPrime", [arg]) => Some(format!(
@@ -212,7 +248,8 @@ impl Translator<'_> {
                 self.print(arg)?
             )),
             ("Solve" | "Solutions" | "NSolve" | "NSolutions", [arg]) => {
-                Some(giac::row_solve(name, &self.print(arg)?, "x"))
+                let variable = variable(solve_variable(self.c, arg));
+                Some(giac::row_solve(name, &self.print(arg)?, &variable))
             }
             ("Solve" | "Solutions" | "NSolve" | "NSolutions", [arg, variable]) => Some(
                 giac::row_solve(name, &self.print(arg)?, &self.print(variable)?),
@@ -266,6 +303,35 @@ mod tests {
         assert_eq!(
             translate(&c, &parse("Solve(x^2=1)", true).unwrap()),
             Some(giac::row_solve("Solve", "(x)^(2)=1", "x")),
+        );
+    }
+
+    #[test]
+    fn translates_exact_literals_and_construction_definitions() {
+        let c = crate::script::load("a = 1/3").unwrap();
+        for (source, expected) in [
+            ("3*a", "(3)*((1)/(3))"),
+            ("1.2E3 + 0", "(1200)+(0)"),
+            ("1.2E-3", "(12/10000)"),
+            ("5!", "5!"),
+            ("x² - 1", "((x)^(2))-(1)"),
+        ] {
+            let tree = parse(source, true).unwrap();
+            let mut printer = Translator {
+                c: &c,
+                command_index: 0,
+            };
+            assert_eq!(printer.print(&tree).as_deref(), Some(expected), "{source}");
+        }
+    }
+
+    #[test]
+    fn translates_a_solve_with_the_equations_variable() {
+        let c = Construction::new();
+        let tree = parse("Solve(y = 1)", true).unwrap();
+        assert_eq!(
+            translate(&c, &tree),
+            Some(giac::row_solve("Solve", "y=1", "y"))
         );
     }
 
