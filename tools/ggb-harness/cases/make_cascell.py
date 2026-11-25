@@ -62,6 +62,7 @@ cases = [
     case("lastround", 6, "0<(" * 11 + "x" + ")<1" * 11),
     case("lastround", 7, "1E40000 + 1E40000"),
     case("lastround", 8, "Solve(x = 1E10000)"),
+    case("lastcommands", 1, "Numeric(f(2))", "g(x) = x²", "f(x) = g(x + 1)"),
 ]
 Path(__file__).with_name("cascell.json").write_text(
     json.dumps({"cases": cases}, indent=2) + "\n", encoding="utf-8"

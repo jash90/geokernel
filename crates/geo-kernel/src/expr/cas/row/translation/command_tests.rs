@@ -658,3 +658,14 @@ fn closing_repetitions_are_bounded_before_template_assembly() {
         assert!(assembled.is_none_or(|input| input.len() <= MAX_INPUT_BYTES));
     }
 }
+
+#[test]
+fn composed_functions_inline_expression_arguments_inside_numeric() {
+    let c = crate::script::load("g(x) = x²\nf(x) = g(x + 1)").unwrap();
+    let tree = parse("Numeric(f(2))", true).unwrap();
+    let translated = translate(&c, &tree).expect("inline the composed function");
+    assert!(translated.contains("((2)+(1))^(2)"), "{translated}");
+    let row = read_back(&tree, "9.0").unwrap();
+    assert_eq!(row.text, "9");
+    assert_eq!(row.latex, r"\mathbf{9}");
+}

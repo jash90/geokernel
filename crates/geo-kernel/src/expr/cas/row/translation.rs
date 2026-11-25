@@ -302,7 +302,7 @@ impl Translator<'_> {
                         Some(value)
                     })
                     .collect::<Option<Vec<_>>>()?;
-                giac::row_application(self.c, id, &arguments)
+                giac::row_application(self.c, id, arguments)
             }
         }
     }

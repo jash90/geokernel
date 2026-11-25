@@ -3262,5 +3262,10 @@ reason = "The default build returns \"Eigenvalues requires a CAS build\" and emp
 
 [[gap]]
 id = "cascell-lastround-006"
-reason = 'The CAS row reader has no chained comparison syntax (crates/geo-kernel/src/expr/cas/syntax.rs:50). The kernel prints ? and \mathbf{?}. GeoGebra prints false and \mathbf{false}.'
+reason = 'The CAS row reader rejects the comparison before cloning a middle operand that would exceed the 10,000-node limit (crates/geo-kernel/src/expr/cas/syntax.rs:111). The kernel prints ? and \mathbf{?}. GeoGebra prints false and \mathbf{false}.'
+mismatches = ["0:output", "0:latex"]
+
+[[gap]]
+id = "cascell-lastcommands-001"
+reason = 'The default build returns "Numeric requires a CAS build" with empty LaTeX (crates/geo-kernel/src/expr/cas/row.rs:62). GeoGebra prints 9 and \mathbf{9}.'
 mismatches = ["0:output", "0:latex"]

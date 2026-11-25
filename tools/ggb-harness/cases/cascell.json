@@ -524,6 +524,20 @@
         }
       ],
       "cascell": "Solve(x = 1E10000)"
+    },
+    {
+      "id": "cascell-lastcommands-001",
+      "group": "cascell",
+      "script": [
+        "g(x) = x\u00b2",
+        "f(x) = g(x + 1)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "cascell": "Numeric(f(2))"
     }
   ]
 }
