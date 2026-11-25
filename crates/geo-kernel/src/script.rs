@@ -186,7 +186,47 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
             .map_err(|e| e.to_string())?;
         return Ok(None);
     }
+    if let Some((command, args)) =
+        split_call(line).filter(|(command, _)| crate::spreadsheet::is_fill(command))
+    {
+        return crate::spreadsheet::fill(c, command, &args, None);
+    }
     let (name, rhs, colon) = assignment(line).ok_or("expected `name = definition`")?;
+    if let Some(result) = crate::spreadsheet::stored_edit(c, name, rhs) {
+        return result;
+    }
+    if let Some((command, args)) =
+        split_call(rhs).filter(|(command, _)| crate::spreadsheet::is_fill(command))
+    {
+        check_label(name)?;
+        return crate::spreadsheet::fill(c, command, &args, Some(name));
+    }
+    if !colon && crate::spreadsheet::needs_preparation(name, rhs) {
+        let before = c.checkpoint();
+        let cell = crate::spreadsheet::Address::parse(name).is_some();
+        let result = crate::spreadsheet::prepare(c, rhs, Some(name)).and_then(|()| {
+            if cell {
+                c.write_spreadsheet_cell(name, false, |c| define_assignment(c, name, rhs, false))
+            } else {
+                execute_assignment(c, name, rhs, false)
+            }
+        });
+        if result.is_err() {
+            c.discard_since(before);
+        } else if let Ok(Some(id)) = result {
+            c.remember_construction_source(id, rhs);
+        }
+        return result;
+    }
+    execute_assignment(c, name, rhs, colon)
+}
+
+fn execute_assignment(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+    colon: bool,
+) -> Result<Option<Id>, String> {
     if let Some((id, value)) = slider_assignment_value(c, name, rhs) {
         c.assign_slider_number(id, value)
             .map_err(|e| e.to_string())?;
@@ -434,7 +474,11 @@ fn convert_source(c: &mut Construction, arg: &str) -> Result<Id, String> {
 
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
-fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+pub(crate) fn define_after_label(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+) -> Result<Option<Id>, String> {
     if let Some((command, _)) = split_call(rhs) {
         if ConicPartDef::reader_name(command).is_some() && c.id(command).is_some() {
             return crate::expr::define(c, name, rhs, is_vector_label(name)).map(Some);

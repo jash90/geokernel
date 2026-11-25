@@ -361,10 +361,22 @@ pub(crate) fn convert_with_assets(
             );
         }
     }
+    for (address, input) in doc.spreadsheet_cells {
+        let line = geo_kernel::spreadsheet::edit_line(address, &input);
+        match geo_kernel::script::exec(&mut c.kernel, &line) {
+            Ok(_) => c.out.script.push(line),
+            Err(reason) => c.out.skipped.push(Skipped {
+                label: address.label(),
+                kind: "cell".into(),
+                reason,
+            }),
+        }
+    }
     let mut out = c.out;
     out.settings = doc.settings;
     out.cas_rows = doc.cas_rows;
     out.cas_visible = doc.cas_visible;
+    out.spreadsheet_view = doc.spreadsheet_view;
     out.view = doc.view;
     if out.settings.continuous {
         out.notes.push(

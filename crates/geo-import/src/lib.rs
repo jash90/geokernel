@@ -76,6 +76,9 @@ pub struct CasOutputOptions {
     pub native: bool,
 }
 
+mod spreadsheet;
+pub use spreadsheet::SpreadsheetView;
+
 /// The result of importing a file.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Imported {
@@ -83,6 +86,7 @@ pub struct Imported {
     pub script: Vec<String>,
     pub cas_rows: Vec<SavedCasRow>,
     pub cas_visible: Option<bool>,
+    pub spreadsheet_view: Option<SpreadsheetView>,
     /// Raster sources for replay without serializing or decoding them again.
     pub image_assets: Vec<geo_kernel::script::saved::Property>,
     /// Saved object presentation used when writing a construction.
@@ -250,7 +254,7 @@ pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
 
 /// Import definitions and share decoded raster assets with the replay caller.
 pub fn import_for_replay(bytes: &[u8]) -> Result<Imported, ImportError> {
-    let doc = {
+    let mut doc = {
         let text = archive::extract_xml(bytes)?;
         xml::parse(&text)?
     };
@@ -260,6 +264,19 @@ pub fn import_for_replay(bytes: &[u8]) -> Result<Imported, ImportError> {
     } else {
         (None, None)
     };
+    if let Some(archive) = &archive {
+        let bytes = archive.spreadsheet_metadata()?;
+        if !bytes.is_empty() {
+            let metadata =
+                std::str::from_utf8(&bytes).map_err(|e| ImportError::Xml(e.to_string()))?;
+            let wrapped = format!("<geogebra>{metadata}<construction/></geogebra>");
+            for (address, input) in xml::parse(&wrapped)?.spreadsheet_cells {
+                if doc.spreadsheet_cells.insert(address, input).is_some() {
+                    return Err(ImportError::DuplicateLabel(address.label()));
+                }
+            }
+        }
+    }
     let mut imported = convert::convert_with_assets(doc, archive.as_ref())?;
     if let Some(error) = archive_error {
         imported.notes.push(format!("Archive extras: {error}"));

@@ -48,6 +48,7 @@ pub struct Presentation<'a> {
     pub settings: Settings,
     pub cas_rows: Vec<crate::SavedCasRow>,
     pub cas_visible: Option<bool>,
+    pub spreadsheet_view: Option<crate::SpreadsheetView>,
     /// Colours of the objects that have no saved style.
     pub colors: BTreeMap<&'a str, [u8; 3]>,
     /// Fill opacity the application draws those objects with, from 0 to 1.
@@ -339,7 +340,7 @@ pub fn ggb<'a>(
         .push_str("<construction title=\"\" author=\"\" date=\"\">\n");
     let mut seen = HashSet::new();
     for definition in definitions {
-        let ids = definition
+        let mut ids = definition
             .outputs
             .iter()
             .map(|label| {
@@ -352,6 +353,7 @@ pub fn ggb<'a>(
                 Ok(id)
             })
             .collect::<Result<Vec<_>, _>>()?;
+        ids.retain(|&id| !construction.is_blank_cell(id));
         if let Some(&first) = ids.first() {
             writer.definition(first, &ids, definition.line)?;
             for id in ids {
@@ -362,10 +364,11 @@ pub fn ggb<'a>(
             return Err(failure("construction XML exceeds the import size limit"));
         }
     }
-    if let Some(id) = construction
-        .ids()
-        .find(|&id| !construction.label(id).starts_with('\0') && !seen.contains(&id))
-    {
+    if let Some(id) = construction.ids().find(|&id| {
+        !construction.label(id).starts_with('\0')
+            && !construction.is_blank_cell(id)
+            && !seen.contains(&id)
+    }) {
         return Err(failure(format!(
             "missing definition for `{}`",
             construction.label(id)
@@ -395,10 +398,43 @@ pub fn ggb<'a>(
     for (name, asset) in writer.images.values() {
         write(name, asset.bytes())?;
     }
+    let spreadsheet = spreadsheet_metadata(construction)?;
+    if let Some(metadata) = spreadsheet {
+        if writer.images.len() + 2 > archive::MAX_ZIP_ENTRIES {
+            return Err(failure("construction exceeds the import archive limits"));
+        }
+        write(crate::spreadsheet::METADATA_FILE, metadata.as_bytes())?;
+    }
     write(archive::XML_FILE, writer.xml.buffer.as_bytes())?;
     zip.finish()
         .map(Cursor::into_inner)
         .map_err(|e| failure(e.to_string()))
+}
+
+fn spreadsheet_metadata(c: &Construction) -> Result<Option<String>, ExportError> {
+    let mut xml = Xml::default();
+    for (address, id) in c.spreadsheet_cells() {
+        let Some(input) = c.spreadsheet_editor_input(id) else {
+            continue;
+        };
+        if xml.buffer.is_empty() {
+            xml.open("spreadsheetView", &[])?;
+        }
+        xml.tag("cell", &[("label", &address.label()), ("input", input)])?;
+        if xml.buffer.len() as u64 + 19 > crate::spreadsheet::MAX_METADATA_BYTES {
+            return Err(failure(
+                "spreadsheet metadata exceeds the import size limit",
+            ));
+        }
+    }
+    if xml.buffer.is_empty() {
+        return Ok(None);
+    }
+    xml.buffer.push_str(
+        "</spreadsheetView>
+",
+    );
+    Ok(Some(xml.buffer))
 }
 
 struct Writer<'a> {
@@ -412,7 +448,11 @@ struct Writer<'a> {
 
 impl Writer<'_> {
     fn settings(&mut self) -> Result<(), ExportError> {
-        if let Some(cas_visible) = self.presentation.cas_visible {
+        let sheet = self.presentation.spreadsheet_view.as_ref();
+        let sheet_visible = sheet.and_then(|sheet| sheet.visible);
+        if self.presentation.cas_visible.is_some() || sheet_visible.is_some() {
+            let cas_visible = self.presentation.cas_visible.unwrap_or(false);
+            let sheet_visible = sheet_visible.unwrap_or(false);
             self.xml.buffer.push_str(
                 "<gui><perspectives><perspective id=\"tmp\"><panes>\n\
                  <pane location=\"\" divider=\"0.32\" orientation=\"1\"/>\n\
@@ -420,9 +460,13 @@ impl Writer<'_> {
             );
             for (id, visible, location, size) in [
                 ("1", true, "1", "600"),
-                ("2", !cas_visible, "3", "300"),
+                ("2", !cas_visible && !sheet_visible, "3", "300"),
                 ("8", cas_visible, "3", "300"),
+                ("4", sheet_visible, "3", "300"),
             ] {
+                if id == "4" && sheet.is_none() {
+                    continue;
+                }
                 self.xml.tag(
                     "view",
                     &[
@@ -496,7 +540,20 @@ impl Writer<'_> {
             )?;
         }
         let settings = &self.presentation.settings;
-        self.xml.buffer.push_str("</euclidianView>\n<kernel>\n");
+        self.xml.buffer.push_str("</euclidianView>\n");
+        if let Some(sheet) = sheet {
+            self.xml.open("spreadsheetView", &[])?;
+            for entry in &sheet.settings {
+                let attributes: Vec<_> = entry
+                    .attributes
+                    .iter()
+                    .map(|(key, value)| (*key, value.as_str()))
+                    .collect();
+                self.xml.tag(entry.name, &attributes)?;
+            }
+            self.xml.buffer.push_str("</spreadsheetView>\n");
+        }
+        self.xml.buffer.push_str("<kernel>\n");
         self.xml.val("continuous", flag(settings.continuous))?;
         self.xml.val("usePathAndRegionParameters", "true")?;
         if let Some(figures) = settings.significant_figures {
@@ -686,7 +743,13 @@ fn syntax(mut source: &str) -> Result<String, ExportError> {
     {
         source = inner;
     }
-    if source.contains('\0') || source.starts_with('$') {
+    let internal = source.starts_with('$')
+        && source
+            .split(|ch: char| !(ch.is_ascii_uppercase() || ch.is_ascii_digit() || ch == '$'))
+            .next()
+            .and_then(geo_kernel::spreadsheet::Address::parse)
+            .is_none();
+    if source.contains('\0') || internal {
         return Err(failure(format!("unsupported definition `{source}`")));
     }
     Ok(source.to_owned())
@@ -735,7 +798,7 @@ impl Xml {
         limit: usize,
     ) -> Result<(), ExportError> {
         self.items += match name {
-            "command" | "element" | "cellPair" => 1,
+            "command" | "element" | "cellPair" | "cell" => 1,
             "expression" if attrs.iter().any(|(key, _)| *key == "label") => 1,
             "output" => attrs.len(),
             _ => 0,

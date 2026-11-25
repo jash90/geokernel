@@ -332,6 +332,11 @@ pub(crate) enum Node {
     /// `{a, b, ...}`: the elements are the [`Node::Item`]s from the first
     /// index on, as many as the second says, one after the other.
     List(u32, u32),
+    /// The cell slots in a rectangular range in column-major order.
+    CellRange(u32, u32),
+    CellItem(Id),
+    CellWatch(Id),
+    CellLookup(u32, u32, Kind),
     /// One element of a list literal.
     Item(u32),
     /// A named geometric object in a list literal.
@@ -1213,9 +1218,11 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         }
         Node::Seq(a, b, c, d, _) => fixed[..4].copy_from_slice(&[a, b, c, d]),
         Node::Financial(_, args) => fixed.copy_from_slice(&args),
-        Node::List(first, len) | Node::TextCmd(_, first, len) | Node::Call(_, first, len) => {
-            run = first..first.saturating_add(len)
-        }
+        Node::CellLookup(a, b, _) => fixed[..2].copy_from_slice(&[a, b]),
+        Node::List(first, len)
+        | Node::CellRange(first, len)
+        | Node::TextCmd(_, first, len)
+        | Node::Call(_, first, len) => run = first..first.saturating_add(len),
         _ => {}
     }
     fixed.into_iter().filter(|&c| c != NONE).chain(run)
@@ -1285,7 +1292,14 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
             shift(c);
             shift(d);
         }
-        Node::List(first, _) | Node::TextCmd(_, first, _) | Node::Call(_, first, _) => shift(first),
+        Node::CellLookup(a, b, _) => {
+            shift(a);
+            shift(b);
+        }
+        Node::List(first, _)
+        | Node::CellRange(first, _)
+        | Node::TextCmd(_, first, _)
+        | Node::Call(_, first, _) => shift(first),
         Node::Financial(_, args) => args.iter_mut().for_each(shift),
         _ => {}
     }
@@ -1296,6 +1310,7 @@ fn is_list_node(node: &Node) -> bool {
     matches!(
         node,
         Node::List(..)
+            | Node::CellRange(..)
             | Node::TextCmd(..)
             | Node::Item(_)
             | Node::ItemObject(_)
@@ -1328,6 +1343,15 @@ pub(crate) use commands::polynomial::division_list;
 
 pub(crate) fn is_expression_command(name: &str) -> bool {
     commands::is_command(name)
+        || matches!(name, "Cell" | "CellRange" | "Row" | "Column" | "ColumnName")
+}
+
+pub(crate) fn cell_range_dependency(c: &Construction, def: ExprDef, parent: Id) -> bool {
+    let e = entry(c, def);
+    matches!(e.nodes[e.root as usize], Node::CellRange(..))
+        && e.nodes
+            .iter()
+            .any(|node| matches!(node, Node::CellItem(id) if *id == parent))
 }
 
 fn entry(c: &Construction, d: ExprDef) -> &Entry {
@@ -1511,6 +1535,10 @@ fn reparse(
         }
         match *node {
             Node::Obj(id) | Node::ObjectDefined(id) | Node::FunctionObject(id) => {
+                (id.0 < c.len()).then_some(())?;
+                read(id, true);
+            }
+            Node::CellItem(id) | Node::CellWatch(id) => {
                 (id.0 < c.len()).then_some(())?;
                 read(id, true);
             }

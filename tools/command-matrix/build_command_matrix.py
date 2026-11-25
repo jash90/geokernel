@@ -25,8 +25,8 @@ COLUMNS = ["command", "alias_of", "group", "priority", "status", "forms_total", 
            "notes"]
 FORMS_COLUMNS = ["command", "group", "forms_2d", "forms"]
 
-# The owner brought the CAS view into scope on 2026-11-24.
-OUT_OF_SCOPE_GROUPS = {"3d", "spreadsheet", "probability", "scripting", "statistics"}
+# The owner brought the CAS and spreadsheet views into scope on 2026-11-24.
+OUT_OF_SCOPE_GROUPS = {"3d", "probability", "scripting", "statistics"}
 # Single commands outside the 2D scope although their table is in scope:
 # a statistics pair (var, cov), 3D objects (Polyhedron, CornerThreeD), a
 # command of the CAS view (Evaluate) and whiteboard-only objects (Stadium,
@@ -100,7 +100,7 @@ P1_GROUPS = {"geometry", "conic", "transformation"}
 # Groups the rule knows how to place. Anything else becomes todo/P2 and is reported.
 KNOWN_GROUPS = OUT_OF_SCOPE_GROUPS | P1_GROUPS | {
     "algebra", "text", "logical", "function", "list", "vector", "charts", "discrete",
-    "geogebra", "optimization", "financial", "cas",
+    "geogebra", "optimization", "financial", "cas", "spreadsheet",
 }
 
 # The only hand-listed exceptions: commands the kernel covers in part

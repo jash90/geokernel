@@ -86,6 +86,7 @@ pub struct Workbench {
     file_slider_animation: BTreeMap<String, geo_import::export::SliderAnimation>,
     file_view: Option<geo_import::export::View>,
     file_cas_visible: Option<bool>,
+    file_spreadsheet_view: Option<geo_import::SpreadsheetView>,
     version: u64,
     /// Counts the times the construction was rebuilt or replaced. Object ids
     /// are only valid within one such period.
@@ -318,6 +319,7 @@ impl Workbench {
         self.file_slider_animation.clear();
         self.file_view = None;
         self.file_cas_visible = None;
+        self.file_spreadsheet_view = None;
         self.selected = None;
         self.undo.clear();
         self.gesture = None;
@@ -389,6 +391,7 @@ impl Workbench {
         if line.is_empty()
             || find_unquoted(&line, '=').is_some()
             || geo_kernel::script::is_construction_step_command(&line)
+            || geo_kernel::spreadsheet::is_fill_line(&line)
         {
             return line;
         }
@@ -533,6 +536,7 @@ impl Workbench {
                 }
             }
             let before = self.construction.len();
+            let fills_cells = geo_kernel::spreadsheet::is_fill_line(&line);
             let step_before = self.construction.step();
             let target = geo_kernel::script::assignment_target(&self.construction, &line);
             let slider = geo_kernel::script::slider_assignment_target(&self.construction, &line);
@@ -543,8 +547,10 @@ impl Workbench {
             match exec_definition(&mut self.construction, &line) {
                 Ok(first) => {
                     let added = self.construction.len() > before;
-                    let mutated =
-                        !added && (assigns_slider || self.construction.step() != step_before);
+                    let mutated = !added
+                        && (assigns_slider
+                            || fills_cells
+                            || self.construction.step() != step_before);
                     let replaced = target.is_some() && first == target;
                     if added || mutated || replaced {
                         // A stroke keeps the points of its creation: the
@@ -589,6 +595,7 @@ impl Workbench {
                     redefined |= replaced;
                 }
                 Err(e) => {
+                    updated |= fills_cells;
                     failure = Some(e);
                     break;
                 }

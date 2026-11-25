@@ -217,9 +217,18 @@ fn normalize_saved_definition(body: &str, comment: Option<&str>) -> String {
 
 fn normalize_definition(input: &str) -> String {
     let line = input.trim();
+    if geo_kernel::spreadsheet::is_fill_line(line) {
+        return line.to_owned();
+    }
     let colon = find_unquoted(line, ':');
     let eq = find_unquoted(line, '=');
     match (colon, eq) {
+        (Some(c), None)
+            if geo_kernel::spreadsheet::Address::parse(line[..c].trim()).is_some()
+                && geo_kernel::spreadsheet::Address::parse(line[c + 1..].trim()).is_some() =>
+        {
+            line.to_owned()
+        }
         (Some(c), None) => format!("{} = {}", line[..c].trim(), line[c + 1..].trim()),
         (Some(c), Some(e)) if c + 1 == e => {
             format!("{} = {}", line[..c].trim(), line[e + 1..].trim())
@@ -483,7 +492,7 @@ fn replacement_seed(c: &Construction, id: Id) -> Option<String> {
 
 /// Internal dependencies have a kernel id but no user-visible label.
 pub(crate) fn object_ids(c: &Construction) -> impl Iterator<Item = Id> + '_ {
-    outputs(c, 0)
+    outputs(c, 0).filter(|&id| !c.is_blank_cell(id))
 }
 
 fn outputs(c: &Construction, from: usize) -> impl Iterator<Item = Id> + '_ {
@@ -744,6 +753,7 @@ impl Log {
             .collect();
         if !labels.is_empty()
             || geo_kernel::script::is_construction_step_command(line)
+            || geo_kernel::spreadsheet::is_fill_line(line)
             || geo_kernel::script::is_slider_assignment(c, line)
         {
             self.ops.push(Op::Define(Entry {
@@ -2005,6 +2015,7 @@ impl Log {
                     .collect(),
                 None if is_directive
                     || geo_kernel::script::is_construction_step_command(&line)
+                    || geo_kernel::spreadsheet::is_fill_line(&line)
                     || geo_kernel::script::is_slider_assignment(&c, &line) =>
                 {
                     Vec::new()

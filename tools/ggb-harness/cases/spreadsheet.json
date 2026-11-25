@@ -1,0 +1,481 @@
+{
+  "cases": [
+    {
+      "id": "spreadsheet-range-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "r = CellRange(A1, A1)",
+          "observe": [
+            "r"
+          ]
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "3"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "5"
+        },
+        {
+          "action": "command",
+          "input": "s = A1:B2",
+          "observe": [
+            "r",
+            "s"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "t = CellRange(C1, C2, \"numeric\")",
+          "observe": [
+            "t"
+          ]
+        },
+        {
+          "action": "edit",
+          "cell": "D1",
+          "input": "=Sum($A$1:B2)"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-address-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "AA7",
+          "input": "3"
+        },
+        {
+          "action": "command",
+          "input": "r = Row(AA7)",
+          "observe": [
+            "r"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "c = Column(AA7)",
+          "observe": [
+            "c"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "t = ColumnName(AA7)",
+          "observe": [
+            "t"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "u = Row((1, 1))",
+          "observe": [
+            "u"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "v = Column((1, 1))",
+          "observe": [
+            "v"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "w = ColumnName((1, 1))",
+          "observe": [
+            "w"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-lookup-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "3"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "4"
+        },
+        {
+          "action": "command",
+          "input": "n = 1",
+          "observe": [
+            "n"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "v = Cell(n, 1)",
+          "observe": [
+            "v"
+          ]
+        },
+        {
+          "action": "command",
+          "input": "n = 2",
+          "observe": [
+            "v"
+          ]
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "7"
+        },
+        {
+          "action": "command",
+          "input": "w = Cell(42, 4)",
+          "observe": [
+            "v",
+            "w"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-fillrow-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "FillRow(4, {1, 2, 3, 4, 5})",
+          "observe": []
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-fillcolumn-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "FillColumn(13, {1, 2, 3, 4, 5})",
+          "observe": []
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-fillcells-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "FillCells(A1, {1,2,3,4,5})",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "FillCells(A1, {{1,2},{3,4}})",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "FillCells(A3:C4, {5,6})",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "FillCells(F1:F2, A1+1)",
+          "observe": []
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-edit-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=A1 / 3"
+        },
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "Hello"
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "8"
+        },
+        {
+          "action": "edit",
+          "cell": "C1",
+          "input": "=0/0"
+        },
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": ""
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-files-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "1.250"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=$A$1 * 2"
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "Total"
+        },
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "=0/0"
+        },
+        {
+          "action": "command",
+          "input": "FillCells(A3:B3, {3,4})",
+          "observe": []
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-matrix-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "FillCells(B2:D4, {{1,2},{\"label\",4}})",
+          "observe": []
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-textlookup-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "value"
+        },
+        {
+          "action": "command",
+          "input": "t = Cell(2, 2)",
+          "observe": [
+            "t"
+          ]
+        },
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "other"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-drag-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "3"
+        },
+        {
+          "action": "edit",
+          "cell": "A3",
+          "input": "5"
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "=$A$1 + A1"
+        },
+        {
+          "action": "drag",
+          "cell": "B1",
+          "target": "B3"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-undo-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "=A1 + 3"
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "7"
+        },
+        {
+          "action": "undo"
+        },
+        {
+          "action": "redo"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-locus-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "P = (1, 1)",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "Q = (4, 4)",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "s = Segment(P, Q)",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "U = Point(s)",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "V = (x(U), y(U) + 1)",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "l = Locus(V, U)",
+          "observe": []
+        },
+        {
+          "action": "command",
+          "input": "FillCells(E1:F3, l)",
+          "observe": []
+        }
+      ]
+    }
+  ]
+}

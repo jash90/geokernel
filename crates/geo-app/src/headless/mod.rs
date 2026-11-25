@@ -511,6 +511,22 @@ impl Headless {
         widgets::collect(&self.ctx, &self.app, update)
     }
 
+    /// The value published by a named accessibility node in the last frame.
+    pub fn accessible_value(&self, label: &str) -> Option<&str> {
+        self.last
+            .as_ref()?
+            .platform_output
+            .accesskit_update
+            .as_ref()?
+            .nodes
+            .iter()
+            .find_map(|(_, node)| {
+                (node.label() == Some(label))
+                    .then(|| node.value())
+                    .flatten()
+            })
+    }
+
     /// The window's regions as last laid out.
     pub fn regions(&self) -> crate::layout::Regions {
         self.app.regions

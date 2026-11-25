@@ -1,0 +1,167 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-range-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "r = CellRange(A1, A1)",
+          "observe": [
+            "r"
+          ],
+          "cells": {},
+          "outputs": {
+            "r": {
+              "type": "list",
+              "defined": true,
+              "elements": []
+            }
+          }
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2",
+          "cells": { "A1": "2" },
+          "outputs": {
+            "r": {
+              "type": "list",
+              "defined": true,
+              "elements": [
+                { "type": "number", "defined": true, "value": 2.0 }
+              ]
+            }
+          }
+        },
+        {
+          "action": "edit",
+          "cell": "A2",
+          "input": "3",
+          "cells": { "A1": "2", "A2": "3" },
+          "outputs": {
+            "r": {
+              "type": "list",
+              "defined": true,
+              "elements": [
+                { "type": "number", "defined": true, "value": 2.0 }
+              ]
+            }
+          }
+        },
+        {
+          "action": "edit",
+          "cell": "B1",
+          "input": "5",
+          "cells": { "A1": "2", "A2": "3", "B1": "5" },
+          "outputs": {
+            "r": {
+              "type": "list",
+              "defined": true,
+              "elements": [
+                { "type": "number", "defined": true, "value": 2.0 }
+              ]
+            }
+          }
+        },
+        {
+          "action": "command",
+          "input": "s = A1:B2",
+          "observe": [
+            "r",
+            "s"
+          ],
+          "cells": { "A1": "2", "A2": "3", "B1": "5" },
+          "outputs": {
+            "r": {
+              "type": "list",
+              "defined": true,
+              "elements": [
+                { "type": "number", "defined": true, "value": 2.0 }
+              ]
+            },
+            "s": {
+              "type": "list",
+              "defined": true,
+              "elements": [
+                { "type": "number", "defined": true, "value": 2.0 },
+                { "type": "number", "defined": true, "value": 3.0 },
+                { "type": "number", "defined": true, "value": 5.0 }
+              ]
+            }
+          }
+        },
+        {
+          "action": "command",
+          "input": "t = CellRange(C1, C2, \"numeric\")",
+          "observe": [
+            "t"
+          ],
+          "cells": { "A1": "2", "A2": "3", "B1": "5" },
+          "outputs": {
+            "r": {
+              "type": "list",
+              "defined": true,
+              "elements": [
+                { "type": "number", "defined": true, "value": 2.0 }
+              ]
+            },
+            "s": {
+              "type": "list",
+              "defined": true,
+              "elements": [
+                { "type": "number", "defined": true, "value": 2.0 },
+                { "type": "number", "defined": true, "value": 3.0 },
+                { "type": "number", "defined": true, "value": 5.0 }
+              ]
+            },
+            "t": {
+              "type": "list",
+              "defined": true,
+              "elements": []
+            }
+          }
+        },
+        {
+          "action": "edit",
+          "cell": "D1",
+          "input": "=Sum($A$1:B2)",
+          "cells": { "A1": "2", "A2": "3", "B1": "5", "D1": "10" },
+          "outputs": {
+            "r": {
+              "type": "list",
+              "defined": true,
+              "elements": [
+                { "type": "number", "defined": true, "value": 2.0 }
+              ]
+            },
+            "s": {
+              "type": "list",
+              "defined": true,
+              "elements": [
+                { "type": "number", "defined": true, "value": 2.0 },
+                { "type": "number", "defined": true, "value": 3.0 },
+                { "type": "number", "defined": true, "value": 5.0 }
+              ]
+            },
+            "t": {
+              "type": "list",
+              "defined": true,
+              "elements": []
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

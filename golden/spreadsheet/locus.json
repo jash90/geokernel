@@ -1,0 +1,69 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-locus-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "P = (1, 1)",
+          "observe": [],
+          "cells": {},
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "Q = (4, 4)",
+          "observe": [],
+          "cells": {},
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "s = Segment(P, Q)",
+          "observe": [],
+          "cells": {},
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "U = Point(s)",
+          "observe": [],
+          "cells": {},
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "V = (x(U), y(U) + 1)",
+          "observe": [],
+          "cells": {},
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "l = Locus(V, U)",
+          "observe": [],
+          "cells": {},
+          "outputs": {}
+        },
+        {
+          "action": "command",
+          "input": "FillCells(E1:F3, l)",
+          "observe": [],
+          "cells": { "E1": "1", "E2": "1.02", "F1": "2", "F2": "2.02" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

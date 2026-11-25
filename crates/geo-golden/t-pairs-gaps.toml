@@ -1047,30 +1047,6 @@ reason = "values agree but `GeoList` of kind list has no the reference-style tex
 mismatches = ["l5"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1190"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Column`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1191"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Column`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1196"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `ColumnName`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1197"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `ColumnName`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:120"
 category = "text-formatting"
 reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `1`"
@@ -1545,33 +1521,9 @@ reason = "the kernel refuses the input: unknown command `Integral`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1665"
-category = "app-command"
-reason = "the kernel refuses the input: unknown command `FillCells`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1666"
-category = "app-command"
-reason = "the kernel refuses the input: unknown command `FillCells`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1667"
-category = "app-command"
-reason = "the kernel refuses the input: unknown command `FillCells`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1672"
-category = "app-command"
-reason = "the kernel refuses the input: unknown command `FillColumn`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1677"
-category = "app-command"
-reason = "the kernel refuses the input: unknown command `FillRow`"
+category = "redefine"
+reason = "the kernel refuses the input: object `A1` already exists: a replacement must have one visible output"
 mismatches = ["step"]
 
 [[gap]]
@@ -3699,36 +3651,6 @@ reason = "the kernel refuses the input: `Rotate` does not take 8 argument(s)"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3759"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Row`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3760"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Row`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3764"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Row`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3765"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Row`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3766"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Row`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3771"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `RunClickScript`"
@@ -5763,18 +5685,6 @@ reason = "the kernel refuses the input: unknown command `Button`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:844"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Cell`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:849"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `CellRange`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:864"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Checkbox`"
@@ -6286,9 +6196,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/RedefineTest.java:275"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `B20`; the method's step `commands/RedefineTest.java:274` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
+category = "incomplete-context"
+reason = "Number(0.0) does not match `x^(2) + y = 0` (type mismatch: expected conic, got number)"
+mismatches = ["D20"]
 
 [[gap]]
 id = "commands/RedefineTest.java:296"

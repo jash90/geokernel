@@ -639,6 +639,34 @@ fn type_node(
             (state.tys[a], state.depth[a], state.cost[a], state.vars[a])
         }
         Node::ItemObject(_) => (Ty::Object, 1, 1, 0),
+        Node::CellWatch(_) => (Ty::Num(0), 1, 1, 0),
+        Node::CellItem(id) => (object_type(c, id)?, 1, 1, 0),
+        Node::CellRange(first, len) => {
+            let mut elem = Elem::Empty;
+            for item in first..first + len {
+                if matches!(nodes[item as usize], Node::CellItem(id) if !c.is_blank_cell(id)) {
+                    elem = join_elem(elem, elem_of(state.tys[item as usize]));
+                }
+            }
+            (Ty::List(elem), 2, u64::from(len) + 1, 0)
+        }
+        Node::CellLookup(a, b, kind) => {
+            let (a, b) = (a as usize, b as usize);
+            if !matches!((state.tys[a], state.tys[b]), (Ty::Num(_), Ty::Num(_))) {
+                return Err("spreadsheet coordinates must be numbers".into());
+            }
+            let ty = if kind == Kind::List {
+                Ty::List(Elem::Any)
+            } else {
+                result_type(kind)?
+            };
+            (
+                ty,
+                1 + state.depth[a].max(state.depth[b]),
+                1 + state.cost[a] + state.cost[b],
+                state.vars[a] + state.vars[b],
+            )
+        }
         Node::List(first, len) => {
             let mut elem = Elem::Empty;
             let (mut d, mut k, mut v) = (0u32, 1u64, 0u64);
@@ -838,6 +866,7 @@ pub(super) fn vec_kind(c: &Construction, nodes: &[Node], tys: &[Ty], i: u32) -> 
     let kind = |k| if k == Kind::Vector { k } else { Kind::Point };
     match nodes[i as usize] {
         Node::Obj(id) => kind(c.kind(id)),
+        Node::CellLookup(_, _, k) => kind(k),
         Node::Cmd(def, _) => kind(def.kind()),
         Node::Vector(_) => Kind::Vector,
         Node::Item(a) | Node::Un(_, a) | Node::If(_, _, a, _) => vec_kind(c, nodes, tys, a),

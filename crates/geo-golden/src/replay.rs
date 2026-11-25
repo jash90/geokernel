@@ -5,7 +5,8 @@ use crate::compare::{
     compare_stroke, line_scale_agrees, numbers_agree, Sign,
 };
 use crate::model::{
-    implicit_output, indexed_prefix, label_prefix, CasAction, CasViewStep, Case, Step,
+    implicit_output, indexed_prefix, label_prefix, CasAction, CasViewStep, Case, SpreadsheetAction,
+    SpreadsheetStep, Step,
 };
 use geo_app_core::workbench::Workbench;
 use geo_kernel::{script, Construction, Def, Kind};
@@ -49,6 +50,7 @@ fn failure(step: usize, label: &str, expected: &str, actual: String) -> Mismatch
 
 pub fn replay(case: &Case) -> CaseOutcome {
     if case.casview.is_some()
+        || case.spreadsheet.is_some()
         || case.steps.iter().any(|step| {
             matches!(
                 step,
@@ -262,6 +264,9 @@ fn replay_document(case: &Case) -> CaseOutcome {
     if let Some(actions) = &case.casview {
         replay_cas_view(&mut document, &mut out, actions);
     }
+    if let Some(actions) = &case.spreadsheet {
+        replay_spreadsheet(&mut document, &mut out, actions);
+    }
     out
 }
 
@@ -296,6 +301,80 @@ fn check_slider_animation(
         }
     }
     Ok(())
+}
+
+fn replay_spreadsheet(
+    document: &mut Workbench,
+    out: &mut CaseOutcome,
+    actions: &[SpreadsheetStep],
+) {
+    use geo_kernel::spreadsheet::Address;
+    use std::collections::BTreeMap;
+    for (i, step) in actions.iter().enumerate() {
+        let address = |cell: Option<&str>| {
+            Address::parse(cell.expect("validated address")).expect("validated address")
+        };
+        let applied = match step.action {
+            SpreadsheetAction::Command => document.run_line(step.input.as_deref().unwrap()),
+            SpreadsheetAction::Edit => document.run_line(&geo_kernel::spreadsheet::edit_line(
+                address(step.cell.as_deref()),
+                step.input.as_deref().unwrap(),
+            )),
+            SpreadsheetAction::Drag => geo_kernel::spreadsheet::drag_line(
+                document.construction(),
+                address(step.cell.as_deref()),
+                address(step.target.as_deref()),
+            )
+            .and_then(|line| document.run_line(&line.ok_or("empty drag source")?)),
+            SpreadsheetAction::Undo => document
+                .undo()
+                .then_some(())
+                .ok_or_else(|| "cannot undo".into()),
+            SpreadsheetAction::Redo => document
+                .redo()
+                .then_some(())
+                .ok_or_else(|| "cannot redo".into()),
+        };
+        if let Err(error) = applied {
+            out.mismatches
+                .push(failure(i, "spreadsheet", "the action applies", error));
+            return;
+        }
+        let c = document.construction();
+        let cells: BTreeMap<_, _> = c
+            .spreadsheet_cells()
+            .map(|(address, _)| (address.label(), c.spreadsheet_display(address)))
+            .collect();
+        for (label, expected) in &step.cells {
+            if cells.get(label) != Some(expected) {
+                out.mismatches.push(failure(
+                    i,
+                    label,
+                    expected,
+                    cells
+                        .get(label)
+                        .cloned()
+                        .unwrap_or_else(|| "no cell".into()),
+                ));
+            }
+        }
+        for (label, value) in &cells {
+            if !step.cells.contains_key(label) {
+                out.mismatches
+                    .push(failure(i, label, "no cell", value.clone()));
+            }
+        }
+        for (label, expected) in &step.outputs {
+            let result = c
+                .id(label)
+                .ok_or_else(|| "no object".into())
+                .and_then(|id| crate::compare::compare_construction_object(expected, c, id));
+            if let Err(error) = result {
+                out.mismatches
+                    .push(failure(i, label, &format!("{expected:?}"), error));
+            }
+        }
+    }
 }
 
 fn replay_cas_view(document: &mut Workbench, out: &mut CaseOutcome, actions: &[CasViewStep]) {

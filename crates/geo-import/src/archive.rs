@@ -185,6 +185,19 @@ impl<'a> AssetArchive<'a> {
         extract_entry(entry, data)
     }
 
+    pub(crate) fn spreadsheet_metadata(&self) -> Result<Vec<u8>, ImportError> {
+        let name = crate::spreadsheet::METADATA_FILE.as_bytes();
+        let Some(offset) = self.offsets.get(name) else {
+            return Ok(Vec::new());
+        };
+        let entry = read_entry(self.bytes, *offset)?;
+        if entry.size > crate::spreadsheet::MAX_METADATA_BYTES {
+            return Err(ImportError::TooLarge);
+        }
+        let data = entry_data(self.bytes, &entry, name)?;
+        extract_entry(entry, data)
+    }
+
     pub(crate) fn image_entry(&self, name: &str) -> Result<(Entry, &[u8]), String> {
         let offset = self
             .offsets

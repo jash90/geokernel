@@ -1,0 +1,27 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-fillcolumn-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "command",
+          "input": "FillColumn(13, {1, 2, 3, 4, 5})",
+          "observe": [],
+          "cells": { "M1": "1", "M2": "2", "M3": "3", "M4": "4", "M5": "5" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

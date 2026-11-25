@@ -326,10 +326,18 @@ public final class GoldenGenerator {
         if (casView != null) {
             golden.put("casview", session.casView(casView));
         }
+        List<?> spreadsheet = (List<?>) input.get("spreadsheet");
+        if ("spreadsheet".equals(input.get("group")) != (spreadsheet != null)
+                || spreadsheet != null && (spreadsheet.isEmpty() || steps.size() != 1)) {
+            throw new IllegalArgumentException("a spreadsheet case needs actions and only the initial step");
+        }
+        if (spreadsheet != null) {
+            golden.put("spreadsheet", session.spreadsheet(spreadsheet));
+        }
         if (input.size() != (4 + (boundaryGrowth ? 1 : 0) + (pointListGrowth ? 1 : 0)
                 + (rootGrowth ? 1 : 0) + (sampleCurves ? 1 : 0) + (view != null ? 1 : 0)
                 + (fileLoading ? 1 : 0) + (observe != null ? 1 : 0) + (row != null ? 1 : 0)
-                + (casView != null ? 1 : 0))) {
+                + (casView != null ? 1 : 0) + (spreadsheet != null ? 1 : 0))) {
             throw new IllegalArgumentException(
                     "unexpected fields in the case input");
         }

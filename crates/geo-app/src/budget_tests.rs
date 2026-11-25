@@ -1426,3 +1426,23 @@ fn a_thousand_cas_rows_only_render_the_visible_range() {
     assert!(counts.vertices < 17_000, "{counts:?}");
     assert!(!counts.immediate, "{counts:?}");
 }
+
+#[test]
+fn a_thousand_spreadsheet_cells_fit_the_frame_budget() {
+    let mut w = Window::with("FillCells(A1:J100, 1)", String::new());
+    w.app.show_spreadsheet = true;
+    assert_eq!(w.app.wb.construction().spreadsheet_cells().count(), 1_000);
+    let counts = w.settled(5);
+    let start = std::time::Instant::now();
+    assert_eq!(w.frames(60), counts);
+    let mean_ms = start.elapsed().as_secs_f64() * 1000.0 / 60.0;
+    println!("Spreadsheet idle frame: {mean_ms:.2} ms, {counts:?}");
+    assert!(counts.texts <= 240, "{counts:?}");
+    assert!(counts.shapes < 800, "{counts:?}");
+    assert_eq!(counts.rows_formatted, 0, "{counts:?}");
+    assert_eq!(counts.rows_built, 0, "{counts:?}");
+    assert!(!counts.immediate, "{counts:?}");
+    if !cfg!(debug_assertions) {
+        assert!(mean_ms <= 4.0, "{mean_ms:.2} ms exceeds the 4 ms budget");
+    }
+}

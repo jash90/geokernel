@@ -373,6 +373,10 @@ impl Parser<'_> {
 
     /// The object named `label`, if the construction has it.
     pub(super) fn lookup(&self, label: &str) -> Option<Id> {
+        if label.contains('$') {
+            let address = crate::spreadsheet::Address::parse(label)?;
+            return self.c.id(&address.label());
+        }
         self.c.resolve_label(label)
     }
 
@@ -868,12 +872,121 @@ impl Parser<'_> {
                 }
                 Ok(self.push(Node::List(first, elements.len() as u32)))
             }
+            Tok::Name { text, call: false } if self.eat(&Tok::Colon) => {
+                let end = self.cell_address()?;
+                self.cell_range(&text, &end)
+            }
             Tok::Name { text, call } => self.name(&text, call),
             _ => Err(format!(
                 "unexpected `{}`",
                 &self.src[token.start..token.end]
             )),
         }
+    }
+
+    fn cell_address(&mut self) -> Result<String, String> {
+        let Some(text) = self.name_at(self.pos).map(str::to_owned) else {
+            return Err("expected a spreadsheet address".into());
+        };
+        self.pos += 1;
+        Ok(text)
+    }
+
+    fn cell_range(&mut self, first: &str, last: &str) -> Result<u32, String> {
+        let range = crate::spreadsheet::Range::parse(first, last)?;
+        let start = self.nodes.len() as u32;
+        for address in range.column_major() {
+            let label = address.label();
+            let id = self
+                .c
+                .id(&label)
+                .ok_or_else(|| format!("unknown object `{label}`"))?;
+            self.read(id, true);
+            self.push(Node::CellItem(id));
+        }
+        Ok(self.push(Node::CellRange(start, self.nodes.len() as u32 - start)))
+    }
+
+    fn spreadsheet_command(&mut self, name: &str) -> Result<Option<u32>, String> {
+        use crate::spreadsheet::{Address, MAX_CELLS_PER_OPERATION};
+
+        let result = match name {
+            "CellRange" => {
+                self.expect(&Tok::LParen, "(")?;
+                let first = self.cell_address()?;
+                self.expect(&Tok::Comma, ",")?;
+                let last = self.cell_address()?;
+                if self.eat(&Tok::Comma) {
+                    self.expression()?;
+                }
+                self.expect(&Tok::RParen, ")")?;
+                self.cell_range(&first, &last)?
+            }
+            "Row" | "Column" | "ColumnName" => {
+                let [arg] = self.arguments()?[..] else {
+                    return Err(format!("`{name}` takes one argument"));
+                };
+                let address = match self.node(arg) {
+                    Node::Obj(id) | Node::FunctionObject(id) => Address::parse(self.label(id)),
+                    _ => None,
+                };
+                match name {
+                    "Row" => self.push(Node::Num(address.map_or(f64::NAN, |a| f64::from(a.row)))),
+                    "Column" => {
+                        self.push(Node::Num(address.map_or(f64::NAN, |a| f64::from(a.column))))
+                    }
+                    _ => match address {
+                        Some(address) => self.text_literal(&Address::column_name(address.column)),
+                        None => {
+                            let condition = self.push(Node::Bool(false));
+                            let text = self.text_literal("");
+                            self.push(Node::If(super::IfMode::Algo, condition, text, NONE))
+                        }
+                    },
+                }
+            }
+            "Cell" => {
+                let [column, row] = self.arguments()?[..] else {
+                    return Err("`Cell` takes two arguments".into());
+                };
+                let constant = |i| self.constant_value(i, 0);
+                let current = |i| {
+                    constant(i).or_else(|| match self.node(i) {
+                        Node::Obj(id) => match self.c.value(id) {
+                            crate::Value::Number(n) => Some(n),
+                            _ => None,
+                        },
+                        _ => None,
+                    })
+                };
+                let address = (|| Address::from_numbers(current(column)?, current(row)?))();
+                let selected = address.and_then(|a| self.c.spreadsheet_cell(a));
+                let kind = selected.map_or(Kind::Number, |id| self.c.kind(id));
+                if constant(column).is_some() && constant(row).is_some() {
+                    if let Some(id) = address.and_then(|a| self.c.id(&a.label())) {
+                        self.read(id, true);
+                        self.push(Node::CellWatch(id));
+                    }
+                } else {
+                    let slots: Vec<_> = self
+                        .c
+                        .spreadsheet_slots()
+                        .filter_map(|(a, id)| (self.c.id(&a.label()) == Some(id)).then_some(id))
+                        .take(MAX_CELLS_PER_OPERATION + 1)
+                        .collect();
+                    if slots.len() > MAX_CELLS_PER_OPERATION {
+                        return Err("spreadsheet limit exceeded".into());
+                    }
+                    for id in slots {
+                        self.read(id, true);
+                        self.push(Node::CellWatch(id));
+                    }
+                }
+                self.push(Node::CellLookup(column, row, kind))
+            }
+            _ => return Ok(None),
+        };
+        Ok(Some(result))
     }
 
     /// A name: a constant, the variable `x`, an object, a built-in function
@@ -1033,6 +1146,9 @@ impl Parser<'_> {
             return Ok(self.push(Node::Bin(Bin::Mul, obj, arg)));
         }
         if call {
+            if let Some(node) = self.spreadsheet_command(text)? {
+                return Ok(node);
+            }
             // `If` and the commands of a list (see `commands`)
             if let Some(node) = commands::parse(self, text)? {
                 return Ok(node);
