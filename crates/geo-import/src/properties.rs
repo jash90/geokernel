@@ -3,7 +3,8 @@
 
 use crate::convert::StyleExpressions;
 use crate::{xml, ImportError};
-use geo_kernel::{Construction, Kind};
+use geo_kernel::kernel::angle::AngleStyle;
+use geo_kernel::{Construction, Def, Id, Kind};
 use quick_xml::events::BytesStart;
 
 /// Additional presentation attached to a saved object. Storing its original
@@ -42,8 +43,15 @@ impl Properties {
     }
 
     pub(crate) fn finish(&mut self) {
-        // The reference classifies a conic when it reads the matrix.
-        self.tags.sort_by_key(|tag| tag.name != "eigenvectors");
+        // The writer emits conic eigenvectors before the matrix and angle
+        // styles before the value. Keep the order within each group.
+        self.tags.sort_by_key(|tag| {
+            if tag.name == "eigenvectors" || (self.class == "angle" && tag.is_angle_style()) {
+                0
+            } else {
+                1
+            }
+        });
     }
 
     pub(crate) fn retain(&mut self, mut keep: impl FnMut(&Tag) -> bool) {
@@ -51,6 +59,50 @@ impl Properties {
             tag.children.retain(&mut keep);
             keep(tag)
         });
+    }
+
+    /// Detach references to points removed from the edited document.
+    pub fn detach_missing_start_points(&mut self, c: &Construction) {
+        if matches!(
+            self.class.as_str(),
+            "vector" | "button" | "list" | "textfield"
+        ) {
+            self.tags.retain(|tag| {
+                tag.name != "startPoint"
+                    || tag
+                        .start_point_label()
+                        .is_none_or(|label| c.id(label).is_some_and(|id| c.kind(id) == Kind::Point))
+            });
+        }
+    }
+
+    pub(crate) fn angle_style(&self, initial: AngleStyle) -> Option<AngleStyle> {
+        self.tags
+            .iter()
+            .filter(|tag| tag.is_angle_style())
+            .fold(None, |previous, tag| {
+                let style = previous.unwrap_or(initial);
+                match tag.name {
+                    "angleStyle" => tag
+                        .attr("val")
+                        .and_then(xml::java_int)
+                        .map(AngleStyle::from_xml)
+                        .or(previous),
+                    "allowReflexAngle" => Some(if tag.attr("val") == Some("true") {
+                        AngleStyle::Anticlockwise
+                    } else {
+                        AngleStyle::NotReflex
+                    }),
+                    "forceReflexAngle" => Some(if tag.attr("val") == Some("true") {
+                        AngleStyle::Reflex
+                    } else if style == AngleStyle::Reflex {
+                        AngleStyle::Anticlockwise
+                    } else {
+                        style
+                    }),
+                    _ => previous,
+                }
+            })
     }
 
     pub(crate) fn for_class(&self, class: &str) -> &[Tag] {
@@ -69,13 +121,29 @@ impl Tag {
             .find_map(|(key, value)| (*key == name).then_some(value.as_str()))
     }
 
-    pub(crate) fn can_write(&self, c: &Construction, expressions: &mut StyleExpressions) -> bool {
+    pub(crate) fn is_angle_style(&self) -> bool {
+        matches!(
+            self.name,
+            "angleStyle" | "allowReflexAngle" | "forceReflexAngle"
+        )
+    }
+
+    fn start_point_label(&self) -> Option<&str> {
+        self.attr("exp").or_else(|| self.attr("label"))
+    }
+
+    pub(crate) fn can_write(
+        &self,
+        c: &Construction,
+        id: Id,
+        expressions: &mut StyleExpressions,
+    ) -> bool {
         match self.name {
             "incrementY" => self
                 .attr("val")
                 .is_some_and(|val| expressions.number(c, val).is_ok()),
             "startPoint" => {
-                if let Some(label) = self.attr("exp").or_else(|| self.attr("label")) {
+                if let Some(label) = self.start_point_label() {
                     // The reference would evaluate any expression here. Only
                     // an existing named point is safe for these retained tags.
                     c.id(label).is_some_and(|id| c.kind(id) == Kind::Point)
@@ -101,18 +169,44 @@ impl Tag {
                     .and_then(xml::java_int)
                     .is_some_and(|n| (-1..=i32::from(limit)).contains(&n))
             }),
-            "tag" => matches!(
-                self.attr("key"),
-                Some(
-                    "barAlpha"
-                        | "barHatchDistance"
-                        | "barFillType"
-                        | "barHatchAngle"
-                        | "barSymbol"
-                        | "barColor"
-                )
-            ),
+            "tags" => matches!(c.def(id), Def::Chart(chart) if chart.has_bar_style()),
+            "tag" => {
+                matches!(c.def(id), Def::Chart(chart) if chart.has_bar_style())
+                    && self.valid_chart_tag()
+            }
+            "angleStyle" => self.attr("val").and_then(xml::java_int).is_some(),
             _ => true,
+        }
+    }
+    fn valid_chart_tag(&self) -> bool {
+        let Some(value) = self.attr("value").filter(|value| !value.is_empty()) else {
+            return false;
+        };
+        if self.attr("barNumber").and_then(xml::java_int).is_none() {
+            return false;
+        }
+        match self.attr("key") {
+            Some("barAlpha") => xml::java_double(value).is_some_and(|n| (n as f32).is_finite()),
+            Some("barHatchDistance" | "barHatchAngle") => xml::java_int(value).is_some(),
+            Some("barFillType") => xml::java_int(value)
+                .is_some_and(|n| (0..=i32::from(crate::export::Fill::MAX_PATTERN)).contains(&n)),
+            Some("barSymbol") => true,
+            Some("barColor") => value
+                .strip_prefix("rgba(")
+                .and_then(|rgba| rgba.strip_suffix(')'))
+                .is_some_and(|rgba| {
+                    let mut fields = rgba.split(',');
+                    (0..3).all(|_| {
+                        fields
+                            .next()
+                            .and_then(xml::java_int)
+                            .is_some_and(|n| u8::try_from(n).is_ok())
+                    }) && fields
+                        .next()
+                        .is_some_and(|n| xml::java_double(n).is_some_and(f64::is_finite))
+                        && fields.next().is_none()
+                }),
+            _ => false,
         }
     }
 }
@@ -126,9 +220,11 @@ pub(crate) fn read(
     name: &str,
     event: &BytesStart,
 ) -> Result<Option<Tag>, ImportError> {
+    let takes_angle_style = matches!(class, "angle" | "list");
     let (name, keys): (_, &[_]) = match name {
-        "allowReflexAngle" => ("allowReflexAngle", &["val"]),
-        "forceReflexAngle" => ("forceReflexAngle", &["val"]),
+        "angleStyle" if takes_angle_style => ("angleStyle", &["val"]),
+        "allowReflexAngle" if takes_angle_style => ("allowReflexAngle", &["val"]),
+        "forceReflexAngle" if takes_angle_style => ("forceReflexAngle", &["val"]),
         "coordStyle" => ("coordStyle", &["style"]),
         "eigenvectors" => (
             "eigenvectors",
@@ -163,6 +259,7 @@ pub(crate) fn read(
         "textAlign" if class == "textfield" => ("textAlign", &["val"]),
         "tempUserInput" if class == "textfield" => ("tempUserInput", &["eval", "display"]),
         "contentSerif" if class == "textfield" => ("contentSerif", &["val"]),
+        "fixedSize" if matches!(class, "button" | "textfield") => ("fixedSize", &["val"]),
         "dimensions" => ("dimensions", &["width", "height", "angle", "unscaled"]),
         "comboBox" => ("comboBox", &["val"]),
         "listType" => ("listType", &["val"]),
@@ -183,8 +280,8 @@ pub(crate) fn read(
         "slopeTriangleSize" => ("slopeTriangleSize", &["val"]),
         "levelOfDetailQuality" => ("levelOfDetailQuality", &["val"]),
         "autocolor" => ("autocolor", &["val"]),
-        "tags" if class == "piechart" => ("tags", &[]),
-        "tag" if class == "piechart" => ("tag", &["key", "value", "barNumber"]),
+        "tags" if matches!(class, "piechart" | "numeric") => ("tags", &[]),
+        "tag" if matches!(class, "piechart" | "numeric") => ("tag", &["key", "value", "barNumber"]),
         _ => return Ok(None),
     };
     let mut attributes = Vec::new();

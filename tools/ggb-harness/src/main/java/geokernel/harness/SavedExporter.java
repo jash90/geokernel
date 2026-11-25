@@ -24,6 +24,8 @@ import org.geogebra.common.kernel.Kernel;
 import org.geogebra.common.kernel.LinearEquationRepresentable;
 import org.geogebra.common.kernel.QuadraticEquationRepresentable;
 import org.geogebra.common.kernel.arithmetic.NumberValue;
+import org.geogebra.common.kernel.geos.AngleProperties;
+import org.geogebra.common.kernel.geos.ChartStyleGeo;
 import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoButton;
@@ -167,7 +169,14 @@ public final class SavedExporter {
                 throw new IllegalArgumentException(step.get("label") + " does not exist");
             }
             Object action = step.get("action");
-            if ("move".equals(action) && geo instanceof GeoPoint p
+            if ("delete_and_run".equals(action)) {
+                geo.remove();
+                runCommands(kernel, List.of(step.get("input")), script, created);
+                continue;
+            } else if ("widget_icon".equals(action) && geo instanceof GeoButton button) {
+                String name = (String) step.get("file");
+                SavedImages.setIcon(button, name, imageAssets);
+            } else if ("move".equals(action) && geo instanceof GeoPoint p
                     && (p.isIndependent() || p.isPointOnPath())) {
                 p.setCoords(number(step.get("x")), number(step.get("y")), 1.0);
             } else if ("point_coords".equals(action) && geo instanceof GeoPoint p
@@ -397,7 +406,14 @@ public final class SavedExporter {
                 case "outlying_intersections" -> ((GeoSegment) geo).setAllowOutlyingIntersections((Boolean) value);
                 case "keep_type" -> ((GeoSegment) geo).setKeepTypeOnGeometricTransform((Boolean) value);
                 case "mask" -> ((GeoPolygon) geo).setIsMask((Boolean) value);
-                case "slice_color" -> ((GeoPieChart) geo).getStyle().setBarColor(color((List<?>) value), 2);
+                case "slice_color", "bar_color" ->
+                        ((ChartStyleGeo) geo).getStyle().setBarColor(color((List<?>) value), 2);
+                case "bar_fill_type" ->
+                        ((ChartStyleGeo) geo).getStyle().setBarFillType(
+                                FillType.valueOf((String) value), 2);
+                case "angle_style" -> ((AngleProperties) geo).setAngleStyle(integer(value));
+                case "emphasize_right_angle" ->
+                        ((AngleProperties) geo).setEmphasizeRightAngle((Boolean) value);
                 case "button_size" -> {
                     GeoButton button = (GeoButton) geo;
                     List<?> dimensions = (List<?>) value;
@@ -455,7 +471,6 @@ public final class SavedExporter {
                     }
                 }
                 case "arc_size" -> ((GeoAngle) geo).setArcSize(integer(value));
-                case "emphasize_right_angle" -> ((GeoAngle) geo).setEmphasizeRightAngle((Boolean) value);
                 case "checkbox_fixed" -> ((GeoBoolean) geo).setCheckboxFixed((Boolean) value);
                 case "slider" -> applySlider((GeoNumeric) geo, (Map<?, ?>) value);
                 case "animation" -> {

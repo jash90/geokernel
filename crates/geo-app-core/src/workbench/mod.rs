@@ -703,7 +703,12 @@ impl Workbench {
         // with its label moved.
         kept.hidden.retain(|l| c.id(l).is_some());
         self.label_offsets.retain(|l, _| c.id(l).is_some());
-        self.file_object_styles.retain(|l, _| c.id(l).is_some());
+        self.file_object_styles.retain(|label, style| {
+            if let Some(properties) = style.preserved.as_deref_mut() {
+                properties.detach_missing_start_points(&c);
+            }
+            c.id(label).is_some()
+        });
         self.file_slider_animation.retain(|l, _| c.id(l).is_some());
         self.boundary_outputs = kept.boundary_outputs(&c);
         self.construction = c;

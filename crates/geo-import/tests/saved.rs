@@ -689,6 +689,10 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                     // The export oracle checks linked objects, widget style and rounding.
                     "saved-input-box-001",
                     "saved-input-rounding-001",
+                    // The export oracle checks list angle presentation and chart style.
+                    "saved-property-review-001",
+                    // The widget archive uses control types outside this snapshot schema.
+                    "saved-property-review-003",
                     "saved-elements-001",
                     // images.rs checks the archive assets and quad snapshots.
                     "saved-images-001",

@@ -772,6 +772,21 @@ case("element-raster-properties", image_points, [
     {"action": "style", "label": "anchoredImage", "interpolate": False},
 ], archive=True, images=[anchor_image])
 
+case("property-review", ["L = {45°, 90°}", "chart = BarChart({2,3,4}, {2,3,4})",
+                         "pie = PieChart({1, 2, 3})"], [
+    {"action": "style", "label": "L", "angle_style": 2, "emphasize_right_angle": False},
+    {"action": "style", "label": "chart", "bar_color": [255, 0, 0]},
+    {"action": "style", "label": "pie", "bar_fill_type": "HATCH"},
+])
+case("property-review", ["A = (1, 2)", "v = (2, 1)"], [
+    {"action": "style", "label": "v", "vector_start": "A"},
+    {"action": "delete_and_run", "label": "A", "input": "A = (30, 40)"},
+])
+case("property-review", ["a = 3.5", "field = InputBox(a)", 'b = Button("Apply")'], [
+    {"action": "widget_icon", "label": "field", "file": "tile.png"},
+    {"action": "widget_icon", "label": "b", "file": "tile.png"},
+], archive=True)
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

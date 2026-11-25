@@ -82,8 +82,8 @@ pub struct Element {
     pub coords: Option<[String; 3]>,
     /// `<value val=>` as written.
     pub value: Option<String>,
-    /// GeoGebra's angle interval code (`<angleStyle val=>`).
-    pub angle_style: Option<i32>,
+    /// Optional archive-backed icon of a button or text field.
+    pub widget_icon: Option<String>,
     /// The saved display form of a line or conic.
     pub equation_form: Option<EquationForm>,
     /// `<matrix A0= ... A5=>` of a conic as written.
@@ -175,8 +175,6 @@ pub struct Document {
     pub weight: usize,
     /// Horizontal range of the primary graphics view, used by function paths.
     pub function_path_bounds: Option<[f64; 2]>,
-    /// Base font size used by older text elements with an additive size.
-    pub gui_font_size: Option<f64>,
     /// The file format is 3.19 or older: its reader ignores the opacity of
     /// a list.
     pub legacy_list_alpha: bool,
@@ -412,7 +410,7 @@ pub(crate) fn java_int(text: &str) -> Option<i32> {
 
 /// `Double.parseDouble`: white space around the number and a type suffix
 /// are allowed, and the infinities and NaN have one spelling each.
-fn java_double(text: &str) -> Option<f64> {
+pub(crate) fn java_double(text: &str) -> Option<f64> {
     let text = text.trim_matches(|ch: char| ch <= ' ');
     let text = text.strip_suffix(['f', 'F', 'd', 'D']).unwrap_or(text);
     let unsigned = text.trim_start_matches(['+', '-']);
@@ -872,10 +870,10 @@ pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, I
                         .visible = Some(attr(e, "visible")?.as_deref() != Some("false"));
                 }
                 "font" if in_gui && !in_construction => {
-                    doc.gui_font_size = attr(e, "size")?
-                        .and_then(|s| s.parse::<u32>().ok())
-                        .filter(|v| *v > 0)
-                        .map(f64::from);
+                    doc.settings.gui_font_size = attr(e, "size")?
+                        .as_deref()
+                        .and_then(java_int)
+                        .filter(|v| *v > 0);
                 }
                 "euclidianView"
                     if !in_construction && !empty && doc.function_path_bounds.is_none() =>
@@ -1225,9 +1223,13 @@ pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, I
                 "value" if element.is_some() => {
                     element.as_mut().expect("checked above").value = attr(e, "val")?;
                 }
-                "angleStyle" if element.is_some() => {
-                    element.as_mut().expect("checked above").angle_style =
-                        attr(e, "val")?.and_then(|v| v.parse().ok());
+                "file"
+                    if element
+                        .as_ref()
+                        .is_some_and(|el| matches!(el.kind.as_str(), "button" | "textfield")) =>
+                {
+                    charge(&mut doc, 1)?;
+                    element.as_mut().expect("checked above").widget_icon = attr(e, "name")?;
                 }
                 "strokeBezierCoords"
                     if element.as_ref().is_some_and(|el| el.kind == "penstroke") =>

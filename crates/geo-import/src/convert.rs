@@ -17,9 +17,9 @@ use geo_kernel::algo::polygon::PolygonDef;
 use geo_kernel::kernel::control::{
     encode_scripts, encode_text, visibility_boolean, NumberRounding, SliderLabel,
 };
-use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
+use geo_kernel::kernel::image::{ImageCorner, ImagePlacement, RasterAsset};
 use geo_kernel::kernel::text::{TextFont, TextOverrides, TextPosition};
-use geo_kernel::kernel::{angle::AngleStyle, Def, DrawingStyle};
+use geo_kernel::kernel::{Def, DrawingStyle};
 use geo_kernel::script::equation::Style as EquationStyle;
 use geo_kernel::script::saved::Property;
 use geo_kernel::script::text::{
@@ -149,7 +149,11 @@ pub(crate) fn convert_with_assets(
                         })
                         .collect::<Option<Vec<_>>>()
                 });
-                c.element(el, points.as_deref(), doc.gui_font_size.unwrap_or(12.0))?;
+                c.element(
+                    el,
+                    points.as_deref(),
+                    f64::from(doc.settings.gui_font_size.unwrap_or(12)),
+                )?;
                 c.restore_slider_early(el);
             }
         }
@@ -210,7 +214,7 @@ pub(crate) fn convert_with_assets(
         let label = quote(&el.label);
         if let Some(properties) = saved_style.preserved.as_deref_mut() {
             properties.retain(|tag| {
-                if tag.can_write(&c.kernel, &mut expressions) {
+                if tag.can_write(&c.kernel, id, &mut expressions) {
                     return true;
                 }
                 c.out.notes.push(format!(
@@ -219,6 +223,16 @@ pub(crate) fn convert_with_assets(
                 ));
                 false
             });
+        }
+        saved_style.saved_angle_style = c.kernel.angle_style(id);
+        if let Some(name) = el.widget_icon.as_deref().filter(|name| !name.is_empty()) {
+            match assets.load(&mut c.kernel, archive, name) {
+                Ok(asset) => saved_style.widget_icon = Some((c.kernel.kind(id), asset)),
+                Err(reason) => c
+                    .out
+                    .notes
+                    .push(format!("icon of `{label}`: {}", quote(&reason))),
+            }
         }
         if let Some(dynamic) = saved_style.dynamic_color.take() {
             match expressions.dynamic_color(&c.kernel, &dynamic) {
@@ -597,9 +611,40 @@ impl Flags {
 
 #[derive(Default)]
 struct ImageAssets {
-    by_name: BTreeMap<Arc<str>, Result<(), String>>,
-    by_offset: BTreeMap<u64, Result<(), String>>,
+    by_name: BTreeMap<Arc<str>, Result<Arc<RasterAsset>, String>>,
+    by_offset: BTreeMap<u64, Result<Arc<RasterAsset>, String>>,
     emitted: BTreeSet<Arc<str>>,
+}
+
+impl ImageAssets {
+    fn load(
+        &mut self,
+        kernel: &mut Construction,
+        archive: Option<&AssetArchive<'_>>,
+        name: &str,
+    ) -> Result<Arc<RasterAsset>, String> {
+        if let Some(result) = self.by_name.get(name) {
+            return result.clone();
+        }
+        let result = (|| {
+            let (entry, data) = archive
+                .ok_or("the image has no archive asset")?
+                .image_entry(name)?;
+            self.by_offset
+                .entry(entry.local_offset)
+                .or_insert_with(|| {
+                    kernel.reserve_image_input(entry.size.max(data.len() as u64))?;
+                    let bytes =
+                        crate::archive::extract_entry(entry, data).map_err(|e| e.to_string())?;
+                    kernel
+                        .decode_image_asset(name.into(), bytes)?
+                        .ok_or_else(|| "the image asset was already registered".into())
+                })
+                .clone()
+        })();
+        self.by_name.insert(name.into(), result.clone());
+        result
+    }
 }
 
 #[derive(Default)]
@@ -1341,26 +1386,7 @@ impl Converter {
                     screen_coords: image.anchors_in_screen_coords,
                 },
             };
-            if !assets.by_name.contains_key(name) {
-                let result = (|| {
-                    let (entry, data) = archive
-                        .ok_or("the image has no archive asset")?
-                        .image_entry(name)?;
-                    let key = entry.local_offset;
-                    let result = assets.by_offset.entry(key).or_insert_with(|| {
-                        self.kernel
-                            .reserve_image_input(entry.size.max(data.len() as u64))?;
-                        let bytes = crate::archive::extract_entry(entry, data)
-                            .map_err(|e| e.to_string())?;
-                        self.kernel
-                            .decode_image_asset(name.into(), bytes)
-                            .map(|_| ())
-                    });
-                    result.as_ref().map(|_| ()).map_err(Clone::clone)
-                })();
-                assets.by_name.insert(name.into(), result);
-            }
-            assets.by_name[name].as_ref().map_err(Clone::clone)?;
+            assets.load(&mut self.kernel, archive, name)?;
             let rhs = geo_kernel::script::image::definition(name, placement, image.style);
             Ok(format!("{} = {rhs}", el.label))
         })();
@@ -1431,12 +1457,16 @@ impl Converter {
                         .push(format!("equation style for `{}`: {e}", quote(&el.label))),
                 }
             }
-            if let Some(code) = el
-                .angle_style
-                .filter(|_| self.kernel.kind(id) == Kind::Angle)
+            if let Some((properties, initial)) = el
+                .object_style
+                .preserved
+                .as_deref()
+                .zip(self.kernel.angle_style(id))
             {
-                let style = AngleStyle::from_xml(code);
-                if self.kernel.angle_style(id) != Some(style) {
+                if let Some(style) = properties
+                    .angle_style(initial)
+                    .filter(|&style| style != initial)
+                {
                     let line = format!("$angleStyle({}, {})", el.label, style.xml_code());
                     match exec(&mut self.kernel, &line) {
                         Ok(_) => self.out.script.push(line),
@@ -2551,8 +2581,12 @@ fn cross_check(
             .map(|saved| saved_infinity(saved) == Some(n)),
         Value::Number(n) => el.value.as_deref().and_then(num).map(|s| {
             let s = if kind == Kind::Angle {
-                el.angle_style
-                    .map_or(s, |code| AngleStyle::from_xml(code).value(s))
+                el.object_style
+                    .preserved
+                    .as_deref()
+                    .zip(c.angle_style(id))
+                    .and_then(|(properties, style)| properties.angle_style(style))
+                    .map_or(s, |style| style.value(s))
             } else {
                 s
             };

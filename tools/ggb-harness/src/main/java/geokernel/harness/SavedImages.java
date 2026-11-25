@@ -17,6 +17,7 @@ import javax.imageio.ImageIO;
 import org.geogebra.common.awt.AwtFactory;
 import org.geogebra.common.kernel.Kernel;
 import org.geogebra.common.kernel.StringTemplate;
+import org.geogebra.common.kernel.geos.GeoButton;
 import org.geogebra.common.kernel.geos.GeoImage;
 import org.geogebra.common.kernel.geos.GeoPoint;
 
@@ -71,6 +72,14 @@ final class SavedImages {
         }
         image.updateCascade();
         return image;
+    }
+
+    static void setIcon(GeoButton button, String name, Map<String, byte[]> assets)
+            throws IOException {
+        assets.put(name, raster("png"));
+        button.getGraphicsAdapter().setImageFileNameOnly(name);
+        button.getGraphicsAdapter().setImageOnly(
+                button.getKernel().getApplication().getExternalImageAdapter(name, WIDTH, HEIGHT));
     }
 
     private static double number(Object value) {

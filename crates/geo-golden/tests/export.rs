@@ -1277,7 +1277,9 @@ const PROPERTY_LIMITS: &[(&str, &str)] = &[
         "PieChart",
         "slice image fills need assets the writer does not carry",
     ),
-    ("Button", "button image assets are not carried"),
+    ("Number", "per-bar image fills are omitted"),
+    ("Button", "icons require an archived PNG, JPEG or GIF"),
+    ("InputBox", "icons require an archived PNG, JPEG or GIF"),
 ];
 
 fn definition_limit(kind: &str) -> &'static str {
@@ -1698,6 +1700,309 @@ fn record_tag_witnesses(
     }
 }
 
+fn saved_review_file(file: &str) -> Vec<u8> {
+    fs::read(repo_root().join("golden/ggb/saved").join(file)).unwrap()
+}
+
+fn review_xml(file: &str, changes: &[(&str, &str)]) -> Vec<u8> {
+    let mut xml = String::from_utf8(saved_review_file(file)).unwrap();
+    for &(from, to) in changes {
+        assert!(xml.contains(from), "{file}: missing {from}");
+        xml = xml.replacen(from, to, 1);
+    }
+    xml.into_bytes()
+}
+
+fn review_workbench(input: &[u8]) -> Workbench {
+    let mut wb = Workbench::default();
+    wb.load_for_export(input, "property review").unwrap();
+    wb
+}
+
+fn review_oracle(source: &[u8], exported: &[u8]) -> (Value, Value) {
+    let scratch = Scratch::new("property-review");
+    for (name, bytes) in [("source", source), ("export", exported)] {
+        let bytes = if geo_import::archive::is_zip(bytes) {
+            bytes.to_vec()
+        } else {
+            archive(bytes, None)
+        };
+        fs::write(scratch.0.join(format!("{name}.ggb")), bytes).unwrap();
+    }
+    let result = tag_snapshots(&scratch.0);
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let read = |name| {
+        serde_json::from_slice(&fs::read(scratch.0.join(format!("{name}.ggb.snapshot"))).unwrap())
+            .unwrap()
+    };
+    (read("source"), read("export"))
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn ordered_angle_tags_survive_reference_reload() {
+    for flag in ["allowReflexAngle", "forceReflexAngle"] {
+        let before = r#"<angleStyle val="2"/>"#;
+        let after = format!(r#"<{flag} val="false"/>{before}"#);
+        let input = review_xml("saved-styles-003.xml", &[(before, &after)]);
+        let wb = review_workbench(&input);
+        let output = wb.export_ggb(None).unwrap();
+        let (source, exported) = review_oracle(&input, &output);
+        let expected = &source["objects"]["w"];
+        assert_eq!(expected["value"], json!(7.0 * std::f64::consts::PI / 4.0));
+        assert_json(expected, &exported["objects"]["w"], flag);
+        assert_eq!(
+            source["reloadedTags"]["w"]["angleStyle"], exported["reloadedTags"]["w"]["angleStyle"],
+            "{flag}"
+        );
+        let xml = geo_import::archive::extract_xml(&output).unwrap();
+        let angle = xml.split_once(r#"label="w">"#).unwrap().1;
+        assert!(
+            angle.find(&format!("<{flag} ")).unwrap() < angle.find("<angleStyle ").unwrap(),
+            "{flag} must precede angleStyle"
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn final_legacy_flag_also_changes_the_live_angle() {
+    let input = review_xml(
+        "saved-styles-003.xml",
+        &[(
+            r#"<angleStyle val="2"/>"#,
+            r#"<angleStyle val="2"/><allowReflexAngle val="false"/>"#,
+        )],
+    );
+    let wb = review_workbench(&input);
+    let (source, exported) = review_oracle(&input, &wb.export_ggb(None).unwrap());
+    let angle = &source["objects"]["w"];
+    assert_eq!(angle["value"], json!(std::f64::consts::FRAC_PI_4));
+    assert_json(angle, &exported["objects"]["w"], "w");
+    let c = wb.construction();
+    compare_construction_object(&expected_from_json(angle).unwrap(), c, c.id("w").unwrap())
+        .unwrap();
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn ordered_button_tags_survive_reference_reload() {
+    let dimensions = r#"<dimensions width="120" height="42"/>"#;
+    let input = review_xml(
+        "saved-element-properties-001.xml",
+        &[(
+            dimensions,
+            &format!(r#"{dimensions}<fixedSize val="false"/>"#),
+        )],
+    );
+    let wb = review_workbench(&input);
+    let output = wb.export_ggb(None).unwrap();
+    let (source, exported) = review_oracle(&input, &output);
+    assert!(source["reloadedTags"]["b"]["dimensions"].is_null());
+    assert_eq!(
+        source["reloadedTags"]["b"]["dimensions"],
+        exported["reloadedTags"]["b"]["dimensions"]
+    );
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn list_angle_presentation_survives_reference_reload() {
+    let input = saved_review_file("saved-property-review-001.xml");
+    let (source, exported) =
+        review_oracle(&input, &review_workbench(&input).export_ggb(None).unwrap());
+    assert_json(&source["objects"]["L"], &exported["objects"]["L"], "L");
+    for tag in ["angleStyle", "emphasizeRightAngle"] {
+        let expected = &source["reloadedTags"]["L"][tag];
+        assert!(!expected.is_null());
+        assert_eq!(*expected, exported["reloadedTags"]["L"][tag], "{tag}");
+    }
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn bar_colors_survive_reference_reload() {
+    let input = saved_review_file("saved-property-review-001.xml");
+    let (source, exported) =
+        review_oracle(&input, &review_workbench(&input).export_ggb(None).unwrap());
+    let tags = &source["reloadedTags"]["chart"]["tags/tag"];
+    assert_eq!(tags[0]["value"], "rgba(255,0,0,1.0)");
+    assert_eq!(*tags, exported["reloadedTags"]["chart"]["tags/tag"]);
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn reused_point_label_does_not_reattach_vector() {
+    let input = saved_review_file("saved-element-properties-003.xml");
+    let mut wb = review_workbench(&input);
+    assert!(wb.delete(wb.construction().id("A").unwrap()));
+    wb.run_line("A = (30, 40)").unwrap();
+    let reference = saved_review_file("saved-property-review-002.xml");
+    let (source, exported) = review_oracle(&reference, &wb.export_ggb(None).unwrap());
+    assert_json(&source["objects"]["v"], &exported["objects"]["v"], "v");
+    assert!(source["reloadedTags"]["v"]["startPoint"].is_null());
+    assert_eq!(
+        source["reloadedTags"]["v"]["startPoint"],
+        exported["reloadedTags"]["v"]["startPoint"]
+    );
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn legacy_widget_font_multipliers_survive_reference_reload() {
+    for (file, fonts, labels) in [
+        (
+            "saved-element-properties-001.xml",
+            &[
+                (r#"sizeM="1.5" size="6""#, r#"size="6""#),
+                (r#"sizeM="1.25" size="3""#, r#"size="6""#),
+            ][..],
+            &["field", "b"][..],
+        ),
+        (
+            "saved-element-properties-002.xml",
+            &[(r#"sizeM="1.25" size="3""#, r#"size="6""#)][..],
+            &["L"][..],
+        ),
+    ] {
+        let mut changes = vec![(r#"<font size="12"/>"#, r#"<font size="24"/>"#)];
+        changes.extend_from_slice(fonts);
+        let input = review_xml(file, &changes);
+        let (source, exported) =
+            review_oracle(&input, &review_workbench(&input).export_ggb(None).unwrap());
+        for label in labels {
+            let expected = &source["reloadedTags"][label]["font"][0]["sizeM"];
+            assert_eq!(*expected, "1.25", "{label}");
+            assert_eq!(
+                *expected, exported["reloadedTags"][label]["font"][0]["sizeM"],
+                "{label}"
+            );
+        }
+    }
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn archived_widget_icons_survive_reference_reload() {
+    let input = saved_review_file("saved-property-review-003.ggb");
+    let output = review_workbench(&input).export_ggb(None).unwrap();
+    let (source, exported) = review_oracle(&input, &output);
+    let entry = |bytes: &[u8], name: &str| {
+        use std::io::Read;
+        let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
+        let mut data = Vec::new();
+        zip.by_name(name).unwrap().read_to_end(&mut data).unwrap();
+        data
+    };
+    for label in ["field", "b"] {
+        assert_eq!(source["reloadedTags"][label]["file"][0]["name"], "tile.png");
+        let name = exported["reloadedTags"][label]["file"][0]["name"]
+            .as_str()
+            .unwrap();
+        assert_eq!(entry(&input, "tile.png"), entry(&output, name), "{label}");
+    }
+}
+
+#[test]
+fn widget_icons_obey_the_raster_entry_limit() {
+    use std::io::{Cursor, Write};
+
+    let source = saved_review_file("saved-property-review-003.ggb");
+    let xml = geo_import::archive::extract_xml(&source).unwrap();
+    let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
+    zip.start_file("geogebra.xml", options).unwrap();
+    zip.write_all(xml.as_bytes()).unwrap();
+    zip.start_file("tile.png", options).unwrap();
+    let size = geo_kernel::kernel::image::MAX_ASSET_BYTES as usize;
+    zip.write_all(&vec![0; size + 1]).unwrap();
+    let oversized = zip.finish().unwrap().into_inner();
+    let imported = geo_import::import_for_replay(&oversized).unwrap();
+    for label in ["field", "b"] {
+        assert!(imported.notes.iter().any(|note| {
+            note.contains(&format!("icon of `{label}`")) && note.contains("too large")
+        }));
+    }
+    assert!(!exported_xml(&review_workbench(&oversized)).contains("<file "));
+}
+
+fn explicit_plain_text_source() -> Vec<u8> {
+    review_xml(
+        "saved-text-equations-001.xml",
+        &[(r#"<isLaTeX val="true"/>"#, r#"<isLaTeX val="false"/>"#)],
+    )
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn latex_command_keeps_reference_mode_with_the_rust_override_tag() {
+    let input = explicit_plain_text_source();
+    let output = review_workbench(&input).export_ggb(None).unwrap();
+    let (source, exported) = review_oracle(&input, &output);
+    assert_eq!(
+        exported["elementTags"]["pTex"]["isLaTeX"][0]["val"],
+        "false"
+    );
+    let expected = &source["reloadedTags"]["pTex"]["isLaTeX"];
+    assert_eq!(expected[0]["val"], "true");
+    assert_eq!(*expected, exported["reloadedTags"]["pTex"]["isLaTeX"]);
+}
+
+#[test]
+fn explicit_plain_text_override_survives_rust_reload() {
+    let input = explicit_plain_text_source();
+    let wb = review_workbench(&input);
+    let c = wb.construction();
+    assert!(!c.text_presentation(c.id("pTex").unwrap()).unwrap().latex);
+    round_trip("plain text override", &wb, None);
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn malformed_chart_property_is_dropped_before_reference_reload() {
+    let input = review_xml(
+        "saved-property-review-001.xml",
+        &[(
+            r#"key="barFillType" barNumber="2" value="1""#,
+            r#"key="barFillType" barNumber="2" value="invalid""#,
+        )],
+    );
+    let scratch = Scratch::new("malformed-chart");
+    let path = scratch.0.join("malformed.ggb");
+    fs::write(&path, archive(&input, None)).unwrap();
+    let result = lenient_java_snapshots(&scratch.0);
+    assert!(result.status.success());
+    let reference: Value =
+        serde_json::from_slice(&fs::read(path.with_extension("ggb.snapshot")).unwrap()).unwrap();
+    assert!(reference["failed"]
+        .as_str()
+        .unwrap()
+        .contains("NumberFormatException"));
+    let clean = saved_review_file("saved-property-review-001.xml");
+    let (source, exported) =
+        review_oracle(&clean, &review_workbench(&input).export_ggb(None).unwrap());
+    let colors = |snapshot: &Value| {
+        snapshot["reloadedTags"]["pie"]["tags/tag"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|tag| tag["key"] == "barColor")
+            .cloned()
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(colors(&source), colors(&exported));
+    assert!(!exported["reloadedTags"]["pie"]["tags/tag"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|tag| tag["key"] == "barFillType"));
+}
+
 fn oracle_command(args: &[&str], dir: &std::path::Path) -> Command {
     let root = repo_root();
     let (script, path) = if std::env::var_os("GEOKERNEL_EXPORT_CONTAINER").is_some() {
@@ -1990,8 +2295,11 @@ impl Scratch {
         } else {
             std::env::temp_dir()
         };
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static NEXT_SCRATCH: AtomicUsize = AtomicUsize::new(0);
+        let sequence = NEXT_SCRATCH.fetch_add(1, Ordering::Relaxed);
         let path = parent.join(format!(
-            "geokernel-ggb-oracle-{case}-{}",
+            "geokernel-ggb-oracle-{case}-{}-{sequence}",
             std::process::id()
         ));
         fs::create_dir(&path).unwrap();
