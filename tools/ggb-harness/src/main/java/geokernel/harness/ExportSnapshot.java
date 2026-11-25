@@ -234,6 +234,9 @@ public final class ExportSnapshot {
         fields.put("background", background == null ? null : List.of(background.getRed(),
                 background.getGreen(), background.getBlue(), background.getAlpha()));
         fields.put("fixed", geo.isLocked());
+        if (geo instanceof GeoInputBox box) {
+            fields.put("input_length", box.getLength());
+        }
         fields.put("auxiliary", geo.isAuxiliaryObject());
         fields.put("selection_allowed", geo.isSelectionAllowed(null));
         fields.put("tooltip_mode", geo.getTooltipMode());

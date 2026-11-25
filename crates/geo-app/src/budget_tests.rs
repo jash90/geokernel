@@ -1426,3 +1426,59 @@ fn a_thousand_cas_rows_only_render_the_visible_range() {
     assert!(counts.vertices < 17_000, "{counts:?}");
     assert!(!counts.immediate, "{counts:?}");
 }
+
+#[test]
+fn a_thousand_canvas_input_boxes_fit_the_frame_budget() {
+    use geo_kernel::kernel::control::InputBoxStyle;
+    use geo_kernel::script::saved::Property;
+    use std::fmt::Write;
+
+    let mut script = "a = 3\nSetVisibleInView(a, 1, false)\n".to_owned();
+    let mut hidden = String::new();
+    for i in 0..1000 {
+        let label = format!("field{i}");
+        writeln!(script, "{label} = $inputBox(a, _)").unwrap();
+        writeln!(
+            script,
+            "{}",
+            Property::InputBoxStyle {
+                label: label.clone(),
+                style: InputBoxStyle {
+                    position: [12 + 28 * (i % 32), 24 + 23 * (i / 32)],
+                    length: 2,
+                },
+            }
+        )
+        .unwrap();
+        writeln!(hidden, "SetVisibleInView({label}, 1, false)").unwrap();
+    }
+    let mut visible = Window::with(&script, String::new());
+    let shown = visible.settled(2);
+    script.push_str(&hidden);
+    let before = Window::with(&script, String::new()).settled(2);
+    let mut elapsed = [0.0_f64; 21];
+    for ms in &mut elapsed {
+        let start = std::time::Instant::now();
+        visible.step(Vec::new());
+        *ms = start.elapsed().as_secs_f64() * 1000.0;
+    }
+    elapsed.sort_by(f64::total_cmp);
+    let median = elapsed[elapsed.len() / 2];
+    println!("input boxes: {median:.3} ms, hidden {before:?}, visible {shown:?}");
+    assert_eq!(shown.texts - before.texts, 1000, "{shown:?}");
+    assert!(
+        shown.vertices > before.vertices
+            && shown.vertices <= 60_000
+            && shown.shapes <= 4700
+            && shown.allocs <= 3500
+            && shown.bytes <= 1_500_000,
+        "{shown:?}"
+    );
+    assert_eq!(
+        (shown.rows_formatted, shown.rows_built, shown.colour_scans),
+        (0, 0, 0)
+    );
+    if !cfg!(debug_assertions) {
+        assert!(median <= 4.0, "input boxes: {median:.3} ms (budget 4 ms)");
+    }
+}

@@ -1,0 +1,5 @@
+{
+  "cases": [
+    {"id": "controls-inputbox-001", "group": "controls", "script": ["a = Slider(0, 8, 0.5)", "b = true", "note = \"x < y\"", "A = (2, 3)", "field = $inputBox(a, _)", "flag = $inputBox(b, _)", "words = $inputBox(note, _)", "point = $inputBox(A, _)", "empty = $inputBox(, _)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": 3.5}]}
+  ]
+}

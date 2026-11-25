@@ -322,6 +322,16 @@ pub(crate) fn convert_with_assets(
                     style,
                 })
             }
+            Def::InputBox(_) => {
+                style.show_label = el.label_shown.unwrap_or(style.show_label);
+                let mut input = geo_kernel::kernel::control::InputBoxStyle::default();
+                input.position = el.label_offset.unwrap_or(input.position);
+                input.length = el.input_box_length.unwrap_or(input.length);
+                Some(Property::InputBoxStyle {
+                    label: el.label.clone(),
+                    style: input,
+                })
+            }
             Def::Boolean(_) => {
                 style.show_label = el.label_shown.unwrap_or(style.show_label);
                 Some(Property::CheckboxStyle {
@@ -342,10 +352,9 @@ pub(crate) fn convert_with_assets(
             c.out.script.push(property.to_string());
         }
         c.out.object_styles.insert(el.label.clone(), saved_style);
-        if let Some([x, y]) = el
-            .label_offset
-            .filter(|&position| position != [0, 0] && !matches!(c.kernel.def(id), Def::Boolean(_)))
-        {
+        if let Some([x, y]) = el.label_offset.filter(|&position| {
+            position != [0, 0] && !matches!(c.kernel.def(id), Def::Boolean(_) | Def::InputBox(_))
+        }) {
             c.out
                 .label_offsets
                 .insert(el.label.clone(), (f64::from(x), f64::from(y)));

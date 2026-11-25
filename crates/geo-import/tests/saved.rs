@@ -681,6 +681,8 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                 .chain(&[
                     "saved-controls-001",
                     "saved-controls-002",
+                    // The export oracle checks the linked objects and widget style.
+                    "saved-input-box-001",
                     "saved-elements-001",
                     // images.rs checks the archive assets and quad snapshots.
                     "saved-images-001",

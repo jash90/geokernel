@@ -62,6 +62,7 @@ import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoFunctionNVar;
 import org.geogebra.common.kernel.geos.GeoImage;
 import org.geogebra.common.kernel.geos.GeoText;
+import org.geogebra.common.kernel.geos.GeoInputBox;
 import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoList;
 import org.geogebra.common.kernel.geos.GeoLocus;
@@ -514,6 +515,11 @@ final class Session {
         String label = m.group(1);
         boolean functionLine = !equationLine && m.group(2) != null;
         String definition = m.group(equationLine ? 2 : 3).trim();
+        // The shared replay form is what the construction reader produces.
+        if (definition.startsWith("$inputBox(") && definition.endsWith(", _)")) {
+            definition = "InputBox(" + definition.substring(10, definition.length() - 4) + ")";
+            line = label + " = " + definition;
+        }
         Matcher references = LABEL.matcher(definition);
         while (references.find()) {
             String reference = references.group();
@@ -1398,6 +1404,9 @@ final class Session {
 
     /** The schema type of a GeoGebra object; the class decides, not the state. */
     static String typeOf(GeoElement geo) {
+        if (geo instanceof GeoInputBox) {
+            return "input_box";
+        }
         if (geo instanceof GeoPieChart) {
             return "piechart";
         }
@@ -1850,6 +1859,8 @@ final class Session {
             case "StepGraph":
             case "Slider":
                 return "number";
+            case "InputBox":
+                return "input_box";
             case "Intersect":
             case "ClosestPoint":
             case "Trilinear":
@@ -2301,6 +2312,9 @@ final class Session {
             case "arc":
             case "sector":
                 return arcFields((GeoConicPart) geo);
+            case "input_box":
+                f.put("text", geo.toValueString(StringTemplate.editTemplate));
+                return f;
             case "text":
                 f.put("text", ((GeoText) geo).getTextString());
                 return f;

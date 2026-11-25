@@ -178,6 +178,7 @@ pub(super) fn accepts(tool: Tool, picks: &[Kind], cand: Option<Kind>) -> bool {
         Tool::Move
         | Tool::Slider
         | Tool::Checkbox
+        | Tool::InputBox
         | Tool::MoveView
         | Tool::ZoomIn
         | Tool::ZoomOut
@@ -460,6 +461,7 @@ pub(super) fn build(
         Tool::Move
         | Tool::Slider
         | Tool::Checkbox
+        | Tool::InputBox
         | Tool::MoveView
         | Tool::ZoomIn
         | Tool::ZoomOut
@@ -587,7 +589,7 @@ pub(super) fn hint(tool: Tool, picks: &[Kind]) -> Hint {
         (Tool::Translate, _) => Hint::Vector,
         (Tool::ReflectCircle, 0) => Hint::Point,
         (Tool::ReflectCircle, _) => Hint::InversionCircle,
-        (Tool::Slider | Tool::Checkbox, _) => Hint::PlaceControl,
+        (Tool::Slider | Tool::Checkbox | Tool::InputBox, _) => Hint::PlaceControl,
         (Tool::MoveView, _) => Hint::DragView,
         (Tool::ZoomIn, _) => Hint::ClickToZoomIn,
         (Tool::ZoomOut, _) => Hint::ClickToZoomOut,

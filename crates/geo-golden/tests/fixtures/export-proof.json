@@ -1998,6 +1998,24 @@
       "saved": true,
       "without": false
     },
+    "input_length": {
+      "fixture": "saved-input-box-001",
+      "label": "field",
+      "saved": 12,
+      "without": 20
+    },
+    "label_offset": {
+      "fixture": "saved-input-box-001",
+      "label": "field",
+      "saved": [
+        124,
+        88
+      ],
+      "without": [
+        30,
+        30
+      ]
+    },
     "layer": {
       "fixture": "saved-styles-007",
       "label": "field",

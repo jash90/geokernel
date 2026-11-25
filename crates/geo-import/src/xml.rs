@@ -74,6 +74,7 @@ pub struct Element {
     pub layer: u8,
     pub label_shown: Option<bool>,
     pub label_offset: Option<[i32; 2]>,
+    pub input_box_length: Option<i32>,
     pub thickness: Option<u8>,
     /// `<coords>` as written: `x`, `y`, `z`.
     pub coords: Option<[String; 3]>,
@@ -1087,6 +1088,10 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                             el.reader_stops.push("objColor");
                         }
                     }
+                }
+                "length" if element.as_ref().is_some_and(|el| el.kind == "textfield") => {
+                    element.as_mut().expect("checked above").input_box_length =
+                        attr(e, "val")?.and_then(|n| n.parse().ok());
                 }
                 "labelOffset" if element.as_ref().is_some_and(|el| el.kind != "text") => {
                     let x = attr(e, "x")?.and_then(|n| n.parse().ok());

@@ -93,6 +93,7 @@ const SAVED_CASES: &[&str] = &[
     "saved-styles-005.xml",
     "saved-styles-006.xml",
     "saved-styles-007.xml",
+    "saved-input-box-001.xml",
     "saved-styles-008.ggb",
     // Styled objects that are undefined in the saved state.
     "saved-styles-009.xml",
@@ -506,6 +507,7 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
                         .filter(|line| {
                             !line.starts_with("$sliderStyle(")
                                 && !line.starts_with("$checkboxStyle(")
+                                && !line.starts_with("$inputBoxStyle(")
                         })
                         .collect::<Vec<_>>()
                         .join("\n");
@@ -985,7 +987,11 @@ const WITNESSES: &[(&str, &[(&str, &str)])] = &[
     ),
     (
         "InputBox",
-        &[("saved-styles-007", "field"), ("saved-styles-007", "empty")],
+        &[
+            ("saved-styles-007", "field"),
+            ("saved-styles-007", "empty"),
+            ("saved-input-box-001", "field"),
+        ],
     ),
     (
         "Button",
@@ -1002,6 +1008,8 @@ fn new_object(kind: &str, property: &str) -> Option<Value> {
         (_, "shown") => json!(true),
         (_, "layer") => json!(0),
         (_, "condition") => Value::Null,
+        ("InputBox", "label_offset") => json!([30, 30]),
+        ("InputBox", "input_length") => json!(20),
         (_, "label_offset") => json!([0, 0]),
         // The kernel keeps the caption of a control and the opacity of an image.
         ("Boolean" | "Button" | "InputBox", "caption") => json!(""),
@@ -1153,7 +1161,16 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
                 "label_offset",
             ],
         ],
-        "InputBox" => &[SHARED, &["fixed", "caption", "background"]],
+        "InputBox" => &[
+            SHARED,
+            &[
+                "fixed",
+                "caption",
+                "background",
+                "label_offset",
+                "input_length",
+            ],
+        ],
         // The reference shows the algebra label again when it names an
         // object that only its element tag creates, as a button and an image
         // are, so it does not keep that flag for them.
@@ -1215,7 +1232,7 @@ const NOT_KEPT: &[(&str, &str)] = &[
     ("Text", "the symbolic mode is not kept"),
     ("FunctionNVar", "the level of detail is not kept"),
     ("PieChart", "the colour and filling of single slices are not kept"),
-    ("InputBox", "the font and size and position and the length and symbolic mode and alignment and typed text are not kept"),
+    ("InputBox", "the font and size and symbolic mode and alignment and typed text are not kept"),
     ("Button", "the font and size and position and the image are not kept"),
 ];
 
@@ -2249,4 +2266,15 @@ fn cas_export_witness() -> Value {
         }
     }
     json!({ "fixture": CAS_EXPORT_CASE, "saved": saved })
+}
+
+#[test]
+fn input_box_export_keeps_the_link_and_widget_geometry() {
+    let source = include_bytes!("../../../golden/ggb/saved/saved-input-box-001.xml");
+    let mut wb = Workbench::default();
+    wb.load_for_export(source, "input-box-widget").unwrap();
+    let (_, again) = round_trip("input-box-widget", &wb, None);
+    let xml = exported_xml(&again);
+    assert!(xml.contains(r#"<labelOffset x="124" y="88""#));
+    assert!(xml.contains(r#"<length val="12""#));
 }

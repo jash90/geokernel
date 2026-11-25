@@ -12,6 +12,21 @@
  },
  "scenarios": [
   {
+   "name": "tool_input_box_places_empty_widget",
+   "source": "EuclidianController.button and controls-inputbox-001",
+   "tool_mode": 61,
+   "initial_script": [],
+   "events": [
+    {"t": 0, "type": "mouse_down", "pos": [-6.44, 5.71]},
+    {"t": 60, "type": "mouse_up", "pos": [-6.44, 5.71]},
+    {"t": 180, "type": "key", "key": "Enter"}
+   ],
+   "expected": {
+    "created_labels": ["InputBox1"],
+    "undo_steps_added": 1
+   }
+  },
+  {
    "name": "drag_free_point_centre",
    "source": "reference web 5.4.936.0 headless probe",
    "group": "A",

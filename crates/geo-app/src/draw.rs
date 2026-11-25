@@ -724,6 +724,35 @@ fn paint_layer<'c>(
                     ));
                 }
             }
+        } else if let Value::InputBox = value {
+            let [x, y, width, height] = c.input_box_rect(id).map(|v| v as f32);
+            let widget = Rect::from_min_size(origin + vec2(x, y), vec2(width, height));
+            if rect.intersects(widget) {
+                painter.rect(
+                    widget,
+                    0.0,
+                    theme::WHITE,
+                    Stroke::new(1.0, theme::BORDER),
+                    eframe::egui::StrokeKind::Inside,
+                );
+                painter.with_clip_rect(widget.shrink(2.0)).text(
+                    widget.left_center() + vec2(6.0, 0.0),
+                    Align2::LEFT_CENTER,
+                    c.input_box_text(id),
+                    FontId::proportional(LABEL_FONT),
+                    color(id),
+                );
+                let caption = c.input_box_caption(id);
+                if !caption.is_empty() {
+                    painter.text(
+                        widget.left_top() - vec2(0.0, 3.0),
+                        Align2::LEFT_BOTTOM,
+                        caption,
+                        FontId::proportional(LABEL_FONT),
+                        color(id),
+                    );
+                }
+            }
         } else if let Value::Bool(checked) = value {
             if let Some((x, y)) = c.checkbox_position(id) {
                 use geo_kernel::kernel::control::{

@@ -327,6 +327,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             | Tool::ShowHide
             | Tool::Slider
             | Tool::Checkbox
+            | Tool::InputBox
     );
     // The show/hide tool shows hidden objects faintly and lets them be picked.
     let show_all = tool == Tool::ShowHide;
@@ -719,7 +720,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             Tool::ZoomIn => zoom_click(app, &mut cam, ZOOM_TOOL, local, w, h),
             Tool::ZoomOut => zoom_click(app, &mut cam, 1.0 / ZOOM_TOOL, local, w, h),
             Tool::MoveView => {}
-            Tool::Slider | Tool::Checkbox => {
+            Tool::Slider | Tool::Checkbox | Tool::InputBox => {
                 if app.tool.control_request().is_none() {
                     app.control_fields = if tool == Tool::Slider {
                         ["-5".into(), "5".into(), "0.1".into()]
@@ -894,6 +895,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             text_rects: Some(&app.text_rects),
         },
     );
+    input_box_editor(app, ui, rect);
     preview(app, &painter, rect, &t, response.hover_pos());
     // The rectangle the zoom in tool drags out, snapped to the view's ratio
     // when it is near it (`updateSelectionRectangle`).
@@ -1228,6 +1230,23 @@ fn toggle_checkbox(app: &mut App, id: Id) {
 fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     if app.tool.tool() == Tool::Move {
         app.wb.selected = hit;
+        let c = app.wb.construction();
+        app.input_box_edit = hit.and_then(|id| {
+            let geo_kernel::Def::InputBox(Some(link)) = c.def(id) else {
+                return None;
+            };
+            let editable = matches!(
+                c.def(link),
+                geo_kernel::Def::Number(_) | geo_kernel::Def::Boolean(_)
+            ) || c.is_independent_text(link);
+            editable.then(|| {
+                (
+                    c.label(id).to_owned(),
+                    c.input_box_text(id).into_owned(),
+                    true,
+                )
+            })
+        });
         if let Some(id) = hit.filter(|&id| !app.wb.construction().checkbox_style(id).fixed) {
             toggle_checkbox(app, id);
         }
@@ -1252,6 +1271,65 @@ fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
         )
     };
     app.apply_outcome(outcome);
+}
+
+fn input_box_editor(app: &mut App, ui: &mut Ui, canvas: Rect) {
+    use geo_kernel::kernel::control::MAX_INPUT_BOX_CHARS;
+    let Some((label, mut text, focus)) = app.input_box_edit.take() else {
+        return;
+    };
+    if app.tool.tool() != Tool::Move {
+        return;
+    }
+    let c = app.wb.construction();
+    let Some(id) = c.id(&label).filter(|&id| app.wb.is_visible(id)) else {
+        return;
+    };
+    let geo_kernel::Def::InputBox(Some(link)) = c.def(id) else {
+        return;
+    };
+    let [x, y, width, height] = c.input_box_rect(id).map(|v| v as f32);
+    let rect = Rect::from_min_size(canvas.min + vec2(x, y), vec2(width, height));
+    let field_id = ui.scope_id().with(("canvas_input_box", id.index()));
+    let widget = ui.put(
+        rect,
+        egui::TextEdit::singleline(&mut text)
+            .id(field_id)
+            .char_limit(MAX_INPUT_BOX_CHARS)
+            .desired_width(width)
+            .min_size(rect.size()),
+    );
+    widget.widget_info(|| egui::WidgetInfo::labeled(egui::Role::TextInput, true, &label));
+    if focus {
+        widget.request_focus();
+        let mut state = egui::TextEdit::load_state(ui.ctx(), field_id).unwrap_or_default();
+        state
+            .cursor
+            .set_char_range(Some(egui::text::CCursorRange::select_all_str(&text)));
+        egui::TextEdit::store_state(ui.ctx(), field_id, state);
+    }
+    if ui.input(|i| i.key_pressed(egui::Key::Enter)) && (widget.has_focus() || widget.lost_focus())
+    {
+        match c.def(link) {
+            geo_kernel::Def::Number(_) => {
+                if let Some(value) = crate::app::parse_number(&text) {
+                    app.wb.set_number(link, value);
+                }
+            }
+            geo_kernel::Def::Boolean(_) => {
+                if let Ok(value) = text.trim().parse::<bool>() {
+                    app.wb.set_boolean(link, value);
+                }
+            }
+            _ if c.is_independent_text(link) => {
+                let _: Result<(), _> = app.wb.run_line(&format!("{} = {text:?}", c.label(link)));
+            }
+            _ => {}
+        }
+        widget.surrender_focus();
+    } else if !widget.lost_focus() {
+        app.input_box_edit = Some((label, text, false));
+    }
 }
 
 /// The world position of a picked point.

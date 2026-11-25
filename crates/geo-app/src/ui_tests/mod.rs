@@ -987,3 +987,90 @@ fn a_nearby_track_press_advances_one_notch_and_then_drags_the_value() {
         assert_eq!(h.state().wb.undo_depth(), (1, 0));
     }
 }
+
+#[test]
+fn input_box_canvas_updates_slider_and_dependents() {
+    let mut h = harness("a = Slider(0, 8, 0.5)\nb = 2 a\nfield = $inputBox(a, _)\n$inputBoxStyle(_6669656c64, 124, 88, 12)");
+    let pos = at(ALGEBRA_WIDTH + SPLITTER + 140.0, TOOLBAR_HEIGHT + 101.0);
+    click(&mut h, pos);
+    let field = h.state().wb.construction().id("field").unwrap();
+    assert_eq!(h.state().wb.selected, Some(field));
+    h.input_mut().events.push(Event::Text("3.5".into()));
+    h.step();
+    h.key_press(egui::Key::Enter);
+    h.run();
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Number(3.5));
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Number(7.0));
+}
+
+#[test]
+fn input_box_tool_places_a_control() {
+    let mut h = harness("a = 1");
+    let tool = Tool::all()
+        .find(|tool| tool.caption() == "Pole tekstowe")
+        .expect("input box tool");
+    h.state_mut().select_tool(tool);
+    click(
+        &mut h,
+        at(ALGEBRA_WIDTH + SPLITTER + 124.0, TOOLBAR_HEIGHT + 88.0),
+    );
+    h.get_by_label("OK").click();
+    h.run();
+    let c = h.state().wb.construction();
+    let field = c
+        .ids()
+        .find(|&id| c.kind(id) == geo_kernel::Kind::InputBox)
+        .unwrap();
+    assert!(matches!(c.def(field), geo_kernel::Def::InputBox(None)));
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+}
+
+#[test]
+fn input_box_canvas_text_is_bounded() {
+    let source = format!(
+        "note = \"{}\"\nfield = $inputBox(note, _)",
+        "a".repeat(16384)
+    );
+    let h = harness(&source);
+    let c = h.state().wb.construction();
+    let field = c.id("field").unwrap();
+    let svg = geo_kernel::svg::render_visible(c, geo_kernel::svg::View::fit(c), 400, 300, |id| {
+        id == field
+    });
+    assert!(svg.contains(">aaaaaaaa"));
+    assert!(!svg.contains(&"a".repeat(1024)));
+}
+
+#[test]
+fn input_box_canvas_edits_a_boolean_and_a_text_literal() {
+    let mut h = harness(
+        "b = $checkBox(true, _)\nnote = \"x < y\"\nflag = $inputBox(b, _)\nwords = $inputBox(note, _)\n\
+         $inputBoxStyle(_666c6167, 124, 128, 8)\n\
+         $inputBoxStyle(_776f726473, 124, 168, 20)",
+    );
+    for (label, y, data) in [("flag", 140.0, "false"), ("words", 180.0, "two \"quotes\"")] {
+        click(
+            &mut h,
+            at(ALGEBRA_WIDTH + SPLITTER + 144.0, TOOLBAR_HEIGHT + y),
+        );
+        assert_eq!(
+            h.state().input_box_edit.as_ref().map(|e| e.0.as_str()),
+            Some(label),
+        );
+        h.input_mut().events.push(Event::Text(data.into()));
+        h.step();
+        assert_eq!(
+            h.state().input_box_edit.as_ref().map(|e| e.1.as_str()),
+            Some(data)
+        );
+        h.key_press(egui::Key::Enter);
+        h.run();
+        let c = h.state().wb.construction();
+        assert_eq!(c.value(c.id("b").unwrap()), Value::Bool(false), "{label}");
+    }
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Bool(false));
+    assert_eq!(c.text(c.id("note").unwrap()), Some("two \"quotes\""));
+    assert_eq!(h.state().wb.undo_depth(), (2, 0));
+}

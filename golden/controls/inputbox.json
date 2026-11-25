@@ -1,0 +1,50 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "controls-inputbox-001",
+      "group": "controls",
+      "script": [
+        "a = Slider(0, 8, 0.5)",
+        "b = true",
+        "note = \"x < y\"",
+        "A = (2, 3)",
+        "field = $inputBox(a, _)",
+        "flag = $inputBox(b, _)",
+        "words = $inputBox(note, _)",
+        "point = $inputBox(A, _)",
+        "empty = $inputBox(, _)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 3.5 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "note": { "type": "text", "defined": true, "text": "x < y" },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "field": { "type": "input_box", "defined": true, "text": "0" },
+          "flag": { "type": "input_box", "defined": true, "text": "true" },
+          "words": { "type": "input_box", "defined": true, "text": "x < y" },
+          "point": { "type": "input_box", "defined": true, "text": "(2, 3)" },
+          "empty": { "type": "input_box", "defined": true, "text": "" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.5 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "note": { "type": "text", "defined": true, "text": "x < y" },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "field": { "type": "input_box", "defined": true, "text": "3.5" },
+          "flag": { "type": "input_box", "defined": true, "text": "true" },
+          "words": { "type": "input_box", "defined": true, "text": "x < y" },
+          "point": { "type": "input_box", "defined": true, "text": "(2, 3)" },
+          "empty": { "type": "input_box", "defined": true, "text": "" }
+        }
+      ]
+    }
+  ]
+}

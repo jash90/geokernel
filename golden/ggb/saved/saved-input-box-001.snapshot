@@ -1,0 +1,22 @@
+{
+  "schema": 2,
+  "id": "saved-input-box-001",
+  "script": [
+    "a = Slider(0, 8, 0.5)",
+    "b = true",
+    "note = \"x < y\"",
+    "field = InputBox(a)",
+    "flag = InputBox(b)",
+    "words = InputBox(note)",
+    "empty = InputBox()"
+  ],
+  "objects": {
+    "a": { "type": "number", "defined": true, "value": 3.5 },
+    "b": { "type": "boolean", "defined": true, "value": true },
+    "note": { "type": "text", "defined": true, "text": "x < y" },
+    "field": { "type": "TextField", "defined": true },
+    "flag": { "type": "TextField", "defined": true },
+    "words": { "type": "TextField", "defined": true },
+    "empty": { "type": "TextField", "defined": true }
+  }
+}

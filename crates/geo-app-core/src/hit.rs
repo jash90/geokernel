@@ -267,6 +267,11 @@ pub fn hit(
                 boundary(slider_track_hit(c, id, slider, p, t))
             }
         }
+        Value::InputBox => {
+            let [x, y, width, height] = c.input_box_rect(id);
+            ((x..x + width).contains(&p.0) && (y..y + height).contains(&p.1))
+                .then_some(HitType::Filling)
+        }
         Value::Bool(_) => {
             use geo_kernel::kernel::control::CHECKBOX_HIT_SIZE;
             let (x, y) = c.checkbox_position(id)?;

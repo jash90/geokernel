@@ -331,6 +331,7 @@ public final class SavedExporter {
                     geo.labelOffsetY = integer(((List<?>) value).get(1));
                 }
                 case "caption" -> geo.setCaption((String) value);
+                case "input_length" -> ((GeoInputBox) geo).setLength(integer(value));
                 case "tooltip_mode" -> geo.setTooltipMode(integer(value));
                 case "trace" -> ((Traceable) geo).setTrace((Boolean) value);
                 case "background" -> {

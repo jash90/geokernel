@@ -124,6 +124,7 @@ pub fn object_text(c: &Construction, id: Id) -> String {
             None => text::label(Label::Undefined).into(),
         },
         Value::Function | Value::FunctionNVar => String::new(),
+        Value::InputBox => c.input_box_text(id).into_owned(),
         Value::Text => c.text(id).unwrap_or_default().to_owned(),
         // `GeoLocusStroke.toString` gives the label
         Value::Image | Value::PenStroke { .. } => c.label(id).to_owned(),
@@ -162,6 +163,7 @@ pub fn is_known(v: &Value) -> bool {
             | Value::FunctionNVar
             | Value::ImplicitCurve
             | Value::Text
+            | Value::InputBox
             | Value::Image
             | Value::PieChart
             | Value::PenStroke { .. }
@@ -281,4 +283,17 @@ mod tests {
         assert_eq!(value_text(&Value::Vector { x: 1.0, y: -0.0 }), "(1, 0)");
         assert_eq!(value_text(&Value::Undefined), "niezdefiniowany");
     }
+}
+
+#[cfg(test)]
+#[test]
+fn input_box_algebra_value_follows_linked_object() {
+    let mut c =
+        geo_kernel::script::load("A = (2, 3)\npoint = $inputBox(A, _)\nempty = $inputBox(, _)")
+            .unwrap();
+    let point = c.id("point").unwrap();
+    assert_eq!(object_text(&c, point), "(2, 3)");
+    assert_eq!(object_text(&c, c.id("empty").unwrap()), "");
+    c.move_point(c.id("A").unwrap(), 4.0, 5.0).unwrap();
+    assert_eq!(object_text(&c, point), "(4, 5)");
 }

@@ -2,6 +2,8 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoNumeric.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoBoolean.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoInputBox.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/draw/DrawInputBox.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -204,6 +206,75 @@ impl Default for SliderStyle {
 pub struct CheckboxStyle {
     pub position: Option<[i32; 2]>,
     pub fixed: bool,
+}
+
+/// Saved canvas placement and length of an input box.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct InputBoxStyle {
+    pub position: [i32; 2],
+    pub length: i32,
+}
+
+impl Default for InputBoxStyle {
+    fn default() -> Self {
+        Self {
+            position: [30, 30],
+            length: 20,
+        }
+    }
+}
+
+pub const MAX_INPUT_BOX_CHARS: usize = 256;
+
+pub fn bounded_input_box_text(text: &str) -> &str {
+    text.char_indices()
+        .nth(MAX_INPUT_BOX_CHARS)
+        .map_or(text, |(at, _)| &text[..at])
+}
+
+impl Construction {
+    pub(crate) fn set_input_box_style(&mut self, id: Id, style: InputBoxStyle) {
+        self.input_box_styles.insert(id, style);
+    }
+
+    pub fn input_box_style(&self, id: Id) -> InputBoxStyle {
+        self.input_box_styles.get(&id).copied().unwrap_or_default()
+    }
+
+    /// Coordinate and extent of the editor in canvas pixels.
+    pub fn input_box_rect(&self, id: Id) -> [f64; 4] {
+        let style = self.input_box_style(id);
+        let [x, y] = style.position.map(f64::from);
+        let width = (16.0 * 0.81 * f64::from(style.length.clamp(1, 100))).round();
+        [x, y, width, 30.0]
+    }
+
+    pub fn input_box_caption(&self, id: Id) -> &str {
+        if self.drawing_style(id).show_label {
+            self.control(id)
+                .map_or("", |control| bounded_input_box_text(&control.caption))
+        } else {
+            ""
+        }
+    }
+
+    pub fn input_box_text(&self, id: Id) -> std::borrow::Cow<'_, str> {
+        let Def::InputBox(Some(link)) = self.def(id) else {
+            return "".into();
+        };
+        match self.value(link) {
+            crate::Value::Number(n) => n.to_string().into(),
+            crate::Value::Bool(b) => if b { "true" } else { "false" }.into(),
+            crate::Value::Point { x, y } | crate::Value::Vector { x, y } => {
+                format!("({x}, {y})").into()
+            }
+            crate::Value::Text => {
+                bounded_input_box_text(self.text(link).unwrap_or_default()).into()
+            }
+            crate::Value::Undefined | crate::Value::InputBox => "".into(),
+            _ => bounded_input_box_text(self.construction_source(link).unwrap_or_default()).into(),
+        }
+    }
 }
 
 /// Slider geometry in canvas pixels, shared by picking, painting and SVG.
@@ -433,5 +504,16 @@ mod tests {
         assert_eq!(c.slider_pointer_value(a, (0.54, 1.0), false), Some(6.0));
         c.set_number(n, 0.5).unwrap();
         assert_eq!(c.slider_pointer_value(a, (0.54, 1.0), false), Some(5.5));
+    }
+
+    #[test]
+    fn input_box_bounds_limit_large_saved_widths() {
+        let c = crate::script::load(
+            "field = $inputBox(, _)\n$inputBoxStyle(_6669656c64, 40, 50, 2147483647)",
+        )
+        .unwrap();
+        let field = c.id("field").unwrap();
+        assert_eq!(c.input_box_style(field).length, i32::MAX);
+        assert_eq!(c.input_box_rect(field), [40.0, 50.0, 1296.0, 30.0]);
     }
 }

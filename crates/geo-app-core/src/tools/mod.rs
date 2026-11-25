@@ -69,6 +69,7 @@ pub enum Tool {
     Dilate,
     Slider,
     Checkbox,
+    InputBox,
     MoveView,
     ZoomIn,
     ZoomOut,
@@ -123,7 +124,7 @@ pub const GROUPS: &[&[Tool]] = &[
         Tool::Translate,
         Tool::Dilate,
     ],
-    &[Tool::Slider, Tool::Checkbox],
+    &[Tool::Slider, Tool::Checkbox, Tool::InputBox],
     &[
         Tool::MoveView,
         Tool::ZoomIn,
@@ -161,6 +162,7 @@ impl Tool {
             Tool::Move
                 | Tool::Slider
                 | Tool::Checkbox
+                | Tool::InputBox
                 | Tool::MoveView
                 | Tool::ZoomIn
                 | Tool::ZoomOut
@@ -347,7 +349,9 @@ impl ToolState {
     }
 
     pub fn begin_control(&mut self, at: (f64, f64)) {
-        if matches!(self.tool, Tool::Slider | Tool::Checkbox) && self.control_at.is_none() {
+        if matches!(self.tool, Tool::Slider | Tool::Checkbox | Tool::InputBox)
+            && self.control_at.is_none()
+        {
             self.control_at = Some(at);
         }
     }
@@ -401,6 +405,35 @@ impl ToolState {
             style: CheckboxStyle {
                 position: Some([x as i32, y as i32]),
                 fixed: false,
+            },
+        };
+        Outcome::Run(vec![definition, style.to_string()])
+    }
+
+    pub fn finish_input_box(
+        &mut self,
+        caption: &str,
+        linked: Option<&str>,
+        taken: impl Fn(&str) -> bool,
+    ) -> Outcome {
+        use geo_kernel::kernel::control::{bounded_input_box_text, encode_text, InputBoxStyle};
+        use geo_kernel::script::saved::Property;
+
+        if self.tool != Tool::InputBox {
+            return Outcome::Ignored;
+        }
+        let Some((x, y)) = self.control_at.take() else {
+            return Outcome::Ignored;
+        };
+        let label = next_label(Kind::InputBox, taken);
+        let caption = encode_text(bounded_input_box_text(caption));
+        let linked = linked.unwrap_or_default();
+        let definition = format!("{label} = $inputBox({linked}, {caption})");
+        let style = Property::InputBoxStyle {
+            label,
+            style: InputBoxStyle {
+                position: [x as i32, y as i32],
+                ..InputBoxStyle::default()
             },
         };
         Outcome::Run(vec![definition, style.to_string()])

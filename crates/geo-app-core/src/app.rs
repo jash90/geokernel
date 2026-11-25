@@ -152,6 +152,8 @@ pub struct App {
     /// The text of the number dialog.
     pub number_text: String,
     pub control_fields: [String; 3],
+    /// The label and current contents of the active canvas editor.
+    pub input_box_edit: Option<(String, String, bool)>,
     /// Where the regions were in the last frame.
     pub regions: Regions,
     /// The widgets over the graphics view in the last frame.
@@ -247,6 +249,7 @@ impl App {
             style_bar: false,
             number_text: String::new(),
             control_fields: Default::default(),
+            input_box_edit: None,
             regions: Regions::new(Rect::ZERO, false, &Metrics::desktop()),
             overlays: Overlays::new(),
             seen_rebuilds: 0,

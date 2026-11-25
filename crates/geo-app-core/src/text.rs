@@ -167,6 +167,7 @@ pub const fn tool_caption(tool: Tool) -> &'static str {
         Tool::Dilate => "Jednokładność",
         Tool::Slider => "Suwak",
         Tool::Checkbox => "Pole wyboru",
+        Tool::InputBox => "Pole tekstowe",
         Tool::MoveView => "Przesuń widok",
         Tool::ZoomIn => "Powiększ",
         Tool::ZoomOut => "Pomniejsz",

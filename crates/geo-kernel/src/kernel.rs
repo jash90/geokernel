@@ -1132,6 +1132,7 @@ pub struct Construction {
     /// The frozen points of the pen strokes.
     pub(crate) strokes: std::collections::BTreeMap<Id, algo::stroke::StrokeData>,
     slider_styles: std::collections::BTreeMap<Id, control::SliderStyle>,
+    input_box_styles: std::collections::BTreeMap<Id, control::InputBoxStyle>,
     checkbox_styles: std::collections::BTreeMap<Id, control::CheckboxStyle>,
     slider_labels: BTreeMap<Id, control::SliderLabel>,
     number_rounding: control::NumberRounding,
@@ -2089,6 +2090,7 @@ impl Construction {
         self.slider_styles.split_off(&Id(at.len));
         self.slider_default_slots.split_off(&Id(at.len));
         self.slider_labels.split_off(&Id(at.len));
+        self.input_box_styles.split_off(&Id(at.len));
         self.checkbox_styles.split_off(&Id(at.len));
         self.free_booleans
             .truncate(self.free_booleans.partition_point(|id| id.0 < at.len));

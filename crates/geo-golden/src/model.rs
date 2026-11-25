@@ -883,6 +883,7 @@ impl TryFrom<RawObject> for Expected {
             "function" => (Kind::Function, &[]),
             "function_nvar" => (Kind::FunctionNVar, &[]),
             "text" => (Kind::Text, &["text"]),
+            "input_box" => (Kind::InputBox, &["text"]),
             "image" => (Kind::Image, &[]),
             "relation" => (Kind::Text, &["reports"]),
             "polygon" => (Kind::Polygon, &["vertices", "area", "signed_area"]),
@@ -1019,7 +1020,7 @@ impl TryFrom<RawObject> for Expected {
                 legacy_angle_number: false,
             });
         }
-        if kind == Kind::Text {
+        if matches!(kind, Kind::Text | Kind::InputBox) {
             let text = raw.fields["text"]
                 .as_str()
                 .ok_or("a text's content must be a string")?;

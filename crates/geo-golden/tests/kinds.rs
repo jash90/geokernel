@@ -501,6 +501,7 @@ const SAMPLE_CASES: &[&str] = &[
     "conics-transform-009",
     "conics-transform-017",
     "conics-transform-025",
+    "controls-inputbox-001",
     "corners-dilate-001",
     "corners-dilate-002",
     "corners-dilate-003",

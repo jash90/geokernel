@@ -581,6 +581,28 @@ fn render_geometry(
                     }
                 }
             }
+            Value::InputBox => {
+                let [x, y, width, height] = c.input_box_rect(id);
+                let (x, y) = label_offset(id).unwrap_or((x, y));
+                let caption = escape(c.input_box_caption(id));
+                let text = escape(&c.input_box_text(id));
+                let _ = writeln!(
+                    controls,
+                    r##"<rect x="{x:.2}" y="{y:.2}" width="{width:.2}" height="{height:.2}" fill="#ffffff" stroke="#777777"/>"##,
+                );
+                let _ = writeln!(
+                    controls,
+                    r#"<svg x="{x:.2}" y="{y:.2}" width="{width:.2}" height="{height:.2}" overflow="hidden"><text x="6" y="20">{text}</text></svg>"#,
+                );
+                if !caption.is_empty() {
+                    let _ = writeln!(
+                        controls,
+                        r#"<text x="{:.2}" y="{:.2}">{caption}</text>"#,
+                        x,
+                        y - 4.0
+                    );
+                }
+            }
             Value::Text => {
                 let Some((source, style)) = c
                     .text(id)
@@ -657,7 +679,6 @@ fn render_geometry(
             | Value::NormalizedPointAtInfinity { .. }
             | Value::Curve { .. }
             | Value::Button
-            | Value::InputBox
             | Value::Image
             | Value::PieChart
             | Value::Undefined => {}
@@ -980,4 +1001,21 @@ mod control_tests {
         assert!(svg.contains(">a = 2</text>"));
         assert!(!svg.contains(">k = 2</text>"));
     }
+}
+
+#[cfg(test)]
+#[test]
+fn input_box_svg_draws_at_saved_position_with_escaped_text() {
+    let c = crate::script::load("note = \"x < y\"\nfield = $inputBox(note, _)").unwrap();
+    let id = c.id("field").unwrap();
+    let svg = render_visible_with_label_offsets(
+        &c,
+        View::fit(&c),
+        400,
+        300,
+        |_| true,
+        |object| (object == id).then_some((48.0, 64.0)),
+    );
+    assert!(svg.contains("<rect x=\"48.00\" y=\"64.00\""));
+    assert!(svg.contains(">x &lt; y</text>"));
 }
