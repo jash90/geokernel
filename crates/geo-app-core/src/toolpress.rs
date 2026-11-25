@@ -36,7 +36,10 @@ use crate::tools::{
 use geo_kernel::kernel::{Id, Kind, Value};
 
 /// Polygon preparation and vertex reads allowed for one constraint pick.
-const CONSTRAINT_VERTEX_WORK: usize = 4096;
+const CONSTRAINT_VERTEX_WORK: usize = hit::SHAPE_HIT_WORK;
+
+/// Label probes allowed for the outputs of one Roots or Extremum click.
+const ANALYSIS_LABEL_WORK: usize = 4096;
 
 fn rigid_copy_size(c: &geo_kernel::Construction, polygon: Id) -> Option<usize> {
     let mut left = CONSTRAINT_VERTEX_WORK;
@@ -122,7 +125,18 @@ impl App {
         }
         let c = self.wb.construction();
         if self.tool.tool() == Tool::PointOnObject {
-            if let Some((object, region)) = self.constraint_at(t, pos, reach) {
+            if let Some((object, region)) = self.constraint_at(t, pos, reach).or_else(|| {
+                self.decor
+                    .axes
+                    .then(|| {
+                        ["xAxis", "yAxis"]
+                            .into_iter()
+                            .filter_map(|name| c.id(name))
+                            .find(|&id| hit::hit(c, id, t, pos, reach.threshold, reach).is_some())
+                    })
+                    .flatten()
+                    .map(|axis| (axis, false))
+            }) {
                 let label = c.label(object).to_owned();
                 return if region {
                     NewPoint::InRegion {
@@ -137,7 +151,11 @@ impl App {
             return NewPoint::Free(x, y);
         }
         let path = hit::pick(c, t, pos, reach, None, |id| {
-            self.hittable(id) && is_path(c, id)
+            self.hittable(id)
+                && (is_path(c, id)
+                    || self.tool.tool() == Tool::SegmentFixed
+                        && c.kind(id) == Kind::Function
+                        && geo_kernel::algo::path::function_is_path(c, id))
         });
         match path {
             Some(p) => NewPoint::OnPath {
@@ -184,20 +202,17 @@ impl App {
         reach: &Reach,
     ) -> Option<(Id, bool)> {
         let c = self.wb.construction();
-        let work = std::cell::Cell::new(CONSTRAINT_VERTEX_WORK);
-        let bounded_polygon = |id| {
-            let mut left = work.get();
-            let vertices = c.vertices_with_work(id, &mut left);
-            work.set(left);
-            vertices.is_some()
-        };
         let polygon = || {
             hit::pick(c, t, pos, reach, None, |id| {
-                self.hittable(id) && c.kind(id) == Kind::Polygon && bounded_polygon(id)
+                self.hittable(id) && c.kind(id) == Kind::Polygon
             })
         };
         let carrier = hit::pick(c, t, pos, reach, None, |id| {
-            self.hittable(id) && (is_path(c, id) || c.kind(id) == Kind::Function)
+            self.hittable(id)
+                && (is_path(c, id)
+                    || c.kind(id) == Kind::Vector
+                    || c.kind(id) == Kind::Function
+                        && geo_kernel::algo::path::function_is_path(c, id))
         });
         let polygon = carrier
             .is_none_or(|id| c.kind(id) == Kind::Segment)
@@ -238,7 +253,12 @@ impl App {
             let label = c.label(id).to_owned();
             if matches!(
                 c.def(id),
-                Def::Path(PathDef::On { .. } | PathDef::OnParam { .. } | PathDef::InRegion { .. })
+                Def::Path(
+                    PathDef::On { .. }
+                        | PathDef::OnParam { .. }
+                        | PathDef::InRegion { .. }
+                        | PathDef::FixedEndpoint { .. }
+                )
             ) {
                 let Value::Point { x, y } = c.value(id) else {
                     return Outcome::Ignored;
@@ -426,8 +446,9 @@ impl App {
             self.apply_outcome(outcome.clone());
             return outcome;
         }
+        let analysis = matches!(tool, Tool::Extremum | Tool::Roots);
         let mut id = None;
-        if matches!(tool, Tool::Extremum | Tool::Roots) {
+        if analysis {
             for kinds in [&[Kind::Function][..], &[Kind::Conic, Kind::Circle][..]] {
                 id = hit::pick(c, t, pos, reach, None, |id| {
                     self.hittable(id) && kinds.contains(&c.kind(id))
@@ -437,7 +458,22 @@ impl App {
                 }
             }
         }
-        let mut id = id.or_else(|| hit::pick(c, t, pos, reach, None, |id| self.hittable(id)));
+        if id.is_none() {
+            let text = if tool == Tool::Relation {
+                self.text_at(pos, None, |id| self.hittable(id))
+            } else {
+                None
+            };
+            let (picked, refused) =
+                hit::pick_with_shape_limit(c, t, pos, reach, None, text, |id| self.hittable(id));
+            if refused
+                && matches!(tool, Tool::PointOnObject | Tool::RigidPolygon)
+                && picked.is_none_or(|id| c.kind(id) == Kind::List)
+            {
+                return Outcome::Ignored;
+            }
+            id = picked;
+        }
         let accepts = |id| self.accepts_tool_hit(id);
         if matches!(
             tool,
@@ -458,12 +494,6 @@ impl App {
         }
         let picks = self.tool.picks();
         if let Some(id) = id {
-            if tool == Tool::PointOnObject && c.kind(id) == Kind::Polygon {
-                let mut left = CONSTRAINT_VERTEX_WORK;
-                if c.vertices_with_work(id, &mut left).is_none() {
-                    return Outcome::Ignored;
-                }
-            }
             if tool == Tool::Compasses
                 && !accepts(id)
                 && matches!(
@@ -483,12 +513,10 @@ impl App {
             if tool == Tool::AngleFixed
                 && matches!(c.kind(id), Kind::Segment | Kind::Circle | Kind::Conic)
             {
-                if !picks.is_empty() {
-                    return Outcome::Ignored;
-                }
                 let Some((start, end)) = c.segment_endpoints(id) else {
                     return Outcome::Ignored;
                 };
+                self.tool.reset();
                 for point in [end, start] {
                     let outcome = self.tool.click(
                         Some((c.label(point), Kind::Point)),
@@ -548,32 +576,39 @@ impl App {
         } else {
             NewPoint::Free(0.0, 0.0)
         };
-        let mut outcome = {
-            let c = self.wb.construction();
-            self.tool.click_with(
-                hit.as_ref().map(|(l, k)| (l.as_str(), *k)),
-                &new_point,
-                &|l| c.id(l).is_some(),
-            )
+        let c = self.wb.construction();
+        let label_probes = std::cell::Cell::new(0);
+        let is_taken = |label: &str| {
+            let used = label_probes.get();
+            if analysis {
+                label_probes.set(used + 1);
+            }
+            (!analysis || used < ANALYSIS_LABEL_WORK) && c.id(label).is_some()
         };
+        let mut outcome = self.tool.click_with(
+            hit.as_ref().map(|(l, k)| (l.as_str(), *k)),
+            &new_point,
+            &is_taken,
+        );
         if let Outcome::VectorPolygon { copy_offset, .. } = &mut outcome {
             *copy_offset = t.view().xmax / 15.0;
         }
-        if matches!(tool, Tool::Extremum | Tool::Roots)
-            && hit
-                .as_ref()
-                .is_some_and(|(_, kind)| *kind == Kind::Function)
-        {
+        if analysis {
+            if label_probes.get() > ANALYSIS_LABEL_WORK {
+                return Outcome::Ignored;
+            }
             if let Outcome::Run(lines) = &mut outcome {
-                let c = self.wb.construction();
                 let (_, rhs) = lines[0]
                     .split_once(" = ")
                     .expect("tool recipe is an assignment");
                 if let Some(Ok(count)) = geo_kernel::script::multi_output_count(c, rhs) {
                     if count > 1 {
-                        let names = crate::labels::free_point_labels(|name| c.id(name).is_some())
+                        let names = crate::labels::free_point_labels(is_taken)
                             .take(count)
                             .collect::<Vec<_>>();
+                        if label_probes.get() > ANALYSIS_LABEL_WORK {
+                            return Outcome::Ignored;
+                        }
                         lines[0] = format!("{{{}}} = {rhs}", names.join(", "));
                     }
                 }
@@ -985,6 +1020,57 @@ mod tests {
     }
 
     #[test]
+    fn tool_constraint_picks_keep_the_selected_path() {
+        for (tool, script, x, y, point, carrier) in [
+            (Tool::PointOnObject, "", 2.0, 0.0, "A", "xAxis"),
+            (
+                Tool::PointOnObject,
+                "A = (0, 0)\nB = (4, 2)\nu = Vector(A, B)",
+                2.0,
+                1.0,
+                "C",
+                "u",
+            ),
+            (Tool::SegmentFixed, "f(x) = x^2", 1.0, 1.0, "A", "f"),
+        ] {
+            let mut app = app(script, tool);
+            click_tool(&mut app, x, y);
+            let c = app.wb.construction();
+            assert_eq!(
+                c.def(c.id(point).unwrap()),
+                Def::Path(PathDef::On {
+                    path: c.id(carrier).unwrap(),
+                }),
+                "{carrier}"
+            );
+        }
+    }
+
+    #[test]
+    fn roots_caps_the_search_for_free_output_labels() {
+        let mut source = String::from("f(x) = x^2 - 1\n");
+        for label in crate::labels::free_point_labels(|_| false).take(2100) {
+            use std::fmt::Write;
+            writeln!(source, "{label} = (100, 100)").unwrap();
+        }
+        let mut app = app(&source, Tool::Roots);
+        let count = app.wb.construction().len();
+        assert_eq!(count, 2101);
+        click_tool(&mut app, 0.0, -1.0);
+        assert_eq!(app.wb.construction().len(), count);
+        assert_eq!(app.wb.undo_depth(), (0, 0));
+    }
+
+    #[test]
+    fn fixed_tool_numeric_input_is_bounded() {
+        let mut app = app("a = 2", Tool::SegmentFixed);
+        app.number_text = "a + 1".to_owned();
+        assert_eq!(app.tool_number_value(), Some(3.0));
+        app.number_text = format!("{}1", " ".repeat(4096));
+        assert_eq!(app.tool_number_value(), None);
+    }
+
+    #[test]
     fn fixed_segment_creates_a_movable_endpoint_after_placing_its_start() {
         let mut app = app("", Tool::SegmentFixed);
         click_tool(&mut app, 1.0, 1.0);
@@ -1054,6 +1140,28 @@ mod tests {
             tool.click(Some(("P_{0}", Kind::Point)), (0.0, 0.0), &|_| false),
             Outcome::Run(_)
         ));
+    }
+
+    #[test]
+    fn oversized_shapes_do_not_place_free_points_or_start_a_copy() {
+        for (tool, command) in [
+            (Tool::RigidPolygon, "Polygon"),
+            (Tool::PointOnObject, "Polygon"),
+            (Tool::PointOnObject, "PolyLine"),
+            (Tool::Relation, "Polygon"),
+        ] {
+            let source = format!("L = Sequence((k, k^2), k, 1, 4097)\np = {command}(L)");
+            let mut app = app(&source, tool);
+            click_tool(&mut app, 1.0, 1.0);
+            assert_eq!(labels(&app), ["L", "p"], "{tool:?}");
+            // Relation may pick the separately visible source list.
+            if tool != Tool::Relation {
+                assert!(picks(&app).is_empty(), "{tool:?}");
+            } else {
+                assert!(!picks(&app).iter().any(|label| label == "p"), "{tool:?}");
+            }
+            assert_eq!(app.wb.undo_depth(), (0, 0));
+        }
     }
 
     #[test]

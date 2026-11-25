@@ -380,20 +380,11 @@ pub(super) fn build(
             let angle = next_greek(is_taken);
             let point = primed(a(0), Kind::Point, is_taken);
             let radians = number.expect("angle");
-            if radians < 0.0 {
-                lines.push(format!(
-                    "{{, {point}}} = Angle({}, {}, {radians})",
-                    a(0),
-                    a(1)
-                ));
-                lines.push(format!("{angle} = Angle({point}, {}, {})", a(1), a(0)));
-            } else {
-                lines.push(format!(
-                    "{{{angle}, {point}}} = Angle({}, {}, {radians})",
-                    a(0),
-                    a(1)
-                ));
-            }
+            lines.push(format!(
+                "{{{angle}, {point}}} = Angle({}, {}, {radians})",
+                a(0),
+                a(1)
+            ));
             return lines;
         }
         Tool::RigidPolygon => (

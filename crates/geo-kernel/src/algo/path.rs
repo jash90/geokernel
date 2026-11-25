@@ -64,6 +64,7 @@ const OPEN_BORDER_OFFSET: f64 = 1e-5;
 pub(crate) const PATH: &[Kind] = &[
     Kind::Line,
     Kind::Segment,
+    Kind::Vector,
     Kind::Ray,
     Kind::Circle,
     Kind::Conic,
@@ -1026,6 +1027,11 @@ impl Construction {
     }
 }
 
+/// Whether a function is a scalar graph usable as a point's path.
+pub fn function_is_path(c: &Construction, id: Id) -> bool {
+    crate::expr::function_signature(c, id).is_some_and(|sig| !sig.boolean)
+}
+
 /// The path `path` as the path code reads it now.
 pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
     // an arc is read as it is even when undefined: `setCoords` still asks
@@ -1063,6 +1069,13 @@ pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
             start: (x, y),
         },
         (_, Value::Segment { x1, y1, x2, y2 }) => Geom::Segment(Seg::new((x1, y1), (x2, y2))),
+        (_, Value::Vector { x, y }) => {
+            let mut work = super::vector::START_WORK;
+            match super::vector::start_with_work(c, path, &mut work) {
+                Some((sx, sy)) => Geom::Segment(Seg::new((sx, sy), (sx + x, sy + y))),
+                None => Geom::Undefined,
+            }
+        }
         (Kind::Circle, _) => match c.conic(path) {
             Some(d) if d.defined => Geom::Conic(d),
             _ => Geom::Undefined,
@@ -1075,9 +1088,7 @@ pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
             Some(n) => Geom::PolyLine { c, id: path, n },
             None => Geom::Undefined,
         },
-        (Kind::Function, Value::Function)
-            if crate::expr::function_signature(c, path).is_some_and(|sig| !sig.boolean) =>
-        {
+        (Kind::Function, Value::Function) if function_is_path(c, path) => {
             Geom::Function { c, id: path }
         }
         (Kind::Curve, Value::Curve { start, end }) => Geom::Curve {
@@ -1307,6 +1318,9 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
     let inputs = |path: Id| match c.kind(path) {
         Kind::Line if defined_line_start(c, path).is_some() => c.read_ids(&c.def(path)),
         Kind::Polygon | Kind::PolyLine => c.read_ids(&c.def(path)),
+        Kind::Vector => super::vector::path_start_parent(c, path)
+            .into_iter()
+            .collect(),
         _ => Vec::new(),
     };
     match *def {
@@ -1407,13 +1421,12 @@ impl Group for PathDef {
             let id = object(c, label)?;
             if PATH.contains(&c.kind(id))
                 || (c.kind(id) == Kind::Function
-                    && (matches!(c.def(id), Def::Chart(_))
-                        || crate::expr::function_signature(c, id).is_some_and(|sig| !sig.boolean)))
+                    && (matches!(c.def(id), Def::Chart(_)) || function_is_path(c, id)))
             {
                 Ok(id)
             } else {
                 Err(format!(
-                    "`Point` needs a line, segment, ray, circle, conic, polygon, polyline, arc, \
+                    "`Point` needs a line, segment, vector, ray, circle, conic, polygon, polyline, arc, \
                      sector or curve, and `{label}` is a {}",
                     c.kind(id)
                 ))
@@ -1736,4 +1749,15 @@ mod axis_tests {
         let g = c.id("g").unwrap();
         assert_eq!(defined_line_start(&c, g), Some((1.0, 2.0, 1.0)));
     }
+}
+
+#[cfg(test)]
+#[test]
+fn a_point_on_a_vector_follows_its_translated_start() {
+    let mut c =
+        crate::script::load("A = (0, 0)\nB = (4, 2)\nu = Vector(A, B)\nP = Point(u)").unwrap();
+    let (a, b, p) = (c.id("A").unwrap(), c.id("B").unwrap(), c.id("P").unwrap());
+    c.move_point(p, 2.0, 1.0).unwrap();
+    c.move_points(&[(a, 1.0, 3.0), (b, 5.0, 5.0)]).unwrap();
+    assert_eq!(c.point(p), Some((3.0, 4.0)));
 }

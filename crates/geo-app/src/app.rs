@@ -395,7 +395,9 @@ fn number_dialog(app: &mut App, ctx: &egui::Context) {
             }
         }
         let enter = field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
-        let parsed = parse_number(&app.number_text).filter(|&value| app.tool.valid_number(value));
+        let parsed = app
+            .tool_number_value()
+            .filter(|&value| app.tool.valid_number(value));
         if parsed.is_none() {
             ui.colored_label(theme::ERROR, text::label(Label::NotANumber));
         }

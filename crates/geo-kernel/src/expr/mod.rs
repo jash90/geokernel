@@ -2593,6 +2593,25 @@ pub(crate) fn constant_number(c: &Construction, text: &str) -> Option<(f64, bool
     if parsed.uses_var || !parsed.parents.is_empty() {
         return None;
     }
+    finite_scalar(c, parsed)
+}
+
+/// Evaluates the input of a numeric tool dialog against the current
+/// construction without creating objects. An angle result is in radians.
+pub fn dialog_number(c: &Construction, text: &str) -> Option<(f64, bool)> {
+    const LIMIT: usize = 4096;
+    if text.len() > LIMIT {
+        return None;
+    }
+    let parsed = parse::parse(c, text).ok()?;
+    if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {
+        return None;
+    }
+    let end = eval::work_done().saturating_add(LIMIT as u64);
+    eval::with_work_deadline(end, || finite_scalar(c, parsed))
+}
+
+fn finite_scalar(c: &Construction, parsed: parse::Parsed) -> Option<(f64, bool)> {
     let entry = Entry::new(c, parsed, false);
     let (raw, _) = eval::root(c, &entry, None);
     match raw {

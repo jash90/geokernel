@@ -1486,7 +1486,9 @@ fn redefinable(def: Def) -> bool {
             | Def::Vector(VectorDef::Free { .. })
             | Def::Expr(_)
             | Def::Measure(MeasureDef::Slope(_))
-            | Def::Path(PathDef::On { .. } | PathDef::OnParam { .. })
+            | Def::Path(
+                PathDef::On { .. } | PathDef::OnParam { .. } | PathDef::FixedEndpoint { .. }
+            )
             | Def::Point(PointDef::Closest { .. })
     )
 }

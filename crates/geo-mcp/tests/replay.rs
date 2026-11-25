@@ -613,6 +613,8 @@ struct Outcome {
     after: Value,
     origin0: (f64, f64),
     undo_added: i64,
+    tool_frames: Vec<(Value, Value)>,
+    tool_undo: Vec<Value>,
     diffs: Vec<String>,
 }
 
@@ -656,6 +658,8 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
     let mut last_t = None::<f64>;
     let mut frames = Vec::new();
     let mut fingers = Vec::new();
+    let mut tool_frames = Vec::new();
+    let capture = s["frames"].is_array();
     for (i, e) in events.iter().enumerate() {
         let t = num(&e["t"]) / 1000.0;
         let dt = match last_t {
@@ -712,6 +716,14 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
                 compare_created(&before, &st, created, "after the first click", &mut diffs);
             }
         }
+        if capture && matches!(e["type"].as_str(), Some("mouse_up" | "key")) {
+            call(
+                &mut w.server,
+                "input",
+                json!({"frames": std::mem::take(&mut frames), "settle": false}),
+            )?;
+            tool_frames.push((e["t"].clone(), w.state()));
+        }
     }
     call(
         &mut w.server,
@@ -720,11 +732,20 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
     )?;
     let after = w.state();
     let undo_added = undo_depth(&after) - depth0;
+    let mut tool_undo = Vec::new();
+    if capture {
+        for _ in 0..undo_added {
+            call(&mut w.server, "undo", json!({}))?;
+            tool_undo.push(w.state());
+        }
+    }
     Ok(Outcome {
         before,
         after,
         origin0,
         undo_added,
+        tool_frames,
+        tool_undo,
         diffs,
     })
 }
@@ -1089,64 +1110,126 @@ fn ours_expected(name: &str) -> Value {
     }
 }
 
-fn compare_tool_capture(capture: &Value, out: &Outcome) -> Vec<String> {
-    let initial = capture["initial"].as_object().unwrap();
-    let frames = capture["frames"].as_array().unwrap();
-    let final_objects = frames.last().unwrap()["objects"].as_object().unwrap();
-    let mut diffs = out.diffs.clone();
-    let mut created = created_labels(&out.before, &out.after);
-    created.sort_unstable();
-    let mut expected_created: Vec<_> = final_objects
+fn compare_tool_objects(reference: &Value, state: &Value, when: &str, diffs: &mut Vec<String>) {
+    let reference = reference.as_object().unwrap();
+    let mut expected: Vec<_> = reference
         .keys()
-        .filter(|label| !initial.contains_key(*label))
-        .map(String::as_str)
+        .map(|name| match name.as_str() {
+            "loc1" => "locus1",
+            label => label,
+        })
         .collect();
-    expected_created.sort_unstable();
-    if created != expected_created {
+    expected.sort_unstable();
+    let mut actual = scenario_labels(state);
+    actual.sort_unstable();
+    if actual != expected {
         diffs.push(format!(
-            "created {created:?}, reference created {expected_created:?}"
+            "{when}: objects {actual:?}, reference {expected:?}"
         ));
     }
-    for (label, geo) in final_objects {
-        if initial.get(label) == Some(geo) {
-            continue;
-        }
-        let Some(actual) = object(&out.after, label) else {
-            diffs.push(format!("missing {label}"));
+    for (label, geo) in reference {
+        let name = if label == "loc1" { "locus1" } else { label };
+        let Some(actual) = object(state, name) else {
             continue;
         };
         let kind = geo["type"].as_str().unwrap();
-        if actual["type"] != kind || actual["defined"] != geo["defined"] {
+        let actual_kind = if kind == "stroke" { "pen stroke" } else { kind };
+        if actual["type"] != actual_kind || actual["defined"] != geo["defined"] {
             diffs.push(format!(
-                "{label} has type {} and definedness {}, reference has {kind} and {}",
+                "{when}: {name} is {} (defined: {}), reference {kind} (defined: {})",
                 actual["type"], actual["defined"], geo["defined"]
             ));
         }
-        if geo["defined"] == true {
-            let fields: &[&str] = match kind {
-                "point" => &["x", "y"],
-                "segment" => &["x1", "y1", "x2", "y2"],
-                "angle" => &["value"],
-                "polygon" => &["area"],
-                _ => &[],
-            };
-            for &field in fields {
-                let actual = &actual["coords"][field];
-                if !same(num(actual), num(&geo[field])) {
+        if kind == "point" {
+            for field in ["on_path", "in_region"] {
+                if actual[field] != geo[field] {
                     diffs.push(format!(
-                        "{label} {field} is {actual}, reference recorded {}",
-                        geo[field]
+                        "{when}: {name} {field} is {}, reference {}",
+                        actual[field], geo[field]
                     ));
                 }
             }
         }
+        if geo["defined"] != true {
+            continue;
+        }
+        let fields: &[&str] = match kind {
+            "point" | "vector" => &["x", "y"],
+            "circle" => &["cx", "cy", "r"],
+            "segment" => &["x1", "y1", "x2", "y2"],
+            "angle" | "number" => &["value"],
+            "polygon" => &["area"],
+            _ => &[],
+        };
+        for &field in fields {
+            let actual = &actual["coords"][field];
+            if !same(num(actual), num(&geo[field])) {
+                diffs.push(format!(
+                    "{when}: {name} {field} is {actual}, reference {}",
+                    geo[field]
+                ));
+            }
+        }
     }
-    let expected_undo = capture["undo"].as_array().unwrap().len() as i64;
-    if out.undo_added != expected_undo {
+}
+
+fn compare_tool_capture(capture: &Value, out: &Outcome) -> Vec<String> {
+    let frames = capture["frames"].as_array().unwrap();
+    let undo = capture["undo"].as_array().unwrap();
+    let desktop_only = match capture["name"].as_str() {
+        Some("tool_text_places_literal") => Some("text1"),
+        Some("tool_input_box_places_empty_widget") => Some("InputBox1"),
+        Some("tool_create_list_from_rectangle") => Some("l1"),
+        _ => None,
+    };
+    let compare_frame = |frame: &Value, state: &Value, when: &str, diffs: &mut Vec<String>| {
+        if let Some(extra) = desktop_only {
+            let mut state = state.clone();
+            state["objects"]
+                .as_array_mut()
+                .unwrap()
+                .retain(|obj| obj["name"] != extra);
+            compare_tool_objects(&frame["objects"], &state, when, diffs);
+        } else {
+            compare_tool_objects(&frame["objects"], state, when, diffs);
+        }
+    };
+    let mut diffs = out.diffs.clone();
+    compare_tool_objects(&capture["initial"], &out.before, "initial", &mut diffs);
+    if out.tool_frames.len() != frames.len() {
         diffs.push(format!(
-            "{} undo steps, reference recorded {expected_undo}",
-            out.undo_added
+            "{} frames, reference {}",
+            out.tool_frames.len(),
+            frames.len()
         ));
+    }
+    for (frame, (time, state)) in frames.iter().zip(&out.tool_frames) {
+        let when = format!("frame {}", frame["t"]);
+        if *time != frame["t"] {
+            diffs.push(format!("{when}: replayed at {time}"));
+        }
+        compare_frame(frame, state, &when, &mut diffs);
+    }
+    if let Some(frame) = frames.last() {
+        compare_frame(frame, &out.after, "settled", &mut diffs);
+    }
+    // Desktop submits the two dialogs and creates the list. Their one
+    // additional undo step must return to the reference's initial state.
+    let expected_undo: Vec<_> = if desktop_only.is_some() {
+        assert!(undo.is_empty(), "reference acquired a new undo step");
+        vec![&capture["initial"]]
+    } else {
+        undo.iter().collect()
+    };
+    if out.undo_added != expected_undo.len() as i64 || out.tool_undo.len() != expected_undo.len() {
+        diffs.push(format!(
+            "{} undo steps, expected {}",
+            out.undo_added,
+            expected_undo.len()
+        ));
+    }
+    for (index, (expected, actual)) in expected_undo.into_iter().zip(&out.tool_undo).enumerate() {
+        compare_tool_objects(expected, actual, &format!("undo {}", index + 1), &mut diffs);
     }
     if capture["tool_mode"] == 14
         && out.after["tool"]["relation"]
@@ -1156,6 +1239,31 @@ fn compare_tool_capture(capture: &Value, out: &Outcome) -> Vec<String> {
         diffs.push("missing relation report".to_owned());
     }
     diffs
+}
+
+#[test]
+fn tool_capture_detects_changed_constraints_and_undo_objects() {
+    let data: Value = serde_json::from_str(TOOL_CAPTURE).unwrap();
+    let capture = data["scenarios"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "tool_segment_fixed_creates_endpoint")
+        .unwrap();
+    let out = replay(capture, false, "ours").unwrap();
+    assert!(compare_tool_capture(capture, &out).is_empty());
+    let mut wrong_path = capture.clone();
+    wrong_path["frames"][1]["objects"]["B"]["on_path"] = json!(false);
+    let mut wrong_undo = capture.clone();
+    wrong_undo["undo"][0]["A"]["x"] = json!(999.0);
+    let discrepancies = [
+        compare_tool_capture(&wrong_path, &out),
+        compare_tool_capture(&wrong_undo, &out),
+    ];
+    assert!(
+        discrepancies.iter().all(|diffs| !diffs.is_empty()),
+        "{discrepancies:?}"
+    );
 }
 
 #[test]
@@ -1187,14 +1295,20 @@ fn the_observed_pointer_scenarios_replay() {
     let scenarios = fixture["scenarios"].as_array().unwrap();
     let mut captured_passes = 0;
     let mut recaptured = 0;
+    let mut bounded = 0;
     for capture in captures {
         let name = capture["name"].as_str().unwrap();
+        if capture["initial"].get("$object_count").is_some() {
+            // These constructions exceed the interactive shape allowance and
+            // auto-fit outside the replay viewport. Core tests exercise the cap.
+            bounded += 1;
+            continue;
+        }
         if let Some(existing) = scenarios.iter().find(|scenario| scenario["name"] == name) {
             for key in ["tool_mode", "initial_script", "events"] {
                 assert_eq!(capture[key], existing[key], "{name} {key}");
             }
             recaptured += 1;
-            continue;
         }
         let diffs = both(capture, "ours", &|out| compare_tool_capture(capture, out));
         if !diffs.is_empty() {
@@ -1208,9 +1322,9 @@ fn the_observed_pointer_scenarios_replay() {
                 diffs.join("; ")
             }
         ));
-        captured_passes += 1;
+        captured_passes += usize::from(!scenarios.iter().any(|scenario| scenario["name"] == name));
     }
-    assert_eq!((captured_passes, recaptured), (9, 5));
+    assert_eq!((captured_passes, recaptured, bounded), (19, 5, 4));
     for s in fixture["scenarios"].as_array().unwrap() {
         let name = s["name"].as_str().unwrap();
         assert!(

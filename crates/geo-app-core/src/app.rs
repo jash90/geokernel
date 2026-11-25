@@ -415,6 +415,27 @@ impl App {
         false
     }
 
+    /// Reads the numeric dialog in its displayed units.
+    pub fn tool_number_value(&self) -> Option<f64> {
+        let tool = self.tool.tool();
+        if !matches!(tool, Tool::AngleFixed | Tool::SegmentFixed) {
+            return parse_number(&self.number_text);
+        }
+        if self.number_text.len() > 4096 {
+            return None;
+        }
+        if let Some(value) = parse_number(&self.number_text) {
+            return Some(value);
+        }
+        let (number, angle) =
+            geo_kernel::expr::dialog_number(self.wb.construction(), &self.number_text)?;
+        Some(if angle && tool == Tool::AngleFixed {
+            number.to_degrees()
+        } else {
+            number
+        })
+    }
+
     /// Whether undo has something to do: a step, or a tool use to take back.
     pub fn can_undo(&self) -> bool {
         self.tool_in_use() || self.wb.can_undo()
