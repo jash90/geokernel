@@ -1381,15 +1381,7 @@ fn click_canvas_input_box(h: &mut Harness<'_, App>, label: &str) {
     );
 }
 
-#[test]
-fn closing_input_box_draft_stays_with_its_worksheet() {
-    let mut h = harness(
-        "a = Slider(0, 8, 0.5)\nfield = $inputBox(a, _)\n$inputBoxStyle(_6669656c64, 124, 88, 12)",
-    );
-    click_canvas_input_box(&mut h, "field");
-    h.input_mut().events.push(Event::Text("5.5".into()));
-    h.step();
-    assert_eq!(h.state().input_box_edit.as_ref().unwrap().text, "5.5");
+fn drop_saved_input_box(h: &mut Harness<'_, App>) {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../golden/ggb/saved/saved-input-box-001.xml");
     #[derive(Debug)]
@@ -1408,6 +1400,18 @@ fn closing_input_box_draft_stays_with_its_worksheet() {
         .push(std::sync::Arc::new(Dropped(path)));
     h.step();
     h.input_mut().dropped_files.clear();
+}
+
+#[test]
+fn closing_input_box_draft_stays_with_its_worksheet() {
+    let mut h = harness(
+        "a = Slider(0, 8, 0.5)\nfield = $inputBox(a, _)\n$inputBoxStyle(_6669656c64, 124, 88, 12)",
+    );
+    click_canvas_input_box(&mut h, "field");
+    h.input_mut().events.push(Event::Text("5.5".into()));
+    h.step();
+    assert_eq!(h.state().input_box_edit.as_ref().unwrap().text, "5.5");
+    drop_saved_input_box(&mut h);
     h.key_press(egui::Key::Tab);
     h.run();
     let c = h.state().wb.construction();
@@ -1579,4 +1583,123 @@ fn closing_input_box_untouched_draft_keeps_a_new_link_value() {
     assert_eq!(c.value(a), Value::Number(5.0));
     assert_eq!(c.value(c.id("b").unwrap()), Value::Number(10.0));
     assert_eq!(h.state().wb.undo_depth(), (1, 0));
+}
+
+#[test]
+fn last_round_input_box_edits_the_full_linked_text() {
+    let original = format!("{}Z", "x".repeat(256));
+    let mut h = harness(&format!(
+        "note = \"{original}\"\nfield = $inputBox(note, _)"
+    ));
+    click_canvas_input_box(&mut h, "field");
+    h.key_press(egui::Key::Home);
+    h.step();
+    h.key_press(egui::Key::Delete);
+    h.step();
+    h.key_press(egui::Key::Enter);
+    h.run();
+    let c = h.state().wb.construction();
+    assert_eq!(c.text(c.id("note").unwrap()), Some(&original[1..]));
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+}
+
+#[test]
+fn last_round_input_box_refuses_an_oversized_value_without_truncating_it() {
+    let original = format!("{}Z", "é".repeat(16_384));
+    let mut h = harness(&format!(
+        "note = \"{original}\"\nfield = $inputBox(note, _)"
+    ));
+    click_canvas_input_box(&mut h, "field");
+    assert!(h.state().input_box_edit.is_none());
+    let c = h.state().wb.construction();
+    assert_eq!(c.text(c.id("note").unwrap()), Some(original.as_str()));
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
+
+    let fits = original.strip_prefix('é').unwrap();
+    let mut h = harness(&format!("note = \"{fits}\"\nfield = $inputBox(note, _)"));
+    click_canvas_input_box(&mut h, "field");
+    h.key_press(egui::Key::Home);
+    h.step();
+    h.input_mut().events.push(Event::Text("Q".into()));
+    h.step();
+    assert_eq!(h.state().input_box_edit.as_ref().unwrap().text, fits);
+    h.key_press(egui::Key::Enter);
+    h.run();
+    let c = h.state().wb.construction();
+    assert_eq!(c.text(c.id("note").unwrap()), Some(fits));
+}
+
+#[test]
+fn last_round_rectangle_charges_stretch_vector_parents() {
+    let mut script = String::from("p = Polygon({(0,0),(1,0),(0,1)})\nv0 = Vector((1,0))");
+    for k in 1..=70 {
+        use std::fmt::Write as _;
+        write!(script, "\nv{k} = UnitVector(v{})", k - 1).unwrap();
+    }
+    for copies in [3, 70] {
+        let mut script = script.clone();
+        for k in 1..=copies {
+            use std::fmt::Write as _;
+            write!(script, "\np{k} = Stretch(p, v70)").unwrap();
+        }
+        let mut h = harness(&script);
+        h.state_mut().select_tool(Tool::CreateList);
+        drag(&mut h, world(-0.5, 1.5), world(1.5, -0.5));
+        assert_eq!(h.state().wb.construction().id("l1").is_some(), copies == 3);
+        assert_eq!(h.state().wb.undo_depth(), (usize::from(copies == 3), 0));
+    }
+}
+
+#[test]
+fn last_round_input_box_undo_stays_with_its_worksheet() {
+    let mut h = harness("");
+    drop_saved_input_box(&mut h);
+    h.run();
+    click_canvas_input_box(&mut h, "field");
+    h.input_mut().events.push(Event::Text("5.5".into()));
+    h.step();
+    assert_eq!(h.state().input_box_edit.as_ref().unwrap().text, "5.5");
+    for _ in 0..80 {
+        h.step();
+    }
+    drop_saved_input_box(&mut h);
+    h.run();
+    click_canvas_input_box(&mut h, "field");
+    h.key_press_modifiers(Modifiers::COMMAND, egui::Key::Z);
+    h.step();
+    h.key_press(egui::Key::Tab);
+    h.run();
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Number(3.5));
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
+}
+
+#[test]
+fn last_round_input_box_commits_before_the_linked_slider_click() {
+    for same_frame in [false, true] {
+        let mut h = harness(
+            "a = Slider(0, 8, 0.5)\na = 2\nfield = $inputBox(a, _)\n\
+             $sliderStyle(_61, true, 80, 60, 100, true, true, 5, 1)\n\
+             $inputBoxStyle(_6669656c64, 124, 104, 12)",
+        );
+        click_canvas_input_box(&mut h, "field");
+        h.input_mut().events.push(Event::Text("3.5".into()));
+        if !same_frame {
+            h.step();
+        }
+        let pos = at(ALGEBRA_WIDTH + SPLITTER + 178.0, TOOLBAR_HEIGHT + 60.0);
+        h.input_mut().events.push(Event::PointerMoved(pos));
+        for pressed in [true, false] {
+            h.input_mut().events.push(Event::PointerButton {
+                pos,
+                button: PointerButton::Primary,
+                pressed,
+                modifiers: Modifiers::NONE,
+            });
+        }
+        h.run();
+        let c = h.state().wb.construction();
+        assert_eq!(c.value(c.id("a").unwrap()), Value::Number(4.0));
+        assert_eq!(h.state().wb.undo_depth(), (2, 0));
+    }
 }

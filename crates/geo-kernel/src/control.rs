@@ -264,7 +264,16 @@ impl Construction {
         }
     }
 
+    /// The preview used by the canvas, algebra panel and SVG.
     pub fn input_box_text(&self, id: Id) -> std::borrow::Cow<'_, str> {
+        match self.input_box_value_text(id) {
+            std::borrow::Cow::Borrowed(text) => bounded_input_box_text(text).into(),
+            owned => owned,
+        }
+    }
+
+    /// The complete linked value, for editing and comparison.
+    pub fn input_box_value_text(&self, id: Id) -> std::borrow::Cow<'_, str> {
         let Def::InputBox(Some(link)) = self.def(id) else {
             return "".into();
         };
@@ -277,11 +286,9 @@ impl Construction {
             crate::Value::Point { x, y } | crate::Value::Vector { x, y } => {
                 format!("({x}, {y})").into()
             }
-            crate::Value::Text => {
-                bounded_input_box_text(self.text(link).unwrap_or_default()).into()
-            }
+            crate::Value::Text => self.text(link).unwrap_or_default().into(),
             crate::Value::Undefined | crate::Value::InputBox => "".into(),
-            _ => bounded_input_box_text(self.construction_source(link).unwrap_or_default()).into(),
+            _ => self.construction_source(link).unwrap_or_default().into(),
         }
     }
 }

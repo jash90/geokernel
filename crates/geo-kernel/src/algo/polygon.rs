@@ -446,7 +446,7 @@ impl<'a> Shape<'a> {
             Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
                 Shape::Moved(
                     Box::new(Shape::prepare(c, source_of(&def), work, depth + 1)?),
-                    def.map(c),
+                    def.map_with_vertex_work(c, work)?,
                 )
             }
             Def::Vector(VectorDef::ApplyMatrix {

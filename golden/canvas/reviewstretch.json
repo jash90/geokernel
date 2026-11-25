@@ -1,0 +1,1014 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "canvas-reviewstretch-001",
+      "group": "canvas",
+      "script": [
+        "p = Polygon({(0,0),(1,0),(0,1)})",
+        "v0 = Vector((1,0))",
+        "v1 = UnitVector(v0)",
+        "v2 = UnitVector(v1)",
+        "v3 = UnitVector(v2)",
+        "v4 = UnitVector(v3)",
+        "v5 = UnitVector(v4)",
+        "v6 = UnitVector(v5)",
+        "v7 = UnitVector(v6)",
+        "v8 = UnitVector(v7)",
+        "v9 = UnitVector(v8)",
+        "v10 = UnitVector(v9)",
+        "v11 = UnitVector(v10)",
+        "v12 = UnitVector(v11)",
+        "v13 = UnitVector(v12)",
+        "v14 = UnitVector(v13)",
+        "v15 = UnitVector(v14)",
+        "v16 = UnitVector(v15)",
+        "v17 = UnitVector(v16)",
+        "v18 = UnitVector(v17)",
+        "v19 = UnitVector(v18)",
+        "v20 = UnitVector(v19)",
+        "v21 = UnitVector(v20)",
+        "v22 = UnitVector(v21)",
+        "v23 = UnitVector(v22)",
+        "v24 = UnitVector(v23)",
+        "v25 = UnitVector(v24)",
+        "v26 = UnitVector(v25)",
+        "v27 = UnitVector(v26)",
+        "v28 = UnitVector(v27)",
+        "v29 = UnitVector(v28)",
+        "v30 = UnitVector(v29)",
+        "v31 = UnitVector(v30)",
+        "v32 = UnitVector(v31)",
+        "v33 = UnitVector(v32)",
+        "v34 = UnitVector(v33)",
+        "v35 = UnitVector(v34)",
+        "v36 = UnitVector(v35)",
+        "v37 = UnitVector(v36)",
+        "v38 = UnitVector(v37)",
+        "v39 = UnitVector(v38)",
+        "v40 = UnitVector(v39)",
+        "v41 = UnitVector(v40)",
+        "v42 = UnitVector(v41)",
+        "v43 = UnitVector(v42)",
+        "v44 = UnitVector(v43)",
+        "v45 = UnitVector(v44)",
+        "v46 = UnitVector(v45)",
+        "v47 = UnitVector(v46)",
+        "v48 = UnitVector(v47)",
+        "v49 = UnitVector(v48)",
+        "v50 = UnitVector(v49)",
+        "v51 = UnitVector(v50)",
+        "v52 = UnitVector(v51)",
+        "v53 = UnitVector(v52)",
+        "v54 = UnitVector(v53)",
+        "v55 = UnitVector(v54)",
+        "v56 = UnitVector(v55)",
+        "v57 = UnitVector(v56)",
+        "v58 = UnitVector(v57)",
+        "v59 = UnitVector(v58)",
+        "v60 = UnitVector(v59)",
+        "v61 = UnitVector(v60)",
+        "v62 = UnitVector(v61)",
+        "v63 = UnitVector(v62)",
+        "v64 = UnitVector(v63)",
+        "v65 = UnitVector(v64)",
+        "v66 = UnitVector(v65)",
+        "v67 = UnitVector(v66)",
+        "v68 = UnitVector(v67)",
+        "v69 = UnitVector(v68)",
+        "v70 = UnitVector(v69)",
+        "p1 = Stretch(p, v70)",
+        "p2 = Stretch(p, v70)",
+        "p3 = Stretch(p, v70)",
+        "p4 = Stretch(p, v70)",
+        "p5 = Stretch(p, v70)",
+        "p6 = Stretch(p, v70)",
+        "p7 = Stretch(p, v70)",
+        "p8 = Stretch(p, v70)",
+        "p9 = Stretch(p, v70)",
+        "p10 = Stretch(p, v70)",
+        "p11 = Stretch(p, v70)",
+        "p12 = Stretch(p, v70)",
+        "p13 = Stretch(p, v70)",
+        "p14 = Stretch(p, v70)",
+        "p15 = Stretch(p, v70)",
+        "p16 = Stretch(p, v70)",
+        "p17 = Stretch(p, v70)",
+        "p18 = Stretch(p, v70)",
+        "p19 = Stretch(p, v70)",
+        "p20 = Stretch(p, v70)",
+        "p21 = Stretch(p, v70)",
+        "p22 = Stretch(p, v70)",
+        "p23 = Stretch(p, v70)",
+        "p24 = Stretch(p, v70)",
+        "p25 = Stretch(p, v70)",
+        "p26 = Stretch(p, v70)",
+        "p27 = Stretch(p, v70)",
+        "p28 = Stretch(p, v70)",
+        "p29 = Stretch(p, v70)",
+        "p30 = Stretch(p, v70)",
+        "p31 = Stretch(p, v70)",
+        "p32 = Stretch(p, v70)",
+        "p33 = Stretch(p, v70)",
+        "p34 = Stretch(p, v70)",
+        "p35 = Stretch(p, v70)",
+        "p36 = Stretch(p, v70)",
+        "p37 = Stretch(p, v70)",
+        "p38 = Stretch(p, v70)",
+        "p39 = Stretch(p, v70)",
+        "p40 = Stretch(p, v70)",
+        "p41 = Stretch(p, v70)",
+        "p42 = Stretch(p, v70)",
+        "p43 = Stretch(p, v70)",
+        "p44 = Stretch(p, v70)",
+        "p45 = Stretch(p, v70)",
+        "p46 = Stretch(p, v70)",
+        "p47 = Stretch(p, v70)",
+        "p48 = Stretch(p, v70)",
+        "p49 = Stretch(p, v70)",
+        "p50 = Stretch(p, v70)",
+        "p51 = Stretch(p, v70)",
+        "p52 = Stretch(p, v70)",
+        "p53 = Stretch(p, v70)",
+        "p54 = Stretch(p, v70)",
+        "p55 = Stretch(p, v70)",
+        "p56 = Stretch(p, v70)",
+        "p57 = Stretch(p, v70)",
+        "p58 = Stretch(p, v70)",
+        "p59 = Stretch(p, v70)",
+        "p60 = Stretch(p, v70)",
+        "p61 = Stretch(p, v70)",
+        "p62 = Stretch(p, v70)",
+        "p63 = Stretch(p, v70)",
+        "p64 = Stretch(p, v70)",
+        "p65 = Stretch(p, v70)",
+        "p66 = Stretch(p, v70)",
+        "p67 = Stretch(p, v70)",
+        "p68 = Stretch(p, v70)",
+        "p69 = Stretch(p, v70)",
+        "p70 = Stretch(p, v70)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "v0": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v1": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v2": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v3": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v4": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v5": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v6": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v7": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v8": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v9": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v10": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v11": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v12": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v13": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v14": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v15": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v16": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v17": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v18": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v19": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v20": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v21": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v22": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v23": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v24": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v25": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v26": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v27": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v28": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v29": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v30": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v31": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v32": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v33": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v34": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v35": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v36": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v37": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v38": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v39": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v40": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v41": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v42": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v43": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v44": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v45": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v46": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v47": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v48": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v49": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v50": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v51": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v52": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v53": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v54": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v55": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v56": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v57": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v58": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v59": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v60": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v61": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v62": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v63": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v64": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v65": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v66": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v67": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v68": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v69": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "v70": { "type": "vector", "defined": true, "x": 1.0, "y": 0.0 },
+          "p1": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p2": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p3": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p4": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p5": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p6": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p7": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p8": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p9": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p10": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p11": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p12": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p13": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p14": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p15": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p16": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p17": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p18": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p19": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p20": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p21": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p22": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p23": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p24": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p25": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p26": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p27": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p28": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p29": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p30": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p31": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p32": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p33": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p34": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p35": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p36": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p37": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p38": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p39": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p40": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p41": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p42": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p43": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p44": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p45": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p46": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p47": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p48": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p49": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p50": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p51": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p52": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p53": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p54": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p55": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p56": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p57": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p58": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p59": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p60": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p61": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p62": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p63": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p64": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p65": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p66": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p67": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p68": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p69": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          },
+          "p70": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "area": 0.5,
+            "signed_area": 0.5
+          }
+        }
+      ]
+    }
+  ]
+}

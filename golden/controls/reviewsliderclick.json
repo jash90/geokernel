@@ -1,0 +1,39 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "controls-reviewsliderclick-001",
+      "group": "controls",
+      "script": [
+        "a = Slider(0, 8, 0.5)",
+        "field = $inputBox(a, _)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "a", "value": 3.5 },
+        { "action": "set_number", "label": "a", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "field": { "type": "input_box", "defined": true, "text": "0" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "field": { "type": "input_box", "defined": true, "text": "2" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.5 },
+          "field": { "type": "input_box", "defined": true, "text": "3.5" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "field": { "type": "input_box", "defined": true, "text": "4" }
+        }
+      ]
+    }
+  ]
+}

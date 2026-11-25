@@ -490,41 +490,55 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
 /// origin when it has none. `None` when `id` is not a vector or its start
 /// point is undefined.
 pub fn start(c: &Construction, id: Id) -> Option<(f64, f64)> {
-    if c.kind(id) != Kind::Vector {
-        return None;
-    }
+    start_with_vertex_work(c, id, &mut None).flatten()
+}
+
+/// The outer None reports budget exhaustion, the inner None an undefined start.
+pub(super) fn start_with_vertex_work(
+    c: &Construction,
+    mut id: Id,
+    work: &mut Option<&mut usize>,
+) -> Option<Option<(f64, f64)>> {
     let from = |p: Id| match c.value(p) {
         Value::Point { x, y } => Some((x, y)),
         Value::Ray { x, y, .. } => Some((x, y)),
         Value::Segment { x1, y1, .. } => Some((x1, y1)),
         _ => None,
     };
-    match c.def(id) {
-        Def::Analysis(super::analysis::AnalysisDef::Curvature {
-            point,
-            output: super::analysis::CurvatureKind::Vector,
-            ..
-        }) => from(point),
-        Def::Vector(VectorDef::Between(p, _)) => from(p),
-        Def::Vector(VectorDef::TranslateTo { start, .. }) => from(start),
-        Def::Vector(
-            VectorDef::Translate { src, .. }
-            | VectorDef::Same(src)
-            | VectorDef::ApplyMatrix { src, .. }
-            | VectorDef::Convert { source: src, .. },
-        ) => start(c, src),
-        Def::Vector(
-            VectorDef::Direction(l)
-            | VectorDef::Unit(l)
-            | VectorDef::Ortho(l)
-            | VectorDef::UnitOrtho(l),
-        ) => match (c.kind(l), c.def(l)) {
-            (Kind::Vector, _) => start(c, l),
-            (_, Def::Line(p, _)) => from(p),
-            (Kind::Segment | Kind::Ray, _) => from(l),
-            _ => Some((0.0, 0.0)),
-        },
-        _ => Some((0.0, 0.0)),
+    loop {
+        if let Some(left) = work {
+            **left = left.checked_sub(1)?;
+        }
+        if c.kind(id) != Kind::Vector {
+            return Some(None);
+        }
+        id = match c.def(id) {
+            Def::Analysis(super::analysis::AnalysisDef::Curvature {
+                point,
+                output: super::analysis::CurvatureKind::Vector,
+                ..
+            }) => return Some(from(point)),
+            Def::Vector(VectorDef::Between(p, _)) => return Some(from(p)),
+            Def::Vector(VectorDef::TranslateTo { start, .. }) => return Some(from(start)),
+            Def::Vector(
+                VectorDef::Translate { src, .. }
+                | VectorDef::Same(src)
+                | VectorDef::ApplyMatrix { src, .. }
+                | VectorDef::Convert { source: src, .. },
+            ) => src,
+            Def::Vector(
+                VectorDef::Direction(l)
+                | VectorDef::Unit(l)
+                | VectorDef::Ortho(l)
+                | VectorDef::UnitOrtho(l),
+            ) => match (c.kind(l), c.def(l)) {
+                (Kind::Vector, _) => l,
+                (_, Def::Line(p, _)) => return Some(from(p)),
+                (Kind::Segment | Kind::Ray, _) => return Some(from(l)),
+                _ => return Some(Some((0.0, 0.0))),
+            },
+            _ => return Some(Some((0.0, 0.0))),
+        };
     }
 }
 

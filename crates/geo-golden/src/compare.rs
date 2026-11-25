@@ -301,7 +301,7 @@ pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Re
     }
     match &expected.data {
         Some(ExpectedData::Text(text)) if kind == Kind::InputBox => {
-            let actual = c.input_box_text(id);
+            let actual = c.input_box_value_text(id);
             if actual != text.as_str() {
                 return Err(format!("expected input box text {text:?}, got {actual:?}"));
             }

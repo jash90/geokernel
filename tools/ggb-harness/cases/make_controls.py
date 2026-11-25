@@ -23,4 +23,10 @@ cases.case("reviewtab", [
 cases.case("reviewdrag", [
     "a = Slider(0, 8, 0.5)", "b = 2*a", "field = $inputBox(a, _)",
 ], [setn("a", 2.0), setn("a", 5.0)])
+cases.case("reviewtext", [
+    'note = "' + "x" * 256 + 'Z"', "field = $inputBox(note, _)",
+], [{"action": "redefine", "line": 'note = "' + "x" * 255 + 'Z"'}])
+cases.case("reviewsliderclick", [
+    "a = Slider(0, 8, 0.5)", "field = $inputBox(a, _)",
+], [setn("a", 2.0), setn("a", 3.5), setn("a", 4.0)])
 cases.write()

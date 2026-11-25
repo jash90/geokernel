@@ -477,6 +477,19 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
     }
 
+    // Submit the editor before a slider press changes the linked value.
+    // Run the same widget here so it can first read text from this frame.
+    let submit_before_slider = app.input_box_edit.is_some()
+        && app
+            .press_slider
+            .is_some_and(|drag| matches!(drag.hold(), Hold::Slider))
+        && fed.owned.is_some();
+    if submit_before_slider {
+        let boxes = std::mem::take(&mut app.input_box_rects);
+        input_box_editor(app, ui, rect, &boxes, Some(None), &starts);
+        app.input_box_rects = boxes;
+    }
+
     let apply_slider_press = |app: &mut App| {
         if let (Some(pos), Some(drag)) = (fed.owned, app.press_slider) {
             if matches!(drag.hold(), Hold::Slider) {
@@ -994,7 +1007,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         &mut list_items_left,
     );
     let input_boxes = input_boxes.into_inner();
-    input_box_editor(app, ui, rect, &input_boxes, input_box_click, &starts);
+    if !submit_before_slider {
+        input_box_editor(app, ui, rect, &input_boxes, input_box_click, &starts);
+    }
     app.input_box_rects = input_boxes;
     if app.pen_samples.len() >= 2 {
         let samples = app
@@ -1604,7 +1619,7 @@ fn commit_input_box(app: &mut App, label: &str, text: &str) {
     else {
         return;
     };
-    if text == c.input_box_text(id) {
+    if text == c.input_box_value_text(id) {
         return;
     }
     match c.def(link) {
@@ -1630,6 +1645,10 @@ fn commit_input_box(app: &mut App, label: &str, text: &str) {
     }
 }
 
+// Bound the work of editing and laying out a draft. Long stored values
+// keep their preview and may be edited through the algebra panel.
+const MAX_INPUT_BOX_EDIT_CHARS: usize = 16_384;
+
 fn input_box_editor(
     app: &mut App,
     ui: &mut Ui,
@@ -1638,7 +1657,6 @@ fn input_box_editor(
     clicked: Option<Option<Id>>,
     presses: &[Option<egui::Pos2>; STARTS],
 ) {
-    use geo_kernel::kernel::control::MAX_INPUT_BOX_CHARS;
     let mut draft = app.input_box_edit.take();
     if app.tool.tool() != Tool::Move {
         if let Some(edit) = draft.filter(|edit| edit.changed) {
@@ -1674,12 +1692,16 @@ fn input_box_editor(
         if Some(id) == active {
             let mut edit = draft.take().unwrap();
             let rect = rect.egui();
+            if edit.request_focus {
+                // The widget ID can be reused by a later editing session.
+                egui::TextEdit::store_state(ui.ctx(), field, Default::default());
+            }
             let put = |ui: &mut Ui, text: &mut String| {
                 ui.put(
                     rect,
                     egui::TextEdit::singleline(text)
                         .id(field)
-                        .char_limit(MAX_INPUT_BOX_CHARS)
+                        .char_limit(MAX_INPUT_BOX_EDIT_CHARS)
                         .desired_width(rect.width())
                         .min_size(rect.size()),
                 )
@@ -1760,9 +1782,16 @@ fn input_box_editor(
     if app.input_box_edit.is_none() {
         if let Some(id) = next.or(focused) {
             let c = app.wb.construction();
+            let text = c.input_box_value_text(id);
+            if text.char_indices().nth(MAX_INPUT_BOX_EDIT_CHARS).is_some() {
+                ui.ctx().memory_mut(|memory| {
+                    memory.surrender_focus(ui.scope_id().with(("canvas_input_box", id.index())));
+                });
+                return;
+            }
             app.input_box_edit = Some(InputBoxEdit {
                 label: c.label(id).to_owned(),
-                text: c.input_box_text(id).into_owned(),
+                text: text.into_owned(),
                 request_focus: true,
                 changed: false,
             });

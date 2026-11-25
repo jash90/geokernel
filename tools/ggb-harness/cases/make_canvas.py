@@ -51,4 +51,9 @@ cases.case("reviewlocus", [
     pt("A", 0, 0), pt("B", 2, 0), "k = Circle(A, B)", "P = Point(k)",
     "Q = Midpoint(P, A)", "l = Locus(Q, P)",
 ], [mv("A", 1, 1)])
+cases.case("reviewstretch", [
+    "p = Polygon({(0,0),(1,0),(0,1)})", "v0 = Vector((1,0))",
+    *[f"v{k} = UnitVector(v{k - 1})" for k in range(1, 71)],
+    *[f"p{k} = Stretch(p, v70)" for k in range(1, 71)],
+], [])
 cases.write()

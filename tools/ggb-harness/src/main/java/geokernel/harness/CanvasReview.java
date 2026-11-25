@@ -42,7 +42,7 @@ public final class CanvasReview {
                 case "canvas-reviewlocus-001" -> locusHits(id, construct(entry));
                 case "canvas-reviewstrokes-001" -> strokes(id);
                 case "canvas-reviewchart-001" -> chartHits(id, construct(entry));
-                case "canvas-reviewrectangle-001" -> rectangle(id, construct(entry));
+                case "canvas-reviewrectangle-001", "canvas-reviewstretch-001" -> rectangle(id, construct(entry));
                 case "canvas-reviewbounds-001" -> listBounds(id, construct(entry));
                 default -> { }
             }
@@ -54,6 +54,8 @@ public final class CanvasReview {
             switch (id) {
                 case "controls-reviewopen-001" -> open(id, construct(entry), Path.of(args[2]));
                 case "controls-reviewblur-001" -> submit(id, construct(entry));
+                case "controls-reviewtext-001" -> editFirstCharacter(id, construct(entry));
+                case "controls-reviewsliderclick-001" -> submitAndClickSlider(id, construct(entry));
                 case "controls-reviewtab-001" -> tabbing(id, construct(entry));
                 default -> { }
             }
@@ -75,6 +77,29 @@ public final class CanvasReview {
         System.out.printf("%s linked submission: a=%s, b=%s%n", id,
                 ((GeoNumeric) session.kernel().lookupLabel("a")).getDouble(),
                 ((GeoNumeric) session.kernel().lookupLabel("b")).getDouble());
+    }
+
+    private static void editFirstCharacter(String id, Session session) {
+        GeoInputBox box = (GeoInputBox) session.kernel().lookupLabel("field");
+        String original = box.getTextForEditor();
+        box.updateLinkedGeo(original.substring(1));
+        String result = ((GeoText) session.kernel().lookupLabel("note")).getTextStringSafe();
+        System.out.printf("%s editor length=%d, edited length=%d, suffix=%s%n", id,
+                original.length(), result.length(), result.endsWith("Z"));
+    }
+
+    private static void submitAndClickSlider(String id, Session session) {
+        EuclidianView view = view(session);
+        GeoNumeric slider = (GeoNumeric) session.kernel().lookupLabel("a");
+        slider.setSliderLocation(80, 60, true);
+        slider.setSliderWidth(100, true);
+        slider.setSliderFixed(true);
+        slider.setValue(2);
+        slider.updateRepaint();
+        GeoInputBox box = (GeoInputBox) session.kernel().lookupLabel("field");
+        box.updateLinkedGeo("3.5");
+        click(view.getEuclidianController(), new TestEvent(178, 60));
+        System.out.printf("%s submitted and clicked: a=%s%n", id, slider.getDouble());
     }
 
     private static void tabbing(String id, Session session) {
