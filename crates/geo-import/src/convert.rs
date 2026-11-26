@@ -609,8 +609,13 @@ impl StyleExpressions {
         match increment? {
             Some(PointIncrement::Scalar) => Ok((line, Vec::new())),
             Some(PointIncrement::ListLength(id)) => {
-                // An indexed alias can be shorter than the stored label.
-                Ok((source.trim().to_owned(), vec![id]))
+                let label = c.label(id);
+                let saved = if "Length[]".len() + label.len() <= crate::xml::MAX_ATTRIBUTE_BYTES {
+                    format!("Length[{label}]")
+                } else {
+                    source.trim().to_owned()
+                };
+                Ok((saved, vec![id]))
             }
             Some(PointIncrement::ListExpression(lists)) => Ok((source.trim().to_owned(), lists)),
             None if remaining == 0 => {
