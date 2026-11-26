@@ -2167,6 +2167,49 @@ fn geogebra_reloads_shadowed_point_list_lengths() {
     }
 }
 
+const POINT_SUM_INCREMENT: &str = r#"<incrementY val="Sum[L]"/>"#;
+
+#[test]
+fn point_list_increment_sum_survives_an_object_named_sum() {
+    let input = review_xml(
+        LIST_POINT_INCREMENTS,
+        &[(
+            r#"<expression label="L" exp="{2, 4, 8}"/>"#,
+            concat!(
+                r#"<element type="numeric" label="Sum"><value val="7"/></element>"#,
+                r#"<expression label="L" exp="{2, 4, 8}"/>"#,
+            ),
+        )],
+    );
+    let wb = review_workbench(&input);
+    let c = wb.construction();
+    assert_eq!(c.kind(c.id("Sum").unwrap()), Kind::Number);
+
+    let xml = exported_xml(&wb);
+    assert!(xml.contains(POINT_SUM_INCREMENT), "{xml}");
+    let reloaded = review_workbench(xml.as_bytes());
+    assert!(exported_xml(&reloaded).contains(POINT_SUM_INCREMENT));
+}
+
+#[test]
+fn point_list_increment_sum_survives_a_later_object_named_sum() {
+    let mut wb = review_workbench(&saved_review_file(LIST_POINT_INCREMENTS));
+    assert!(exported_xml(&wb).contains(POINT_SUM_INCREMENT));
+
+    wb.run_line("Sum = 7").unwrap();
+    assert!(exported_xml(&wb).contains(POINT_SUM_INCREMENT));
+    assert_eq!(wb.construction().arithmetic_value("Sum(2)"), Some(14.0));
+
+    assert!(wb.delete(wb.construction().id("L").unwrap()));
+    assert!(!exported_xml(&wb).contains(POINT_SUM_INCREMENT));
+    wb.run_line("L = 2").unwrap();
+    assert!(!exported_xml(&wb).contains(POINT_SUM_INCREMENT));
+
+    assert!(wb.undo());
+    assert!(wb.undo());
+    assert!(exported_xml(&wb).contains(POINT_SUM_INCREMENT));
+}
+
 #[test]
 fn point_list_increments_require_the_list_at_export() {
     let mut wb = review_workbench(&saved_review_file(LIST_POINT_INCREMENTS));

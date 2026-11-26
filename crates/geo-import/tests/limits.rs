@@ -527,6 +527,35 @@ fn point_list_increments_charge_list_evaluation_to_the_style_budget() {
 }
 
 #[test]
+fn point_list_increment_sum_with_shadow_requires_a_named_numeric_or_empty_list() {
+    use geo_import::convert::StyleExpressions;
+
+    let c = geo_kernel::script::load("L = Sequence(1, 256)\nE = {}\nB = {true, false}\nSum = 7")
+        .unwrap();
+    let mut expressions = StyleExpressions::default();
+    let sum = "Sum[L]";
+    assert_eq!(
+        expressions.point_increment(&c, sum).unwrap(),
+        (sum.to_owned(), vec![c.id("L").unwrap()])
+    );
+    assert!(expressions.work() >= sum.len() as u64 + 256);
+    assert_eq!(
+        expressions.point_increment(&c, "Sum[E]").unwrap(),
+        ("Sum[E]".to_owned(), vec![c.id("E").unwrap()])
+    );
+    for unsupported in ["Sum(L)", "Sum [L]", "Sum[L] + 1", "Sum[L, 2]", "Sum[B]"] {
+        assert!(
+            expressions.point_increment(&c, unsupported).is_err(),
+            "{unsupported}"
+        );
+    }
+
+    let mut limited = StyleExpressions::with_budget(sum.len() as u64 + 128);
+    let reason = limited.point_increment(&c, sum).unwrap_err();
+    assert!(reason.contains("evaluation budget"), "{reason}");
+}
+
+#[test]
 fn shadowed_point_list_length_arithmetic_spends_the_style_budget() {
     use geo_import::convert::StyleExpressions;
 
