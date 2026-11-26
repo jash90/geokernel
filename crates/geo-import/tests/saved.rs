@@ -711,6 +711,10 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                     // `tests/export.rs` compares the visibility and the
                     // slider animations SlowPlot set with the export.
                     "saved-slowplot-001",
+                    // The arrow presentation witness compares the full
+                    // slope field between two reference reloads in export.rs.
+                    // The two applications have different sampling grids.
+                    "saved-slope-arrows-001",
                 ])
                 .chain(&TEXT_FIXTURES)
                 .chain(&TEXT_EQUATION_FIXTURES)
