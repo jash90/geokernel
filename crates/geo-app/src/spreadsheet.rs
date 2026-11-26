@@ -54,7 +54,7 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
             let action = ui
                 .add(
                     eframe::egui::Button::new(text)
-                        .extend()
+                        .wrap_mode(eframe::egui::TextWrapMode::Extend)
                         .min_size(vec2(width, 0.0)),
                 )
                 .clicked();
