@@ -138,7 +138,7 @@ fn selected_spreadsheet_cells_keep_their_gridlines() {
     activate(&mut window, EXTEND);
     activate(&mut window, "A3");
     let cell = widget(&window, "A2").rect;
-    let shapes = &window.output().shapes;
+    let shapes = &window.last_output().unwrap().shapes;
     let fill = shapes
         .iter()
         .rposition(|s| match &s.shape {
