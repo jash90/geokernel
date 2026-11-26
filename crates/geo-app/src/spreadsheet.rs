@@ -28,21 +28,31 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
         app.select_spreadsheet_cell(address);
     }
     let analysis_open = matches!(app.spreadsheet_analysis, Ok(Some(_)));
-    let launch = if Analysis::available() {
+    let (launch, close) = if Analysis::available() {
         ui.horizontal_wrapped(|ui| {
+            let title = "Analiza jednej zmiennej";
+            let launch = ui.button("Analiza");
+            launch.widget_info(|| WidgetInfo::labeled(Role::Button, true, title));
+            let launch = launch.on_hover_text(title).clicked();
+            // Reserve the close slot so opening the summary cannot move the grid.
+            let close = ui.add_visible(analysis_open, eframe::egui::Button::new("×"));
+            let close = analysis_open && {
+                let title = "Zamknij podsumowanie";
+                close.widget_info(|| WidgetInfo::labeled(Role::Button, true, title));
+                close.on_hover_text(title).clicked()
+            };
             ui.heading(label(Label::SpreadsheetView));
-            let launch = ui.button("Analiza jednej zmiennej").clicked();
             let editor = app
                 .spreadsheet_editor
                 .as_mut()
                 .expect("spreadsheet selection");
             ui.checkbox(&mut editor.range_extension_armed, "Zaznacz zakres");
-            launch
+            (launch, close)
         })
         .inner
     } else {
         ui.heading(label(Label::SpreadsheetView));
-        false
+        (false, false)
     };
     crate::app::file_notices(app, ui);
 
@@ -57,25 +67,8 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
     if focus {
         ui.memory_mut(|memory| memory.request_focus(input_id));
     }
-    let (response, close) = ui
+    let response = ui
         .horizontal(|ui| {
-            // Keep the close control on the formula row, outside the clipped panes.
-            let close = if Analysis::available() {
-                let side = ui.spacing().interact_size.y;
-                let response = ui.add_visible(
-                    analysis_open,
-                    eframe::egui::Button::new("×").min_size(vec2(side, side)),
-                );
-                if analysis_open {
-                    let title = "Zamknij podsumowanie";
-                    response.widget_info(|| WidgetInfo::labeled(Role::Button, true, title));
-                    response.on_hover_text(title).clicked()
-                } else {
-                    false
-                }
-            } else {
-                false
-            };
             ui.label(selected.label());
             let mut text = TextEdit::load_state(ui.ctx(), input_id).unwrap_or_default();
             if focus {
@@ -86,14 +79,13 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
                 )));
                 text.store(ui.ctx(), input_id);
             }
-            let response = ui.add(
+            ui.add(
                 TextEdit::singleline(&mut editor.draft)
                     .id(input_id)
                     .hint_text(label(Label::SpreadsheetInput))
                     .char_limit(MAX_INPUT_BYTES)
                     .desired_width(f32::INFINITY),
-            );
-            (response, close)
+            )
         })
         .inner;
     response
