@@ -3,7 +3,7 @@ use super::{
     Writer,
 };
 use geo_kernel::algo::path::PathDef;
-use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
+use geo_kernel::kernel::image::{ImageCorner, ImagePlacement, RasterAsset};
 use geo_kernel::kernel::text::TextPosition;
 use geo_kernel::{script, Def, Id, Kind, Value};
 
@@ -61,7 +61,7 @@ fn traceable(kind: Kind) -> bool {
     )
 }
 
-impl Writer<'_> {
+impl<'a> Writer<'a> {
     pub(super) fn element(&mut self, id: Id, line: &str) -> Result<(), ExportError> {
         let c = self.c;
         let label = c.label(id);
@@ -87,6 +87,12 @@ impl Writer<'_> {
         // An object from a file writes the tags its file had. A tag the file
         // left out stays out, so the reader keeps the same default.
         let saved = self.presentation.object_styles.get(label).copied();
+        if let Some((_, icon)) = saved
+            .and_then(|style| style.widget_icon.as_ref())
+            .filter(|(owner_kind, _)| *owner_kind == object_kind)
+        {
+            self.raster_file(icon, label)?;
+        }
         let shown = !self.presentation.hidden.contains(label);
         let label_shown = if style.label_edited {
             style.show_label
@@ -386,7 +392,7 @@ impl Writer<'_> {
                 self.xml.val("pointStyle", &point_style.to_string())?;
             }
         }
-        if matches!(object_kind, Kind::Text | Kind::InputBox) {
+        if matches!(object_kind, Kind::Text | Kind::InputBox | Kind::List) {
             match saved.and_then(|style| style.rounding) {
                 Some(Rounding::Decimals(digits)) => {
                     self.xml.val("decimals", &digits.to_string())?;
@@ -454,16 +460,80 @@ impl Writer<'_> {
         if c.text_presentation(id).is_some() {
             self.text_style(id)?;
         }
+        if let Some(properties) = saved.and_then(|s| s.preserved.as_deref()) {
+            self.properties(id, properties, class, false)?;
+        }
         self.xml.buffer.push_str("</element>\n");
+        Ok(())
+    }
+
+    fn properties(
+        &mut self,
+        id: Id,
+        properties: &crate::properties::Properties,
+        class: &str,
+        before_matrix: bool,
+    ) -> Result<(), ExportError> {
+        for tag in properties.for_class(class).iter().filter(|tag| {
+            (class != "angle" || !tag.is_angle_style())
+                && (tag.name == "eigenvectors") == before_matrix
+        }) {
+            self.property(id, tag)?;
+        }
+        Ok(())
+    }
+
+    fn property(&mut self, id: Id, tag: &crate::properties::Tag) -> Result<(), ExportError> {
+        if !tag.can_write(self.c, id, &mut self.expressions) {
+            return Ok(());
+        }
+        self.xml.charge_items(1)?;
+        let attributes = tag
+            .attributes
+            .iter()
+            .map(|(key, value)| (*key, value.as_str()))
+            .collect::<Vec<_>>();
+        if tag.children.is_empty() {
+            self.xml.tag(tag.name, &attributes)?;
+        } else {
+            self.xml.open(tag.name, &attributes)?;
+            for child in &tag.children {
+                self.property(id, child)?;
+            }
+            self.xml.close(tag.name);
+        }
+        if self.xml.buffer.len() as u64 > crate::archive::MAX_XML_BYTES {
+            return Err(failure("construction XML exceeds the import size limit"));
+        }
         Ok(())
     }
 
     /// The interval of an angle and its right-angle marker.
     fn angle(&mut self, id: Id, saved: Option<&ObjectStyle>) -> Result<(), ExportError> {
-        if let Some(angle) = self.c.angle_style(id) {
-            self.xml.val("angleStyle", &angle.xml_code().to_string())?;
+        let object_kind = self.c.kind(id);
+        // Legacy flags and angleStyle are applied in the order they appear.
+        // Write any subsequent live edit after those saved tags.
+        let mut wrote_style = false;
+        if let Some(properties) = saved
+            .and_then(|s| s.preserved.as_deref())
+            .filter(|_| object_kind == Kind::Angle)
+        {
+            for tag in properties
+                .for_class("angle")
+                .iter()
+                .filter(|t| t.is_angle_style())
+            {
+                self.property(id, tag)?;
+                wrote_style = true;
+            }
         }
-        if self.c.kind(id) == Kind::Angle {
+        if let Some(angle) = self.c.angle_style(id) {
+            if !wrote_style || saved.and_then(|s| s.saved_angle_style) != Some(angle) {
+                self.xml.charge_items(1)?;
+                self.xml.val("angleStyle", &angle.xml_code().to_string())?;
+            }
+        }
+        if matches!(object_kind, Kind::Angle | Kind::List) {
             if let Some(emphasize) = saved.and_then(|style| style.emphasize_right_angle) {
                 self.xml.val("emphasizeRightAngle", flag(emphasize))?;
             }
@@ -645,7 +715,9 @@ impl Writer<'_> {
                 self.xml
                     .coords("coords", [y1 - y2, x2 - x1, x1 * y2 - y1 * x2])?;
             }
-            Value::Number(n) => self.xml.val("value", &number(n))?,
+            Value::Number(n) => self
+                .xml
+                .val("value", &number(c.free_angle_raw(id).unwrap_or(n)))?,
             Value::Bool(b) => self.xml.val("value", flag(b))?,
             Value::Undefined
                 if matches!(
@@ -663,6 +735,14 @@ impl Writer<'_> {
         }
 
         if let Some(conic) = c.arc(id).map(|arc| arc.conic).or_else(|| c.conic(id)) {
+            if let Some(properties) = self
+                .presentation
+                .object_styles
+                .get(c.label(id))
+                .and_then(|s| s.preserved.as_deref())
+            {
+                self.properties(id, properties, kind(c.kind(id)), true)?;
+            }
             let values = conic.matrix.map(number);
             self.xml.tag(
                 "matrix",
@@ -682,16 +762,20 @@ impl Writer<'_> {
     fn text_style(&mut self, id: Id) -> Result<(), ExportError> {
         let c = self.c;
         let text = c.text_presentation(id).expect("text checked by caller");
-        self.xml.val("isLaTeX", flag(text.latex))?;
+        if text.latex || c.text_latex_override(id) == Some(false) {
+            self.xml.val("isLaTeX", flag(text.latex))?;
+        }
         let style = u8::from(text.bold) | (u8::from(text.italic) << 1);
-        self.xml.tag(
-            "font",
-            &[
-                ("serif", flag(text.serif)),
-                ("sizeM", &text.size.to_string()),
-                ("style", &style.to_string()),
-            ],
-        )?;
+        if text.latex || text.serif || text.size != 1.0 || style != 0 {
+            self.xml.tag(
+                "font",
+                &[
+                    ("serif", flag(text.serif)),
+                    ("sizeM", &text.size.to_string()),
+                    ("style", &style.to_string()),
+                ],
+            )?;
+        }
         if text.offset != [0, 0] {
             self.xml
                 .pixels("labelOffset", text.offset[0], text.offset[1])?;
@@ -717,10 +801,8 @@ impl Writer<'_> {
         }
     }
 
-    fn image(&mut self, id: Id) -> Result<(), ExportError> {
-        let c = self.c;
-        let image = c.image(id).expect("image checked by caller");
-        let bytes = image.asset.bytes();
+    fn raster_file(&mut self, asset: &'a RasterAsset, label: &str) -> Result<(), ExportError> {
+        let bytes = asset.bytes();
         let extension = if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
             "png"
         } else if bytes.starts_with(b"\xff\xd8\xff") {
@@ -728,21 +810,24 @@ impl Writer<'_> {
         } else if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
             "gif"
         } else {
-            return Err(failure(format!(
-                "unsupported raster data for `{}`",
-                c.label(id)
-            )));
+            return Err(failure(format!("unsupported raster data for `{label}`")));
         };
         let next = self.images.len() + 1;
-        let (name, _) = self.images.entry(image.asset.id()).or_insert_with(|| {
-            (
-                format!("images/image{next}.{extension}"),
-                image.asset.as_ref(),
-            )
-        });
-        self.xml.tag("file", &[("name", name)])?;
+        let (name, _) = self
+            .images
+            .entry(asset.id())
+            .or_insert_with(|| (format!("images/image{next}.{extension}"), asset));
+        self.xml.tag("file", &[("name", name)])
+    }
+
+    fn image(&mut self, id: Id) -> Result<(), ExportError> {
+        let c = self.c;
+        let image = c.image(id).expect("image checked by caller");
+        self.raster_file(&image.asset, c.label(id))?;
         self.xml.val("inBackground", flag(image.style.background))?;
-        self.xml.val("interpolate", flag(image.style.interpolate))?;
+        if !image.style.interpolate {
+            self.xml.val("interpolate", "false")?;
+        }
         match image.placement {
             ImagePlacement::Screen([x, y]) => {
                 self.xml

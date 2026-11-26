@@ -1,0 +1,24 @@
+{
+  "schema": 2,
+  "id": "saved-element-properties-002",
+  "script": [
+    "L = {1.25, 2.5, 3.75}",
+    "M = {}"
+  ],
+  "objects": {
+    "L": {
+      "type": "list",
+      "defined": true,
+      "elements": [
+        { "type": "number", "defined": true, "value": 1.25 },
+        { "type": "number", "defined": true, "value": 2.5 },
+        { "type": "number", "defined": true, "value": 3.75 }
+      ]
+    },
+    "M": {
+      "type": "list",
+      "defined": true,
+      "elements": []
+    }
+  }
+}

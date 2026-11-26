@@ -1,0 +1,27 @@
+{
+  "schema": 2,
+  "id": "saved-property-review-001",
+  "script": [
+    "L = {45°, 90°}",
+    "chart = BarChart({2,3,4}, {2,3,4})",
+    "pie = PieChart({1, 2, 3})"
+  ],
+  "objects": {
+    "L": {
+      "type": "list",
+      "defined": true,
+      "elements": [
+        { "type": "angle", "defined": true, "value": 5.497787143782138 },
+        { "type": "angle", "defined": true, "value": 4.71238898038469 }
+      ]
+    },
+    "chart": { "type": "number", "defined": true, "value": 9.0 },
+    "pie": {
+      "type": "piechart",
+      "defined": true,
+      "center": [0.0, 0.0],
+      "radius": 3.0,
+      "fractions": [0.16666666666666666, 0.3333333333333333, 0.5]
+    }
+  }
+}

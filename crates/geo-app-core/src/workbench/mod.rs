@@ -8,7 +8,7 @@ use crate::interact::TextMove;
 use crate::labels::{next_label, next_numbered};
 use crate::scriptlog::{exec_definition, normalize, Log, Setting};
 use crate::snap::check_decimal_fraction;
-use crate::style::{Palette, Sides};
+use crate::style::{ImportedStyles, Palette, Sides};
 use crate::undo::Undo;
 use crate::view::Camera;
 pub use file::{import_notice, rejected_notice, SNAPSHOT_VERSION};
@@ -18,8 +18,8 @@ use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use geo_kernel::script::saved::Property;
 use geo_kernel::script::text::Properties as TextProperties;
 use geo_kernel::script::{find_top_level, BoundaryOutputs};
-use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::sync::OnceLock;
+use std::collections::{BTreeMap, BTreeSet};
+use std::sync::{Arc, OnceLock};
 
 /// What the algebra list shows for one object.
 #[derive(Clone, Debug, PartialEq)]
@@ -44,9 +44,14 @@ pub struct Row {
     pub siblings: Vec<String>,
 }
 
+// Keep imported presentation shared across journal snapshots. Only an edit
+// that removes an owner or an anchor needs a new copy of the map.
+type FileObjectStyles = Arc<ImportedStyles>;
+
 /// A drag in progress: all moves of it are one undo step.
 struct Gesture {
     snapshot: Log,
+    file_object_styles: FileObjectStyles,
     committed: bool,
 }
 
@@ -58,6 +63,7 @@ struct Gesture {
 /// (`restoreStateForModeStarting`).
 struct ToolUse {
     snapshot: Log,
+    file_object_styles: FileObjectStyles,
     changed: bool,
 }
 
@@ -69,6 +75,7 @@ struct ToolUse {
 #[derive(Clone, Debug)]
 struct UndoState {
     log: Log,
+    file_object_styles: FileObjectStyles,
     cas: crate::cas::Table,
     cas_only: bool,
     camera: Option<Camera>,
@@ -83,7 +90,7 @@ pub struct Workbench {
     boundary_outputs: BoundaryOutputs,
     file_settings: geo_import::Settings,
     file_import_losses: (usize, usize),
-    file_object_styles: HashMap<String, geo_import::export::ObjectStyle>,
+    file_object_styles: FileObjectStyles,
     file_slider_animation: BTreeMap<String, geo_import::export::SliderAnimation>,
     file_view: Option<geo_import::export::View>,
     file_cas_visible: Option<bool>,
@@ -233,6 +240,7 @@ impl Workbench {
     fn state(&self, log: Log) -> UndoState {
         UndoState {
             log,
+            file_object_styles: self.file_object_styles.clone(),
             cas: self.cas.clone(),
             cas_only: false,
             camera: self.camera,
@@ -318,7 +326,7 @@ impl Workbench {
         self.file_settings = geo_import::Settings::default();
         self.file_import_losses = (0, 0);
         self.style_before = None;
-        self.file_object_styles.clear();
+        self.file_object_styles = Arc::default();
         self.file_slider_animation.clear();
         self.file_view = None;
         self.file_cas_visible = None;
@@ -448,13 +456,20 @@ impl Workbench {
             return change(self);
         }
         let pending = self.copy(&self.log);
-        if let Err(why) = self.restore(self.copy(&t.snapshot)) {
+        let pending_styles = self.file_object_styles.clone();
+        if let Err(why) = self.restore_state(
+            self.copy(&t.snapshot),
+            false,
+            Some(t.file_object_styles.clone()),
+        ) {
             self.keep_unrevertable(&why);
             return change(self);
         }
-        change(self).inspect_err(|_| match self.restore(pending) {
-            Ok(()) => self.tool_use = Some(t),
-            Err(why) => self.keep_unrevertable(&why),
+        change(self).inspect_err(|_| {
+            match self.restore_state(pending, false, Some(pending_styles)) {
+                Ok(()) => self.tool_use = Some(t),
+                Err(why) => self.keep_unrevertable(&why),
+            }
         })
     }
 
@@ -473,6 +488,7 @@ impl Workbench {
         if self.tool_use.is_none() {
             self.tool_use = Some(ToolUse {
                 snapshot: self.copy(&self.log),
+                file_object_styles: self.file_object_styles.clone(),
                 changed: false,
             });
         }
@@ -489,7 +505,9 @@ impl Workbench {
     pub fn end_tool_use(&mut self) {
         if let Some(t) = self.tool_use.take() {
             if t.changed {
-                self.record_undo(self.state(t.snapshot));
+                let mut state = self.state(t.snapshot);
+                state.file_object_styles = t.file_object_styles;
+                self.record_undo(state);
             }
         }
     }
@@ -505,7 +523,7 @@ impl Workbench {
         if !t.changed {
             return false;
         }
-        if let Err(why) = self.restore(t.snapshot) {
+        if let Err(why) = self.restore_state(t.snapshot, false, Some(t.file_object_styles)) {
             self.keep_unrevertable(&why);
         }
         true
@@ -513,6 +531,7 @@ impl Workbench {
 
     fn exec_lines(&mut self, lines: &[String], in_tool: bool) -> Result<(), String> {
         let snapshot = self.copy(&self.log);
+        let file_object_styles = self.file_object_styles.clone();
         let n0 = self.construction.len();
         let mut updated = false;
         let mut redefined = false;
@@ -549,6 +568,8 @@ impl Workbench {
             let fills_cells = geo_kernel::spreadsheet::is_fill_line(&line);
             let step_before = self.construction.step();
             let target = geo_kernel::script::assignment_target(&self.construction, &line);
+            let target_was_point =
+                target.is_some_and(|id| self.construction.kind(id) == Kind::Point);
             let slider = geo_kernel::script::slider_assignment_target(&self.construction, &line);
             let assigns_slider = slider.is_some();
             self.construction.take_hidden_requests();
@@ -562,6 +583,15 @@ impl Workbench {
                             || fills_cells
                             || self.construction.step() != step_before);
                     let replaced = target.is_some() && first == target;
+                    if replaced
+                        && target_was_point
+                        && first.is_some_and(|id| self.construction.kind(id) != Kind::Point)
+                    {
+                        Self::prune_file_object_styles(
+                            &mut self.file_object_styles,
+                            &self.construction,
+                        );
+                    }
                     if added || mutated || replaced {
                         // A stroke keeps the points of its creation: the
                         // journal replays them, not the smoothing in
@@ -619,7 +649,8 @@ impl Workbench {
         match failure {
             Some(e) => {
                 if changed {
-                    if let Err(why) = self.restore(snapshot) {
+                    if let Err(why) = self.restore_state(snapshot, false, Some(file_object_styles))
+                    {
                         self.keep_unrevertable(&why);
                     }
                 }
@@ -630,7 +661,8 @@ impl Workbench {
                     match &mut self.tool_use {
                         Some(t) if in_tool => t.changed = true,
                         _ => {
-                            let state = self.state(snapshot);
+                            let mut state = self.state(snapshot);
+                            state.file_object_styles = file_object_styles;
                             self.record_undo(state);
                         }
                     }
@@ -667,10 +699,15 @@ impl Workbench {
     /// Replays `log` into a new construction, keeping the selection by label.
     /// If the replay fails the previous state stays and `notice` says why.
     fn restore(&mut self, log: Log) -> Result<(), String> {
-        self.restore_state(log, false)
+        self.restore_state(log, false, None)
     }
 
-    fn restore_state(&mut self, log: Log, snapshot: bool) -> Result<(), String> {
+    fn restore_state(
+        &mut self,
+        log: Log,
+        snapshot: bool,
+        file_object_styles: Option<FileObjectStyles>,
+    ) -> Result<(), String> {
         #[cfg(test)]
         if let Some(e) = self.fail_rebuilds.clone() {
             self.notice = Some(format!("Nie można odtworzyć konstrukcji: {e}"));
@@ -686,6 +723,9 @@ impl Workbench {
         if snapshot {
             kept.reset_snapshot_records(&mut c);
             kept.reset_inequality_helpers(&mut c);
+        }
+        if let Some(styles) = file_object_styles {
+            self.file_object_styles = styles;
         }
         self.install_replay(c, kept);
         Ok(())
@@ -703,7 +743,7 @@ impl Workbench {
         // with its label moved.
         kept.hidden.retain(|l| c.id(l).is_some());
         self.label_offsets.retain(|l, _| c.id(l).is_some());
-        self.file_object_styles.retain(|l, _| c.id(l).is_some());
+        Self::prune_file_object_styles(&mut self.file_object_styles, &c);
         self.file_slider_animation.retain(|l, _| c.id(l).is_some());
         self.boundary_outputs = kept.boundary_outputs(&c);
         self.construction = c;
@@ -713,6 +753,35 @@ impl Workbench {
         self.notice = None;
         self.version += 1;
         self.rebuilds += 1;
+    }
+
+    fn prune_file_object_styles(styles: &mut FileObjectStyles, c: &Construction) {
+        let needs_pruning = styles.iter().any(|(label, style)| {
+            c.id(label).is_none()
+                || style
+                    .preserved
+                    .as_deref()
+                    .is_some_and(|properties| properties.has_missing_start_point(c))
+        });
+        if needs_pruning {
+            Arc::make_mut(styles).retain(|label, style| {
+                if c.id(label).is_none() {
+                    return false;
+                }
+                if style
+                    .preserved
+                    .as_deref()
+                    .is_some_and(|properties| properties.has_missing_start_point(c))
+                {
+                    Arc::make_mut(style)
+                        .preserved
+                        .as_deref_mut()
+                        .expect("missing point in retained properties")
+                        .detach_missing_start_points(c);
+                }
+                true
+            });
+        }
     }
 
     pub fn edit_spreadsheet_cell(
@@ -783,13 +852,14 @@ impl Workbench {
         if !next.remove(label, &self.construction) {
             return false;
         }
+        let before = self.state(snapshot);
         let gesture = self.gesture.take();
         let restored = self.restore(next);
         self.gesture = gesture;
         if restored.is_err() {
             return false;
         }
-        self.note_change_from(snapshot);
+        self.note_change_with(|_| before);
         true
     }
 
@@ -841,7 +911,7 @@ impl Workbench {
         if next.view_only || next.cas_only {
             self.notice = None;
         } else {
-            self.restore_state(next.log, true)?;
+            self.restore_state(next.log, true, Some(next.file_object_styles))?;
         }
         self.cas = next.cas;
         self.restored_view = next.camera.filter(|c| Some(*c) != self.camera);
@@ -882,6 +952,7 @@ impl Workbench {
         self.cancel_tool_use();
         self.gesture = Some(Gesture {
             snapshot: self.copy(&self.log),
+            file_object_styles: self.file_object_styles.clone(),
             committed: false,
         });
     }
@@ -949,7 +1020,7 @@ impl Workbench {
             // The drag's undo step goes either way: on success the drag is
             // gone, on failure it stays but could not be undone either.
             self.undo.discard_last();
-            if let Err(why) = self.restore(g.snapshot) {
+            if let Err(why) = self.restore_state(g.snapshot, false, Some(g.file_object_styles)) {
                 self.keep_unrevertable(&why);
             }
         }
@@ -957,21 +1028,16 @@ impl Workbench {
 
     /// Records the undo step for a change that is about to be logged.
     fn note_change(&mut self) {
-        self.note_change_with(|w| w.copy(&w.log));
+        self.note_change_with(|w| w.state(w.copy(&w.log)));
     }
 
-    /// Records the undo step for a change made from the state `before`:
-    /// the gesture's one step if a gesture is in progress, else a step of
-    /// its own.
-    fn note_change_from(&mut self, before: Log) {
-        self.note_change_with(move |_| before);
-    }
-
-    fn note_change_with(&mut self, before: impl FnOnce(&Self) -> Log) {
+    /// Records the first change of the gesture, or one standalone step.
+    fn note_change_with(&mut self, before: impl FnOnce(&Self) -> UndoState) {
         match &self.gesture {
             Some(g) if !g.committed => {
                 let snapshot = self.copy(&g.snapshot);
-                let state = self.state(snapshot);
+                let mut state = self.state(snapshot);
+                state.file_object_styles = g.file_object_styles.clone();
                 self.record_undo(state);
                 if let Some(g) = &mut self.gesture {
                     g.committed = true;
@@ -979,7 +1045,7 @@ impl Workbench {
             }
             Some(_) => {}
             None => {
-                let before = self.state(before(self));
+                let before = before(self);
                 self.record_undo(before);
             }
         }

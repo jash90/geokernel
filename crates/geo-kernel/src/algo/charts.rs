@@ -106,6 +106,14 @@ impl ChartDef {
         }
     }
 
+    /// The reference's output implements ChartStyleGeo for these commands.
+    pub fn has_bar_style(self) -> bool {
+        matches!(
+            self.command,
+            Command::Bar | Command::Stick | Command::Step | Command::Pie
+        )
+    }
+
     pub(crate) fn check(self, c: &Construction) -> Result<(), Error> {
         let args = c.list(self.args);
         if self.command.forms().iter().any(|form| {

@@ -1,0 +1,28 @@
+{
+  "schema": 2,
+  "id": "saved-element-properties-004",
+  "script": [
+    "f(x) = x > 2",
+    "t = Text(\"x^2\", (2, 3), true, true)"
+  ],
+  "objects": {
+    "f": {
+      "type": "function",
+      "defined": true,
+      "samples": [
+        [-8.0, 0.0],
+        [-4.0, 0.0],
+        [-2.0, 0.0],
+        [-1.0, 0.0],
+        [-0.5, 0.0],
+        [0.0, 0.0],
+        [0.5, 0.0],
+        [1.0, 0.0],
+        [2.0, 0.0],
+        [4.0, 1.0],
+        [8.0, 1.0]
+      ]
+    },
+    "t": { "type": "text", "defined": true, "text": "x^2" }
+  }
+}

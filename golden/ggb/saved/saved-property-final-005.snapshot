@@ -1,0 +1,8 @@
+{
+  "schema": 2,
+  "id": "saved-property-final-005",
+  "script": [],
+  "objects": {
+    "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+  }
+}

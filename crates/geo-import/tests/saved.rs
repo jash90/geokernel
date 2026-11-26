@@ -666,12 +666,17 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
         .unwrap()
         .map(|e| e.unwrap().path())
         .filter(|p| p.extension().is_some_and(|e| e == "snapshot"))
-        // The export oracle reloads the style fixtures and compares them.
+        // The export oracle compares the style fixtures, including the
+        // controls and raster assets outside the generic snapshot schema.
         .filter(|p| {
-            !p.file_stem()
-                .unwrap()
-                .to_string_lossy()
-                .starts_with(STYLE_FIXTURES)
+            let name = p.file_stem().unwrap().to_string_lossy();
+            ![
+                STYLE_FIXTURES,
+                "saved-element-properties-",
+                "saved-element-raster-properties-",
+            ]
+            .iter()
+            .any(|&prefix| name.starts_with(prefix))
         })
         .filter(|p| {
             !EXPRESSION_FIXTURES
@@ -684,6 +689,10 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                     // The export oracle checks linked objects, widget style and rounding.
                     "saved-input-box-001",
                     "saved-input-rounding-001",
+                    // The export oracle checks list angle presentation and chart style.
+                    "saved-property-review-001",
+                    // The widget archive uses control types outside this snapshot schema.
+                    "saved-property-review-003",
                     "saved-elements-001",
                     // images.rs checks the archive assets and quad snapshots.
                     "saved-images-001",

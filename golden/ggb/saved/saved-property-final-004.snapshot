@@ -1,0 +1,9 @@
+{
+  "schema": 2,
+  "id": "saved-property-final-004",
+  "script": [],
+  "objects": {
+    "b": { "type": "boolean", "defined": true, "value": true },
+    "n": { "type": "number", "defined": true, "value": 2.0 }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "schema": 2,
+  "id": "saved-property-review-002",
+  "script": [
+    "A = (1, 2)",
+    "v = (2, 1)",
+    "A = (30, 40)"
+  ],
+  "objects": {
+    "v": { "type": "vector", "defined": true, "x": 2.0, "y": 1.0 },
+    "A": { "type": "point", "defined": true, "x": 30.0, "y": 40.0 }
+  }
+}

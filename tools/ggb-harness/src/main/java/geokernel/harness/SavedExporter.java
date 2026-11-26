@@ -24,6 +24,8 @@ import org.geogebra.common.kernel.Kernel;
 import org.geogebra.common.kernel.LinearEquationRepresentable;
 import org.geogebra.common.kernel.QuadraticEquationRepresentable;
 import org.geogebra.common.kernel.arithmetic.NumberValue;
+import org.geogebra.common.kernel.geos.AngleProperties;
+import org.geogebra.common.kernel.geos.ChartStyleGeo;
 import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoButton;
@@ -33,6 +35,8 @@ import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoFunctionNVar;
 import org.geogebra.common.kernel.geos.GeoInputBox;
+import org.geogebra.common.kernel.geos.GeoImage;
+import org.geogebra.common.kernel.geos.GeoLocusStroke;
 import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoLocus;
 import org.geogebra.common.kernel.geos.GeoList;
@@ -42,14 +46,18 @@ import org.geogebra.common.kernel.geos.GeoPolygon;
 import org.geogebra.common.kernel.geos.GeoSegment;
 import org.geogebra.common.kernel.geos.GeoText;
 import org.geogebra.common.kernel.geos.GeoVector;
+import org.geogebra.common.kernel.geos.HasSymbolicMode;
+import org.geogebra.common.kernel.geos.TextProperties;
 import org.geogebra.common.kernel.geos.HasSegmentStyle;
 import org.geogebra.common.kernel.geos.PointProperties;
 import org.geogebra.common.kernel.geos.SegmentStyle;
 import org.geogebra.common.kernel.geos.Traceable;
 import org.geogebra.common.kernel.geos.VectorHeadStyle;
 import org.geogebra.common.kernel.geos.properties.FillType;
+import org.geogebra.common.kernel.geos.properties.HorizontalAlignment;
 import org.geogebra.common.kernel.kernelND.GeoCurveCartesianND;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
+import org.geogebra.common.kernel.kernelND.SurfaceEvaluable.LevelOfDetail;
 import org.geogebra.common.main.App;
 import org.geogebra.common.main.error.ErrorHandler;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
@@ -154,14 +162,40 @@ public final class SavedExporter {
                 kernel.lookupLabel((String) label).setEuclidianVisible(false);
             }
         }
+        boolean reloaded = false;
         for (Object s : (List<?>) input.get("steps")) {
             Map<?, ?> step = (Map<?, ?>) s;
+            Object action = step.get("action");
+            if ("load_xml".equals(action)) {
+                try {
+                    app.getXMLio().processXMLString((String) step.get("xml"), true, false);
+                } catch (org.geogebra.common.io.XMLParseException error) {
+                    throw new IllegalArgumentException(error);
+                }
+                reloaded = true;
+                continue;
+            }
             GeoElement geo = kernel.lookupLabel((String) step.get("label"));
             if (geo == null) {
                 throw new IllegalArgumentException(step.get("label") + " does not exist");
             }
-            Object action = step.get("action");
-            if ("move".equals(action) && geo instanceof GeoPoint p
+            if ("delete_and_undo".equals(action)) {
+                app.setUndoActive(true);
+                kernel.initUndoInfo();
+                geo.remove();
+                kernel.storeUndoInfo();
+                kernel.undo();
+                reloaded = true;
+                continue;
+            }
+            if ("delete_and_run".equals(action)) {
+                geo.remove();
+                runCommands(kernel, List.of(step.get("input")), script, created);
+                continue;
+            } else if ("widget_icon".equals(action) && geo instanceof GeoButton button) {
+                String name = (String) step.get("file");
+                SavedImages.setIcon(button, name, imageAssets);
+            } else if ("move".equals(action) && geo instanceof GeoPoint p
                     && (p.isIndependent() || p.isPointOnPath())) {
                 p.setCoords(number(step.get("x")), number(step.get("y")), 1.0);
             } else if ("point_coords".equals(action) && geo instanceof GeoPoint p
@@ -241,7 +275,9 @@ public final class SavedExporter {
         }
         // The state to save, and what GeoGebra computes in it.
         Map<String, Object> objects = new LinkedHashMap<>();
-        for (GeoElement geo : created) {
+        Iterable<GeoElement> saved = reloaded
+                ? kernel.getConstruction().getGeoSetConstructionOrder() : created;
+        for (GeoElement geo : saved) {
             if (geo.isLabelSet() && kernel.lookupLabel(geo.getLabelSimple()) == geo) {
                 objects.put(geo.getLabelSimple(), describe(geo));
             }
@@ -332,6 +368,88 @@ public final class SavedExporter {
                 }
                 case "caption" -> geo.setCaption((String) value);
                 case "input_length" -> ((GeoInputBox) geo).setLength(integer(value));
+                case "font" -> {
+                    List<?> font = (List<?>) value;
+                    TextProperties text = (TextProperties) geo;
+                    text.setSerifFont((Boolean) font.get(0));
+                    text.setFontSizeMultiplier(number(font.get(1)));
+                    text.setFontStyle(integer(font.get(2)));
+                }
+                case "symbolic" -> ((HasSymbolicMode) geo).setSymbolicMode((Boolean) value, false);
+                case "content_serif" -> ((GeoInputBox) geo).setSerifContent((Boolean) value);
+                case "text_align" -> ((GeoInputBox) geo)
+                        .setAlignment(HorizontalAlignment.valueOf((String) value));
+                case "temp_input" -> {
+                    List<?> input = (List<?>) value;
+                    ((GeoInputBox) geo).setTempUserInput((String) input.get(0), (String) input.get(1));
+                }
+                case "dropdown" -> {
+                    GeoList list = (GeoList) geo;
+                    list.setDrawAsComboBox(true);
+                    list.setSelectedIndex(integer(value));
+                }
+                case "list_type" -> ((GeoList) geo).setTypeStringForXML((String) value);
+                case "interpolate" -> ((GeoImage) geo).setInterpolate((Boolean) value);
+                case "surface_quality" -> ((GeoFunctionNVar) geo).setLevelOfDetail(LevelOfDetail.QUALITY);
+                case "split_parent" -> ((GeoLocusStroke) geo).setSplitParentLabel((String) value);
+                case "spreadsheet_trace" -> {
+                    geo.setSpreadsheetTrace(true);
+                    var trace = geo.getTraceSettings();
+                    trace.traceColumn1 = 2;
+                    trace.traceColumn2 = 2;
+                    trace.traceRow1 = 1;
+                    trace.traceRow2 = 5;
+                    trace.tracingRow = 2;
+                    trace.numRows = 4;
+                    trace.headerOffset = 1;
+                    trace.doRowLimit = true;
+                    trace.pause = true;
+                }
+                case "point_polar" -> ((GeoPoint) geo).setMode(Kernel.COORD_POLAR);
+                case "vector_polar" -> ((GeoVector) geo).setMode(Kernel.COORD_POLAR);
+                case "vertical_increment" ->
+                        ((GeoPoint) geo).setVerticalIncrement(algebra.evaluateToNumeric((String) value, null));
+                case "vector_start" -> {
+                    try {
+                        ((GeoVector) geo).setStartPoint((GeoPoint) kernel.lookupLabel((String) value));
+                    } catch (CircularDefinitionException ex) {
+                        throw new IllegalArgumentException("circular vector start", ex);
+                    }
+                }
+                case "slope_triangle_size" -> ((GeoNumeric) geo).setSlopeTriangleSize(integer(value));
+                case "show_on_axis" -> ((GeoFunction) geo).setShowOnAxis((Boolean) value);
+                case "simplify_coefficients" -> ((GeoFunction) geo).setSimplifyCoefficients((Boolean) value);
+                case "table_column" -> {
+                    GeoFunction function = (GeoFunction) geo;
+                    function.setTableColumn(integer(value));
+                    function.setPointsVisible(false);
+                }
+                case "outlying_intersections" -> ((GeoSegment) geo).setAllowOutlyingIntersections((Boolean) value);
+                case "keep_type" -> ((GeoSegment) geo).setKeepTypeOnGeometricTransform((Boolean) value);
+                case "mask" -> ((GeoPolygon) geo).setIsMask((Boolean) value);
+                case "slice_color", "bar_color" ->
+                        ((ChartStyleGeo) geo).getStyle().setBarColor(color((List<?>) value), 2);
+                case "bar_alpha" -> ((ChartStyleGeo) geo).getStyle().setBarAlpha(
+                        Float.parseFloat((String) value), 2);
+                case "bar_fill_type" ->
+                        ((ChartStyleGeo) geo).getStyle().setBarFillType(
+                                FillType.valueOf((String) value), 2);
+                case "angle_style" -> ((AngleProperties) geo).setAngleStyle(integer(value));
+                case "emphasize_right_angle" ->
+                        ((AngleProperties) geo).setEmphasizeRightAngle((Boolean) value);
+                case "button_size" -> {
+                    GeoButton button = (GeoButton) geo;
+                    List<?> dimensions = (List<?>) value;
+                    button.setWidth(number(dimensions.get(0)));
+                    button.setHeight(number(dimensions.get(1)));
+                    button.setFixedSize(true);
+                }
+                case "button_position" -> {
+                    GeoButton button = (GeoButton) geo;
+                    List<?> position = (List<?>) value;
+                    button.setAbsoluteScreenLoc(integer(position.get(0)), integer(position.get(1)));
+                    button.setAbsoluteScreenLocActive(true);
+                }
                 case "tooltip_mode" -> geo.setTooltipMode(integer(value));
                 case "trace" -> ((Traceable) geo).setTrace((Boolean) value);
                 case "background" -> {
@@ -362,6 +480,8 @@ public final class SavedExporter {
                 case "decimals" -> {
                     if (geo instanceof GeoInputBox box) {
                         box.setPrintDecimals(integer(value), true);
+                    } else if (geo instanceof GeoList list) {
+                        list.setPrintDecimals(integer(value), true);
                     } else {
                         ((GeoText) geo).setPrintDecimals(integer(value), true);
                     }
@@ -374,7 +494,6 @@ public final class SavedExporter {
                     }
                 }
                 case "arc_size" -> ((GeoAngle) geo).setArcSize(integer(value));
-                case "emphasize_right_angle" -> ((GeoAngle) geo).setEmphasizeRightAngle((Boolean) value);
                 case "checkbox_fixed" -> ((GeoBoolean) geo).setCheckboxFixed((Boolean) value);
                 case "slider" -> applySlider((GeoNumeric) geo, (Map<?, ?>) value);
                 case "animation" -> {
