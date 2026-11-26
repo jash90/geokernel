@@ -134,6 +134,18 @@ case "$cmd" in
     ;;
   golden)
     commit="${GEOGEBRA_REV:-$(git -C "$ggb" rev-parse HEAD)}"
+    if [ "$#" -eq 1 ] && [ "$1" = parity-scenarios ]; then
+      probe="$(mktemp -d)"
+      trap 'rm -rf "$probe"' EXIT
+      cp="$build/classes:$(classpath)"
+      src="$here/src/main/java/geokernel/harness"
+      harness_revision="$(cat "$src/ToolPointer.java" "$src/Session.java" "$src/Json.java" | sha256sum)"
+      javac --release 17 -cp "$cp" -d "$probe" "$src/ToolPointer.java" "$src/Session.java" "$src/Json.java" "$src/GiacOracle.java" "$src/ProverOracle.java"
+      java "${java_opts[@]}" -cp "$probe:$cp" geokernel.harness.ToolPointer --parity \
+        "$here/cases/pointer/parity-scenarios.json" \
+        "$repo/crates/geo-mcp/tests/fixtures/parity_scenario_capture.json" "$commit" "${harness_revision%% *}"
+      exit
+    fi
     if [ "$#" -gt 0 ]; then
       files=()
       for group in "$@"; do

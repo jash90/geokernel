@@ -2,6 +2,7 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/EuclidianController.java
 //   source/shared/common/src/main/java/org/geogebra/common/euclidian/modes/ModeDeleteLocus.java
+//   source/shared/common/src/main/java/org/geogebra/common/euclidian/TextDispatcher.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDispatcher.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
@@ -40,6 +41,46 @@ const CONSTRAINT_VERTEX_WORK: usize = hit::SHAPE_HIT_WORK;
 
 /// Label probes allowed for the outputs of one Roots or Extremum click.
 const ANALYSIS_LABEL_WORK: usize = 4096;
+
+/// Each candidate checks the two labels created by the polygon Area tool.
+const AREA_LABEL_CANDIDATES: usize = 2048;
+
+fn polygon_area_labels(polygon: &str, taken: impl Fn(&str) -> bool) -> Option<(String, String)> {
+    if polygon.len() > crate::tools::MAX_PLACED_TEXT_CHARS {
+        return None;
+    }
+    let stem = polygon.replace(['_', '{', '}'], "");
+    let text = format!("Text{stem}");
+    let point = format!("Point{stem}");
+    if !taken(&text) && !taken(&point) {
+        return Some((text, point));
+    }
+    (1..AREA_LABEL_CANDIDATES)
+        .map(|i| (format!("{text}_{{{i}}}"), format!("{point}_{{{i}}}")))
+        .find(|(text, point)| !taken(text) && !taken(point))
+}
+
+fn polygon_area(c: &geo_kernel::Construction, polygon: Id, (x, y): (f64, f64)) -> Outcome {
+    use crate::describe::exact;
+    use crate::text::tool_caption;
+    use geo_kernel::script::text::literal;
+
+    let mut shape_work = CONSTRAINT_VERTEX_WORK;
+    if c.vertices_with_work(polygon, &mut shape_work).is_none() {
+        return Outcome::Ignored;
+    }
+    let polygon = c.label(polygon);
+    let Some((text, point)) = polygon_area_labels(polygon, |name| c.id(name).is_some()) else {
+        return Outcome::Ignored;
+    };
+    let caption = literal(&format!("{} {polygon} = ", tool_caption(Tool::Area)));
+    Outcome::Run(vec![
+        format!("{point} = PointIn({polygon})"),
+        format!("SetCoords({point}, {}, {})", exact(x), exact(y)),
+        format!("SetVisibleInView({point}, 1, false)"),
+        format!("{text} = Text({caption} + Text({polygon}), {point})"),
+    ])
+}
 
 fn rigid_copy_size(c: &geo_kernel::Construction, polygon: Id) -> Option<usize> {
     let mut left = CONSTRAINT_VERTEX_WORK;
@@ -501,6 +542,14 @@ impl App {
                 self.hittable(id) && accepts(id)
             })
             .or(id);
+        }
+        if let Some(polygon) = id.filter(|&id| tool == Tool::Area && c.kind(id) == Kind::Polygon) {
+            let outcome = polygon_area(c, polygon, t.screen_to_world(pos.0, pos.1));
+            self.apply_outcome(outcome.clone());
+            if matches!(outcome, Outcome::Run(_)) {
+                self.select_only(None);
+            }
+            return outcome;
         }
         let picks = self.tool.picks();
         if let Some(id) = id {
@@ -1070,6 +1119,28 @@ mod tests {
                 "{carrier}"
             );
         }
+    }
+
+    #[test]
+    fn polygon_area_caps_label_search_and_shape_preparation() {
+        let long_label = "p".repeat(crate::tools::MAX_PLACED_TEXT_CHARS + 1);
+        assert!(polygon_area_labels(&long_label, |_| false).is_none());
+        let first_free = format!("Textp_{{{AREA_LABEL_CANDIDATES}}}");
+        assert!(
+            polygon_area_labels("p", |name| name.starts_with("Text") && name != first_free)
+                .is_none()
+        );
+        assert_eq!(
+            polygon_area_labels("p", |name| name == "Pointp"),
+            Some(("Textp_{1}".to_owned(), "Pointp_{1}".to_owned()))
+        );
+
+        let app = app("p = Polygon(Sequence((k, k^2), k, 1, 4097))", Tool::Area);
+        let c = app.wb.construction();
+        assert_eq!(
+            polygon_area(c, c.id("p").unwrap(), (1.0, 1.0)),
+            Outcome::Ignored
+        );
     }
 
     #[test]

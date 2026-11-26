@@ -1,0 +1,1789 @@
+{
+  "scenarios": [
+    {
+      "name": "free_equation_line_not_draggable",
+      "tool_mode": 0,
+      "initial_script": [
+        "f: y=1.01"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2.0,
+            1.01
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            2.08,
+            0.956667
+          ]
+        },
+        {
+          "t": 175,
+          "type": "mouse_move",
+          "pos": [
+            2.16,
+            0.903333
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_move",
+          "pos": [
+            2.24,
+            0.85
+          ]
+        },
+        {
+          "t": 225,
+          "type": "mouse_move",
+          "pos": [
+            2.32,
+            0.796667
+          ]
+        },
+        {
+          "t": 250,
+          "type": "mouse_move",
+          "pos": [
+            2.4,
+            0.743333
+          ]
+        },
+        {
+          "t": 275,
+          "type": "mouse_move",
+          "pos": [
+            2.48,
+            0.69
+          ]
+        },
+        {
+          "t": 300,
+          "type": "mouse_move",
+          "pos": [
+            2.56,
+            0.636667
+          ]
+        },
+        {
+          "t": 325,
+          "type": "mouse_move",
+          "pos": [
+            2.64,
+            0.583333
+          ]
+        },
+        {
+          "t": 350,
+          "type": "mouse_move",
+          "pos": [
+            2.72,
+            0.53
+          ]
+        },
+        {
+          "t": 375,
+          "type": "mouse_move",
+          "pos": [
+            2.8,
+            0.476667
+          ]
+        },
+        {
+          "t": 400,
+          "type": "mouse_move",
+          "pos": [
+            2.88,
+            0.423333
+          ]
+        },
+        {
+          "t": 425,
+          "type": "mouse_move",
+          "pos": [
+            2.96,
+            0.37
+          ]
+        },
+        {
+          "t": 450,
+          "type": "mouse_move",
+          "pos": [
+            3.04,
+            0.316667
+          ]
+        },
+        {
+          "t": 475,
+          "type": "mouse_move",
+          "pos": [
+            3.12,
+            0.263333
+          ]
+        },
+        {
+          "t": 500,
+          "type": "mouse_move",
+          "pos": [
+            3.2,
+            0.21
+          ]
+        },
+        {
+          "t": 625,
+          "type": "mouse_up",
+          "pos": [
+            3.2,
+            0.21
+          ]
+        }
+      ]
+    },
+    {
+      "name": "area_tool_on_polygon",
+      "tool_mode": 49,
+      "initial_script": [
+        "A=(1,1)",
+        "B=(5,1)",
+        "C=(1,4)",
+        "p=Polygon(A,B,C)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2.0,
+            1.51
+          ]
+        },
+        {
+          "t": 30,
+          "type": "mouse_up",
+          "pos": [
+            2.0,
+            1.51
+          ]
+        }
+      ]
+    },
+    {
+      "name": "enter_on_empty_input_row",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "focus_input_row"
+        },
+        {
+          "t": 300,
+          "type": "key",
+          "key": "Enter"
+        }
+      ]
+    },
+    {
+      "name": "tool_text_places_literal",
+      "tool_mode": 17,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 180,
+          "type": "text",
+          "text": "Placed text"
+        },
+        {
+          "t": 220,
+          "type": "key",
+          "key": "Enter"
+        }
+      ]
+    },
+    {
+      "name": "tool_input_box_places_empty_widget",
+      "tool_mode": 61,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            -6.44,
+            5.71
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            -6.44,
+            5.71
+          ]
+        },
+        {
+          "t": 180,
+          "type": "key",
+          "key": "Enter"
+        }
+      ]
+    },
+    {
+      "name": "press_on_polygon_edge_does_nothing",
+      "tool_mode": 0,
+      "initial_script": [
+        "A=(1,1.01)",
+        "B=(5,1.01)",
+        "C=(1,4.01)",
+        "p=Polygon(A,B,C)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            3.0,
+            1.01
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            3.12,
+            0.93
+          ]
+        },
+        {
+          "t": 175,
+          "type": "mouse_move",
+          "pos": [
+            3.24,
+            0.85
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_move",
+          "pos": [
+            3.36,
+            0.77
+          ]
+        },
+        {
+          "t": 225,
+          "type": "mouse_move",
+          "pos": [
+            3.48,
+            0.69
+          ]
+        },
+        {
+          "t": 250,
+          "type": "mouse_move",
+          "pos": [
+            3.6,
+            0.61
+          ]
+        },
+        {
+          "t": 275,
+          "type": "mouse_move",
+          "pos": [
+            3.72,
+            0.53
+          ]
+        },
+        {
+          "t": 300,
+          "type": "mouse_move",
+          "pos": [
+            3.84,
+            0.45
+          ]
+        },
+        {
+          "t": 325,
+          "type": "mouse_move",
+          "pos": [
+            3.96,
+            0.37
+          ]
+        },
+        {
+          "t": 350,
+          "type": "mouse_move",
+          "pos": [
+            4.08,
+            0.29
+          ]
+        },
+        {
+          "t": 375,
+          "type": "mouse_move",
+          "pos": [
+            4.2,
+            0.21
+          ]
+        },
+        {
+          "t": 500,
+          "type": "mouse_up",
+          "pos": [
+            4.2,
+            0.21
+          ]
+        }
+      ]
+    },
+    {
+      "name": "segment_tool_twice_stays_selected",
+      "tool_mode": 15,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1.0,
+            1.01
+          ]
+        },
+        {
+          "t": 30,
+          "type": "mouse_up",
+          "pos": [
+            1.0,
+            1.01
+          ]
+        },
+        {
+          "t": 500,
+          "type": "mouse_down",
+          "pos": [
+            4.0,
+            3.01
+          ]
+        },
+        {
+          "t": 530,
+          "type": "mouse_up",
+          "pos": [
+            4.0,
+            3.01
+          ]
+        },
+        {
+          "t": 1000,
+          "type": "mouse_down",
+          "pos": [
+            3.0,
+            -0.99
+          ]
+        },
+        {
+          "t": 1030,
+          "type": "mouse_up",
+          "pos": [
+            3.0,
+            -0.99
+          ]
+        },
+        {
+          "t": 1500,
+          "type": "mouse_down",
+          "pos": [
+            -2.0,
+            2.01
+          ]
+        },
+        {
+          "t": 1530,
+          "type": "mouse_up",
+          "pos": [
+            -2.0,
+            2.01
+          ]
+        }
+      ]
+    },
+    {
+      "name": "delete_tool_stroke_erases_crossed_object",
+      "tool_mode": 6,
+      "initial_script": [
+        "A=(1,1.01)",
+        "B=(4,1.01)",
+        "s=Segment(A,B)",
+        "C=(-3,-1.99)",
+        "D=(6,4.01)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            3.0,
+            1.73
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            1.65
+          ]
+        },
+        {
+          "t": 175,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            1.57
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            1.49
+          ]
+        },
+        {
+          "t": 225,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            1.41
+          ]
+        },
+        {
+          "t": 250,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            1.33
+          ]
+        },
+        {
+          "t": 275,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            1.25
+          ]
+        },
+        {
+          "t": 300,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            1.17
+          ]
+        },
+        {
+          "t": 325,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            1.09
+          ]
+        },
+        {
+          "t": 350,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            1.01
+          ]
+        },
+        {
+          "t": 375,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            0.93
+          ]
+        },
+        {
+          "t": 400,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            0.85
+          ]
+        },
+        {
+          "t": 425,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            0.77
+          ]
+        },
+        {
+          "t": 450,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            0.69
+          ]
+        },
+        {
+          "t": 475,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            0.61
+          ]
+        },
+        {
+          "t": 500,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            0.53
+          ]
+        },
+        {
+          "t": 525,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            0.45
+          ]
+        },
+        {
+          "t": 550,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            0.37
+          ]
+        },
+        {
+          "t": 575,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            0.29
+          ]
+        },
+        {
+          "t": 600,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            0.21
+          ]
+        },
+        {
+          "t": 625,
+          "type": "mouse_move",
+          "pos": [
+            3.0,
+            0.13
+          ]
+        },
+        {
+          "t": 750,
+          "type": "mouse_up",
+          "pos": [
+            3.0,
+            0.13
+          ]
+        }
+      ]
+    },
+    {
+      "name": "drag_point_on_line_slides",
+      "tool_mode": 0,
+      "initial_script": [
+        "f: y=1.01",
+        "P=Point(f)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            0.0,
+            1.01
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            0.08,
+            0.956667
+          ]
+        },
+        {
+          "t": 175,
+          "type": "mouse_move",
+          "pos": [
+            0.16,
+            0.903333
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_move",
+          "pos": [
+            0.24,
+            0.85
+          ]
+        },
+        {
+          "t": 225,
+          "type": "mouse_move",
+          "pos": [
+            0.32,
+            0.796667
+          ]
+        },
+        {
+          "t": 250,
+          "type": "mouse_move",
+          "pos": [
+            0.4,
+            0.743333
+          ]
+        },
+        {
+          "t": 275,
+          "type": "mouse_move",
+          "pos": [
+            0.48,
+            0.69
+          ]
+        },
+        {
+          "t": 300,
+          "type": "mouse_move",
+          "pos": [
+            0.56,
+            0.636667
+          ]
+        },
+        {
+          "t": 325,
+          "type": "mouse_move",
+          "pos": [
+            0.64,
+            0.583333
+          ]
+        },
+        {
+          "t": 350,
+          "type": "mouse_move",
+          "pos": [
+            0.72,
+            0.53
+          ]
+        },
+        {
+          "t": 375,
+          "type": "mouse_move",
+          "pos": [
+            0.8,
+            0.476667
+          ]
+        },
+        {
+          "t": 400,
+          "type": "mouse_move",
+          "pos": [
+            0.88,
+            0.423333
+          ]
+        },
+        {
+          "t": 425,
+          "type": "mouse_move",
+          "pos": [
+            0.96,
+            0.37
+          ]
+        },
+        {
+          "t": 450,
+          "type": "mouse_move",
+          "pos": [
+            1.04,
+            0.316667
+          ]
+        },
+        {
+          "t": 475,
+          "type": "mouse_move",
+          "pos": [
+            1.12,
+            0.263333
+          ]
+        },
+        {
+          "t": 500,
+          "type": "mouse_move",
+          "pos": [
+            1.2,
+            0.21
+          ]
+        },
+        {
+          "t": 625,
+          "type": "mouse_up",
+          "pos": [
+            1.2,
+            0.21
+          ]
+        }
+      ]
+    },
+    {
+      "name": "zoom_in_tool_rectangle_fills_canvas",
+      "tool_mode": 41,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1.0,
+            1.01
+          ]
+        },
+        {
+          "t": 20,
+          "type": "mouse_move",
+          "pos": [
+            1.266667,
+            1.143333
+          ]
+        },
+        {
+          "t": 45,
+          "type": "mouse_move",
+          "pos": [
+            1.533333,
+            1.276667
+          ]
+        },
+        {
+          "t": 70,
+          "type": "mouse_move",
+          "pos": [
+            1.8,
+            1.41
+          ]
+        },
+        {
+          "t": 95,
+          "type": "mouse_move",
+          "pos": [
+            2.066667,
+            1.543333
+          ]
+        },
+        {
+          "t": 120,
+          "type": "mouse_move",
+          "pos": [
+            2.333333,
+            1.676667
+          ]
+        },
+        {
+          "t": 145,
+          "type": "mouse_move",
+          "pos": [
+            2.6,
+            1.81
+          ]
+        },
+        {
+          "t": 170,
+          "type": "mouse_move",
+          "pos": [
+            2.866667,
+            1.943333
+          ]
+        },
+        {
+          "t": 195,
+          "type": "mouse_move",
+          "pos": [
+            3.133333,
+            2.076667
+          ]
+        },
+        {
+          "t": 220,
+          "type": "mouse_move",
+          "pos": [
+            3.4,
+            2.21
+          ]
+        },
+        {
+          "t": 245,
+          "type": "mouse_move",
+          "pos": [
+            3.666667,
+            2.343333
+          ]
+        },
+        {
+          "t": 270,
+          "type": "mouse_move",
+          "pos": [
+            3.933333,
+            2.476667
+          ]
+        },
+        {
+          "t": 295,
+          "type": "mouse_move",
+          "pos": [
+            4.2,
+            2.61
+          ]
+        },
+        {
+          "t": 320,
+          "type": "mouse_move",
+          "pos": [
+            4.466667,
+            2.743333
+          ]
+        },
+        {
+          "t": 345,
+          "type": "mouse_move",
+          "pos": [
+            4.733333,
+            2.876667
+          ]
+        },
+        {
+          "t": 370,
+          "type": "mouse_move",
+          "pos": [
+            5.0,
+            3.01
+          ]
+        },
+        {
+          "t": 495,
+          "type": "mouse_up",
+          "pos": [
+            5.0,
+            3.01
+          ]
+        }
+      ]
+    },
+    {
+      "name": "controller_drag_time_gate",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 80,
+          "type": "mouse_move",
+          "pos": [
+            2,
+            0.99
+          ],
+          "since_press_ms": 80
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            3,
+            0.99
+          ],
+          "since_press_ms": 150
+        },
+        {
+          "t": 230,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            0.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hit_radius_mouse_and_touch",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "hit_test",
+          "pos": [
+            1.4,
+            0.99
+          ],
+          "source": "mouse"
+        },
+        {
+          "t": 150,
+          "type": "hit_test",
+          "pos": [
+            1.4,
+            0.99
+          ],
+          "source": "touch"
+        }
+      ]
+    },
+    {
+      "name": "dependent_line_snap",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)",
+        "B = (4, 2)",
+        "f = Line(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2.5,
+            1.49
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            3.44,
+            2.41
+          ]
+        },
+        {
+          "t": 210,
+          "type": "mouse_up",
+          "pos": [
+            3.44,
+            2.41
+          ]
+        }
+      ]
+    },
+    {
+      "name": "grid_steps_during_zoom",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "wheel",
+          "pos": [
+            0,
+            -0.01
+          ],
+          "deltaY": -100
+        },
+        {
+          "t": 130,
+          "type": "wheel",
+          "pos": [
+            0,
+            -0.01
+          ],
+          "deltaY": -100
+        },
+        {
+          "t": 260,
+          "type": "wheel",
+          "pos": [
+            0,
+            -0.01
+          ],
+          "deltaY": -100
+        },
+        {
+          "t": 390,
+          "type": "wheel",
+          "pos": [
+            0,
+            -0.01
+          ],
+          "deltaY": -100
+        }
+      ]
+    },
+    {
+      "name": "pan_off_axis",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.99
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            3,
+            2.01
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_move",
+          "pos": [
+            4,
+            2.03
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            2.03
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pan_near_axis_inside_lock_cone",
+      "tool_mode": 40,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.99
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            2.24,
+            2.07
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_move",
+          "pos": [
+            2.8,
+            2.13
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            2.8,
+            2.13
+          ]
+        }
+      ]
+    },
+    {
+      "name": "segment_preview_endpoint",
+      "tool_mode": 15,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            3.04,
+            2.05
+          ]
+        },
+        {
+          "t": 220,
+          "type": "mouse_down",
+          "pos": [
+            3.04,
+            2.05
+          ]
+        },
+        {
+          "t": 280,
+          "type": "mouse_up",
+          "pos": [
+            3.04,
+            2.05
+          ]
+        }
+      ]
+    },
+    {
+      "name": "zoom_rectangle_near_view_aspect",
+      "tool_mode": 41,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            -4,
+            3.99
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            2,
+            -0.81
+          ]
+        },
+        {
+          "t": 220,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            -0.81
+          ]
+        }
+      ]
+    },
+    {
+      "name": "segment_preview_hits_existing_point",
+      "tool_mode": 15,
+      "initial_script": [
+        "B = (3, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            3.04,
+            2.05
+          ]
+        }
+      ]
+    },
+    {
+      "name": "resize_after_view_reload",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "wheel",
+          "pos": [
+            2,
+            0.99
+          ],
+          "deltaY": -100
+        },
+        {
+          "t": 150,
+          "type": "reload_view"
+        },
+        {
+          "t": 250,
+          "type": "resize_canvas",
+          "width": 1092,
+          "height": 847
+        }
+      ]
+    },
+    {
+      "name": "rapid_second_press_on_point",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 40,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 100,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ],
+          "since_release_ms": 60
+        },
+        {
+          "t": 140,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 700,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ],
+          "since_release_ms": 560
+        },
+        {
+          "t": 740,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "point_visibility_with_automatic_labeling",
+      "tool_mode": 1,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "algebra_visibility",
+          "visible": true
+        },
+        {
+          "t": 150,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 220,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 300,
+          "type": "algebra_visibility",
+          "visible": false
+        },
+        {
+          "t": 450,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            2.99
+          ]
+        },
+        {
+          "t": 520,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            2.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "context_menu_routes_object_or_canvas",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            2.99
+          ],
+          "right_click": true
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            2.99
+          ],
+          "right_click": true
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ],
+          "right_click": true
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ],
+          "right_click": true
+        }
+      ]
+    },
+    {
+      "name": "select_point_for_algebra_highlight",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "drag_release_outside_canvas",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (8, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            8,
+            0.99
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            8.5,
+            1.19
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_exit"
+        },
+        {
+          "t": 250,
+          "type": "mouse_move",
+          "pos": [
+            9.2,
+            1.39
+          ]
+        },
+        {
+          "t": 310,
+          "type": "mouse_up",
+          "pos": [
+            9.2,
+            1.39
+          ]
+        }
+      ]
+    },
+    {
+      "name": "circle_radius_dialog_cancel",
+      "tool_mode": 34,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 200,
+          "type": "key",
+          "key": "Escape"
+        }
+      ]
+    },
+    {
+      "name": "wheel_checkpoint_at_next_press",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "wheel",
+          "pos": [
+            2,
+            0.99
+          ],
+          "deltaY": -100
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            2.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            2.99
+          ]
+        }
+      ]
+    },
+    {
+      "name": "wheel_checkpoint_at_exit",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "wheel",
+          "pos": [
+            2,
+            0.99
+          ],
+          "deltaY": -100
+        },
+        {
+          "t": 260,
+          "type": "mouse_exit"
+        }
+      ]
+    },
+    {
+      "name": "zoom_tool_checkpoint_on_leave",
+      "tool_mode": 41,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "select_tool",
+          "mode": 0
+        }
+      ]
+    },
+    {
+      "name": "algebra_description_separators",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)",
+        "a = 3",
+        "f: y = 1",
+        "g(x) = x^2"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "algebra_descriptions"
+        }
+      ]
+    },
+    {
+      "name": "pinch_sub_threshold_step",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "pinch_start",
+          "fingers": [
+            [
+              346,
+              373
+            ],
+            [
+              546,
+              373
+            ]
+          ]
+        },
+        {
+          "t": 120,
+          "type": "pinch_move",
+          "fingers": [
+            [
+              345,
+              373
+            ],
+            [
+              547,
+              373
+            ]
+          ]
+        },
+        {
+          "t": 160,
+          "type": "pinch_move",
+          "fingers": [
+            [
+              296,
+              373
+            ],
+            [
+              596,
+              373
+            ]
+          ]
+        },
+        {
+          "t": 220,
+          "type": "pinch_end"
+        }
+      ]
+    },
+    {
+      "name": "two_fingers_scale_x_axis",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "touch_gesture_start",
+          "fingers": [
+            [
+              346,
+              374
+            ],
+            [
+              546,
+              374
+            ]
+          ]
+        },
+        {
+          "t": 120,
+          "type": "touch_gesture_move",
+          "fingers": [
+            [
+              296,
+              374
+            ],
+            [
+              596,
+              374
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "two_fingers_scale_circle",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (0, 1)",
+        "B = (0, 3)",
+        "c = Circle(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "touch_gesture_start",
+          "fingers": [
+            [
+              346,
+              324
+            ],
+            [
+              546,
+              324
+            ]
+          ]
+        },
+        {
+          "t": 120,
+          "type": "touch_gesture_move",
+          "fingers": [
+            [
+              296,
+              324
+            ],
+            [
+              596,
+              324
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "two_fingers_move_line",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (-3, 2)",
+        "B = (3, 2)",
+        "f = Line(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "touch_gesture_start",
+          "fingers": [
+            [
+              346,
+              274
+            ],
+            [
+              546,
+              274
+            ]
+          ]
+        },
+        {
+          "t": 120,
+          "type": "touch_gesture_move",
+          "fingers": [
+            [
+              346,
+              244
+            ],
+            [
+              546,
+              244
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4074 @@
+{
+  "upstream": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "generator": "ggb-harness",
+  "harness_revision_sha256": "35ab0e188aef4a7c20101a89d53d38a15cde87fa6340ba598b6206b6c90cc24e",
+  "command": "GEOGEBRA_SRC=<checkout> tools/ggb-harness/linux-x86_64.sh golden parity-scenarios",
+  "scenarios": [
+    {
+      "name": "free_equation_line_not_draggable",
+      "tool_mode": 0,
+      "initial_script": [
+        "f: y=1.01"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [2.0, 1.01]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [2.08, 0.956667]
+        },
+        {
+          "t": 175,
+          "type": "mouse_move",
+          "pos": [2.16, 0.903333]
+        },
+        {
+          "t": 200,
+          "type": "mouse_move",
+          "pos": [2.24, 0.85]
+        },
+        {
+          "t": 225,
+          "type": "mouse_move",
+          "pos": [2.32, 0.796667]
+        },
+        {
+          "t": 250,
+          "type": "mouse_move",
+          "pos": [2.4, 0.743333]
+        },
+        {
+          "t": 275,
+          "type": "mouse_move",
+          "pos": [2.48, 0.69]
+        },
+        {
+          "t": 300,
+          "type": "mouse_move",
+          "pos": [2.56, 0.636667]
+        },
+        {
+          "t": 325,
+          "type": "mouse_move",
+          "pos": [2.64, 0.583333]
+        },
+        {
+          "t": 350,
+          "type": "mouse_move",
+          "pos": [2.72, 0.53]
+        },
+        {
+          "t": 375,
+          "type": "mouse_move",
+          "pos": [2.8, 0.476667]
+        },
+        {
+          "t": 400,
+          "type": "mouse_move",
+          "pos": [2.88, 0.423333]
+        },
+        {
+          "t": 425,
+          "type": "mouse_move",
+          "pos": [2.96, 0.37]
+        },
+        {
+          "t": 450,
+          "type": "mouse_move",
+          "pos": [3.04, 0.316667]
+        },
+        {
+          "t": 475,
+          "type": "mouse_move",
+          "pos": [3.12, 0.263333]
+        },
+        {
+          "t": 500,
+          "type": "mouse_move",
+          "pos": [3.2, 0.21]
+        },
+        {
+          "t": 625,
+          "type": "mouse_up",
+          "pos": [3.2, 0.21]
+        }
+      ],
+      "initial": {
+        "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.01 }
+      },
+      "frames": [
+        {
+          "t": 625,
+          "objects": {
+            "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.01 }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 175,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 200,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 225,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 250,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 275,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 300,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 325,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 350,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 375,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 400,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 425,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 450,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 475,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 500,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 625,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.01 }
+      },
+      "undo": []
+    },
+    {
+      "name": "area_tool_on_polygon",
+      "tool_mode": 49,
+      "initial_script": [
+        "A=(1,1)",
+        "B=(5,1)",
+        "C=(1,4)",
+        "p=Polygon(A,B,C)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [2.0, 1.51]
+        },
+        {
+          "t": 30,
+          "type": "mouse_up",
+          "pos": [2.0, 1.51]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "on_path": false, "in_region": false },
+        "p": {
+          "type": "polygon",
+          "defined": true,
+          "vertices": [
+            [1.0, 1.0],
+            [5.0, 1.0],
+            [1.0, 4.0]
+          ],
+          "area": 6.0,
+          "signed_area": 6.0
+        },
+        "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
+        "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 1.0, "y2": 4.0 },
+        "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 1.0, "y2": 1.0 }
+      },
+      "frames": [
+        {
+          "t": 30,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "on_path": false, "in_region": false },
+            "p": {
+              "type": "polygon",
+              "defined": true,
+              "vertices": [
+                [1.0, 1.0],
+                [5.0, 1.0],
+                [1.0, 4.0]
+              ],
+              "area": 6.0,
+              "signed_area": 6.0
+            },
+            "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
+            "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 1.0, "y2": 4.0 },
+            "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 1.0, "y2": 1.0 },
+            "Textp": { "type": "text", "defined": true, "anchor": "Pointp" },
+            "Pointp": { "type": "point", "defined": true, "x": 2.0, "y": 1.51, "visible": false, "on_path": false, "in_region": true }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 49,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 30,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 49,
+          "selection": [],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "on_path": false, "in_region": false },
+        "p": {
+          "type": "polygon",
+          "defined": true,
+          "vertices": [
+            [1.0, 1.0],
+            [5.0, 1.0],
+            [1.0, 4.0]
+          ],
+          "area": 6.0,
+          "signed_area": 6.0
+        },
+        "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
+        "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 1.0, "y2": 4.0 },
+        "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 1.0, "y2": 1.0 },
+        "Textp": { "type": "text", "defined": true, "anchor": "Pointp" },
+        "Pointp": { "type": "point", "defined": true, "x": 2.0, "y": 1.51, "visible": false, "on_path": false, "in_region": true }
+      },
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "on_path": false, "in_region": false },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [5.0, 1.0],
+              [1.0, 4.0]
+            ],
+            "area": 6.0,
+            "signed_area": 6.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
+          "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 1.0, "y2": 4.0 },
+          "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 1.0, "y2": 1.0 }
+        }
+      ]
+    },
+    {
+      "name": "enter_on_empty_input_row",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        { "t": 0, "type": "focus_input_row" },
+        { "t": 300, "type": "key", "key": "Enter" }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 300,
+          "objects": {}
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 300,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": { "normalized_input": "" },
+      "settled": {},
+      "undo": []
+    },
+    {
+      "name": "tool_text_places_literal",
+      "tool_mode": 17,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        { "t": 180, "type": "text", "text": "Placed text" },
+        { "t": 220, "type": "key", "key": "Enter" }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 60,
+          "objects": {}
+        },
+        {
+          "t": 220,
+          "objects": {
+            "text1": {
+              "type": "text",
+              "defined": true,
+              "text": "Placed text",
+              "world_position": [2.0, 0.99]
+            }
+          }
+        }
+      ],
+      "dialogs": [
+        { "kind": "text" }
+      ],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 17,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 60,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 17,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 180,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 17,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 220,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 17,
+          "selection": [],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "text1": {
+          "type": "text",
+          "defined": true,
+          "text": "Placed text",
+          "world_position": [2.0, 0.99]
+        }
+      },
+      "undo": [
+        {}
+      ]
+    },
+    {
+      "name": "tool_input_box_places_empty_widget",
+      "tool_mode": 61,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [-6.44, 5.71]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [-6.44, 5.71]
+        },
+        { "t": 180, "type": "key", "key": "Enter" }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 60,
+          "objects": {}
+        },
+        {
+          "t": 180,
+          "objects": {
+            "InputBox1": {
+              "type": "input_box",
+              "defined": true,
+              "text": "",
+              "screen_position": [
+                124,
+                88
+              ]
+            }
+          }
+        }
+      ],
+      "dialogs": [
+        {
+          "kind": "input_box",
+          "pos": [
+            124,
+            88
+          ]
+        }
+      ],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 61,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 60,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 61,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 180,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 61,
+          "selection": [],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "InputBox1": {
+          "type": "input_box",
+          "defined": true,
+          "text": "",
+          "screen_position": [
+            124,
+            88
+          ]
+        }
+      },
+      "undo": [
+        {}
+      ]
+    },
+    {
+      "name": "press_on_polygon_edge_does_nothing",
+      "tool_mode": 0,
+      "initial_script": [
+        "A=(1,1.01)",
+        "B=(5,1.01)",
+        "C=(1,4.01)",
+        "p=Polygon(A,B,C)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [3.0, 1.01]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [3.12, 0.93]
+        },
+        {
+          "t": 175,
+          "type": "mouse_move",
+          "pos": [3.24, 0.85]
+        },
+        {
+          "t": 200,
+          "type": "mouse_move",
+          "pos": [3.36, 0.77]
+        },
+        {
+          "t": 225,
+          "type": "mouse_move",
+          "pos": [3.48, 0.69]
+        },
+        {
+          "t": 250,
+          "type": "mouse_move",
+          "pos": [3.6, 0.61]
+        },
+        {
+          "t": 275,
+          "type": "mouse_move",
+          "pos": [3.72, 0.53]
+        },
+        {
+          "t": 300,
+          "type": "mouse_move",
+          "pos": [3.84, 0.45]
+        },
+        {
+          "t": 325,
+          "type": "mouse_move",
+          "pos": [3.96, 0.37]
+        },
+        {
+          "t": 350,
+          "type": "mouse_move",
+          "pos": [4.08, 0.29]
+        },
+        {
+          "t": 375,
+          "type": "mouse_move",
+          "pos": [4.2, 0.21]
+        },
+        {
+          "t": 500,
+          "type": "mouse_up",
+          "pos": [4.2, 0.21]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.01, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.01, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.01, "on_path": false, "in_region": false },
+        "p": {
+          "type": "polygon",
+          "defined": true,
+          "vertices": [
+            [1.0, 1.01],
+            [5.0, 1.01],
+            [1.0, 4.01]
+          ],
+          "area": 5.999999999999998,
+          "signed_area": 5.999999999999998
+        },
+        "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.01, "x2": 5.0, "y2": 1.01 },
+        "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.01, "x2": 1.0, "y2": 4.01 },
+        "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.01, "x2": 1.0, "y2": 1.01 }
+      },
+      "frames": [
+        {
+          "t": 500,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.2, "y": 0.22, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 6.2, "y": 0.22, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.01, "on_path": false, "in_region": false },
+            "p": {
+              "type": "polygon",
+              "defined": true,
+              "vertices": [
+                [2.2, 0.22],
+                [6.2, 0.22],
+                [1.0, 4.01]
+              ],
+              "area": 7.58,
+              "signed_area": 7.58
+            },
+            "c": { "type": "segment", "defined": true, "x1": 2.2, "y1": 0.22, "x2": 6.2, "y2": 0.22 },
+            "a": { "type": "segment", "defined": true, "x1": 6.2, "y1": 0.22, "x2": 1.0, "y2": 4.01 },
+            "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.01, "x2": 2.2, "y2": 0.22 }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "c"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "c"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 175,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "c"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 200,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "c"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 225,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "c"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 250,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "c"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 275,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "c"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 300,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "c"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 325,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "c"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 350,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "c"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 375,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "c"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 500,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "c"
+          ],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 2.2, "y": 0.22, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 6.2, "y": 0.22, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.01, "on_path": false, "in_region": false },
+        "p": {
+          "type": "polygon",
+          "defined": true,
+          "vertices": [
+            [2.2, 0.22],
+            [6.2, 0.22],
+            [1.0, 4.01]
+          ],
+          "area": 7.58,
+          "signed_area": 7.58
+        },
+        "c": { "type": "segment", "defined": true, "x1": 2.2, "y1": 0.22, "x2": 6.2, "y2": 0.22 },
+        "a": { "type": "segment", "defined": true, "x1": 6.2, "y1": 0.22, "x2": 1.0, "y2": 4.01 },
+        "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.01, "x2": 2.2, "y2": 0.22 }
+      },
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.01, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.01, "on_path": false, "in_region": false },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.01, "on_path": false, "in_region": false },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.01],
+              [5.0, 1.01],
+              [1.0, 4.01]
+            ],
+            "area": 5.999999999999998,
+            "signed_area": 5.999999999999998
+          },
+          "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.01, "x2": 5.0, "y2": 1.01 },
+          "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.01, "x2": 1.0, "y2": 4.01 },
+          "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.01, "x2": 1.0, "y2": 1.01 }
+        }
+      ]
+    },
+    {
+      "name": "segment_tool_twice_stays_selected",
+      "tool_mode": 15,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [1.0, 1.01]
+        },
+        {
+          "t": 30,
+          "type": "mouse_up",
+          "pos": [1.0, 1.01]
+        },
+        {
+          "t": 500,
+          "type": "mouse_down",
+          "pos": [4.0, 3.01]
+        },
+        {
+          "t": 530,
+          "type": "mouse_up",
+          "pos": [4.0, 3.01]
+        },
+        {
+          "t": 1000,
+          "type": "mouse_down",
+          "pos": [3.0, -0.99]
+        },
+        {
+          "t": 1030,
+          "type": "mouse_up",
+          "pos": [3.0, -0.99]
+        },
+        {
+          "t": 1500,
+          "type": "mouse_down",
+          "pos": [-2.0, 2.01]
+        },
+        {
+          "t": 1530,
+          "type": "mouse_up",
+          "pos": [-2.0, 2.01]
+        }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 30,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 530,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 4.0, "y2": 3.0 }
+          }
+        },
+        {
+          "t": 1030,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 4.0, "y2": 3.0 },
+            "C": { "type": "point", "defined": true, "x": 3.0, "y": -1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 1530,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 4.0, "y2": 3.0 },
+            "C": { "type": "point", "defined": true, "x": 3.0, "y": -1.0, "on_path": false, "in_region": false },
+            "D": { "type": "point", "defined": true, "x": -2.0, "y": 2.0, "on_path": false, "in_region": false },
+            "g": { "type": "segment", "defined": true, "x1": 3.0, "y1": -1.0, "x2": -2.0, "y2": 2.0 }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 30,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 500,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 530,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [],
+          "undo_steps_added": 1
+        },
+        {
+          "t": 1000,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [
+            "C"
+          ],
+          "undo_steps_added": 1
+        },
+        {
+          "t": 1030,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [
+            "C"
+          ],
+          "undo_steps_added": 1
+        },
+        {
+          "t": 1500,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [
+            "C"
+          ],
+          "undo_steps_added": 1
+        },
+        {
+          "t": 1530,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [],
+          "undo_steps_added": 2
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0, "on_path": false, "in_region": false },
+        "f": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 4.0, "y2": 3.0 },
+        "C": { "type": "point", "defined": true, "x": 3.0, "y": -1.0, "on_path": false, "in_region": false },
+        "D": { "type": "point", "defined": true, "x": -2.0, "y": 2.0, "on_path": false, "in_region": false },
+        "g": { "type": "segment", "defined": true, "x1": 3.0, "y1": -1.0, "x2": -2.0, "y2": 2.0 }
+      },
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0, "on_path": false, "in_region": false },
+          "f": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 4.0, "y2": 3.0 }
+        },
+        {}
+      ]
+    },
+    {
+      "name": "delete_tool_stroke_erases_crossed_object",
+      "tool_mode": 6,
+      "initial_script": [
+        "A=(1,1.01)",
+        "B=(4,1.01)",
+        "s=Segment(A,B)",
+        "C=(-3,-1.99)",
+        "D=(6,4.01)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [3.0, 1.73]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [3.0, 1.65]
+        },
+        {
+          "t": 175,
+          "type": "mouse_move",
+          "pos": [3.0, 1.57]
+        },
+        {
+          "t": 200,
+          "type": "mouse_move",
+          "pos": [3.0, 1.49]
+        },
+        {
+          "t": 225,
+          "type": "mouse_move",
+          "pos": [3.0, 1.41]
+        },
+        {
+          "t": 250,
+          "type": "mouse_move",
+          "pos": [3.0, 1.33]
+        },
+        {
+          "t": 275,
+          "type": "mouse_move",
+          "pos": [3.0, 1.25]
+        },
+        {
+          "t": 300,
+          "type": "mouse_move",
+          "pos": [3.0, 1.17]
+        },
+        {
+          "t": 325,
+          "type": "mouse_move",
+          "pos": [3.0, 1.09]
+        },
+        {
+          "t": 350,
+          "type": "mouse_move",
+          "pos": [3.0, 1.01]
+        },
+        {
+          "t": 375,
+          "type": "mouse_move",
+          "pos": [3.0, 0.93]
+        },
+        {
+          "t": 400,
+          "type": "mouse_move",
+          "pos": [3.0, 0.85]
+        },
+        {
+          "t": 425,
+          "type": "mouse_move",
+          "pos": [3.0, 0.77]
+        },
+        {
+          "t": 450,
+          "type": "mouse_move",
+          "pos": [3.0, 0.69]
+        },
+        {
+          "t": 475,
+          "type": "mouse_move",
+          "pos": [3.0, 0.61]
+        },
+        {
+          "t": 500,
+          "type": "mouse_move",
+          "pos": [3.0, 0.53]
+        },
+        {
+          "t": 525,
+          "type": "mouse_move",
+          "pos": [3.0, 0.45]
+        },
+        {
+          "t": 550,
+          "type": "mouse_move",
+          "pos": [3.0, 0.37]
+        },
+        {
+          "t": 575,
+          "type": "mouse_move",
+          "pos": [3.0, 0.29]
+        },
+        {
+          "t": 600,
+          "type": "mouse_move",
+          "pos": [3.0, 0.21]
+        },
+        {
+          "t": 625,
+          "type": "mouse_move",
+          "pos": [3.0, 0.13]
+        },
+        {
+          "t": 750,
+          "type": "mouse_up",
+          "pos": [3.0, 0.13]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.01, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.01, "on_path": false, "in_region": false },
+        "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.01, "x2": 4.0, "y2": 1.01 },
+        "C": { "type": "point", "defined": true, "x": -3.0, "y": -1.99, "on_path": false, "in_region": false },
+        "D": { "type": "point", "defined": true, "x": 6.0, "y": 4.01, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 750,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.01, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.01, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": -3.0, "y": -1.99, "on_path": false, "in_region": false },
+            "D": { "type": "point", "defined": true, "x": 6.0, "y": 4.01, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 175,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 200,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 225,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 250,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 275,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 300,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 325,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 350,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 375,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 400,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 425,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 450,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 475,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 500,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 525,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 550,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 575,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 600,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 625,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 750,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 6,
+          "selection": [],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.01, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.01, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": -3.0, "y": -1.99, "on_path": false, "in_region": false },
+        "D": { "type": "point", "defined": true, "x": 6.0, "y": 4.01, "on_path": false, "in_region": false }
+      },
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.01, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.01, "on_path": false, "in_region": false },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.01, "x2": 4.0, "y2": 1.01 },
+          "C": { "type": "point", "defined": true, "x": -3.0, "y": -1.99, "on_path": false, "in_region": false },
+          "D": { "type": "point", "defined": true, "x": 6.0, "y": 4.01, "on_path": false, "in_region": false }
+        }
+      ]
+    },
+    {
+      "name": "drag_point_on_line_slides",
+      "tool_mode": 0,
+      "initial_script": [
+        "f: y=1.01",
+        "P=Point(f)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [0.0, 1.01]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [0.08, 0.956667]
+        },
+        {
+          "t": 175,
+          "type": "mouse_move",
+          "pos": [0.16, 0.903333]
+        },
+        {
+          "t": 200,
+          "type": "mouse_move",
+          "pos": [0.24, 0.85]
+        },
+        {
+          "t": 225,
+          "type": "mouse_move",
+          "pos": [0.32, 0.796667]
+        },
+        {
+          "t": 250,
+          "type": "mouse_move",
+          "pos": [0.4, 0.743333]
+        },
+        {
+          "t": 275,
+          "type": "mouse_move",
+          "pos": [0.48, 0.69]
+        },
+        {
+          "t": 300,
+          "type": "mouse_move",
+          "pos": [0.56, 0.636667]
+        },
+        {
+          "t": 325,
+          "type": "mouse_move",
+          "pos": [0.64, 0.583333]
+        },
+        {
+          "t": 350,
+          "type": "mouse_move",
+          "pos": [0.72, 0.53]
+        },
+        {
+          "t": 375,
+          "type": "mouse_move",
+          "pos": [0.8, 0.476667]
+        },
+        {
+          "t": 400,
+          "type": "mouse_move",
+          "pos": [0.88, 0.423333]
+        },
+        {
+          "t": 425,
+          "type": "mouse_move",
+          "pos": [0.96, 0.37]
+        },
+        {
+          "t": 450,
+          "type": "mouse_move",
+          "pos": [1.04, 0.316667]
+        },
+        {
+          "t": 475,
+          "type": "mouse_move",
+          "pos": [1.12, 0.263333]
+        },
+        {
+          "t": 500,
+          "type": "mouse_move",
+          "pos": [1.2, 0.21]
+        },
+        {
+          "t": 625,
+          "type": "mouse_up",
+          "pos": [1.2, 0.21]
+        }
+      ],
+      "initial": {
+        "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.01 },
+        "P": { "type": "point", "defined": true, "x": 0.0, "y": 1.01, "on_path": true, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 625,
+          "objects": {
+            "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.01 },
+            "P": { "type": "point", "defined": true, "x": 1.2, "y": 1.01, "on_path": true, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 175,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 200,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 225,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 250,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 275,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 300,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 325,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 350,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 375,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 400,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 425,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 450,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 475,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 500,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 625,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "P"
+          ],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.01 },
+        "P": { "type": "point", "defined": true, "x": 1.2, "y": 1.01, "on_path": true, "in_region": false }
+      },
+      "undo": [
+        {
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.01 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 1.01, "on_path": true, "in_region": false }
+        }
+      ]
+    },
+    {
+      "name": "zoom_in_tool_rectangle_fills_canvas",
+      "tool_mode": 41,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [1.0, 1.01]
+        },
+        {
+          "t": 20,
+          "type": "mouse_move",
+          "pos": [1.266667, 1.143333]
+        },
+        {
+          "t": 45,
+          "type": "mouse_move",
+          "pos": [1.533333, 1.276667]
+        },
+        {
+          "t": 70,
+          "type": "mouse_move",
+          "pos": [1.8, 1.41]
+        },
+        {
+          "t": 95,
+          "type": "mouse_move",
+          "pos": [2.066667, 1.543333]
+        },
+        {
+          "t": 120,
+          "type": "mouse_move",
+          "pos": [2.333333, 1.676667]
+        },
+        {
+          "t": 145,
+          "type": "mouse_move",
+          "pos": [2.6, 1.81]
+        },
+        {
+          "t": 170,
+          "type": "mouse_move",
+          "pos": [2.866667, 1.943333]
+        },
+        {
+          "t": 195,
+          "type": "mouse_move",
+          "pos": [3.133333, 2.076667]
+        },
+        {
+          "t": 220,
+          "type": "mouse_move",
+          "pos": [3.4, 2.21]
+        },
+        {
+          "t": 245,
+          "type": "mouse_move",
+          "pos": [3.666667, 2.343333]
+        },
+        {
+          "t": 270,
+          "type": "mouse_move",
+          "pos": [3.933333, 2.476667]
+        },
+        {
+          "t": 295,
+          "type": "mouse_move",
+          "pos": [4.2, 2.61]
+        },
+        {
+          "t": 320,
+          "type": "mouse_move",
+          "pos": [4.466667, 2.743333]
+        },
+        {
+          "t": 345,
+          "type": "mouse_move",
+          "pos": [4.733333, 2.876667]
+        },
+        {
+          "t": 370,
+          "type": "mouse_move",
+          "pos": [5.0, 3.01]
+        },
+        {
+          "t": 495,
+          "type": "mouse_up",
+          "pos": [5.0, 3.01]
+        }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 495,
+          "objects": {}
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 20,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 316.0, 13.0, 7.0]
+        },
+        {
+          "t": 45,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 310.0, 27.0, 13.0]
+        },
+        {
+          "t": 70,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 303.0, 40.0, 20.0]
+        },
+        {
+          "t": 95,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 296.0, 53.0, 27.0]
+        },
+        {
+          "t": 120,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 290.0, 67.0, 33.0]
+        },
+        {
+          "t": 145,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 283.0, 80.0, 40.0]
+        },
+        {
+          "t": 170,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 276.0, 93.0, 47.0]
+        },
+        {
+          "t": 195,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 270.0, 107.0, 53.0]
+        },
+        {
+          "t": 220,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 263.0, 120.0, 60.0]
+        },
+        {
+          "t": 245,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 256.0, 133.0, 67.0]
+        },
+        {
+          "t": 270,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 250.0, 147.0, 73.0]
+        },
+        {
+          "t": 295,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 243.0, 160.0, 80.0]
+        },
+        {
+          "t": 320,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 236.0, 173.0, 87.0]
+        },
+        {
+          "t": 345,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 230.0, 187.0, 93.0]
+        },
+        {
+          "t": 370,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [496.0, 223.0, 200.0, 100.0]
+        },
+        {
+          "t": 495,
+          "view": [-223.0, 1124.2350000000001, 223.0, 373.5],
+          "grid_step": [0.2, 0.2],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {},
+      "settled": {},
+      "undo": []
+    },
+    {
+      "name": "controller_drag_time_gate",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 80,
+          "type": "mouse_move",
+          "pos": [
+            2,
+            0.99
+          ],
+          "since_press_ms": 80
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            3,
+            0.99
+          ],
+          "since_press_ms": 150
+        },
+        {
+          "t": 230,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            0.99
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 230,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 3.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0,
+          "point": [1.0, 1.0]
+        },
+        {
+          "t": 80,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0,
+          "point": [1.0, 1.0]
+        },
+        {
+          "t": 150,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0,
+          "point": [3.0, 1.0]
+        },
+        {
+          "t": 230,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0,
+          "point": [3.0, 1.0]
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 3.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 1.0, "on_path": false, "in_region": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 1.0, "on_path": false, "in_region": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 1.0, "on_path": false, "in_region": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 1.0, "on_path": false, "in_region": false }
+        }
+      ]
+    },
+    {
+      "name": "hit_radius_mouse_and_touch",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "hit_test",
+          "pos": [1.4, 0.99],
+          "source": "mouse"
+        },
+        {
+          "t": 150,
+          "type": "hit_test",
+          "pos": [1.4, 0.99],
+          "source": "touch"
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "frames": [],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {
+        "MOUSE": [],
+        "TOUCH": [
+          "A"
+        ]
+      },
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "undo": []
+    },
+    {
+      "name": "dependent_line_snap",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)",
+        "B = (4, 2)",
+        "f = Line(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [2.5, 1.49]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [3.44, 2.41]
+        },
+        {
+          "t": 210,
+          "type": "mouse_up",
+          "pos": [3.44, 2.41]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0, "on_path": false, "in_region": false },
+        "f": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -2.0 }
+      },
+      "frames": [
+        {
+          "t": 210,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0, "on_path": false, "in_region": false },
+            "f": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -4.0 }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 210,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "f"
+          ],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0, "on_path": false, "in_region": false },
+        "f": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -4.0 }
+      },
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0, "on_path": false, "in_region": false },
+          "f": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -4.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0, "on_path": false, "in_region": false },
+          "f": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -4.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0, "on_path": false, "in_region": false },
+          "f": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -4.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0, "on_path": false, "in_region": false },
+          "f": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -4.0 }
+        }
+      ]
+    },
+    {
+      "name": "grid_steps_during_zoom",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "wheel",
+          "pos": [
+            0,
+            -0.01
+          ],
+          "deltaY": -100
+        },
+        {
+          "t": 130,
+          "type": "wheel",
+          "pos": [
+            0,
+            -0.01
+          ],
+          "deltaY": -100
+        },
+        {
+          "t": 260,
+          "type": "wheel",
+          "pos": [
+            0,
+            -0.01
+          ],
+          "deltaY": -100
+        },
+        {
+          "t": 390,
+          "type": "wheel",
+          "pos": [
+            0,
+            -0.01
+          ],
+          "deltaY": -100
+        }
+      ],
+      "initial": {},
+      "frames": [],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.45, 55.0, 55.00000000000003],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 130,
+          "view": [446.0, 373.395, 60.500000000000014, 60.500000000000036],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 260,
+          "view": [446.00000000000006, 373.33450000000005, 66.55000000000003, 66.55000000000008],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 390,
+          "view": [446.00000000000006, 373.26795000000004, 73.20500000000004, 73.20500000000011],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {},
+      "settled": {},
+      "undo": []
+    },
+    {
+      "name": "pan_off_axis",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.99
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            3,
+            2.01
+          ]
+        },
+        {
+          "t": 200,
+          "type": "mouse_move",
+          "pos": [
+            4,
+            2.03
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            2.03
+          ]
+        }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 260,
+          "objects": {}
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 40,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [496.0, 372.49999999999994, 50.0, 49.99999999999999],
+          "grid_step": [1.0, 1.0],
+          "mode": 40,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 200,
+          "view": [546.0, 371.5, 50.0, 49.99999999999999],
+          "grid_step": [1.0, 1.0],
+          "mode": 40,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 260,
+          "view": [546.0, 371.5, 50.0, 49.99999999999999],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {},
+      "settled": {},
+      "undo": []
+    },
+    {
+      "name": "pan_near_axis_inside_lock_cone",
+      "tool_mode": 40,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            1.99
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [2.24, 2.07]
+        },
+        {
+          "t": 200,
+          "type": "mouse_move",
+          "pos": [2.8, 2.13]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [2.8, 2.13]
+        }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 260,
+          "objects": {}
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 40,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [458.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 40,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 200,
+          "view": [485.99999999999994, 373.5, 49.99999999999999, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 40,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 260,
+          "view": [485.99999999999994, 373.5, 49.99999999999999, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 40,
+          "selection": [],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {},
+      "settled": {},
+      "undo": []
+    },
+    {
+      "name": "segment_preview_endpoint",
+      "tool_mode": 15,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [3.04, 2.05]
+        },
+        {
+          "t": 220,
+          "type": "mouse_down",
+          "pos": [3.04, 2.05]
+        },
+        {
+          "t": 280,
+          "type": "mouse_up",
+          "pos": [3.04, 2.05]
+        }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 280,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
+            "f": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 3.0, "y2": 2.0 }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 60,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0,
+          "segment_preview": [496.0, 323.5, 596.0, 274.0],
+          "preview_style": [
+            28,
+            28,
+            31,
+            0,
+            5
+          ]
+        },
+        {
+          "t": 220,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 280,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {
+        "created_segment_style": [
+          28,
+          28,
+          31,
+          0,
+          5
+        ]
+      },
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
+        "f": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 3.0, "y2": 2.0 }
+      },
+      "undo": [
+        {}
+      ]
+    },
+    {
+      "name": "zoom_rectangle_near_view_aspect",
+      "tool_mode": 41,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            -4,
+            3.99
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            2,
+            -0.81
+          ]
+        },
+        {
+          "t": 220,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            -0.81
+          ]
+        }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 220,
+          "objects": {}
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [246.0, 174.0, 300.0, 251.0]
+        },
+        {
+          "t": 220,
+          "view": [396.0, 353.24999999999994, 75.0, 75.00000000000004],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0,
+          "rectangle": [246.0, 174.0, 300.0, 251.0]
+        }
+      ],
+      "metadata": {},
+      "settled": {},
+      "undo": []
+    },
+    {
+      "name": "segment_preview_hits_existing_point",
+      "tool_mode": 15,
+      "initial_script": [
+        "B = (3, 2)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [3.04, 2.05]
+        }
+      ],
+      "initial": {
+        "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 60,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 15,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0,
+          "segment_preview": [496.0, 323.5, 596.0, 274.0],
+          "preview_style": [
+            28,
+            28,
+            31,
+            0,
+            5
+          ]
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "undo": [
+        {
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+        },
+        {
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+        },
+        {
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+        },
+        {
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+        }
+      ]
+    },
+    {
+      "name": "resize_after_view_reload",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "wheel",
+          "pos": [
+            2,
+            0.99
+          ],
+          "deltaY": -100
+        },
+        { "t": 150, "type": "reload_view" },
+        { "t": 250, "type": "resize_canvas", "width": 1092, "height": 847 }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "frames": [],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [436.0, 378.45, 55.0, 55.00000000000003],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [436.0, 378.45, 55.0, 55.00000000000003],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 250,
+          "view": [436.0, 378.45, 55.0, 55.00000000000003],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "undo": []
+    },
+    {
+      "name": "rapid_second_press_on_point",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 40,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 100,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ],
+          "since_release_ms": 60
+        },
+        {
+          "t": 140,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 700,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ],
+          "since_release_ms": 560
+        },
+        {
+          "t": 740,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 40,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 140,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 740,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [
+        { "kind": "redefine", "object": "A" }
+      ],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 40,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 100,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0,
+          "double_click_started": true
+        },
+        {
+          "t": 140,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 700,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0,
+          "double_click_started": false
+        },
+        {
+          "t": 740,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "undo": []
+    },
+    {
+      "name": "point_visibility_with_automatic_labeling",
+      "tool_mode": 1,
+      "initial_script": [],
+      "events": [
+        { "t": 0, "type": "algebra_visibility", "visible": true },
+        {
+          "t": 150,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 220,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        { "t": 300, "type": "algebra_visibility", "visible": false },
+        {
+          "t": 450,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            2.99
+          ]
+        },
+        {
+          "t": 520,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            2.99
+          ]
+        }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 220,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 520,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 1,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 1,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 220,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 1,
+          "selection": [],
+          "undo_steps_added": 1
+        },
+        {
+          "t": 300,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 1,
+          "selection": [],
+          "undo_steps_added": 1
+        },
+        {
+          "t": 450,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 1,
+          "selection": [],
+          "undo_steps_added": 1
+        },
+        {
+          "t": 520,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 1,
+          "selection": [],
+          "undo_steps_added": 2
+        }
+      ],
+      "metadata": { "visible_algebra_label": true, "hidden_algebra_label": false },
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0, "on_path": false, "in_region": false }
+      },
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false }
+        },
+        {}
+      ]
+    },
+    {
+      "name": "context_menu_routes_object_or_canvas",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            2.99
+          ],
+          "right_click": true
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            2.99
+          ],
+          "right_click": true
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ],
+          "right_click": true
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ],
+          "right_click": true
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 260,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [
+        { "kind": "canvas_menu" },
+        {
+          "kind": "object_menu",
+          "objects": [
+            "A"
+          ]
+        }
+      ],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 60,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 200,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 260,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "undo": []
+    },
+    {
+      "name": "select_point_for_algebra_highlight",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            1,
+            0.99
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 60,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "undo": []
+    },
+    {
+      "name": "drag_release_outside_canvas",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (8, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            8,
+            0.99
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [8.5, 1.19]
+        },
+        { "t": 200, "type": "mouse_exit" },
+        {
+          "t": 250,
+          "type": "mouse_move",
+          "pos": [9.2, 1.39]
+        },
+        {
+          "t": 310,
+          "type": "mouse_up",
+          "pos": [9.2, 1.39]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 8.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 310,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 8.92, "y": 1.39, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 150,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 200,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 250,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 310,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [
+            "A"
+          ],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 8.92, "y": 1.39, "on_path": false, "in_region": false }
+      },
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 8.92, "y": 1.39, "on_path": false, "in_region": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 8.92, "y": 1.39, "on_path": false, "in_region": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 8.92, "y": 1.39, "on_path": false, "in_region": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 8.92, "y": 1.39, "on_path": false, "in_region": false }
+        }
+      ]
+    },
+    {
+      "name": "circle_radius_dialog_cancel",
+      "tool_mode": 34,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        { "t": 200, "type": "key", "key": "Escape" }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        },
+        {
+          "t": 200,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false }
+          }
+        }
+      ],
+      "dialogs": [
+        { "kind": "radius", "point": "A" }
+      ],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 34,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 60,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 34,
+          "selection": [],
+          "undo_steps_added": 1
+        },
+        {
+          "t": 200,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 34,
+          "selection": [],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": { "cancelled_dialog": "radius" },
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false }
+      },
+      "undo": [
+        {}
+      ]
+    },
+    {
+      "name": "wheel_checkpoint_at_next_press",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "wheel",
+          "pos": [
+            2,
+            0.99
+          ],
+          "deltaY": -100
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            4,
+            2.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            4,
+            2.99
+          ]
+        }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 260,
+          "objects": {}
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [436.0, 378.45, 55.0, 55.00000000000003],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 200,
+          "view": [436.0, 378.45, 55.0, 55.00000000000003],
+          "grid_step": [1.0, 1.0],
+          "mode": 40,
+          "selection": [],
+          "undo_steps_added": 1
+        },
+        {
+          "t": 260,
+          "view": [436.0, 378.45, 55.0, 55.00000000000003],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {},
+      "settled": {},
+      "undo": []
+    },
+    {
+      "name": "wheel_checkpoint_at_exit",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "wheel",
+          "pos": [
+            2,
+            0.99
+          ],
+          "deltaY": -100
+        },
+        { "t": 260, "type": "mouse_exit" }
+      ],
+      "initial": {},
+      "frames": [],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [436.0, 378.45, 55.0, 55.00000000000003],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 260,
+          "view": [436.0, 378.45, 55.0, 55.00000000000003],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {},
+      "settled": {},
+      "undo": []
+    },
+    {
+      "name": "zoom_tool_checkpoint_on_leave",
+      "tool_mode": 41,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            0.99
+          ]
+        },
+        { "t": 260, "type": "select_tool", "mode": 0 }
+      ],
+      "initial": {},
+      "frames": [
+        {
+          "t": 60,
+          "objects": {}
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 60,
+          "view": [396.0, 398.24999999999994, 75.0, 75.00000000000004],
+          "grid_step": [1.0, 1.0],
+          "mode": 41,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 260,
+          "view": [396.0, 398.24999999999994, 75.0, 75.00000000000004],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {},
+      "settled": {},
+      "undo": []
+    },
+    {
+      "name": "algebra_description_separators",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)",
+        "a = 3",
+        "f: y = 1",
+        "g(x) = x^2"
+      ],
+      "events": [
+        { "t": 0, "type": "algebra_descriptions" }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+        "a": { "type": "number", "defined": true, "value": 3.0 },
+        "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+        "g": {
+          "type": "function",
+          "defined": true,
+          "samples": [
+            [-8.0, 64.0],
+            [-4.0, 16.0],
+            [-2.0, 4.0],
+            [-1.0, 1.0],
+            [-0.5, 0.25],
+            [0.0, 0.0],
+            [0.5, 0.25],
+            [1.0, 1.0],
+            [2.0, 4.0],
+            [4.0, 16.0],
+            [8.0, 64.0]
+          ]
+        }
+      },
+      "frames": [],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {
+        "algebra_descriptions": { "A": "A = (1, 1)", "a": "a = 3", "f": "f: y = 1", "g": "g(x) = x²" }
+      },
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
+        "a": { "type": "number", "defined": true, "value": 3.0 },
+        "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+        "g": {
+          "type": "function",
+          "defined": true,
+          "samples": [
+            [-8.0, 64.0],
+            [-4.0, 16.0],
+            [-2.0, 4.0],
+            [-1.0, 1.0],
+            [-0.5, 0.25],
+            [0.0, 0.0],
+            [0.5, 0.25],
+            [1.0, 1.0],
+            [2.0, 4.0],
+            [4.0, 16.0],
+            [8.0, 64.0]
+          ]
+        }
+      },
+      "undo": []
+    },
+    {
+      "name": "pinch_sub_threshold_step",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "pinch_start",
+          "fingers": [
+            [
+              346,
+              373
+            ],
+            [
+              546,
+              373
+            ]
+          ]
+        },
+        {
+          "t": 120,
+          "type": "pinch_move",
+          "fingers": [
+            [
+              345,
+              373
+            ],
+            [
+              547,
+              373
+            ]
+          ]
+        },
+        {
+          "t": 160,
+          "type": "pinch_move",
+          "fingers": [
+            [
+              296,
+              373
+            ],
+            [
+              596,
+              373
+            ]
+          ]
+        },
+        { "t": 220, "type": "pinch_end" }
+      ],
+      "initial": {},
+      "frames": [],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 120,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 160,
+          "view": [446.00000000000006, 373.75, 75.0, 75.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 220,
+          "view": [446.00000000000006, 373.75, 75.0, 75.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {},
+      "settled": {},
+      "undo": []
+    },
+    {
+      "name": "two_fingers_scale_x_axis",
+      "tool_mode": 0,
+      "initial_script": [],
+      "events": [
+        {
+          "t": 0,
+          "type": "touch_gesture_start",
+          "fingers": [
+            [
+              346,
+              374
+            ],
+            [
+              546,
+              374
+            ]
+          ]
+        },
+        {
+          "t": 120,
+          "type": "touch_gesture_move",
+          "fingers": [
+            [
+              296,
+              374
+            ],
+            [
+              596,
+              374
+            ]
+          ]
+        }
+      ],
+      "initial": {},
+      "frames": [],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 120,
+          "view": [446.00000000000006, 373.5, 75.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {},
+      "settled": {},
+      "undo": []
+    },
+    {
+      "name": "two_fingers_scale_circle",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (0, 1)",
+        "B = (0, 3)",
+        "c = Circle(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "touch_gesture_start",
+          "fingers": [
+            [
+              346,
+              324
+            ],
+            [
+              546,
+              324
+            ]
+          ]
+        },
+        {
+          "t": 120,
+          "type": "touch_gesture_move",
+          "fingers": [
+            [
+              296,
+              324
+            ],
+            [
+              596,
+              324
+            ]
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 0.0, "y": 3.0, "on_path": false, "in_region": false },
+        "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 1.0, "r": 2.0 }
+      },
+      "frames": [],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 120,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
+        "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 1.0, "r": 3.0 }
+      },
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 1.0, "r": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 1.0, "r": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 1.0, "r": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 1.0, "r": 3.0 }
+        }
+      ]
+    },
+    {
+      "name": "two_fingers_move_line",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (-3, 2)",
+        "B = (3, 2)",
+        "f = Line(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "touch_gesture_start",
+          "fingers": [
+            [
+              346,
+              274
+            ],
+            [
+              546,
+              274
+            ]
+          ]
+        },
+        {
+          "t": 120,
+          "type": "touch_gesture_move",
+          "fingers": [
+            [
+              346,
+              244
+            ],
+            [
+              546,
+              244
+            ]
+          ]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": -3.0, "y": 2.0, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
+        "f": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -12.0 }
+      },
+      "frames": [],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 120,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 0,
+          "selection": [],
+          "undo_steps_added": 0
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": -3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
+        "f": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -19.139999999999997 }
+      },
+      "undo": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -19.139999999999997 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -19.139999999999997 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -19.139999999999997 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
+          "f": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -19.139999999999997 }
+        }
+      ]
+    }
+  ]
+}

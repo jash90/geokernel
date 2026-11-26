@@ -1970,6 +1970,21 @@ impl Log {
         }
     }
 
+    /// The two placement directives an atomic tool recipe may issue.
+    pub(crate) fn apply_tool_placement(
+        &mut self,
+        c: &mut Construction,
+        line: &str,
+    ) -> Option<Result<(), String>> {
+        if !line.starts_with("SetCoords(") && !line.starts_with("SetVisibleInView(") {
+            return None;
+        }
+        directive(line).map(|directive| {
+            self.apply(c, directive?, &mut ResetBudget::new())
+                .map(|_| ())
+        })
+    }
+
     /// Applies a directive line to `c` and records it.
     fn apply(
         &mut self,

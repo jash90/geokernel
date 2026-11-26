@@ -546,6 +546,16 @@ impl Workbench {
                 break;
             }
             if in_tool {
+                if let Some(result) = self.log.apply_tool_placement(&mut self.construction, &line) {
+                    match result {
+                        Ok(()) => updated = true,
+                        Err(error) => {
+                            failure = Some(error);
+                            break;
+                        }
+                    }
+                    continue;
+                }
                 use geo_kernel::script::saved;
                 if let Some(property) = saved::parse(&line) {
                     match property.and_then(|property| {

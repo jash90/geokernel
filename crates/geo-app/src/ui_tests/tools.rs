@@ -765,8 +765,31 @@ fn area_uses_the_conic_label_and_prefers_a_conic_over_polygon_fill() {
     click(&mut h, world(2.0, -2.0));
     assert_eq!(h.state().wb.definition("areac_1"), Some("Area(c)"));
     click(&mut h, world(1.5, -2.0));
-    assert!(h.state().wb.construction().id("areap").is_none());
-    assert_eq!(h.state().wb.undo_depth(), (2, 0));
+    let wb = &h.state().wb;
+    let c = wb.construction();
+    let text = c.id("Textp").expect("polygon area label");
+    let point = c.id("Pointp").expect("polygon area anchor");
+    assert_eq!(c.text(text).unwrap().rsplit_once(" = ").unwrap().1, "12");
+    assert_eq!(
+        c.text_position(text),
+        Some(geo_kernel::kernel::text::TextPosition::Point(point))
+    );
+    assert_eq!(wb.definition("Pointp"), Some("PointIn(p)"));
+    assert!(!wb.is_visible(point));
+    assert_eq!(wb.undo_depth(), (3, 0));
+    let d = c.id("D").unwrap();
+    assert!(h.state_mut().wb.move_point(d, 1.0, -4.5));
+    assert_eq!(
+        h.state()
+            .wb
+            .construction()
+            .text(text)
+            .unwrap()
+            .rsplit_once(" = ")
+            .unwrap()
+            .1,
+        "14"
+    );
 }
 
 #[test]

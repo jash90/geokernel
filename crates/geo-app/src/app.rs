@@ -658,7 +658,12 @@ fn control_dialog(app: &mut App, ctx: &egui::Context) {
         } else {
             app.tool.finish_checkbox(&app.control_fields[0], taken)
         };
+        let clear_selection =
+            (text || input_box) && matches!(outcome, geo_app_core::tools::Outcome::Run(_));
         app.apply_outcome(outcome);
+        if clear_selection {
+            app.select_only(None);
+        }
     } else if cancel || modal.should_close() {
         app.reset_tool();
     }
