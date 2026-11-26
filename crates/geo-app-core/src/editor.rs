@@ -95,7 +95,7 @@ impl App {
                     match self.style_source.as_deref().and_then(|label| c.id(label)) {
                         Some(source) if source == id => {
                             self.style_source = None;
-                            self.wb.selected = None;
+                            self.select_only(None);
                             self.wb.finish_style_edits();
                         }
                         Some(source) => self.wb.copy_drawing_style(source, id),
@@ -107,9 +107,9 @@ impl App {
                                     && c.kind(target) == c.kind(id)
                             }) {
                                 self.wb.copy_drawing_style(id, target);
-                                self.wb.selected = None;
+                                self.select_only(None);
                             } else {
-                                self.wb.selected = Some(id);
+                                self.select_only(Some(id));
                             }
                         }
                     }
@@ -155,7 +155,7 @@ impl App {
         let request = self.image_request.as_ref().ok_or("no image placement")?;
         let id = self.wb.insert_image(request, bytes)?;
         self.select_tool(Tool::Move);
-        self.wb.selected = Some(id);
+        self.select_only(Some(id));
         Ok(())
     }
 
@@ -173,7 +173,7 @@ impl App {
         match center {
             Some(center) if center == id => {
                 self.rotation_center = None;
-                self.wb.selected = None;
+                self.select_only(None);
                 None
             }
             Some(center) => {
@@ -184,7 +184,7 @@ impl App {
             }
             None if c.kind(id) == Kind::Point => {
                 self.rotation_center = Some(c.label(id).to_owned());
-                self.wb.selected = Some(id);
+                self.select_only(Some(id));
                 None
             }
             None => None,

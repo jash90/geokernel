@@ -3,7 +3,7 @@ use crate::geom::Rgba;
 use crate::properties::{EditError, Field, Input, MAX_EDIT_TARGETS};
 use geo_kernel::kernel::angle::AngleStyle;
 use geo_kernel::kernel::appearance::Playback;
-use geo_kernel::kernel::control::NumberRounding;
+use geo_kernel::kernel::control::{resolve_label_mode, NumberRounding};
 use geo_kernel::kernel::text::TextFont;
 use geo_kernel::kernel::EquationForm;
 
@@ -90,16 +90,15 @@ impl Workbench {
                 .to_owned(),
             Visible => self.is_visible(id).to_string(),
             ShowLabel => drawing.show_label.to_string(),
-            LabelMode => a
-                .label_mode
-                .or_else(|| saved.and_then(|s| s.label_mode))
-                .unwrap_or(if c.kind(id) == Kind::Angle || c.has_slider_bounds(id) {
-                    1
-                } else {
-                    0
-                })
-                .clamp(0, 4)
-                .to_string(),
+            LabelMode => {
+                let default = i32::from(c.kind(id) == Kind::Angle || c.has_slider_bounds(id));
+                let mode = a.label_mode().or_else(|| saved.and_then(|s| s.label_mode));
+                match mode.map_or(default, |mode| resolve_label_mode(mode, default)) {
+                    9 => 4,
+                    mode => mode,
+                }
+                .to_string()
+            }
             Animating => playback(c, id).playing.to_string(),
             Fixed => a
                 .fixed
@@ -592,7 +591,7 @@ impl Workbench {
                     raw.to_owned()
                 })
             }
-            LabelMode => appearance.label_mode = Some(integral),
+            LabelMode => appearance.label_mode = Some(if integral == 4 { 9 } else { integral }),
             Fixed => appearance.fixed = Some(checked),
             Auxiliary => appearance.auxiliary = Some(checked),
             Selectable => appearance.selection_allowed = Some(checked),

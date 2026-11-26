@@ -262,11 +262,20 @@ fn paint_layer<'c>(
             c
         }
     };
+    let saved_line = |id| {
+        scene
+            .palette
+            .imported_style(id)
+            .and_then(|style| style.line)
+    };
     let stroke_color = |id: Id| {
         let color = color(id);
-        c.appearance(id).line_opacity.map_or(color, |alpha| {
-            color.gamma_multiply(alpha.clamp(0, 255) as f32 / 255.0)
-        })
+        c.appearance(id)
+            .line_opacity
+            .or_else(|| saved_line(id)?.opacity)
+            .map_or(color, |alpha| {
+                color.gamma_multiply(alpha.clamp(0, 255) as f32 / 255.0)
+            })
     };
     let fill_color = |id: Id| {
         let alpha = c
@@ -280,7 +289,10 @@ fn paint_layer<'c>(
             painter,
             points,
             curve(id),
-            c.appearance(id).line_type.unwrap_or(0),
+            c.appearance(id)
+                .line_type
+                .or_else(|| saved_line(id).map(|line| line.kind))
+                .unwrap_or(0),
         );
     };
 
@@ -771,13 +783,20 @@ fn paint_layer<'c>(
                 DEPENDENT_POINT_RADIUS
             };
             let props = c.appearance(id);
-            let radius = props.point_size.map_or(radius, |r| r.clamp(1, 9) as f32);
+            let saved = scene.palette.imported_style(id);
+            let radius = props
+                .point_size
+                .or_else(|| saved?.point_size)
+                .map_or(radius, |r| r.clamp(1, 9) as f32);
             appearance::point(
                 painter,
                 p(x, y),
                 color(id),
                 radius,
-                props.point_style.unwrap_or(0),
+                props
+                    .point_style
+                    .or_else(|| saved?.point_style)
+                    .unwrap_or(0),
             );
             let (sx, sy) = screen(x, y);
             labels.push(label(
@@ -803,6 +822,7 @@ fn paint_layer<'c>(
                     .map_or(col, |[r, g, b]| Color32::from_rgb(r, g, b));
                 let alpha = props
                     .line_opacity
+                    .or_else(|| saved_line(id)?.opacity)
                     .map_or(0.45, |alpha| alpha.clamp(0, 255) as f32 / 255.0);
                 let thickness = line_width(c, id, 25.0 / 3.0);
                 painter.line_segment(
@@ -953,7 +973,7 @@ fn paint_layer<'c>(
                 if c.drawing_style(id).show_label {
                     let anchor = top + vec2(size + 9.0, size * 0.5);
                     let caption = c.checkbox_caption(id);
-                    let caption = object_label(c, id, caption);
+                    let caption = object_label(c, id, caption, None, None);
                     let (ox, oy) = (scene.label_offset)(id).unwrap_or_default();
                     let anchor = anchor + vec2(ox as f32, oy as f32);
                     let width = if let Some(source) =
@@ -1015,7 +1035,19 @@ fn paint_layer<'c>(
         if sx < -20.0 || sy < -20.0 || sx > wf + 20.0 || sy > hf + 20.0 {
             continue;
         }
-        let text = object_label(c, id, text);
+        // The slider formatter already applies its caption and file rounding.
+        let text = if c.kind(id) == Kind::Number && c.has_slider_bounds(id) {
+            text
+        } else {
+            let saved = scene.palette.imported_style(id);
+            object_label(
+                c,
+                id,
+                text,
+                saved.and_then(|s| s.label_mode),
+                saved.map(|s| s.caption.as_str()),
+            )
+        };
         let galley = painter.layout_no_wrap(text.into_owned(), font.clone(), color);
         let r = align.anchor_size(origin + vec2(sx, sy), galley.size());
         painter.galley(r.min, galley, color);
@@ -1025,22 +1057,36 @@ fn paint_layer<'c>(
     }
 }
 
-fn object_label<'a>(c: &'a Construction, id: Id, base: Cow<'a, str>) -> Cow<'a, str> {
+fn object_label<'a>(
+    c: &'a Construction,
+    id: Id,
+    base: Cow<'a, str>,
+    saved_mode: Option<i32>,
+    saved_caption: Option<&'a str>,
+) -> Cow<'a, str> {
+    use geo_kernel::kernel::control::resolve_label_mode;
+
     let appearance = c.appearance(id);
-    let Some(mode) = appearance.label_mode else {
+    let Some(mode) = appearance.label_mode().or(saved_mode) else {
         return base;
     };
-    let caption = || c.object_caption(id);
+    let caption = || {
+        if let Some(raw) = appearance.caption.as_deref().or(saved_caption) {
+            c.expand_caption(id, raw)
+        } else {
+            c.object_caption(id)
+        }
+    };
     let value = || match (c.kind(id), c.value(id)) {
         (Kind::Angle, Value::Number(radians)) => crate::describe::degrees(radians),
         _ => crate::describe::object_text(c, id),
     };
     let name = c.label(id);
-    match mode {
+    match resolve_label_mode(mode, i32::from(c.kind(id) == Kind::Angle)) {
         1 => Cow::Owned(format!("{name} = {}", value())),
         2 => Cow::Owned(value()),
         3 => caption(),
-        4 => Cow::Owned(format!("{} = {}", caption(), value())),
+        9 => Cow::Owned(format!("{} = {}", caption(), value())),
         _ => Cow::Borrowed(name),
     }
 }

@@ -153,6 +153,11 @@ impl<'a> Palette<'a> {
         self
     }
 
+    /// Presentation retained from the source file, before any local edits.
+    pub fn imported_style(&self, id: Id) -> Option<&'a geo_import::export::ObjectStyle> {
+        self.file_styles?.get(self.c.label(id)).map(AsRef::as_ref)
+    }
+
     /// The edited or saved colour, with the usual palette as a fallback.
     pub fn color(&self, id: Id) -> Rgba {
         let base = self.static_color(id);

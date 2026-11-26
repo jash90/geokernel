@@ -452,7 +452,7 @@ impl Workbench {
             if let Some(caption) = &edited.caption {
                 style.caption.clone_from(caption);
             }
-            style.label_mode = edited.label_mode.or(style.label_mode);
+            style.label_mode = edited.label_mode().or(style.label_mode);
             style.alpha = edited.fill_opacity.or(style.alpha);
             style.background = edited.text_background.or(style.background);
             style.tooltip_mode = edited.tooltip.or(style.tooltip_mode);

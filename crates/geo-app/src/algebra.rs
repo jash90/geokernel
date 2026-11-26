@@ -130,7 +130,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     }
     // Last: deleting rebuilds the construction and invalidates every id.
     if let Some(id) = actions.delete {
-        app.wb.delete(id);
+        app.delete_object(id);
     }
 }
 

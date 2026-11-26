@@ -360,7 +360,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                     .wb
                     .recognize_stroke(&samples, &t, tool == Tool::FreehandFunction)
                 {
-                    Ok(Some(id)) => app.wb.selected = Some(id),
+                    Ok(Some(id)) => app.select_only(Some(id)),
                     Ok(None) => {}
                     Err(error) => {
                         app.wb.cancel_tool_use();
@@ -524,7 +524,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         let (local, pt) = at_press(app, pos);
         if app.label_at(local).is_none() {
             if let Target::Object(id) = target(app, &pt, local) {
-                app.wb.selected = Some(id);
+                app.select_only(Some(id));
                 if !modifiers_pan {
                     let c = app.wb.construction();
                     if c.kind(id) == Kind::Number {
@@ -726,7 +726,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 app.wb.begin_gesture();
             }
             if !matches!(drag.hold(), Hold::Label { .. }) {
-                app.wb.selected = Some(drag.id());
+                app.select_only(Some(drag.id()));
             }
         }
         // A drag that only changes the view (a pan, an axis rescale, a
@@ -1463,7 +1463,7 @@ fn toggle_checkbox(app: &mut App, id: Id) {
 /// A click on the drawing area, with the object under it.
 fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     if app.tool.tool() == Tool::Move {
-        app.wb.selected = hit;
+        app.select_only(hit);
         if let Some(id) = hit.filter(|&id| !app.wb.construction().checkbox_style(id).fixed) {
             toggle_checkbox(app, id);
         }

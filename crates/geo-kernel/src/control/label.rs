@@ -30,6 +30,16 @@ pub struct SliderLabel {
     pub caption: Arc<str>,
 }
 
+/// Resolves the imported codes used by default object styles.
+pub fn resolve_label_mode(mode: i32, default: i32) -> i32 {
+    match mode {
+        0..=3 | 9 => mode,
+        4 => default,
+        5..=8 => mode - 5,
+        _ => 0,
+    }
+}
+
 /// The graphics view accepts trailing spaces after the closing dollar.
 pub fn latex_caption(caption: &str) -> Option<&str> {
     caption
@@ -70,13 +80,26 @@ impl Construction {
     pub fn slider_label(&self, id: Id, value: f64) -> Cow<'_, str> {
         let name = self.label(id);
         let saved = self.slider_labels.get(&id);
-        let mode = saved.map_or(1, |label| label.mode);
-        let caption = || self.expand_caption(id, saved.map_or("", |label| label.caption.as_ref()));
-        let prefix = match mode {
-            1 | 6 | -1 => Cow::Borrowed(name),
-            2 | 7 => return Cow::Owned(self.format_display_number(value)),
-            3 | 8 => return caption(),
-            4 => caption(),
+        let edited = self.appearance(id);
+        let mode = edited
+            .label_mode()
+            .unwrap_or_else(|| saved.map_or(1, |label| label.mode));
+        let caption = || {
+            let text = edited
+                .caption
+                .as_deref()
+                .or_else(|| saved.map(|label| label.caption.as_ref()));
+            self.expand_caption(id, text.unwrap_or_default())
+        };
+        let prefix = match if mode == -1 {
+            1
+        } else {
+            resolve_label_mode(mode, 1)
+        } {
+            1 => Cow::Borrowed(name),
+            2 => return Cow::Owned(self.format_display_number(value)),
+            3 => return caption(),
+            9 => caption(),
             _ => return Cow::Borrowed(name),
         };
         let mut out = match prefix {
@@ -111,7 +134,8 @@ impl Construction {
         Some(self.caption_value(next))
     }
 
-    fn expand_caption<'a>(&'a self, id: Id, caption: &'a str) -> Cow<'a, str> {
+    /// Expands the saved caption's substitutions and falls back to the object name.
+    pub fn expand_caption<'a>(&'a self, id: Id, caption: &'a str) -> Cow<'a, str> {
         // Caption substitutions can repeat long object values. Cap expansion
         // work and use the literal caption if the result exceeds the cap.
         const MAX_EXPANSION: usize = 16_384;

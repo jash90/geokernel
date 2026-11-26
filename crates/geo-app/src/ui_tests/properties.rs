@@ -878,3 +878,189 @@ fn a_degree_angle_label_uses_the_algebra_units() {
         assert!(view.iter().any(|shape| matches!(&shape.shape, egui::Shape::Text(text) if text.galley.text().contains("90°"))));
     }
 }
+
+#[test]
+fn properties_merge_imports_five_presentation_fields() {
+    use geo_app_core::properties::Field;
+    let mut h = harness("");
+    let witness = include_bytes!("../../../../golden/ggb/saved/saved-propertydialog-001.xml");
+    h.state_mut()
+        .wb
+        .load_bytes(witness, "style witness")
+        .unwrap();
+    let a = h.state().wb.construction().id("A").unwrap();
+    let s = h.state().wb.construction().id("s").unwrap();
+    h.state_mut().open_properties(a);
+    h.run();
+    h.get_by_label(Field::LabelMode.label());
+    assert_eq!(h.state().wb.property_value(a, Field::LabelMode), "3");
+    h.get_by_label("Kolor").click_accesskit();
+    h.run();
+    h.get_by_label(Field::Color.label());
+    assert_eq!(h.state().wb.property_value(a, Field::Color), "#DB3456");
+    h.get_by_label("Zamknij").click_accesskit();
+    h.run();
+    h.state_mut().open_properties(s);
+    h.run();
+    h.get_by_label("Styl").click_accesskit();
+    h.run();
+    for (field, expected) in [(Field::Thickness, "7"), (Field::LineType, "2")] {
+        h.get_by_label(field.label());
+        assert_eq!(h.state().wb.property_value(s, field), expected);
+    }
+    h.get_by_label("Zamknij").click_accesskit();
+    h.run();
+    let [graphics, _] = rendered_views(&mut h);
+    let red = egui::Color32::from_rgb(219, 52, 86);
+    assert!(graphics.iter().any(|shape| matches!(&shape.shape,
+        egui::Shape::Text(text) if text.galley.text() == "Vertex"
+            && text.fallback_color == red)));
+    assert!(
+        graphics
+            .iter()
+            .filter(|shape| matches!(&shape.shape,
+                egui::Shape::LineSegment { points, stroke }
+                    if stroke.width == 3.5 && points[0].distance(points[1]) <= 11.01
+            ))
+            .count()
+            > 1,
+        "the thick segment must paint as multiple dashes"
+    );
+
+    let witness = include_bytes!("../../../../golden/ggb/saved/saved-styles-006.xml");
+    h.state_mut()
+        .wb
+        .load_bytes(witness, "font witness")
+        .unwrap();
+    let text = h.state().wb.construction().id("value").unwrap();
+    h.state_mut().open_properties(text);
+    h.run();
+    h.get_by_label("Styl").click_accesskit();
+    h.run();
+    h.get_by_label(Field::TextSize.label());
+    assert_eq!(h.state().wb.property_value(text, Field::TextSize), "70");
+    assert_eq!(h.state().wb.property_value(text, Field::TextItalic), "true");
+    h.get_by_label("Zamknij").click_accesskit();
+    h.run();
+    let [graphics, _] = rendered_views(&mut h);
+    assert!(graphics.iter().any(|shape| matches!(&shape.shape,
+        egui::Shape::Text(text) if text.galley.text().starts_with("n = ")
+            && text.galley.job.sections.iter().all(|part|
+                part.format.italics && part.format.font_id.size == 11.0)
+    )));
+}
+
+#[test]
+fn properties_merge_caption_and_value_round_trips_with_the_reference_code() {
+    use geo_app_core::properties::Field;
+    let witness =
+        include_bytes!("../../../../golden/ggb/saved/saved-property-caption-value-001.xml");
+    let mut reference = Workbench::default();
+    reference.load_bytes(witness, "caption witness").unwrap();
+    let styles = reference.export_presentation(None).object_styles;
+    let mut h = harness("A = (2, 1)\na = Slider(0, 10)");
+    for (label, caption) in [("A", "Vertex"), ("a", "Amount")] {
+        let id = h.state().wb.construction().id(label).unwrap();
+        h.state_mut().open_properties(id);
+        h.run();
+        enter(&mut h, Field::Caption.label(), caption);
+        pick(&mut h, Field::LabelMode.label());
+        pick(&mut h, "Podpis i wartość");
+        pick(&mut h, "Zamknij");
+    }
+    let archive = h.state().wb.export_ggb(None).unwrap();
+    let mut reopened = Workbench::default();
+    reopened.load_bytes(&archive, "edited archive").unwrap();
+    let saved = reopened.export_presentation(None);
+    for label in ["A", "a"] {
+        assert_eq!(
+            saved.object_styles[label].label_mode,
+            styles[label].label_mode
+        );
+    }
+
+    let mut h = harness("");
+    h.state_mut()
+        .wb
+        .load_bytes(witness, "caption witness")
+        .unwrap();
+    let [graphics, _] = rendered_views(&mut h);
+    for prefix in ["Vertex = ", "Amount = 4"] {
+        assert!(
+            graphics.iter().any(|shape| matches!(&shape.shape,
+                egui::Shape::Text(text) if text.galley.text().starts_with(prefix)
+            )),
+            "{prefix}"
+        );
+    }
+
+    for (code, choice) in [(4, "0"), (5, "0"), (6, "1"), (7, "2"), (8, "3")] {
+        let xml = format!(
+            r#"<geogebra format="5.0"><construction>
+            <element type="point" label="A"><coords x="2" y="1" z="1"/>
+            <labelMode val="{code}"/><caption val="Vertex"/></element>
+            </construction></geogebra>"#
+        );
+        reopened.load_bytes(xml.as_bytes(), "label mode").unwrap();
+        let id = reopened.construction().id("A").unwrap();
+        assert_eq!(
+            reopened.property_value(id, Field::LabelMode),
+            choice,
+            "{code}"
+        );
+    }
+}
+
+#[test]
+fn properties_merge_clears_multi_selection_when_primary_selection_changes() {
+    use geo_app_core::tools::Outcome;
+
+    let select_pair = |app: &mut App| {
+        let c = app.wb.construction();
+        let (a, b) = (c.id("A").unwrap(), c.id("B").unwrap());
+        app.select_algebra_object(a, false);
+        app.select_algebra_object(b, true);
+        assert_eq!(app.property_selection.len(), 2);
+        a
+    };
+    for (name, change) in [
+        (
+            "leave tool",
+            (|app: &mut App| app.leave_tool()) as fn(&mut App),
+        ),
+        ("submit input", |app: &mut App| {
+            app.input = "C = (1, 1)".into();
+            app.submit_input();
+        }),
+        ("tool selection", |app: &mut App| {
+            app.apply_outcome(Outcome::SelectionChanged);
+        }),
+        ("pick existing point", |app: &mut App| {
+            app.apply_outcome(Outcome::Select("A".into()));
+        }),
+        ("finish construction", |app: &mut App| {
+            app.apply_outcome(Outcome::Run(vec!["D = (1, 1)".into()]));
+        }),
+        ("place point", |app: &mut App| {
+            app.apply_outcome(Outcome::Place {
+                line: "E = (1, 1)".into(),
+                at: None,
+                then: Box::new(Outcome::Pending),
+            });
+        }),
+    ] {
+        let mut h = harness("A = (2, 1)\nB = (4, 1)");
+        let app = h.state_mut();
+        let a = select_pair(app);
+        change(app);
+        assert!(app.property_selection.is_empty(), "{name}");
+        app.open_properties(a);
+        assert_eq!(app.properties.take().unwrap().targets(), ["A"], "{name}");
+    }
+    let mut h = harness("A = (2, 1)\nB = (4, 1)");
+    let app = h.state_mut();
+    select_pair(app);
+    app.input = "@".into();
+    app.submit_input();
+    assert_eq!(app.property_selection.len(), 2);
+}

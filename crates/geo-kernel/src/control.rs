@@ -14,7 +14,7 @@ use crate::{Construction, Def, Id, Kind};
 #[path = "control/label.rs"]
 mod label;
 pub(crate) use label::write_decimal;
-pub use label::{latex_caption, NumberRounding, SliderLabel};
+pub use label::{latex_caption, resolve_label_mode, NumberRounding, SliderLabel};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Control {

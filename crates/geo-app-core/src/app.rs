@@ -377,13 +377,32 @@ impl App {
         }
     }
 
+    /// Replaces the algebra selection with a single object, or clears it.
+    pub fn select_only(&mut self, id: Option<Id>) {
+        self.property_selection.clear();
+        self.wb.selected = id;
+    }
+
+    pub fn delete_object(&mut self, id: Id) -> bool {
+        if !self.wb.delete(id) {
+            return false;
+        }
+        self.prune_property_selection();
+        true
+    }
+
+    fn prune_property_selection(&mut self) {
+        let c = self.wb.construction();
+        self.property_selection
+            .retain(|label| c.id(label).is_some());
+    }
+
     pub fn select_algebra_object(&mut self, id: Id, extend: bool) {
         let c = self.wb.construction();
         let label = c.label(id);
         if !extend {
             let selected = self.wb.selected == Some(id) && self.property_selection.len() <= 1;
-            self.property_selection.clear();
-            self.wb.selected = (!selected).then_some(id);
+            self.select_only((!selected).then_some(id));
             return;
         }
         if let Some(previous) = self.wb.selected {
@@ -413,6 +432,7 @@ impl App {
     /// (`EuclidianController.initNewMode`).
     pub fn select_tool(&mut self, tool: Tool) {
         self.reset_tool();
+        self.property_selection.clear();
         self.tool.set_tool(tool);
         if tool == Tool::ShowHideLabel {
             if let Some(id) = self.wb.selected.take() {
@@ -457,6 +477,7 @@ impl App {
             return true;
         }
         if self.wb.undo() {
+            self.prune_property_selection();
             self.cancel_cas_edit();
             self.reload_spreadsheet_selection();
             return true;
@@ -471,6 +492,7 @@ impl App {
         }
         self.reset_tool();
         if self.wb.redo() {
+            self.prune_property_selection();
             self.cancel_cas_edit();
             self.reload_spreadsheet_selection();
             return true;
@@ -516,7 +538,7 @@ impl App {
     /// closes the style bar: Escape, or the close button of the tool hint.
     pub fn leave_tool(&mut self) {
         self.select_tool(Tool::Move);
-        self.wb.selected = None;
+        self.select_only(None);
         self.style_bar = false;
     }
 
@@ -532,7 +554,7 @@ impl App {
                 self.input.clear();
                 self.input_cursor = 0;
                 self.input_error = None;
-                self.wb.selected = None;
+                self.select_only(None);
             }
             Err(e) => self.input_error = Some(errors::polish(&e)),
         }
@@ -561,7 +583,7 @@ impl App {
                     if let (Some(id), Some((x, y))) = (new, at) {
                         self.wb.move_pending_point(id, x, y);
                     }
-                    self.wb.selected = new;
+                    self.select_only(new);
                     if self.tool.tool() == Tool::SegmentFixed {
                         self.wb.end_tool_use();
                     }
@@ -575,7 +597,8 @@ impl App {
             Outcome::Run(lines) => match self.wb.run_tool_lines(&lines) {
                 Ok(()) => {
                     self.tool_error = None;
-                    self.wb.selected = self.wb.construction().ids().last();
+                    let id = self.wb.construction().ids().last();
+                    self.select_only(id);
                 }
                 Err(e) => {
                     self.tool_error = Some(errors::polish(&e));
@@ -586,7 +609,7 @@ impl App {
                 match self.wb.make_vector_polygon(&picks, copy_offset) {
                     Ok(id) => {
                         self.tool_error = None;
-                        self.wb.selected = Some(id);
+                        self.select_only(Some(id));
                     }
                     Err(e) => {
                         self.tool_error = Some(errors::polish(&e));
@@ -608,7 +631,7 @@ impl App {
             }
             Outcome::Delete(label) => {
                 if let Some(id) = self.wb.construction().id(&label) {
-                    self.wb.delete(id);
+                    self.delete_object(id);
                 }
                 self.tool_error = None;
             }
@@ -618,11 +641,12 @@ impl App {
                 }
             }
             Outcome::Select(label) => {
-                self.wb.selected = self.wb.construction().id(&label);
+                let id = self.wb.construction().id(&label);
+                self.select_only(id);
                 self.tool_error = None;
             }
             Outcome::SelectionChanged => {
-                self.wb.selected = None;
+                self.select_only(None);
                 self.tool_error = None;
             }
             Outcome::Pending => self.tool_error = None,

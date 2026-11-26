@@ -37,6 +37,13 @@ pub struct Appearance {
     pub dynamic: DynamicColor,
 }
 
+impl Appearance {
+    /// Archives use code 9. Older native snapshots stored the dialog index 4.
+    pub fn label_mode(&self) -> Option<i32> {
+        self.label_mode.map(|mode| if mode == 4 { 9 } else { mode })
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct DynamicColor {
