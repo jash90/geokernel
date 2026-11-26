@@ -2211,6 +2211,20 @@ fn point_list_increment_sum_survives_a_later_object_named_sum() {
 }
 
 #[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_reloads_shadowed_point_list_sum() {
+    let input = saved_review_file("saved-export-point-increment-sum-shadow-001.xml");
+    let wb = review_workbench(&input);
+    let (source, exported) = review_oracle(&input, &wb.export_ggb(None).unwrap());
+    for snapshot in [&source, &exported] {
+        assert_eq!(snapshot["pointIncrements"]["P"].as_f64(), Some(14.0));
+        for tags in ["elementTags", "reloadedTags"] {
+            assert_eq!(snapshot[tags]["P"]["incrementY"][0]["val"], "Sum[L]");
+        }
+    }
+}
+
+#[test]
 fn point_list_increments_require_the_list_at_export() {
     let mut wb = review_workbench(&saved_review_file(LIST_POINT_INCREMENTS));
     assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 3);

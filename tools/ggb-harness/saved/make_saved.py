@@ -928,6 +928,14 @@ case("export-point-increment-shadow", [], [{
     ),
 }])
 
+# A numeric object named Sum coexists with the explicit saved list command.
+case("export-point-increment-sum-shadow", [], [load_xml(
+    '<expression label="L" exp="{2, 4, 8}"/><element type="list" label="L"/>'
+    '<element type="numeric" label="Sum"><value val="7"/></element>'
+    '<element type="point" label="P"><coords x="0" y="1" z="1"/>'
+    '<incrementY val="Sum[L]"/></element>'
+)])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")
