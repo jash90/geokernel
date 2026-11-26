@@ -132,6 +132,10 @@ area = next(c for c in cases if c["name"] == "area_tool_on_polygon")
 cases += [
     case("area_polygon_occupied_anchor_label", area["tool_mode"],
          [*area["initial_script"], "Pointp = (0, 0)"], *area["events"]),
+    case("area_polygon_inline_vertices", area["tool_mode"],
+         ["p = Polygon((1,1),(5,1),(1,4))"], *area["events"]),
+    case("area_polygon_mixed_vertices", area["tool_mode"],
+         ["A = (1,1)", "p = Polygon(A,(5,1),(1,4))"], *area["events"]),
     dict(case("area_polygon_grows_after_placement", area["tool_mode"],
               ["n = 3", "p = Polygon(Sequence((k, k^2), k, 1, n))"],
               pointer(0, "down", 2, 4.51), pointer(60, "up", 2, 4.51),

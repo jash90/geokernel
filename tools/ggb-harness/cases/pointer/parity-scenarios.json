@@ -1815,6 +1815,57 @@
       ]
     },
     {
+      "name": "area_polygon_inline_vertices",
+      "tool_mode": 49,
+      "initial_script": [
+        "p = Polygon((1,1),(5,1),(1,4))"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2.0,
+            1.51
+          ]
+        },
+        {
+          "t": 30,
+          "type": "mouse_up",
+          "pos": [
+            2.0,
+            1.51
+          ]
+        }
+      ]
+    },
+    {
+      "name": "area_polygon_mixed_vertices",
+      "tool_mode": 49,
+      "initial_script": [
+        "A = (1,1)",
+        "p = Polygon(A,(5,1),(1,4))"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2.0,
+            1.51
+          ]
+        },
+        {
+          "t": 30,
+          "type": "mouse_up",
+          "pos": [
+            2.0,
+            1.51
+          ]
+        }
+      ]
+    },
+    {
       "name": "area_polygon_grows_after_placement",
       "tool_mode": 49,
       "initial_script": [

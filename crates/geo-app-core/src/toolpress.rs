@@ -92,6 +92,13 @@ fn polygon_area(c: &geo_kernel::Construction, polygon: Id, (x, y): (f64, f64)) -
         Def::Polygon(PolygonDef::Polygon(vertices)) => c.list(vertices),
         _ => &[],
     };
+    // A polygon with an anonymous vertex uses its own label in the caption
+    // and leaves all vertex label visibility unchanged.
+    let vertices = if vertices.iter().any(|&id| c.label(id).starts_with('\0')) {
+        &[]
+    } else {
+        vertices
+    };
     let Some(subject) = area_vertex_names(vertices.iter().map(|&id| c.label(id))) else {
         return Outcome::Ignored;
     };
@@ -1245,6 +1252,29 @@ mod tests {
                 assert!(c.id("Textp").is_none());
                 assert!(app.redo());
             }
+        }
+    }
+
+    #[test]
+    fn polygon_area_with_anonymous_vertices_uses_the_polygon_label() {
+        for script in [
+            "p = Polygon((1,1),(5,1),(1,4))",
+            "A = (1,1)\np = Polygon(A,(5,1),(1,4))",
+        ] {
+            let mut app = app(script, Tool::Area);
+            click_tool(&mut app, 2.0, 1.51);
+            let c = app.wb.construction();
+            let text = c.id("Textp").expect("area label for the polygon");
+            let caption = c.text(text).unwrap();
+            let (subject, value) = caption.rsplit_once(" = ").unwrap();
+            assert_eq!(subject.split_whitespace().last(), Some("p"));
+            assert_eq!(value, "6");
+            let anchor = c.id("Pointp").expect("area anchor for the polygon");
+            assert_eq!(
+                c.text_position(text),
+                Some(geo_kernel::kernel::text::TextPosition::Point(anchor))
+            );
+            assert_eq!(app.wb.undo_depth(), (1, 0));
         }
     }
 

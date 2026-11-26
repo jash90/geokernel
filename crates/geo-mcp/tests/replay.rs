@@ -648,26 +648,23 @@ fn our_definition(d: &str, st: &Value) -> String {
     d.to_owned()
 }
 
-/// The measurements the app can expose. The reference web build creates
-/// text and anchor points for Area labels, and uses a generic numeric label.
-/// The app exposes conic measurements under the controller's area prefix.
-fn supported_area_outcome(observed: &Value) -> Option<Value> {
+/// The conic Area tool exposes the numeric measurement without the reference's
+/// text and anchor. Polygon Area has no numeric output and is compared as recorded.
+fn supported_conic_area_outcome(observed: &Value) -> Option<Value> {
     let mut expected = observed.clone();
     let created = expected.get_mut("created")?.as_array_mut()?;
-    let displayed_text = created.iter().any(|o| o["type"] == "text");
-    created.retain(|o| o["type"] == "numeric");
-    if displayed_text && created.is_empty() {
-        expected["undo_steps_added"] = json!(0);
-    } else {
-        for measure in created {
-            let definition = measure["definition"].as_str().unwrap();
-            let input = definition
-                .strip_prefix("Area(")
-                .unwrap()
-                .strip_suffix(')')
-                .unwrap();
-            measure["label"] = json!(format!("area{}", input.replace(['_', '{', '}'], "")));
-        }
+    if !created.iter().any(|object| object["type"] == "numeric") {
+        return None;
+    }
+    created.retain(|object| object["type"] == "numeric");
+    for measure in created {
+        let definition = measure["definition"].as_str().unwrap();
+        let input = definition
+            .strip_prefix("Area(")
+            .unwrap()
+            .strip_suffix(')')
+            .unwrap();
+        measure["label"] = json!(format!("area{}", input.replace(['_', '{', '}'], "")));
     }
     Some(expected)
 }
@@ -1835,8 +1832,8 @@ fn the_observed_pointer_scenarios_replay() {
             s["source"].as_str().is_some(),
             "{name}: missing observation source"
         );
-        let area_outcome = (s["tool_mode"] == 49 && name != "area_measures_a_polygon")
-            .then(|| supported_area_outcome(&s["expected"]))
+        let area_outcome = (s["tool_mode"] == 49)
+            .then(|| supported_conic_area_outcome(&s["expected"]))
             .flatten();
         let expected = area_outcome.as_ref().unwrap_or(&s["expected"]);
         let status = match part(name) {
