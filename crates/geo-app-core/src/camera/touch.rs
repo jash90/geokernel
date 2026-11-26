@@ -171,25 +171,31 @@ impl TouchTarget {
                 if crossed {
                     next.swap(0, 1);
                 }
-                if next == fingers {
-                    return;
-                }
                 let (dx, dy) = difference(next[1], next[0]);
                 let length2 = dx * dx + dy * dy;
                 if !length2.is_finite() || length2 == 0.0 {
                     return;
                 }
                 let positions = [0, 1].map(|i| {
-                    let (px, py) = difference(points[i], next[0]);
-                    let along = (px * dx + py * dy) / length2;
-                    let (tx, ty) = difference(next[i], fingers[i]);
-                    (
-                        endpoints[i],
-                        next[0].0 + dx * along + tx,
-                        next[0].1 + dy * along + ty,
-                    )
+                    let (x, y) = if next == fingers {
+                        // Preserve the original endpoints, including a slight
+                        // offset between the line and the touch pixels.
+                        points[i]
+                    } else {
+                        let (px, py) = difference(points[i], next[0]);
+                        let along = (px * dx + py * dy) / length2;
+                        let (tx, ty) = difference(next[i], fingers[i]);
+                        (next[0].0 + dx * along + tx, next[0].1 + dy * along + ty)
+                    };
+                    (endpoints[i], x, y)
                 });
-                app.wb.move_paired_points(positions);
+                let c = app.wb.construction();
+                if positions.iter().any(|&(id, x, y)| {
+                    !matches!(c.value(id), Value::Point { x: old_x, y: old_y }
+                        if old_x.to_bits() == x.to_bits() && old_y.to_bits() == y.to_bits())
+                }) {
+                    app.wb.move_paired_points(positions);
+                }
             }
         }
     }

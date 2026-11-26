@@ -143,6 +143,35 @@ cases += [
          observe=["n", "Pointp", "Textp"]),
 ]
 
+cases += [
+    case("area_polygon_reopen_while_collapsed", area["tool_mode"], area["initial_script"],
+         *area["events"],
+         event(200, "command", input="SetCoords(C, 1, 1)"),
+         event(210, "snapshot", name="collapsed"),
+         event(300, "reload_view"),
+         event(310, "snapshot", name="reopened"),
+         event(400, "command", input="SetCoords(C, 1, 4)")),
+    case("point_redefine_after_drag", 0, ["A = (1, 1)"],
+         pointer(0, "down", 1, 0.99), pointer(150, "move", 3, 1.99),
+         pointer(210, "up", 3, 1.99),
+         pointer(900, "down", 3, 1.99), pointer(940, "up", 3, 1.99),
+         {**pointer(1000, "down", 3, 1.99), "since_release_ms": 60},
+         pointer(1040, "up", 3, 1.99), event(1100, "key", key="Enter")),
+    case("outside_point_release_after_creation", 0, ["A = (8, 1)"],
+         event(0, "select_tool", mode=1),
+         pointer(200, "down", 2, 2.99), pointer(260, "up", 2, 2.99),
+         event(350, "select_tool", mode=0),
+         pointer(500, "down", 8, 0.99), pointer(650, "move", 8.5, 1.19),
+         event(700, "mouse_exit"), pointer(750, "move", 9.2, 1.39),
+         pointer(810, "up", 9.2, 1.39)),
+    case("two_fingers_return_line_to_start", 0,
+         ["A = (-3, 2)", "B = (3, 2)", "f = Line(A, B)"],
+         event(0, "touch_gesture_start", fingers=[[346, 274], [546, 274]]),
+         event(120, "touch_gesture_move", fingers=[[346, 244], [546, 244]]),
+         event(160, "snapshot", name="displaced"),
+         event(220, "touch_gesture_move", fingers=[[346, 274], [546, 274]])),
+]
+
 (directory / "pointer" / "parity-scenarios.json").write_text(
     json.dumps({"scenarios": cases}, indent=2) + "\n", encoding="utf-8"
 )

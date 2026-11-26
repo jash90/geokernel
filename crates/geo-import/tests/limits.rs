@@ -330,6 +330,16 @@ fn a_wide_command_with_a_huge_argument_holds_memory_in_proportion_to_the_input()
 }
 
 #[test]
+fn saved_polygon_region_parameters_share_the_attribute_limit() {
+    let padded = " ".repeat(geo_import::xml::MAX_ATTRIBUTE_BYTES);
+    let xml = wrap(&format!(
+        r#"<element type="point" label="P"><coords x="0" y="0" z="1"
+        geokernelRegion="1 2 0.25 0.25{padded}"/></element>"#
+    ));
+    assert_eq!(import(xml.as_bytes()), Err(ImportError::AttributeTooLong));
+}
+
+#[test]
 fn many_inputs_and_many_outputs_of_a_single_command() {
     // 10000 label arguments, 10000 outputs; the kernel has no such command,
     // so every output is skipped with one short reason.

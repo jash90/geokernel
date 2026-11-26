@@ -1900,6 +1900,258 @@
         "Pointp",
         "Textp"
       ]
+    },
+    {
+      "name": "area_polygon_reopen_while_collapsed",
+      "tool_mode": 49,
+      "initial_script": [
+        "A=(1,1)",
+        "B=(5,1)",
+        "C=(1,4)",
+        "p=Polygon(A,B,C)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2.0,
+            1.51
+          ]
+        },
+        {
+          "t": 30,
+          "type": "mouse_up",
+          "pos": [
+            2.0,
+            1.51
+          ]
+        },
+        {
+          "t": 200,
+          "type": "command",
+          "input": "SetCoords(C, 1, 1)"
+        },
+        {
+          "t": 210,
+          "type": "snapshot",
+          "name": "collapsed"
+        },
+        {
+          "t": 300,
+          "type": "reload_view"
+        },
+        {
+          "t": 310,
+          "type": "snapshot",
+          "name": "reopened"
+        },
+        {
+          "t": 400,
+          "type": "command",
+          "input": "SetCoords(C, 1, 4)"
+        }
+      ]
+    },
+    {
+      "name": "point_redefine_after_drag",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (1, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            1,
+            0.99
+          ]
+        },
+        {
+          "t": 150,
+          "type": "mouse_move",
+          "pos": [
+            3,
+            1.99
+          ]
+        },
+        {
+          "t": 210,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            1.99
+          ]
+        },
+        {
+          "t": 900,
+          "type": "mouse_down",
+          "pos": [
+            3,
+            1.99
+          ]
+        },
+        {
+          "t": 940,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            1.99
+          ]
+        },
+        {
+          "t": 1000,
+          "type": "mouse_down",
+          "pos": [
+            3,
+            1.99
+          ],
+          "since_release_ms": 60
+        },
+        {
+          "t": 1040,
+          "type": "mouse_up",
+          "pos": [
+            3,
+            1.99
+          ]
+        },
+        {
+          "t": 1100,
+          "type": "key",
+          "key": "Enter"
+        }
+      ]
+    },
+    {
+      "name": "outside_point_release_after_creation",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (8, 1)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "select_tool",
+          "mode": 1
+        },
+        {
+          "t": 200,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            2.99
+          ]
+        },
+        {
+          "t": 260,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            2.99
+          ]
+        },
+        {
+          "t": 350,
+          "type": "select_tool",
+          "mode": 0
+        },
+        {
+          "t": 500,
+          "type": "mouse_down",
+          "pos": [
+            8,
+            0.99
+          ]
+        },
+        {
+          "t": 650,
+          "type": "mouse_move",
+          "pos": [
+            8.5,
+            1.19
+          ]
+        },
+        {
+          "t": 700,
+          "type": "mouse_exit"
+        },
+        {
+          "t": 750,
+          "type": "mouse_move",
+          "pos": [
+            9.2,
+            1.39
+          ]
+        },
+        {
+          "t": 810,
+          "type": "mouse_up",
+          "pos": [
+            9.2,
+            1.39
+          ]
+        }
+      ]
+    },
+    {
+      "name": "two_fingers_return_line_to_start",
+      "tool_mode": 0,
+      "initial_script": [
+        "A = (-3, 2)",
+        "B = (3, 2)",
+        "f = Line(A, B)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "touch_gesture_start",
+          "fingers": [
+            [
+              346,
+              274
+            ],
+            [
+              546,
+              274
+            ]
+          ]
+        },
+        {
+          "t": 120,
+          "type": "touch_gesture_move",
+          "fingers": [
+            [
+              346,
+              244
+            ],
+            [
+              546,
+              244
+            ]
+          ]
+        },
+        {
+          "t": 160,
+          "type": "snapshot",
+          "name": "displaced"
+        },
+        {
+          "t": 220,
+          "type": "touch_gesture_move",
+          "fingers": [
+            [
+              346,
+              274
+            ],
+            [
+              546,
+              274
+            ]
+          ]
+        }
+      ]
     }
   ]
 }

@@ -12,7 +12,7 @@ painted platform widgets require separate evidence.
 | Rule | Recording | Result |
 | --- | --- | --- |
 | A | `controller_drag_time_gate` | A move at 80 ms leaves the point in place; at 150 ms it moves. This confirms the controller gate. Chromium frame-aligned dispatch and the observed 85–91 ms remain unmeasured. |
-| A6 | `rapid_second_press_on_point` | The second press 60 ms after release sets the double-click flag and opens the point's redefine dialog on release. A press after 560 ms leaves the flag clear. The desktop opens the point definition in the algebra input row. |
+| A6 | `rapid_second_press_on_point` | The second press 60 ms after release sets the double-click flag and opens the point's redefine dialog on release. A press after 560 ms leaves the flag clear. The desktop opens the point definition in the algebra input row. In `point_redefine_after_drag`, submitting the unchanged definition keeps the moved point without adding a redefine checkpoint. |
 | B4 | `press_on_polygon_edge_does_nothing` | Refuted in the Java controller. It selects side `c`, moves its two endpoints and stores an undo step. The older web observation remains a separate measurement. |
 | B8 | `hit_radius_mouse_and_touch` | At 20 px from the point, the mouse misses and the touch hits. Native egui attribution is outside this reference test. |
 | C3 | `dependent_line_snap` | Confirmed. The first free point lands at (2, 2); the second moves by the same displacement to (5, 3). |
@@ -30,9 +30,9 @@ painted platform widgets require separate evidence.
 | G6 | `select_point_for_algebra_highlight` | The controller selects `A`. Cell highlighting is a renderer decision and remains unverified by this harness. |
 | G7 | `context_menu_routes_object_or_canvas` | Right-click on empty space requests the drawing-pad menu. Right-click on `A` requests the object menu for `A`. The menu item builders sit beyond these GUI hooks. |
 | H4 | `pinch_sub_threshold_step` | A 2 px change does not zoom. The next move, from a starting span of 200 px to 300 px, reaches 1.5×. This probe refutes losing the first sub-threshold step in the shared controller. The old 1.485× platform measurement remains unexplained. |
-| H5 | `two_fingers_scale_x_axis`, `two_fingers_scale_circle`, `two_fingers_move_line` | The controller and desktop both scale x alone, increase the two-point circle's radius from 2 to 3, and move both line inputs to y = 3.19. The headless recording ends during the two-finger moves. |
+| H5 | `two_fingers_scale_x_axis`, `two_fingers_scale_circle`, `two_fingers_move_line` | The controller and desktop both scale x alone, increase the two-point circle's radius from 2 to 3, and move both line inputs to y = 3.19. In `two_fingers_return_line_to_start`, the reference leaves the line at y = 1.39 after both fingers return. The desktop restores the original endpoints and y = 2. |
 | W1 | `point_visibility_with_automatic_labeling` | Automatic labeling shows the label with algebra open and hides it with algebra closed. The particular saved preference in the older desktop measurement remains unverified. |
-| W4, W5 | `drag_release_outside_canvas` | An injected outside move leaves the point at the view edge (8.92, 1.39) with no undo step in both replays. Swing delivery of those events remains unverified. |
+| W4, W5 | `drag_release_outside_canvas`, `outside_point_release_after_creation` | An injected outside move leaves the point at the view edge (8.92, 1.39). The reference stores no drag checkpoint. The owner keeps one, so Undo restores the point before undoing the previous creation. Swing delivery of those events remains unverified. |
 
 ## Native-app design cautions
 

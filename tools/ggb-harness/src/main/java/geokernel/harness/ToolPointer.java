@@ -22,6 +22,7 @@ import org.geogebra.common.factories.AwtFactoryCommon;
 import org.geogebra.common.gui.Layout;
 import org.geogebra.common.gui.dialog.ButtonDialogModel;
 import org.geogebra.common.gui.dialog.TextInputDialog;
+import org.geogebra.common.gui.dialog.handler.RedefineInputHandler;
 import org.geogebra.common.gui.dialog.handler.TextBuilder;
 import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.DialogManagerNoGui;
@@ -46,6 +47,8 @@ import org.geogebra.test.TestEvent;
 
 /** Records the controller's construction state after each pointer gesture. */
 public final class ToolPointer {
+    private static final int MAX_UNDO_SNAPSHOTS = 4;
+    private static final int OBSERVATION_WORK = 4096;
     private static final int SELECTION_LABEL_WORK = 65_536;
 
     private ToolPointer() {
@@ -55,6 +58,8 @@ public final class ToolPointer {
         boolean parity = "--parity".equals(args[0]);
         if (parity) {
             checkSelectionBudget();
+            checkUndoSnapshotBudget();
+            checkObservationBudget();
         }
         var captures = new ArrayList<Object>();
         for (String input : parity ? List.of(args[1]) : List.of(args[0], args[1])) {
@@ -105,6 +110,49 @@ public final class ToolPointer {
         throw new AssertionError("Selection recording exceeded its allowance");
     }
 
+    private static void checkUndoSnapshotBudget() throws Exception {
+        var events = new ArrayList<Object>();
+        for (int i = 0; i < 5; i++) {
+            var pos = List.of(1.0 + i, 2.99);
+            events.add(dialog("type", "mouse_down", "t", 200 * i, "pos", pos));
+            events.add(dialog("type", "mouse_up", "t", 200 * i + 60, "pos", pos));
+        }
+        var input = dialog("name", "four_point_placements", "tool_mode", EuclidianConstants.MODE_POINT,
+                "initial_script", List.of(), "events", events.subList(0, 8));
+        var atLimit = record(input, true);
+        if (((List<?>) atLimit.get("undo")).size() != 4 || ((List<?>) atLimit.get("undo_views")).size() != 4) {
+            throw new AssertionError("Four checkpoints must retain four construction and view snapshots");
+        }
+        input = dialog("name", "five_point_placements", "tool_mode", EuclidianConstants.MODE_POINT,
+                "initial_script", List.of(), "events", events);
+        try {
+            record(input, true);
+        } catch (IllegalArgumentException expected) {
+            if (expected.getMessage().equals("five_point_placements: undo recording exceeds 4 checkpoints")) {
+                return;
+            }
+            throw expected;
+        }
+        throw new AssertionError("Five point placements must exceed the undo snapshot allowance");
+    }
+
+    private static void checkObservationBudget() throws Exception {
+        var events = new ArrayList<Object>();
+        for (int i = 0; i <= OBSERVATION_WORK; i++) {
+            events.add(dialog("type", "snapshot", "t", i, "name", "snapshot" + i));
+        }
+        try {
+            record(dialog("name", "observation_budget", "tool_mode", EuclidianConstants.MODE_MOVE,
+                    "initial_script", List.of(), "events", events), true);
+        } catch (IllegalArgumentException expected) {
+            if (expected.getMessage().equals("observation_budget: snapshots exceed 4096 work units")) {
+                return;
+            }
+            throw expected;
+        }
+        throw new AssertionError("Repeated empty snapshots must exhaust the observation allowance");
+    }
+
     private static Map<String, Object> record(Map<?, ?> input, boolean parity) throws Exception {
         var app = new PointerApp(parity);
         var view = app.getActiveEuclidianView();
@@ -144,6 +192,7 @@ public final class ToolPointer {
         var frames = new ArrayList<Object>();
         var interaction = new ArrayList<Object>();
         int selectionWork = SELECTION_LABEL_WORK;
+        int observationWork = OBSERVATION_WORK;
         boolean dragging = false;
         long pressedAt = 0;
         String answer = "";
@@ -196,6 +245,21 @@ public final class ToolPointer {
                             .processAlgebraCommand((String) event.get("input"), true) == null) {
                         throw new IllegalArgumentException("Could not run " + event.get("input"));
                     }
+                }
+                case "snapshot" -> {
+                    var objects = app.getKernel().getConstruction().getGeoSetConstructionOrder();
+                    observationWork -= Math.max(1, objects.size());
+                    if (observationWork < 0) {
+                        throw new IllegalArgumentException(input.get("name") + ": snapshots exceed "
+                                + OBSERVATION_WORK + " work units");
+                    }
+                    var points = new LinkedHashMap<String, Object>();
+                    for (var geo : objects) {
+                        if (geo instanceof GeoPointND) {
+                            points.put(geo.getLabelSimple(), Session.describe(geo, "point"));
+                        }
+                    }
+                    metadata.put((String) event.get("name"), points);
                 }
                 case "focus_input_row" -> inputRow = true;
                 case "key" -> {
@@ -264,6 +328,11 @@ public final class ToolPointer {
                 default -> throw new IllegalArgumentException("Unsupported pointer event " + type);
             }
             if (parity) {
+                int depth = app.getUndoManager().getHistorySize() - baseline;
+                if (depth > MAX_UNDO_SNAPSHOTS) {
+                    throw new IllegalArgumentException(input.get("name") + ": undo recording exceeds "
+                            + MAX_UNDO_SNAPSHOTS + " checkpoints");
+                }
                 var selection = app.getSelectionManager().getSelectedGeos();
                 selectionWork = chargeSelection(selectionWork, selection.size());
                 var state = dialog("t", event.get("t"), "view",
@@ -271,7 +340,7 @@ public final class ToolPointer {
                         "mode", controller.getMode(),
                         "selection", selection.stream()
                                 .map(GeoElement::getLabelSimple).toList(),
-                        "undo_steps_added", app.getUndoManager().getHistorySize() - baseline);
+                        "undo_steps_added", depth);
                 if (timeGate) {
                     var point = (GeoPointND) app.getKernel().lookupLabel("A");
                     state.put("point", List.of(point.getInhomX(), point.getInhomY()));
@@ -332,7 +401,7 @@ public final class ToolPointer {
                 result.put("reloaded", snapshot(app, observe, area));
             }
         } else {
-            for (int i = 0; i < 4 && !snapshot(app, observe, area).equals(initial); i++) {
+            for (int i = 0; i < MAX_UNDO_SNAPSHOTS && !snapshot(app, observe, area).equals(initial); i++) {
                 app.getKernel().undo();
                 undo.add(snapshot(app, observe, area));
             }
@@ -455,6 +524,8 @@ public final class ToolPointer {
         private GeoPointND[] points;
         private GeoSegmentND[] segments;
 
+        private RedefineInputHandler redefine;
+        private String definition;
         private TextBuilder textBuilder;
         private ButtonDialogModel inputBox;
         private final boolean requireSubmission;
@@ -492,6 +563,8 @@ public final class ToolPointer {
                 public void showRedefineDialog(GeoElement geo, boolean allowTextDialog) {
                     if (submitTextAndInputBox) {
                         dialogs.add(dialog("kind", "redefine", "object", geo.getLabelSimple()));
+                        definition = geo.getRedefineString(false, true);
+                        redefine = new RedefineInputHandler(PointerApp.this, geo, definition);
                     }
                 }
 
@@ -567,7 +640,14 @@ public final class ToolPointer {
         }
 
         void submit(String answer) {
-            if (textBuilder != null) {
+            if (redefine != null) {
+                redefine.processInput(definition, TestErrorHandler.INSTANCE, ok -> {
+                    if (!ok) {
+                        throw new IllegalStateException("Unchanged redefine was rejected");
+                    }
+                });
+                redefine = null;
+            } else if (textBuilder != null) {
                 textBuilder.createText(Json.write(answer), TestErrorHandler.INSTANCE, ok -> {
                     if (!ok) {
                         throw new IllegalStateException("Text dialog submission failed");

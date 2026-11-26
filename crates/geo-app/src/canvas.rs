@@ -1352,11 +1352,10 @@ fn end_drag(app: &mut App, intents: &Intents, outside: bool) {
         app.erasing = false;
     }
     if intents.end_drag {
-        // The reference app keeps no step for a drag within the click
-        // threshold (spec F2); the owner keeps every drag
-        // (`interact::EVERY_DRAG_IS_A_STEP`).
+        // The reference skips short drags and point releases outside the
+        // canvas. The owner keeps one step for any drag that changed an object.
         let short = intents.released.is_some_and(|r| !r.beyond_threshold);
-        if outside || (short && !app.rules.every_drag_is_a_step) {
+        if (outside || short) && !app.rules.every_drag_is_a_step {
             app.wb.end_gesture_without_step();
         } else {
             app.wb.end_gesture();

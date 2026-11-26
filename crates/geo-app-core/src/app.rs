@@ -139,6 +139,7 @@ pub struct App {
     /// The tool each toolbar group shows (the last one chosen in it).
     pub group_tools: Vec<Tool>,
     pub input: String,
+    point_definition_input: Option<String>,
     pub input_error: Option<String>,
     pub tool_error: Option<String>,
     pub relation_report: Option<Vec<geo_kernel::algo::predicate::RelationReport>>,
@@ -265,6 +266,7 @@ impl App {
             tool: ToolState::new(Tool::Move),
             group_tools: GROUPS.iter().map(|g| g[0]).collect(),
             input: String::new(),
+            point_definition_input: None,
             input_error: None,
             tool_error: None,
             relation_report: None,
@@ -394,7 +396,22 @@ impl App {
         if label.len().saturating_add(definition.len()) > crate::tools::MAX_PLACED_TEXT_CHARS {
             return;
         }
-        self.input = format!("{label} = {definition}");
+        let input = match (c.def(id), c.construction_source(id), c.value(id)) {
+            (geo_kernel::Def::FreePoint { .. }, None, geo_kernel::Value::Point { x, y }) => {
+                let point = if geo_kernel::script::is_vector_label(label) {
+                    "$point"
+                } else {
+                    ""
+                };
+                format!("{label} = {point}({x}, {y})")
+            }
+            _ => format!("{label} = {definition}"),
+        };
+        if input.len() > crate::tools::MAX_PLACED_TEXT_CHARS {
+            return;
+        }
+        self.point_definition_input = Some(input.clone());
+        self.input = input;
         self.input_error = None;
         self.cursor_request = Some(self.input.chars().count());
         self.focus_point_definition = true;
@@ -565,16 +582,28 @@ impl App {
         self.style_bar = false;
     }
 
+    /// Replaces the draft with a new input, such as a recalled history entry.
+    pub fn set_input_draft(&mut self, input: String) {
+        self.input = input;
+        self.point_definition_input = None;
+    }
+
     /// Runs the input row's text.
     pub fn submit_input(&mut self) {
-        match self.wb.run_line(&self.input) {
+        // An unchanged redefine is accepted without running the definition.
+        let result = if self.point_definition_input.as_deref() == Some(self.input.as_str()) {
+            Ok(())
+        } else {
+            self.wb.run_line(&self.input)
+        };
+        match result {
             Ok(()) => {
                 // A tool use that does not finish ends (its points went
                 // with it, `Workbench::run_lines`); a failed line changes
                 // nothing, the use goes on.
                 self.tool.reset();
                 self.tool_press = None;
-                self.input.clear();
+                self.set_input_draft(String::new());
                 self.input_cursor = 0;
                 self.input_error = None;
                 self.select_only(None);

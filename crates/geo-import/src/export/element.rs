@@ -702,6 +702,25 @@ impl<'a> Writer<'a> {
                     .tag("curveParam", &[("t", &number(state.parameter()))])?;
             }
         }
+        if let Some((second, third, u, v)) = c
+            .path_state(id)
+            .and_then(|state| state.polygon_region_parameters())
+        {
+            let [x, y, z] = match c.stored_value(id) {
+                Value::Point { x, y } => [x, y, 1.0],
+                Value::HomogeneousPoint { x, y, z } => [x, y, z],
+                _ => [f64::NAN; 3],
+            };
+            return self.xml.tag(
+                "coords",
+                &[
+                    ("x", &number(x)),
+                    ("y", &number(y)),
+                    ("z", &number(z)),
+                    ("geokernelRegion", &format!("{second} {third} {u} {v}")),
+                ],
+            );
+        }
         match c.stored_value(id) {
             Value::Point { x, y } | Value::NormalizedPointAtInfinity { x, y } => {
                 self.xml.coords("coords", [x, y, 1.0])?;

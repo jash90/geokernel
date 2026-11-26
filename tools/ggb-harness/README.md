@@ -421,11 +421,17 @@ This command writes only `crates/geo-mcp/tests/fixtures/parity_scenario_capture.
 Its header identifies the GeoGebra revision and the SHA-256 of the recorder
 sources. The scenario names identify the inputs and checkpoints. The command
 compiles the recorder against the existing build. The capture is separate
-from the kernel golden corpus.
+from the kernel golden corpus. A parity trace with more than four undo
+checkpoints is rejected before taking its undo snapshots. Each recording
+checks this limit with four and five placements through the Point tool.
+Point observations between these frames share a 4,096-unit budget per
+case. Each observation charges for all labels it scans, with a minimum
+charge of one.
 
 The controller gets the same integer screen positions throughout a gesture,
 including after a change of view. Text submission uses `TextBuilder`, as in
-`TextBuilderTest`, and InputBox submission uses `ButtonDialogModel.apply`.
+`TextBuilderTest`, and InputBox submission uses `ButtonDialogModel.apply`. An unchanged redefine submits the definition
+supplied by the reference to its shared `RedefineInputHandler`.
 The headless app exercises the shared input preview helper for an empty
 algebra entry. Native key delivery and the virtual keyboard still use the
 original web observation and desktop replay. See the [interaction parity

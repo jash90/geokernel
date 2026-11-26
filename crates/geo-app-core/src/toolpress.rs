@@ -1203,6 +1203,31 @@ mod tests {
     }
 
     #[test]
+    fn polygon_area_recovers_its_placement_after_reopening_a_collapsed_polygon() {
+        // The reference case area_polygon_reopen_while_collapsed puts the anchor
+        // on AB while collapsed. Keep its interior position for the next edit.
+        let mut app = app("A=(1,1)\nB=(5,1)\nC=(1,4)\np=Polygon(A,B,C)", Tool::Area);
+        click_tool(&mut app, 2.0, 1.51);
+        let original = point(app.wb.construction(), "Pointp");
+        app.wb.run_line("C = (1, 1)").unwrap();
+        let collapsed = point(app.wb.construction(), "Pointp");
+        assert!((collapsed.0 - 2.0).abs() < 1e-9 && collapsed.1 == 1.0);
+        for _ in 0..2 {
+            let bytes = app.wb.export_ggb(None).unwrap();
+            app.wb.load_bytes(&bytes, "area.ggb").unwrap();
+            let (x, y) = point(app.wb.construction(), "Pointp");
+            assert!((x - collapsed.0).abs() < 1e-9 && y == collapsed.1);
+        }
+        app.wb.run_line("C = (1, 4)").unwrap();
+        let (x, y) = point(app.wb.construction(), "Pointp");
+        assert!(
+            (x - original.0).abs() < 1e-9 && (y - original.1).abs() < 1e-9,
+            "{x}, {y}"
+        );
+        app.wb.export_ggb(None).unwrap();
+    }
+
+    #[test]
     fn polygon_area_anchor_is_bounded_after_its_polygon_grows() {
         let mut app = app(
             "n = 3\np = Polygon(Sequence((k, k^2), k, 1, n))",

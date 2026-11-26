@@ -99,7 +99,7 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
             app.cancel_cas_edit();
             app.cancel_spreadsheet_edit();
-            app.input.clear();
+            app.set_input_draft(String::new());
             app.input_error = None;
             app.keyboard.open = false;
             ctx.memory_mut(|m| {

@@ -494,6 +494,7 @@ fn frame_events(
             vec![t]
         }
         "text" => vec![json!({"type": "text", "text": e["text"]})],
+        "snapshot" => Vec::new(),
         "mouse_exit" => vec![json!({ "type": "gone" })],
         "touch_gesture_start" | "touch_gesture_move" => {
             let phase = if kind == "touch_gesture_start" {
@@ -1567,6 +1568,11 @@ fn parity_capture_undo_matches_checkpoint_depth() {
         let last = case["interaction"].as_array().unwrap().last().unwrap();
         let depth = last["undo_steps_added"].as_u64().unwrap() as usize;
         let recorded = case["undo"].as_array().unwrap().len();
+        assert!(
+            recorded <= 4,
+            "{} has too many undo snapshots",
+            case["name"]
+        );
         assert_eq!(
             case["undo_views"].as_array().unwrap().len(),
             recorded,
@@ -1673,7 +1679,16 @@ fn replay_fresh_controller_gestures() {
             }
             let mut diffs = Vec::new();
             if name == "drag_release_outside_canvas" {
-                diffs.extend(compare_parity_capture(case, &out));
+                // The owner adds a step restoring the pre-drag construction.
+                assert_eq!(last["undo_steps_added"], 0);
+                let mut expected = case.clone();
+                expected["undo"] = json!([case["initial"]]);
+                expected["interaction"]
+                    .as_array_mut()
+                    .unwrap()
+                    .last_mut()
+                    .unwrap()["undo_steps_added"] = json!(1);
+                diffs.extend(compare_parity_capture(&expected, &out));
             } else if name.starts_with("two_fingers_") {
                 compare_tool_objects(&case["settled"], &out.after, "settled", &mut diffs);
             } else if name == "rapid_second_press_on_point" {
@@ -1700,6 +1715,89 @@ fn replay_fresh_controller_gestures() {
         }
     }
     assert!(mismatches.is_empty(), "{}", mismatches.join("\n"));
+}
+
+#[test]
+fn accepting_a_point_redefine_keeps_the_drag() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let case = capture["scenarios"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "point_redefine_after_drag")
+        .unwrap();
+    assert!(case["dialogs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|request| { request["kind"] == "redefine" && request["object"] == "A" }));
+    for idle in [false, true] {
+        let out = replay(case, idle, "ours").unwrap();
+        let (_, opened) = &out.tool_frames[2];
+        assert_eq!(opened["input"]["text"], "A = (3, 2)");
+        assert_eq!(opened["keyboard_open"], false);
+        assert_eq!(out.after["input"]["text"], "");
+        let mut diffs = Vec::new();
+        compare_tool_objects(&case["settled"], &out.after, "after Enter", &mut diffs);
+        assert!(diffs.is_empty(), "{}", diffs.join("\n"));
+        assert_eq!(out.undo_added, 1, "only the drag adds a desktop checkpoint");
+        compare_tool_objects(&case["initial"], &out.tool_undo[0], "undo drag", &mut diffs);
+        assert!(diffs.is_empty(), "{}", diffs.join("\n"));
+    }
+}
+
+#[test]
+fn releasing_a_point_outside_undoes_its_drag_before_the_previous_edit() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let case = capture["scenarios"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "outside_point_release_after_creation")
+        .unwrap();
+    for idle in [false, true] {
+        let reference = replay(case, idle, "reference").unwrap();
+        let diffs = compare_parity_capture(case, &reference);
+        assert!(diffs.is_empty(), "{}", diffs.join("\n"));
+
+        let out = replay(case, idle, "ours").unwrap();
+        let mut diffs = Vec::new();
+        compare_tool_objects(&case["settled"], &out.after, "outside release", &mut diffs);
+        assert!(diffs.is_empty(), "{}", diffs.join("\n"));
+        assert_eq!(out.undo_added, 2);
+        compare_tool_objects(
+            &case["frames"][0]["objects"],
+            &out.tool_undo[0],
+            "undo drag",
+            &mut diffs,
+        );
+        compare_tool_objects(
+            &case["initial"],
+            &out.tool_undo[1],
+            "undo creation",
+            &mut diffs,
+        );
+        assert!(diffs.is_empty(), "{}", diffs.join("\n"));
+    }
+}
+
+#[test]
+fn returning_both_fingers_restores_the_original_line() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let case = capture["scenarios"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "two_fingers_return_line_to_start")
+        .unwrap();
+    assert!(!same(num(&case["metadata"]["displaced"]["A"]["y"]), 2.0));
+    assert!(same(num(&case["settled"]["A"]["y"]), 1.39));
+    for idle in [false, true] {
+        let out = replay(case, idle, "ours").unwrap();
+        let mut diffs = Vec::new();
+        compare_tool_objects(&case["initial"], &out.after, "fingers returned", &mut diffs);
+        assert!(diffs.is_empty(), "{}", diffs.join("\n"));
+    }
 }
 
 #[test]

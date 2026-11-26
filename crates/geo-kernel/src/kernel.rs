@@ -5359,11 +5359,9 @@ impl Construction {
         &mut self,
         label: &str,
         region: Id,
-        x: f64,
-        y: f64,
+        state: PathState,
     ) -> Result<Id, Error> {
         let def = Def::Path(PathDef::InRegion { region });
-        let state = PathState::saved_region(self, region, x, y);
         self.add_with_path_state(label, def, Some(state), None)
     }
 

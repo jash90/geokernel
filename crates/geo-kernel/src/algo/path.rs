@@ -197,6 +197,46 @@ impl PathState {
         state
     }
 
+    /// The vertex indices and interior weights of a point on a polygon region.
+    pub fn polygon_region_parameters(self) -> Option<(usize, usize, f64, f64)> {
+        match self.region {
+            RegionState::Polygon {
+                second,
+                third,
+                u,
+                v,
+            } => Some((second, third, u, v)),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn saved_polygon_region(
+        c: &Construction,
+        region: Id,
+        (second, third, u, v): (usize, usize, f64, f64),
+    ) -> Option<Self> {
+        if c.kind(region) != Kind::Polygon
+            || second == 0
+            || second >= third
+            || third >= REGION_VERTEX_WORK
+            || !u.is_finite()
+            || !v.is_finite()
+        {
+            return None;
+        }
+        let mut state = Self {
+            region: RegionState::Polygon {
+                second,
+                third,
+                u,
+                v,
+            },
+            ..Self::new()
+        };
+        state.follow_region(c, region);
+        Some(state)
+    }
+
     /// Restore a curve point from its saved parameter, which identifies its
     /// branch even when multiple parameters share the same coordinates.
     pub(crate) fn saved_curve(c: &Construction, curve: Id, t: f64) -> Self {
@@ -1642,9 +1682,10 @@ impl PathState {
     }
 }
 
+const REGION_VERTEX_WORK: usize = 4096;
+
 /// Charge shape preparation and vertex reads before projecting a region point.
 fn region_polygon(c: &Construction, region: Id) -> Option<Vec<(f64, f64)>> {
-    const REGION_VERTEX_WORK: usize = 4096;
     if !c.value(region).is_defined() {
         return None;
     }

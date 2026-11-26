@@ -80,6 +80,8 @@ pub struct Element {
     pub thickness: Option<u8>,
     /// `<coords>` as written: `x`, `y`, `z`.
     pub coords: Option<[String; 3]>,
+    /// Interior parameters saved by this application for a point on a polygon.
+    pub(crate) polygon_region: Option<(usize, usize, f64, f64)>,
     /// `<value val=>` as written.
     pub value: Option<String>,
     /// Number of retained tags seen when the angle value was read, reduced
@@ -1188,8 +1190,18 @@ pub(crate) fn parse_with_weight(text: &str, weight: usize) -> Result<Document, I
                 }
                 "coords" if element.is_some() => {
                     let get = |k: &str| attr(e, k).map(Option::unwrap_or_default);
-                    element.as_mut().expect("checked above").coords =
-                        Some([get("x")?, get("y")?, get("z")?]);
+                    let el = element.as_mut().expect("checked above");
+                    el.coords = Some([get("x")?, get("y")?, get("z")?]);
+                    if el.kind == "point" {
+                        el.polygon_region = attr(e, "geokernelRegion")?.and_then(|source| {
+                            let mut fields = source.split_ascii_whitespace();
+                            let second = fields.next()?.parse().ok()?;
+                            let third = fields.next()?.parse().ok()?;
+                            let u = fields.next()?.parse().ok()?;
+                            let v = fields.next()?.parse().ok()?;
+                            fields.next().is_none().then_some((second, third, u, v))
+                        });
+                    }
                 }
                 "matrix" if element.is_some() => {
                     let get = |k: &str| attr(e, k).map(Option::unwrap_or_default);
