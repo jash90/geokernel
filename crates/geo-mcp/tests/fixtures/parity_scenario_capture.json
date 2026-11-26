@@ -1,7 +1,7 @@
 {
   "upstream": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "generator": "ggb-harness",
-  "harness_revision_sha256": "35ab0e188aef4a7c20101a89d53d38a15cde87fa6340ba598b6206b6c90cc24e",
+  "harness_revision_sha256": "a65bf71d464d584b49246c3e6eab2325c08006ce3c68ebc6ac8f81663c5bdb3f",
   "command": "GEOGEBRA_SRC=<checkout> tools/ggb-harness/linux-x86_64.sh golden parity-scenarios",
   "scenarios": [
     {
@@ -285,6 +285,7 @@
       "settled": {
         "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.01 }
       },
+      "undo_views": [],
       "undo": []
     },
     {
@@ -309,9 +310,9 @@
         }
       ],
       "initial": {
-        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
-        "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
-        "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "on_path": false, "in_region": false },
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
         "p": {
           "type": "polygon",
           "defined": true,
@@ -331,9 +332,9 @@
         {
           "t": 30,
           "objects": {
-            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
-            "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
-            "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "on_path": false, "in_region": false },
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
             "p": {
               "type": "polygon",
               "defined": true,
@@ -348,8 +349,19 @@
             "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
             "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 1.0, "y2": 4.0 },
             "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 1.0, "y2": 1.0 },
-            "Textp": { "type": "text", "defined": true, "anchor": "Pointp" },
-            "Pointp": { "type": "point", "defined": true, "x": 2.0, "y": 1.51, "visible": false, "on_path": false, "in_region": true }
+            "Textp": {
+              "type": "text",
+              "defined": true,
+              "anchor": "Pointp",
+              "measure_subject": "ABC",
+              "measure_value": "6",
+              "background": [
+                255,
+                255,
+                255
+              ]
+            },
+            "Pointp": { "type": "point", "defined": true, "x": 2.0, "y": 1.51, "visible": false, "auxiliary": true, "label_visible": true, "on_path": false, "in_region": true }
           }
         }
       ],
@@ -374,9 +386,9 @@
       ],
       "metadata": {},
       "settled": {
-        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
-        "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
-        "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "on_path": false, "in_region": false },
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
         "p": {
           "type": "polygon",
           "defined": true,
@@ -391,14 +403,60 @@
         "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
         "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 1.0, "y2": 4.0 },
         "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 1.0, "y2": 1.0 },
-        "Textp": { "type": "text", "defined": true, "anchor": "Pointp" },
-        "Pointp": { "type": "point", "defined": true, "x": 2.0, "y": 1.51, "visible": false, "on_path": false, "in_region": true }
+        "Textp": {
+          "type": "text",
+          "defined": true,
+          "anchor": "Pointp",
+          "measure_subject": "ABC",
+          "measure_value": "6",
+          "background": [
+            255,
+            255,
+            255
+          ]
+        },
+        "Pointp": { "type": "point", "defined": true, "x": 2.0, "y": 1.51, "visible": false, "auxiliary": true, "label_visible": true, "on_path": false, "in_region": true }
+      },
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
+      "reloaded": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "p": {
+          "type": "polygon",
+          "defined": true,
+          "vertices": [
+            [1.0, 1.0],
+            [5.0, 1.0],
+            [1.0, 4.0]
+          ],
+          "area": 6.0,
+          "signed_area": 6.0
+        },
+        "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
+        "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 1.0, "y2": 4.0 },
+        "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 1.0, "y2": 1.0 },
+        "Textp": {
+          "type": "text",
+          "defined": true,
+          "anchor": "Pointp",
+          "measure_subject": "ABC",
+          "measure_value": "6",
+          "background": [
+            255,
+            255,
+            255
+          ]
+        },
+        "Pointp": { "type": "point", "defined": true, "x": 2.0, "y": 1.51, "visible": false, "auxiliary": true, "label_visible": true, "on_path": false, "in_region": true }
       },
       "undo": [
         {
-          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
-          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "on_path": false, "in_region": false },
-          "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "on_path": false, "in_region": false },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
           "p": {
             "type": "polygon",
             "defined": true,
@@ -452,6 +510,7 @@
       ],
       "metadata": { "normalized_input": "" },
       "settled": {},
+      "undo_views": [],
       "undo": []
     },
     {
@@ -542,6 +601,9 @@
           "world_position": [2.0, 0.99]
         }
       },
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
       "undo": [
         {}
       ]
@@ -631,6 +693,9 @@
           ]
         }
       },
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
       "undo": [
         {}
       ]
@@ -892,6 +957,9 @@
         "a": { "type": "segment", "defined": true, "x1": 6.2, "y1": 0.22, "x2": 1.0, "y2": 4.01 },
         "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.01, "x2": 2.2, "y2": 0.22 }
       },
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
       "undo": [
         {
           "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.01, "on_path": false, "in_region": false },
@@ -1085,6 +1153,10 @@
         "D": { "type": "point", "defined": true, "x": -2.0, "y": 2.0, "on_path": false, "in_region": false },
         "g": { "type": "segment", "defined": true, "x1": 3.0, "y1": -1.0, "x2": -2.0, "y2": 2.0 }
       },
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0],
+        [446.0, 373.5, 50.0, 50.0]
+      ],
       "undo": [
         {
           "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false },
@@ -1420,6 +1492,9 @@
         "C": { "type": "point", "defined": true, "x": -3.0, "y": -1.99, "on_path": false, "in_region": false },
         "D": { "type": "point", "defined": true, "x": 6.0, "y": 4.01, "on_path": false, "in_region": false }
       },
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
       "undo": [
         {
           "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.01, "on_path": false, "in_region": false },
@@ -1715,6 +1790,9 @@
         "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.01 },
         "P": { "type": "point", "defined": true, "x": 1.2, "y": 1.01, "on_path": true, "in_region": false }
       },
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
       "undo": [
         {
           "f": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.01 },
@@ -1836,8 +1914,7 @@
           "grid_step": [1.0, 1.0],
           "mode": 41,
           "selection": [],
-          "undo_steps_added": 0,
-          "rectangle": [496.0, 316.0, 13.0, 7.0]
+          "undo_steps_added": 0
         },
         {
           "t": 45,
@@ -1845,8 +1922,7 @@
           "grid_step": [1.0, 1.0],
           "mode": 41,
           "selection": [],
-          "undo_steps_added": 0,
-          "rectangle": [496.0, 310.0, 27.0, 13.0]
+          "undo_steps_added": 0
         },
         {
           "t": 70,
@@ -1854,8 +1930,7 @@
           "grid_step": [1.0, 1.0],
           "mode": 41,
           "selection": [],
-          "undo_steps_added": 0,
-          "rectangle": [496.0, 303.0, 40.0, 20.0]
+          "undo_steps_added": 0
         },
         {
           "t": 95,
@@ -1863,8 +1938,7 @@
           "grid_step": [1.0, 1.0],
           "mode": 41,
           "selection": [],
-          "undo_steps_added": 0,
-          "rectangle": [496.0, 296.0, 53.0, 27.0]
+          "undo_steps_added": 0
         },
         {
           "t": 120,
@@ -1976,7 +2050,12 @@
       ],
       "metadata": {},
       "settled": {},
-      "undo": []
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
+      "undo": [
+        {}
+      ]
     },
     {
       "name": "controller_drag_time_gate",
@@ -2082,20 +2161,8 @@
       "settled": {
         "A": { "type": "point", "defined": true, "x": 3.0, "y": 1.0, "on_path": false, "in_region": false }
       },
-      "undo": [
-        {
-          "A": { "type": "point", "defined": true, "x": 3.0, "y": 1.0, "on_path": false, "in_region": false }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 3.0, "y": 1.0, "on_path": false, "in_region": false }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 3.0, "y": 1.0, "on_path": false, "in_region": false }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 3.0, "y": 1.0, "on_path": false, "in_region": false }
-        }
-      ]
+      "undo_views": [],
+      "undo": []
     },
     {
       "name": "hit_radius_mouse_and_touch",
@@ -2149,6 +2216,7 @@
       "settled": {
         "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
       },
+      "undo_views": [],
       "undo": []
     },
     {
@@ -2230,28 +2298,8 @@
         "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0, "on_path": false, "in_region": false },
         "f": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -4.0 }
       },
-      "undo": [
-        {
-          "A": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
-          "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0, "on_path": false, "in_region": false },
-          "f": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -4.0 }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
-          "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0, "on_path": false, "in_region": false },
-          "f": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -4.0 }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
-          "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0, "on_path": false, "in_region": false },
-          "f": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -4.0 }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 2.0, "y": 2.0, "on_path": false, "in_region": false },
-          "B": { "type": "point", "defined": true, "x": 5.0, "y": 3.0, "on_path": false, "in_region": false },
-          "f": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -4.0 }
-        }
-      ]
+      "undo_views": [],
+      "undo": []
     },
     {
       "name": "grid_steps_during_zoom",
@@ -2334,6 +2382,7 @@
       ],
       "metadata": {},
       "settled": {},
+      "undo_views": [],
       "undo": []
     },
     {
@@ -2418,7 +2467,12 @@
       ],
       "metadata": {},
       "settled": {},
-      "undo": []
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
+      "undo": [
+        {}
+      ]
     },
     {
       "name": "pan_near_axis_inside_lock_cone",
@@ -2493,7 +2547,12 @@
       ],
       "metadata": {},
       "settled": {},
-      "undo": []
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
+      "undo": [
+        {}
+      ]
     },
     {
       "name": "segment_preview_endpoint",
@@ -2622,6 +2681,9 @@
         "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
         "f": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 3.0, "y2": 2.0 }
       },
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
       "undo": [
         {}
       ]
@@ -2694,6 +2756,7 @@
       ],
       "metadata": {},
       "settled": {},
+      "undo_views": [],
       "undo": []
     },
     {
@@ -2783,24 +2846,8 @@
         "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
         "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
       },
-      "undo": [
-        {
-          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
-          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
-        },
-        {
-          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
-          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
-        },
-        {
-          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
-          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
-        },
-        {
-          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0, "on_path": false, "in_region": false },
-          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
-        }
-      ]
+      "undo_views": [],
+      "undo": []
     },
     {
       "name": "resize_after_view_reload",
@@ -2856,6 +2903,7 @@
       "settled": {
         "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
       },
+      "undo_views": [],
       "undo": []
     },
     {
@@ -3008,6 +3056,7 @@
       "settled": {
         "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
       },
+      "undo_views": [],
       "undo": []
     },
     {
@@ -3122,6 +3171,10 @@
         "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false },
         "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0, "on_path": false, "in_region": false }
       },
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0],
+        [446.0, 373.5, 50.0, 50.0]
+      ],
       "undo": [
         {
           "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false }
@@ -3237,6 +3290,7 @@
       "settled": {
         "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
       },
+      "undo_views": [],
       "undo": []
     },
     {
@@ -3301,6 +3355,7 @@
       "settled": {
         "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "on_path": false, "in_region": false }
       },
+      "undo_views": [],
       "undo": []
     },
     {
@@ -3403,20 +3458,8 @@
       "settled": {
         "A": { "type": "point", "defined": true, "x": 8.92, "y": 1.39, "on_path": false, "in_region": false }
       },
-      "undo": [
-        {
-          "A": { "type": "point", "defined": true, "x": 8.92, "y": 1.39, "on_path": false, "in_region": false }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 8.92, "y": 1.39, "on_path": false, "in_region": false }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 8.92, "y": 1.39, "on_path": false, "in_region": false }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 8.92, "y": 1.39, "on_path": false, "in_region": false }
-        }
-      ]
+      "undo_views": [],
+      "undo": []
     },
     {
       "name": "circle_radius_dialog_cancel",
@@ -3485,10 +3528,13 @@
           "undo_steps_added": 1
         }
       ],
-      "metadata": { "cancelled_dialog": "radius" },
+      "metadata": { "unhandled_platform_key": "Escape" },
       "settled": {
         "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0, "on_path": false, "in_region": false }
       },
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
       "undo": [
         {}
       ]
@@ -3560,7 +3606,12 @@
       ],
       "metadata": {},
       "settled": {},
-      "undo": []
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
+      "undo": [
+        {}
+      ]
     },
     {
       "name": "wheel_checkpoint_at_exit",
@@ -3601,7 +3652,12 @@
       ],
       "metadata": {},
       "settled": {},
-      "undo": []
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
+      "undo": [
+        {}
+      ]
     },
     {
       "name": "zoom_tool_checkpoint_on_leave",
@@ -3662,7 +3718,12 @@
       ],
       "metadata": {},
       "settled": {},
-      "undo": []
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
+      "undo": [
+        {}
+      ]
     },
     {
       "name": "algebra_description_separators",
@@ -3735,6 +3796,7 @@
           ]
         }
       },
+      "undo_views": [],
       "undo": []
     },
     {
@@ -3825,6 +3887,7 @@
       ],
       "metadata": {},
       "settled": {},
+      "undo_views": [],
       "undo": []
     },
     {
@@ -3884,6 +3947,7 @@
       ],
       "metadata": {},
       "settled": {},
+      "undo_views": [],
       "undo": []
     },
     {
@@ -3955,28 +4019,8 @@
         "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
         "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 1.0, "r": 3.0 }
       },
-      "undo": [
-        {
-          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0, "on_path": false, "in_region": false },
-          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
-          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 1.0, "r": 3.0 }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0, "on_path": false, "in_region": false },
-          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
-          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 1.0, "r": 3.0 }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0, "on_path": false, "in_region": false },
-          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
-          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 1.0, "r": 3.0 }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0, "on_path": false, "in_region": false },
-          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0, "on_path": false, "in_region": false },
-          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 1.0, "r": 3.0 }
-        }
-      ]
+      "undo_views": [],
+      "undo": []
     },
     {
       "name": "two_fingers_move_line",
@@ -4047,26 +4091,323 @@
         "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
         "f": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -19.139999999999997 }
       },
+      "undo_views": [],
+      "undo": []
+    },
+    {
+      "name": "area_polygon_occupied_anchor_label",
+      "tool_mode": 49,
+      "initial_script": [
+        "A=(1,1)",
+        "B=(5,1)",
+        "C=(1,4)",
+        "p=Polygon(A,B,C)",
+        "Pointp = (0, 0)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [2.0, 1.51]
+        },
+        {
+          "t": 30,
+          "type": "mouse_up",
+          "pos": [2.0, 1.51]
+        }
+      ],
+      "initial": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "p": {
+          "type": "polygon",
+          "defined": true,
+          "vertices": [
+            [1.0, 1.0],
+            [5.0, 1.0],
+            [1.0, 4.0]
+          ],
+          "area": 6.0,
+          "signed_area": 6.0
+        },
+        "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
+        "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 1.0, "y2": 4.0 },
+        "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 1.0, "y2": 1.0 },
+        "Pointp": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false }
+      },
+      "frames": [
+        {
+          "t": 30,
+          "objects": {
+            "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+            "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+            "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+            "p": {
+              "type": "polygon",
+              "defined": true,
+              "vertices": [
+                [1.0, 1.0],
+                [5.0, 1.0],
+                [1.0, 4.0]
+              ],
+              "area": 6.0,
+              "signed_area": 6.0
+            },
+            "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
+            "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 1.0, "y2": 4.0 },
+            "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 1.0, "y2": 1.0 },
+            "Pointp_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+            "Textp": {
+              "type": "text",
+              "defined": true,
+              "anchor": "Pointp",
+              "measure_subject": "ABC",
+              "measure_value": "6",
+              "background": [
+                255,
+                255,
+                255
+              ]
+            },
+            "Pointp": { "type": "point", "defined": true, "x": 2.0, "y": 1.51, "visible": false, "auxiliary": true, "label_visible": true, "on_path": false, "in_region": true }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 49,
+          "selection": [],
+          "undo_steps_added": 0
+        },
+        {
+          "t": 30,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 49,
+          "selection": [],
+          "undo_steps_added": 1
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "p": {
+          "type": "polygon",
+          "defined": true,
+          "vertices": [
+            [1.0, 1.0],
+            [5.0, 1.0],
+            [1.0, 4.0]
+          ],
+          "area": 6.0,
+          "signed_area": 6.0
+        },
+        "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
+        "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 1.0, "y2": 4.0 },
+        "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 1.0, "y2": 1.0 },
+        "Pointp_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "Textp": {
+          "type": "text",
+          "defined": true,
+          "anchor": "Pointp",
+          "measure_subject": "ABC",
+          "measure_value": "6",
+          "background": [
+            255,
+            255,
+            255
+          ]
+        },
+        "Pointp": { "type": "point", "defined": true, "x": 2.0, "y": 1.51, "visible": false, "auxiliary": true, "label_visible": true, "on_path": false, "in_region": true }
+      },
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0]
+      ],
+      "reloaded": {
+        "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "p": {
+          "type": "polygon",
+          "defined": true,
+          "vertices": [
+            [1.0, 1.0],
+            [5.0, 1.0],
+            [1.0, 4.0]
+          ],
+          "area": 6.0,
+          "signed_area": 6.0
+        },
+        "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
+        "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 1.0, "y2": 4.0 },
+        "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 1.0, "y2": 1.0 },
+        "Pointp_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+        "Textp": {
+          "type": "text",
+          "defined": true,
+          "anchor": "Pointp",
+          "measure_subject": "ABC",
+          "measure_value": "6",
+          "background": [
+            255,
+            255,
+            255
+          ]
+        },
+        "Pointp": { "type": "point", "defined": true, "x": 2.0, "y": 1.51, "visible": false, "auxiliary": true, "label_visible": true, "on_path": false, "in_region": true }
+      },
       "undo": [
         {
-          "A": { "type": "point", "defined": true, "x": -3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
-          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
-          "f": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -19.139999999999997 }
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 4.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [5.0, 1.0],
+              [1.0, 4.0]
+            ],
+            "area": 6.0,
+            "signed_area": 6.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
+          "a": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 1.0, "y2": 4.0 },
+          "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 1.0, "y2": 1.0 },
+          "Pointp": { "type": "point", "defined": true, "x": 0.0, "y": 0.0, "visible": true, "auxiliary": false, "label_visible": true, "on_path": false, "in_region": false }
+        }
+      ]
+    },
+    {
+      "name": "area_polygon_grows_after_placement",
+      "tool_mode": 49,
+      "initial_script": [
+        "n = 3",
+        "p = Polygon(Sequence((k, k^2), k, 1, n))"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            4.51
+          ]
         },
         {
-          "A": { "type": "point", "defined": true, "x": -3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
-          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
-          "f": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -19.139999999999997 }
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            4.51
+          ]
+        },
+        { "t": 200, "type": "command", "input": "SetValue(n, 4097)" }
+      ],
+      "initial": {
+        "$object_count": 2,
+        "n": { "type": "number", "defined": true, "value": 3.0 }
+      },
+      "frames": [
+        {
+          "t": 60,
+          "objects": {
+            "$object_count": 4,
+            "n": { "type": "number", "defined": true, "value": 3.0 },
+            "Textp": {
+              "type": "text",
+              "defined": true,
+              "anchor": "Pointp",
+              "measure_subject": "p",
+              "measure_value": "1",
+              "background": [
+                255,
+                255,
+                255
+              ]
+            },
+            "Pointp": { "type": "point", "defined": true, "x": 2.0, "y": 4.51, "visible": false, "auxiliary": true, "label_visible": true, "on_path": false, "in_region": true }
+          }
+        }
+      ],
+      "dialogs": [],
+      "interaction": [
+        {
+          "t": 0,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 49,
+          "selection": [],
+          "undo_steps_added": 0
         },
         {
-          "A": { "type": "point", "defined": true, "x": -3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
-          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
-          "f": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -19.139999999999997 }
+          "t": 60,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 49,
+          "selection": [],
+          "undo_steps_added": 1
         },
         {
-          "A": { "type": "point", "defined": true, "x": -3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
-          "B": { "type": "point", "defined": true, "x": 3.0, "y": 3.1899999999999995, "on_path": false, "in_region": false },
-          "f": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -19.139999999999997 }
+          "t": 200,
+          "view": [446.0, 373.5, 50.0, 50.0],
+          "grid_step": [1.0, 1.0],
+          "mode": 49,
+          "selection": [],
+          "undo_steps_added": 2
+        }
+      ],
+      "metadata": {},
+      "settled": {
+        "$object_count": 4,
+        "n": { "type": "number", "defined": true, "value": 4097.0 },
+        "Textp": {
+          "type": "text",
+          "defined": true,
+          "anchor": "Pointp",
+          "measure_subject": "p",
+          "measure_value": "11453245440",
+          "background": [
+            255,
+            255,
+            255
+          ]
+        },
+        "Pointp": { "type": "point", "defined": true, "x": 2.0, "y": 4.51, "visible": false, "auxiliary": true, "label_visible": true, "on_path": false, "in_region": true }
+      },
+      "undo_views": [
+        [446.0, 373.5, 50.0, 50.0],
+        [446.0, 373.5, 50.0, 50.0]
+      ],
+      "undo": [
+        {
+          "$object_count": 4,
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "Textp": {
+            "type": "text",
+            "defined": true,
+            "anchor": "Pointp",
+            "measure_subject": "p",
+            "measure_value": "1",
+            "background": [
+              255,
+              255,
+              255
+            ]
+          },
+          "Pointp": { "type": "point", "defined": true, "x": 2.0, "y": 4.51, "visible": false, "auxiliary": true, "label_visible": true, "on_path": false, "in_region": true }
+        },
+        {
+          "$object_count": 2,
+          "n": { "type": "number", "defined": true, "value": 3.0 }
         }
       ]
     }

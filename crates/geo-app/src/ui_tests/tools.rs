@@ -202,20 +202,21 @@ fn scene_labels() -> Vec<String> {
 }
 
 #[test]
-fn cancelling_the_number_dialog_takes_the_new_point_away() {
-    // Circle with radius on empty space: the centre is made at once, as a
-    // pending point of the tool use; cancelling the dialog ends the use
-    // unfinished and takes it away (spec E5; what the reference does on a
-    // cancelled dialog is unconfirmed, this follows its Escape rule).
+fn cancelling_the_radius_dialog_keeps_the_new_centre() {
+    // The radius dialog's cancel action leaves the centre in the construction.
     let mut h = with_clicks(Tool::CircleRadius, &[(0.0, 2.0)]);
     assert!(h.state().tool.asking().is_some());
     assert!(h.state().wb.construction().id("F").is_some());
     h.key_press(egui::Key::Escape);
     h.run();
-    assert_eq!(labels(&h), scene_labels());
+    let mut expected = scene_labels();
+    expected.push("F".to_owned());
+    assert_eq!(labels(&h), expected);
     let app = h.state();
     assert!(app.tool.asking().is_none() && app.tool.picks().is_empty());
-    assert_eq!(app.wb.undo_depth(), (0, 0));
+    assert_eq!(app.wb.undo_depth(), (1, 0));
+    undo(&mut h);
+    assert_eq!(labels(&h), scene_labels());
 }
 
 #[test]

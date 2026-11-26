@@ -349,11 +349,29 @@ impl Window {
         use geo_kernel::{kernel::text::TextPosition, Kind};
 
         let mut state = self.state();
-        let c = self.server.session.headless().app.wb.construction();
+        let wb = &self.server.session.headless().app.wb;
+        let c = wb.construction();
         for object in state["objects"].as_array_mut().unwrap() {
             let Some(id) = object["name"].as_str().and_then(|name| c.id(name)) else {
                 continue;
             };
+            if c.kind(id) == Kind::Point {
+                object["label_visible"] = json!(c.drawing_style(id).show_label);
+                object["auxiliary"] = json!(wb.auxiliary_object(id));
+            }
+            if c.kind(id) == Kind::Text {
+                let background = c
+                    .appearance(id)
+                    .text_background
+                    .filter(|rgba| rgba[3] != 0)
+                    .map(|[r, g, b, _]| [r, g, b]);
+                object["background"] = json!(background);
+                if let Some((caption, value)) = c.text(id).and_then(|text| text.rsplit_once(" = "))
+                {
+                    object["measure_subject"] = json!(caption.split_whitespace().last());
+                    object["measure_value"] = json!(value);
+                }
+            }
             match c.kind(id) {
                 Kind::Text => match c.text_position(id) {
                     Some(TextPosition::Point(anchor)) => object["anchor"] = json!(c.label(anchor)),
@@ -409,6 +427,7 @@ fn tool_name(mode: i64) -> Option<&'static str> {
         24 => "semicircle",
         26 => "image",
         28 => "show_hide_label",
+        34 => "circle_radius",
         35 => "copy_visual_style",
         39 => "move_rotate",
         68 => "function_inspector",
@@ -478,6 +497,26 @@ fn frame_events(
             vec![t]
         }
         "text" => vec![json!({"type": "text", "text": e["text"]})],
+        "mouse_exit" => vec![json!({ "type": "gone" })],
+        "touch_gesture_start" | "touch_gesture_move" => {
+            let phase = if kind == "touch_gesture_start" {
+                "start"
+            } else {
+                "move"
+            };
+            e["fingers"]
+                .as_array()
+                .ok_or("touch gesture needs fingers")?
+                .iter()
+                .enumerate()
+                .map(|(id, pos)| {
+                    json!({
+                        "type": "touch", "phase": phase, "id": id,
+                        "x": w.view_min.0 + num(&pos[0]), "y": w.view_min.1 + num(&pos[1]),
+                    })
+                })
+                .collect()
+        }
         "key" => {
             let key = e["key"].as_str().ok_or("a key event names no key")?;
             vec![json!({"type": "key", "key": key})]
@@ -642,6 +681,7 @@ struct Outcome {
     before: Value,
     after: Value,
     origin0: (f64, f64),
+    reloaded: Option<Value>,
     undo_added: i64,
     tool_frames: Vec<(Value, Value)>,
     tool_undo: Vec<Value>,
@@ -779,6 +819,19 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
     } else {
         w.state()
     };
+    let saved = if s.get("reloaded").is_some() {
+        Some(
+            w.server
+                .session
+                .headless()
+                .app
+                .wb
+                .export_ggb(None)
+                .map_err(|e| e.to_string())?,
+        )
+    } else {
+        None
+    };
     let undo_added = undo_depth(&after) - depth0;
     let mut tool_undo = Vec::new();
     if capture {
@@ -787,10 +840,28 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
             tool_undo.push(w.capture_state());
         }
     }
+    let reloaded = if let Some(bytes) = saved {
+        call(
+            &mut w.server,
+            "open",
+            json!({ "base64": geo_mcp::base64_encode(&bytes), "name": "replay.ggb" }),
+        )?;
+        w.server
+            .session
+            .headless()
+            .app
+            .wb
+            .export_ggb(None)
+            .map_err(|e| e.to_string())?;
+        Some(w.capture_state())
+    } else {
+        None
+    };
     Ok(Outcome {
         before,
         after,
         origin0,
+        reloaded,
         undo_added,
         tool_frames,
         tool_undo,
@@ -1330,7 +1401,17 @@ fn compare_tool_objects(reference: &Value, state: &Value, when: &str, diffs: &mu
                 actual["value"], geo["text"]
             ));
         }
-        for field in ["anchor", "visible", "screen_position", "world_position"] {
+        for field in [
+            "anchor",
+            "visible",
+            "label_visible",
+            "auxiliary",
+            "background",
+            "measure_subject",
+            "measure_value",
+            "screen_position",
+            "world_position",
+        ] {
             if let Some(expected) = geo.get(field) {
                 let got = &actual[field];
                 let matches = if let (Some(a), Some(b)) = (got.as_array(), expected.as_array()) {
@@ -1417,7 +1498,7 @@ fn compare_tool_capture(capture: &Value, out: &Outcome) -> Vec<String> {
         }
         compare_frame(frame, state, &when, &mut diffs);
     }
-    if let Some(frame) = frames.last() {
+    if let Some(frame) = frames.last().filter(|_| capture.get("settled").is_none()) {
         compare_frame(frame, &out.after, "settled", &mut diffs);
     }
     // The desktop list action adds one undo step, returning to the initial state.
@@ -1450,6 +1531,14 @@ fn compare_tool_capture(capture: &Value, out: &Outcome) -> Vec<String> {
 fn compare_parity_capture(capture: &Value, out: &Outcome) -> Vec<String> {
     let mut diffs = compare_tool_capture(capture, out);
     compare_tool_objects(&capture["settled"], &out.after, "settled", &mut diffs);
+    if let Some(reference) = capture.get("reloaded") {
+        compare_tool_objects(
+            reference,
+            out.reloaded.as_ref().unwrap(),
+            "reloaded",
+            &mut diffs,
+        );
+    }
     let last = capture["interaction"].as_array().unwrap().last().unwrap();
     let selection = out.after["selected"]
         .as_str()
@@ -1474,6 +1563,149 @@ fn compare_parity_capture(capture: &Value, out: &Outcome) -> Vec<String> {
         ));
     }
     diffs
+}
+
+#[test]
+fn parity_capture_undo_matches_checkpoint_depth() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let mut mismatches = Vec::new();
+    for case in capture["scenarios"].as_array().unwrap() {
+        let last = case["interaction"].as_array().unwrap().last().unwrap();
+        let depth = last["undo_steps_added"].as_u64().unwrap() as usize;
+        let recorded = case["undo"].as_array().unwrap().len();
+        assert_eq!(
+            case["undo_views"].as_array().unwrap().len(),
+            recorded,
+            "{}",
+            case["name"]
+        );
+        if depth != recorded {
+            mismatches.push(format!(
+                "{}: {depth} checkpoints, {recorded} undos",
+                case["name"]
+            ));
+        }
+    }
+    assert!(mismatches.is_empty(), "{}", mismatches.join("\n"));
+}
+
+#[test]
+fn radius_escape_is_marked_as_a_platform_boundary() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let case = capture["scenarios"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "circle_radius_dialog_cancel")
+        .unwrap();
+    assert_eq!(case["dialogs"], json!([{ "kind": "radius", "point": "A" }]));
+    assert_eq!(
+        case["metadata"],
+        json!({ "unhandled_platform_key": "Escape" })
+    );
+    assert_eq!(case["frames"][0]["objects"], case["frames"][1]["objects"]);
+    assert_eq!(case["interaction"][1]["undo_steps_added"], 1);
+}
+
+#[test]
+fn the_area_anchor_collision_leaves_the_text_label_available() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let case = capture["scenarios"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "area_polygon_occupied_anchor_label")
+        .unwrap();
+    assert_eq!(case["settled"]["Textp"]["anchor"], "Pointp");
+    assert_eq!(case["settled"]["Pointp_{1}"]["x"], 0.0);
+    for idle in [false, true] {
+        let out = replay(case, idle, "ours").unwrap();
+        assert_eq!(object(&out.after, "Pointp").unwrap()["coords"]["x"], 0.0);
+        let text = object(&out.after, "Textp").unwrap();
+        assert_eq!(text["anchor"], "Pointp_{1}");
+        assert_eq!(
+            text["measure_subject"],
+            case["settled"]["Textp"]["measure_subject"]
+        );
+        assert_eq!(text["background"], case["settled"]["Textp"]["background"]);
+        assert_eq!(out.undo_added, 1);
+    }
+}
+
+#[test]
+fn zoom_drag_respects_the_recorded_press_delay() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let scenarios = capture["scenarios"].as_array().unwrap();
+    let case = scenarios
+        .iter()
+        .find(|case| case["name"] == "zoom_in_tool_rectangle_fills_canvas")
+        .unwrap();
+    let states = case["interaction"].as_array().unwrap();
+    assert!(states
+        .iter()
+        .filter(|state| num(&state["t"]) < 100.0)
+        .all(|state| state.get("rectangle").is_none()));
+    assert!(states.iter().any(|state| state.get("rectangle").is_some()));
+}
+
+#[test]
+fn replay_fresh_controller_gestures() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let mut mismatches = Vec::new();
+    for case in capture["scenarios"].as_array().unwrap() {
+        let name = case["name"].as_str().unwrap();
+        if !matches!(
+            name,
+            "circle_radius_dialog_cancel"
+                | "segment_tool_twice_stays_selected"
+                | "zoom_rectangle_near_view_aspect"
+                | "two_fingers_scale_x_axis"
+                | "two_fingers_scale_circle"
+                | "two_fingers_move_line"
+                | "drag_release_outside_canvas"
+                | "rapid_second_press_on_point"
+        ) {
+            continue;
+        }
+        for idle in [false, true] {
+            let out = replay(case, idle, "ours").unwrap_or_else(|error| panic!("{name}: {error}"));
+            let last = case["interaction"].as_array().unwrap().last().unwrap();
+            for (index, field) in [(2, "scale"), (3, "yscale")] {
+                let expected = num(&last["view"][index]);
+                let got = num(&out.after["view"][field]);
+                if !same(got, expected) {
+                    mismatches.push(format!("{name}: {field} {got}, reference {expected}"));
+                }
+            }
+            let mut diffs = Vec::new();
+            if name == "drag_release_outside_canvas" {
+                diffs.extend(compare_parity_capture(case, &out));
+            } else if name.starts_with("two_fingers_") {
+                compare_tool_objects(&case["settled"], &out.after, "settled", &mut diffs);
+            } else if name == "rapid_second_press_on_point" {
+                diffs.extend(compare_parity_capture(case, &out));
+                let request = &case["dialogs"][0];
+                assert_eq!(request["kind"], "redefine");
+                let label = request["object"].as_str().unwrap();
+                if !out.after["input"]["text"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with(&format!("{label} = "))
+                {
+                    diffs.push(format!("definition of {label} was not opened"));
+                }
+            } else if name == "zoom_rectangle_near_view_aspect" {
+                // The owner makes a completed view change an immediate undo step.
+                if out.undo_added != 1 {
+                    diffs.push(format!("{} undo steps, expected one", out.undo_added));
+                }
+            } else {
+                diffs.extend(compare_parity_capture(case, &out));
+            }
+            mismatches.extend(diffs.into_iter().map(|diff| format!("{name}: {diff}")));
+        }
+    }
+    assert!(mismatches.is_empty(), "{}", mismatches.join("\n"));
 }
 
 #[test]

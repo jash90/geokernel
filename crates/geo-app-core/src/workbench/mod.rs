@@ -1321,6 +1321,11 @@ impl Workbench {
         self.move_free_points(&positions)
     }
 
+    /// Move the two points of a two-finger line grab as one update.
+    pub(crate) fn move_paired_points(&mut self, points: [(Id, f64, f64); 2]) -> bool {
+        self.move_free_points(&points)
+    }
+
     fn move_free_points(&mut self, positions: &[(Id, f64, f64)]) -> bool {
         if positions.is_empty() {
             return false;

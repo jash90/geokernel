@@ -13,6 +13,9 @@
 
 use crate::view::{Camera, ScaleLimits};
 
+mod touch;
+pub use touch::TouchTarget;
+
 /// The reference app's wheel zoom factor (`EuclidianView
 /// .MOUSE_WHEEL_ZOOM_FACTOR`).
 pub const WHEEL_ZOOM_FACTOR: f64 = 1.1;

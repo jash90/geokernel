@@ -382,6 +382,20 @@ pub(crate) fn convert_with_assets(
                 .expect("the control kind was just checked");
             c.out.script.push(property.to_string());
         }
+        if c.kernel.kind(id) == Kind::Text {
+            if let Some(background) = saved_style.background {
+                let mut style = c.kernel.appearance(id).clone();
+                style.text_background = Some(background);
+                let property = Property::Appearance {
+                    label: el.label.clone(),
+                    style: Box::new(style),
+                };
+                property
+                    .apply(&mut c.kernel)
+                    .expect("changing a color does not change its channels");
+                c.out.script.push(property.to_string());
+            }
+        }
         c.out.object_styles.insert(el.label.clone(), saved_style);
         if let Some([x, y]) = el.label_offset.filter(|&position| {
             position != [0, 0] && !matches!(c.kernel.def(id), Def::Boolean(_) | Def::InputBox(_))
@@ -987,6 +1001,18 @@ impl Converter {
             "Function" if legacy_interval => "$functionInterval",
             _ => name,
         };
+        if let ("PointIn", [region], [label]) = (name, args.as_slice(), outputs) {
+            if let Some([x, y, z]) = elements.get(label.as_str()).and_then(|el| coords3(el)) {
+                let (x, y) = (x / z, y / z);
+                if x.is_finite() && y.is_finite() {
+                    return Ok(vec![Step {
+                        line: format!("{label} = $pointInRegion({region}, {x}, {y})"),
+                        labels: vec![label.clone()],
+                        auto: false,
+                    }]);
+                }
+            }
+        }
         if let ("Point", [path], [label]) = (name, args.as_slice(), outputs) {
             if let Some((el, path_id)) = elements.get(label.as_str()).zip(self.kernel.id(path)) {
                 let kind = self.kernel.kind(path_id);

@@ -152,6 +152,7 @@ pub struct App {
     /// The object under the pointer in the drawing area.
     pub hovered: Option<Id>,
     pub focus_input: bool,
+    pub focus_point_definition: bool,
     /// The input row's cursor (in characters), kept while the on-screen
     /// keyboard takes the focus for a moment.
     pub input_cursor: usize,
@@ -205,6 +206,7 @@ pub struct App {
     /// The pinch in progress (`twoTouchStart` .. `twoTouchEnd`), while
     /// two fingers hold the view.
     pub pinch: Option<crate::camera::Pinch>,
+    pub touch_target: Option<crate::camera::TouchTarget>,
     /// An axis the current drag rescales (`camera::axis_scale`), with the
     /// world value the press grabbed on it.
     pub axis: Option<crate::camera::AxisDrag>,
@@ -273,6 +275,7 @@ impl App {
             decor,
             hovered: None,
             focus_input: false,
+            focus_point_definition: false,
             input_cursor: 0,
             cursor_request: None,
             keyboard: Keyboard::default(),
@@ -302,6 +305,7 @@ impl App {
             pinching: false,
             fingers: std::collections::BTreeMap::new(),
             pinch: None,
+            touch_target: None,
             axis: None,
             rect_from: None,
             rect_to: None,
@@ -375,6 +379,25 @@ impl App {
         } else {
             self.properties = crate::properties::Dialog::open(&self.wb, [id]);
         }
+    }
+
+    /// Starts an edit of a point's definition through the input row.
+    pub fn edit_point_definition(&mut self, id: Id) {
+        let c = self.wb.construction();
+        if c.kind(id) != geo_kernel::Kind::Point || c.appearance(id).fixed == Some(true) {
+            return;
+        }
+        let label = c.label(id);
+        let Some(definition) = self.wb.definition(label) else {
+            return;
+        };
+        if label.len().saturating_add(definition.len()) > crate::tools::MAX_PLACED_TEXT_CHARS {
+            return;
+        }
+        self.input = format!("{label} = {definition}");
+        self.input_error = None;
+        self.cursor_request = Some(self.input.chars().count());
+        self.focus_point_definition = true;
     }
 
     /// Replaces the algebra selection with a single object, or clears it.
@@ -598,7 +621,11 @@ impl App {
                 Ok(()) => {
                     self.tool_error = None;
                     let id = self.wb.construction().ids().last();
-                    self.select_only(id);
+                    self.select_only(if self.tool.tool() == Tool::Segment {
+                        None
+                    } else {
+                        id
+                    });
                 }
                 Err(e) => {
                     self.tool_error = Some(errors::polish(&e));
@@ -665,6 +692,17 @@ pub fn parse_number(s: &str) -> Option<f64> {
 #[cfg(test)]
 mod tests {
     use super::parse_number;
+
+    #[test]
+    fn point_definition_edit_caps_the_input_copy() {
+        let mut app = super::App::new(crate::workbench::Workbench::default(), None);
+        let padding = " ".repeat(crate::tools::MAX_PLACED_TEXT_CHARS);
+        app.wb.load_script(&format!("A = (1,{padding}2)")).unwrap();
+        let id = app.wb.construction().id("A").unwrap();
+        app.edit_point_definition(id);
+        assert!(app.input.is_empty());
+        assert!(!app.focus_point_definition);
+    }
 
     #[test]
     fn typed_numbers_accept_a_comma_and_a_degree_sign() {

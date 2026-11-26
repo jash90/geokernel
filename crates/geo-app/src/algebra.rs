@@ -747,11 +747,12 @@ fn input_row(app: &mut App, ui: &mut Ui) {
             text::label(Label::InputHint),
         )
     });
-    if app.focus_input {
+    let point_definition = std::mem::take(&mut app.focus_point_definition);
+    let focus_input = std::mem::take(&mut app.focus_input);
+    if point_definition || focus_input {
         response.request_focus();
-        app.focus_input = false;
     }
-    if response.gained_focus() {
+    if response.gained_focus() && !point_definition {
         // As in the reference, the keyboard comes up with the input row.
         app.keyboard.open = true;
     }

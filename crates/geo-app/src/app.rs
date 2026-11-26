@@ -562,7 +562,13 @@ fn number_dialog(app: &mut App, ctx: &egui::Context) {
             };
             app.apply_outcome(outcome);
         }
-        Some(None) => app.reset_tool(),
+        Some(None) => {
+            if app.tool.tool() == crate::tools::Tool::CircleRadius {
+                app.wb.end_tool_use();
+                app.select_only(None);
+            }
+            app.reset_tool();
+        }
         None => {}
     }
 }

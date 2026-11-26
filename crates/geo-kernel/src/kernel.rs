@@ -5355,6 +5355,18 @@ impl Construction {
         self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state), None)
     }
 
+    pub(crate) fn add_saved_region_point(
+        &mut self,
+        label: &str,
+        region: Id,
+        x: f64,
+        y: f64,
+    ) -> Result<Id, Error> {
+        let def = Def::Path(PathDef::InRegion { region });
+        let state = PathState::saved_region(self, region, x, y);
+        self.add_with_path_state(label, def, Some(state), None)
+    }
+
     pub(crate) fn add_saved_curve_point(
         &mut self,
         label: &str,

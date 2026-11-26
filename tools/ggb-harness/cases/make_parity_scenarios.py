@@ -128,6 +128,17 @@ cases += [
          event(120, "touch_gesture_move", fingers=[[346, 244], [546, 244]])),
 ]
 
+area = next(c for c in cases if c["name"] == "area_tool_on_polygon")
+cases += [
+    case("area_polygon_occupied_anchor_label", area["tool_mode"],
+         [*area["initial_script"], "Pointp = (0, 0)"], *area["events"]),
+    dict(case("area_polygon_grows_after_placement", area["tool_mode"],
+              ["n = 3", "p = Polygon(Sequence((k, k^2), k, 1, n))"],
+              pointer(0, "down", 2, 4.51), pointer(60, "up", 2, 4.51),
+              event(200, "command", input="SetValue(n, 4097)")),
+         observe=["n", "Pointp", "Textp"]),
+]
+
 (directory / "pointer" / "parity-scenarios.json").write_text(
     json.dumps({"scenarios": cases}, indent=2) + "\n", encoding="utf-8"
 )

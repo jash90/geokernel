@@ -112,7 +112,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         let intents = gesture.cancel();
         app.gesture = gesture;
         app.overlays.clear();
-        end_drag(app, &intents);
+        end_drag(app, &intents, false);
         if app.press_slider.take().is_some() {
             app.wb.end_gesture();
         }
@@ -171,6 +171,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         app.drag = None;
         app.press_slider = None;
         app.tool_press = None;
+        app.touch_target = None;
+        app.pinch = None;
         app.label_rects.borrow_mut().clear();
         app.text_rects.borrow_mut().clear();
         gesture.forget_target();
@@ -292,6 +294,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         let limits = app.rules.scale_limits;
         let mut fingers = std::mem::take(&mut app.fingers);
         let mut pinch = app.pinch;
+        let mut target = app.touch_target;
+        let mut latest = None;
         ui.input(|i| {
             for ev in &i.events {
                 let (id, at, down) = match *ev {
@@ -316,20 +320,38 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 if id != first && id != second {
                     continue;
                 }
-                if let (Some(a), Some(b)) = (fingers.get(&first), fingers.get(&second)) {
-                    let (a, b) = (*a, *b);
-                    match pinch.as_mut() {
-                        // The pinch is on: one move of a finger is one
-                        // step (`twoTouchMove`).
-                        Some(p) => camera::pinch_move(&mut cam, p, a, b, w, h, limits),
-                        // Both fingers are down: the pinch begins here
-                        // (`twoTouchStart`).
-                        None => pinch = Some(camera::Pinch::start(a, b, bands)),
+                let (Some(&a), Some(&b)) = (fingers.get(&first), fingers.get(&second)) else {
+                    continue;
+                };
+                if target.is_some() {
+                    latest = Some([a, b]);
+                } else if let Some(p) = pinch.as_mut() {
+                    camera::pinch_move(&mut cam, p, a, b, w, h, limits);
+                } else {
+                    if gesture.touch_press() && app.tool.tool() == Tool::Move {
+                        target = camera::TouchTarget::start(app, cam, &cam.transform(w, h), [a, b]);
+                    }
+                    if target.is_none() {
+                        pinch = Some(camera::Pinch::start(a, b, bands));
                     }
                 }
             }
         });
+        if let (Some(target), Some(pair)) = (target, latest) {
+            if target.moves_geometry() && !app.wb.gesture_open() {
+                app.wb.begin_gesture();
+            }
+            target.update(app, &mut cam, (w, h), pair);
+        }
+        if !pinching
+            && app
+                .touch_target
+                .is_some_and(camera::TouchTarget::moves_geometry)
+        {
+            app.wb.end_gesture();
+        }
         app.fingers = fingers;
+        app.touch_target = pinching.then_some(target).flatten();
         app.pinch = pinching.then_some(pinch).flatten();
     }
     if !pinching && zoomed {
@@ -740,7 +762,12 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         if !app.wb.gesture_open() {
             app.wb.begin_gesture();
         }
-        let (sx, sy) = to_local(pos.egui());
+        let at = pos.egui();
+        let (sx, sy) = to_local(if drag.hold() == Hold::Point {
+            rect.clamp(at)
+        } else {
+            at
+        });
         let now = cam.transform(w, h);
         match drag.step(&now, &app.snap(now.xscale(), now.yscale()), sx, sy) {
             Step::Point { x, y } => {
@@ -824,7 +851,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 if let Some(hits) = rectangle_list_hits(app, contains, &mut work_left) {
                     create_list(app, hits, work_left);
                 }
-            } else {
+            } else if intents.released.is_some_and(|r| r.beyond_threshold) {
                 let (x0, y0, x1, y1) = camera::zoom_rectangle(from, to, w, h);
                 if x1 - x0 >= camera::ZOOM_RECT_THRESHOLD && y1 - y0 >= camera::ZOOM_RECT_THRESHOLD
                 {
@@ -848,7 +875,12 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             }
         }
     }
-    end_drag(app, &intents);
+    let outside = fed
+        .late_release
+        .or(fed.early_release)
+        .is_some_and(|pos| !rect.contains(pos))
+        && app.drag.is_some_and(|drag| drag.hold() == Hold::Point);
+    end_drag(app, &intents, outside);
     // The automaton alone decides a click (egui's click rules take no part
     // in the drawing); the release must still be over the drawing, not over
     // a button on it.
@@ -860,7 +892,14 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         match tool {
             // The zoom tools' click is one undo step at once (the owner's
             // rule; the reference stores it when the tool is left).
-            Tool::ZoomIn => zoom_click(app, &mut cam, ZOOM_TOOL, local, w, h),
+            Tool::ZoomIn => {
+                if intents.end_drag {
+                    // A single accepted move can start a rectangle preview and
+                    // still count as a click. Only the click changes the view.
+                    app.view_gesture.end(cam);
+                }
+                zoom_click(app, &mut cam, ZOOM_TOOL, local, w, h);
+            }
             Tool::ZoomOut => zoom_click(app, &mut cam, 1.0 / ZOOM_TOOL, local, w, h),
             Tool::MoveView
             | Tool::MoveRotate
@@ -944,6 +983,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 match hit {
                     Target::Object(id) => {
                         click(app, &pt, local, Some(id));
+                        if move_tool && response.double_clicked() {
+                            app.edit_point_definition(id);
+                        }
                         input_box_click = Some(Some(id));
                     }
                     Target::Nothing => {
@@ -1001,7 +1043,12 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if pinching && !app.pinching {
         // A drag the pinch suspends ends its own step here; the pinch is a
         // gesture of its own until the last other finger lifts.
-        app.wb.end_gesture();
+        if !app
+            .touch_target
+            .is_some_and(camera::TouchTarget::moves_geometry)
+        {
+            app.wb.end_gesture();
+        }
         if let Some(before) = app.view_gesture.begin(cam0) {
             app.wb.record_view_step(before);
         }
@@ -1296,7 +1343,7 @@ enum Target {
 }
 
 /// Puts back or ends the drag that the automaton ended.
-fn end_drag(app: &mut App, intents: &Intents) {
+fn end_drag(app: &mut App, intents: &Intents, outside: bool) {
     if intents.cancel_drag {
         app.cancel_drag();
         if app.erasing {
@@ -1309,7 +1356,7 @@ fn end_drag(app: &mut App, intents: &Intents) {
         // threshold (spec F2); the owner keeps every drag
         // (`interact::EVERY_DRAG_IS_A_STEP`).
         let short = intents.released.is_some_and(|r| !r.beyond_threshold);
-        if short && !app.rules.every_drag_is_a_step {
+        if outside || (short && !app.rules.every_drag_is_a_step) {
             app.wb.end_gesture_without_step();
         } else {
             app.wb.end_gesture();

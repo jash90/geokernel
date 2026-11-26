@@ -1784,6 +1784,71 @@
           ]
         }
       ]
+    },
+    {
+      "name": "area_polygon_occupied_anchor_label",
+      "tool_mode": 49,
+      "initial_script": [
+        "A=(1,1)",
+        "B=(5,1)",
+        "C=(1,4)",
+        "p=Polygon(A,B,C)",
+        "Pointp = (0, 0)"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2.0,
+            1.51
+          ]
+        },
+        {
+          "t": 30,
+          "type": "mouse_up",
+          "pos": [
+            2.0,
+            1.51
+          ]
+        }
+      ]
+    },
+    {
+      "name": "area_polygon_grows_after_placement",
+      "tool_mode": 49,
+      "initial_script": [
+        "n = 3",
+        "p = Polygon(Sequence((k, k^2), k, 1, n))"
+      ],
+      "events": [
+        {
+          "t": 0,
+          "type": "mouse_down",
+          "pos": [
+            2,
+            4.51
+          ]
+        },
+        {
+          "t": 60,
+          "type": "mouse_up",
+          "pos": [
+            2,
+            4.51
+          ]
+        },
+        {
+          "t": 200,
+          "type": "command",
+          "input": "SetValue(n, 4097)"
+        }
+      ],
+      "observe": [
+        "n",
+        "Pointp",
+        "Textp"
+      ]
     }
   ]
 }

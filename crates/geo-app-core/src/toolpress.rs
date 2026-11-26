@@ -50,36 +50,96 @@ fn polygon_area_labels(polygon: &str, taken: impl Fn(&str) -> bool) -> Option<(S
         return None;
     }
     let stem = polygon.replace(['_', '{', '}'], "");
-    let text = format!("Text{stem}");
-    let point = format!("Point{stem}");
-    if !taken(&text) && !taken(&point) {
-        return Some((text, point));
+    let free = |base: String| {
+        if !taken(&base) {
+            return Some(base);
+        }
+        (1..AREA_LABEL_CANDIDATES)
+            .map(|i| format!("{base}_{{{i}}}"))
+            .find(|label| !taken(label))
+    };
+    Some((free(format!("Text{stem}"))?, free(format!("Point{stem}"))?))
+}
+
+fn area_vertex_names<'a>(labels: impl IntoIterator<Item = &'a str>) -> Option<String> {
+    let mut subject = String::new();
+    for label in labels {
+        if subject.len() + label.len() > crate::tools::MAX_PLACED_TEXT_CHARS {
+            return None;
+        }
+        subject.push_str(label);
     }
-    (1..AREA_LABEL_CANDIDATES)
-        .map(|i| (format!("{text}_{{{i}}}"), format!("{point}_{{{i}}}")))
-        .find(|(text, point)| !taken(text) && !taken(point))
+    Some(subject)
 }
 
 fn polygon_area(c: &geo_kernel::Construction, polygon: Id, (x, y): (f64, f64)) -> Outcome {
     use crate::describe::exact;
     use crate::text::tool_caption;
-    use geo_kernel::script::text::literal;
+    use geo_kernel::algo::polygon::PolygonDef;
+    use geo_kernel::kernel::appearance::Appearance;
+    use geo_kernel::script::{saved::Property, text::literal};
+    use geo_kernel::Def;
 
     let mut shape_work = CONSTRAINT_VERTEX_WORK;
     if c.vertices_with_work(polygon, &mut shape_work).is_none() {
         return Outcome::Ignored;
     }
-    let polygon = c.label(polygon);
-    let Some((text, point)) = polygon_area_labels(polygon, |name| c.id(name).is_some()) else {
+    let label = c.label(polygon);
+    let Some((text, point)) = polygon_area_labels(label, |name| c.id(name).is_some()) else {
         return Outcome::Ignored;
     };
-    let caption = literal(&format!("{} {polygon} = ", tool_caption(Tool::Area)));
-    Outcome::Run(vec![
-        format!("{point} = PointIn({polygon})"),
+    let vertices = match c.def(polygon) {
+        Def::Polygon(PolygonDef::Polygon(vertices)) => c.list(vertices),
+        _ => &[],
+    };
+    let Some(subject) = area_vertex_names(vertices.iter().map(|&id| c.label(id))) else {
+        return Outcome::Ignored;
+    };
+    let subject = if subject.is_empty() { label } else { &subject };
+    let caption = literal(&format!("{} {subject} = ", tool_caption(Tool::Area)));
+    let mut lines = vec![
+        format!("{point} = PointIn({label})"),
         format!("SetCoords({point}, {}, {})", exact(x), exact(y)),
         format!("SetVisibleInView({point}, 1, false)"),
-        format!("{text} = Text({caption} + Text({polygon}), {point})"),
-    ])
+        format!("{text} = Text({caption} + Text({label}), {point})"),
+    ];
+    let anchor_style = Appearance {
+        auxiliary: Some(true),
+        ..Appearance::default()
+    };
+    lines.push(
+        Property::Appearance {
+            label: point,
+            style: Box::new(anchor_style),
+        }
+        .to_string(),
+    );
+    let text_style = Appearance {
+        text_background: Some([255; 4]),
+        ..Appearance::default()
+    };
+    lines.push(
+        Property::Appearance {
+            label: text,
+            style: Box::new(text_style),
+        }
+        .to_string(),
+    );
+    for &id in vertices {
+        let mut style = c.drawing_style(id);
+        if !style.show_label {
+            style.show_label = true;
+            style.label_edited = true;
+            lines.push(
+                Property::DrawingStyle {
+                    label: c.label(id).to_owned(),
+                    style,
+                }
+                .to_string(),
+            );
+        }
+    }
+    Outcome::Run(lines)
 }
 
 fn rigid_copy_size(c: &geo_kernel::Construction, polygon: Id) -> Option<usize> {
@@ -1122,9 +1182,78 @@ mod tests {
     }
 
     #[test]
+    fn polygon_area_keeps_its_region_anchor_after_ggb_reload() {
+        let mut app = app("A=(1,1)\nB=(5,1)\nC=(1,4)\np=Polygon(A,B,C)", Tool::Area);
+        click_tool(&mut app, 2.0, 1.51);
+        let bytes = app.wb.export_ggb(None).unwrap();
+        app.wb.load_bytes(&bytes, "area.ggb").unwrap();
+        let (x, y) = point(app.wb.construction(), "Pointp");
+        assert!(
+            (x - 2.0).abs() < 1e-9 && (y - 1.51).abs() < 1e-9,
+            "{x}, {y}"
+        );
+        app.wb.export_ggb(None).unwrap();
+    }
+
+    #[test]
+    fn polygon_area_anchor_is_bounded_after_its_polygon_grows() {
+        let mut app = app(
+            "n = 3\np = Polygon(Sequence((k, k^2), k, 1, n))",
+            Tool::Area,
+        );
+        click_tool(&mut app, 2.0, 4.51);
+        let c = app.wb.construction();
+        assert!(c.value(c.id("Pointp").unwrap()).is_defined());
+        app.wb.run_lines(&["n = 4097".into()]).unwrap();
+        let c = app.wb.construction();
+        assert!(!c.value(c.id("Pointp").unwrap()).is_defined());
+        app.wb.run_lines(&["n = 3".into()]).unwrap();
+        let (x, y) = point(app.wb.construction(), "Pointp");
+        assert!(
+            (x - 2.0).abs() < 1e-9 && (y - 4.51).abs() < 1e-9,
+            "{x}, {y}"
+        );
+    }
+
+    #[test]
+    fn polygon_area_sets_saved_presentation_in_the_same_undo_step() {
+        use crate::properties::Field;
+        let mut app = app("A=(1,1)\nB=(5,1)\nC=(1,4)\np=Polygon(A,B,C)", Tool::Area);
+        app.wb
+            .edit_property(&["A".into()], Field::ShowLabel, "false", None)
+            .unwrap();
+        click_tool(&mut app, 2.0, 1.51);
+        for reloaded in [false, true] {
+            if reloaded {
+                let bytes = app.wb.export_ggb(None).unwrap();
+                app.wb.load_bytes(&bytes, "area.ggb").unwrap();
+            }
+            let c = app.wb.construction();
+            assert!(c.drawing_style(c.id("A").unwrap()).show_label);
+            assert!(app.wb.auxiliary_object(c.id("Pointp").unwrap()));
+            assert!(!app.wb.is_visible(c.id("Pointp").unwrap()));
+            assert_eq!(
+                app.wb
+                    .property_value(c.id("Textp").unwrap(), Field::TextBackground),
+                "#FFFFFF"
+            );
+            if !reloaded {
+                assert_eq!(app.wb.undo_depth(), (2, 0));
+                assert!(app.undo());
+                let c = app.wb.construction();
+                assert!(!c.drawing_style(c.id("A").unwrap()).show_label);
+                assert!(c.id("Textp").is_none());
+                assert!(app.redo());
+            }
+        }
+    }
+
+    #[test]
     fn polygon_area_caps_label_search_and_shape_preparation() {
         let long_label = "p".repeat(crate::tools::MAX_PLACED_TEXT_CHARS + 1);
         assert!(polygon_area_labels(&long_label, |_| false).is_none());
+        assert!(area_vertex_names([long_label.as_str()]).is_none());
+        assert_eq!(area_vertex_names(["A", "B", "C"]).as_deref(), Some("ABC"));
         let first_free = format!("Textp_{{{AREA_LABEL_CANDIDATES}}}");
         assert!(
             polygon_area_labels("p", |name| name.starts_with("Text") && name != first_free)
@@ -1132,7 +1261,7 @@ mod tests {
         );
         assert_eq!(
             polygon_area_labels("p", |name| name == "Pointp"),
-            Some(("Textp_{1}".to_owned(), "Pointp_{1}".to_owned()))
+            Some(("Textp".to_owned(), "Pointp_{1}".to_owned()))
         );
 
         let app = app("p = Polygon(Sequence((k, k^2), k, 1, 4097))", Tool::Area);

@@ -46,11 +46,16 @@ import org.geogebra.test.TestEvent;
 
 /** Records the controller's construction state after each pointer gesture. */
 public final class ToolPointer {
+    private static final int SELECTION_LABEL_WORK = 65_536;
+
     private ToolPointer() {
     }
 
     public static void main(String[] args) throws Exception {
         boolean parity = "--parity".equals(args[0]);
+        if (parity) {
+            checkSelectionBudget();
+        }
         var captures = new ArrayList<Object>();
         for (String input : parity ? List.of(args[1]) : List.of(args[0], args[1])) {
             var scenarios = (List<?>) ((Map<?, ?>) Json.parse(Files.readString(Path.of(input))))
@@ -77,6 +82,29 @@ public final class ToolPointer {
         Files.writeString(Path.of(args[2]), Json.write(output));
     }
 
+    private static int chargeSelection(int remaining, int count) {
+        if (count > remaining) {
+            throw new IllegalArgumentException("Selection recording exceeds " + SELECTION_LABEL_WORK + " labels");
+        }
+        return remaining - count;
+    }
+
+    private static void checkSelectionBudget() {
+        int remaining = SELECTION_LABEL_WORK;
+        for (int i = 0; i < 256; i++) {
+            remaining = chargeSelection(remaining, 256);
+        }
+        if (remaining != 0) {
+            throw new AssertionError("Selection allowance was not consumed");
+        }
+        try {
+            chargeSelection(remaining, 1);
+        } catch (IllegalArgumentException expected) {
+            return;
+        }
+        throw new AssertionError("Selection recording exceeded its allowance");
+    }
+
     private static Map<String, Object> record(Map<?, ?> input, boolean parity) throws Exception {
         var app = new PointerApp(parity);
         var view = app.getActiveEuclidianView();
@@ -91,7 +119,9 @@ public final class ToolPointer {
         var controller = view.getEuclidianController();
         var touch = new MouseTouchGestureController(app, controller);
         boolean timeGate = "controller_drag_time_gate".equals(input.get("name"));
-        controller.setDraggingDelay(timeGate ? EuclidianConstants.DRAGGING_DELAY : 0);
+        if (!parity) {
+            controller.setDraggingDelay(0);
+        }
         app.setMode(((Number) input.get("tool_mode")).intValue());
         for (Object line : (List<?>) input.get("initial_script")) {
             if (app.getKernel().getAlgebraProcessor().processAlgebraCommand((String) line, false)
@@ -108,12 +138,14 @@ public final class ToolPointer {
             result.put(key, input.get(key));
         }
         var observe = (List<?>) input.get("observe");
-        boolean area = parity && "area_tool_on_polygon".equals(input.get("name"));
+        boolean area = parity && app.getMode() == EuclidianConstants.MODE_AREA;
         var initial = snapshot(app, observe, area);
         result.put("initial", initial);
         var frames = new ArrayList<Object>();
         var interaction = new ArrayList<Object>();
+        int selectionWork = SELECTION_LABEL_WORK;
         boolean dragging = false;
+        long pressedAt = 0;
         String answer = "";
         boolean inputRow = false;
         var metadata = new LinkedHashMap<String, Object>();
@@ -130,11 +162,11 @@ public final class ToolPointer {
                                 Boolean.TRUE.equals(event.get("right_click")))
                         : new TestEvent(view.toScreenCoordX(x), view.toScreenCoordY(y));
             }
-            // Only the two clock probes override a timestamp, just before the
-            // controller checks it. Scheduled events need no real-time sleeps.
-            if (event.get("since_press_ms") instanceof Number elapsed) {
-                controllerField("lastMousePressedTime").setLong(controller,
-                        System.currentTimeMillis() - elapsed.longValue());
+            long time = ((Number) event.get("t")).longValue();
+            if (parity && dragging && "mouse_move".equals(type)) {
+                long elapsed = event.get("since_press_ms") instanceof Number supplied
+                        ? supplied.longValue() : time - pressedAt;
+                controller.setLastMousePressedTime(System.currentTimeMillis() - elapsed);
             }
             if (event.get("since_release_ms") instanceof Number elapsed) {
                 controllerField("lastPointerRelease").setLong(controller,
@@ -145,6 +177,7 @@ public final class ToolPointer {
                     controller.wrapMouseMoved(pointer);
                     controller.wrapMousePressed(pointer);
                     dragging = true;
+                    pressedAt = time;
                 }
                 case "mouse_move" -> {
                     if (dragging) {
@@ -158,6 +191,12 @@ public final class ToolPointer {
                     dragging = false;
                 }
                 case "text" -> answer = (String) event.get("text");
+                case "command" -> {
+                    if (app.getKernel().getAlgebraProcessor()
+                            .processAlgebraCommand((String) event.get("input"), true) == null) {
+                        throw new IllegalArgumentException("Could not run " + event.get("input"));
+                    }
+                }
                 case "focus_input_row" -> inputRow = true;
                 case "key" -> {
                     if ("Enter".equals(event.get("key"))) {
@@ -170,8 +209,9 @@ public final class ToolPointer {
                         } else {
                             app.submit(answer);
                         }
-                    } else if ("Escape".equals(event.get("key")) && app.cancelRadiusDialog()) {
-                        metadata.put("cancelled_dialog", "radius");
+                    } else if ("Escape".equals(event.get("key")) && app.radiusDialogRequested()) {
+                        // Only the request reaches AppCommon. Escape belongs to the native dialog.
+                        metadata.put("unhandled_platform_key", "Escape");
                     } else {
                         throw new IllegalArgumentException("Unsupported dialog key " + event);
                     }
@@ -224,11 +264,12 @@ public final class ToolPointer {
                 default -> throw new IllegalArgumentException("Unsupported pointer event " + type);
             }
             if (parity) {
+                var selection = app.getSelectionManager().getSelectedGeos();
+                selectionWork = chargeSelection(selectionWork, selection.size());
                 var state = dialog("t", event.get("t"), "view",
-                        List.of(view.getXZero(), view.getYZero(), view.getXscale(), view.getYscale()),
-                        "grid_step", List.of(view.getGridDistances(0), view.getGridDistances(1)),
+                        viewCoordinates(view), "grid_step", List.of(view.getGridDistances(0), view.getGridDistances(1)),
                         "mode", controller.getMode(),
-                        "selection", app.getSelectionManager().getSelectedGeos().stream()
+                        "selection", selection.stream()
                                 .map(GeoElement::getLabelSimple).toList(),
                         "undo_steps_added", app.getUndoManager().getHistorySize() - baseline);
                 if (timeGate) {
@@ -273,9 +314,28 @@ public final class ToolPointer {
             result.put("settled", snapshot(app, observe, area));
         }
         var undo = new ArrayList<Object>();
-        for (int i = 0; i < 4 && !snapshot(app, observe, area).equals(initial); i++) {
-            app.getKernel().undo();
-            undo.add(snapshot(app, observe, area));
+        if (parity) {
+            String saved = area && observe == null ? app.getXML() : null;
+            var undoViews = new ArrayList<Object>();
+            while (app.getUndoManager().getHistorySize() > baseline) {
+                int depth = app.getUndoManager().getHistorySize();
+                app.getKernel().undo();
+                if (app.getUndoManager().getHistorySize() != depth - 1) {
+                    throw new IllegalStateException("Undo did not remove exactly one checkpoint");
+                }
+                undo.add(snapshot(app, observe, area));
+                undoViews.add(viewCoordinates(view));
+            }
+            result.put("undo_views", undoViews);
+            if (saved != null) {
+                app.setXML(saved, true);
+                result.put("reloaded", snapshot(app, observe, area));
+            }
+        } else {
+            for (int i = 0; i < 4 && !snapshot(app, observe, area).equals(initial); i++) {
+                app.getKernel().undo();
+                undo.add(snapshot(app, observe, area));
+            }
         }
         result.put("undo", undo);
         return result;
@@ -303,8 +363,18 @@ public final class ToolPointer {
                         state.put("world_position", List.of(anchor.getInhomX(), anchor.getInhomY()));
                     }
                     if (area) {
-                        // The caption is localized; the polygon snapshot carries the area.
+                        // Keep the measured subject and value independently of the locale's wording.
+                        String caption = text.getTextString();
+                        int equals = caption.lastIndexOf(" = ");
+                        if (equals >= 0) {
+                            String subject = caption.substring(0, equals).stripTrailing();
+                            state.put("measure_subject", subject.substring(subject.lastIndexOf(' ') + 1));
+                            state.put("measure_value", caption.substring(equals + 3));
+                        }
                         state.remove("text");
+                        var background = text.getBackgroundColor();
+                        state.put("background", background == null ? null
+                                : List.of(background.getRed(), background.getGreen(), background.getBlue()));
                     }
                 } else if (geo instanceof GeoInputBox box) {
                     state.put("screen_position", List.of(box.getAbsoluteScreenLocX(), box.getAbsoluteScreenLocY()));
@@ -313,6 +383,8 @@ public final class ToolPointer {
             if (geo instanceof GeoPointND point) {
                 if (area) {
                     state.put("visible", geo.isEuclidianVisible());
+                    state.put("auxiliary", geo.isAuxiliaryObject());
+                    state.put("label_visible", geo.isLabelVisible());
                 }
                 state.put("on_path", point.isPointOnPath());
                 state.put("in_region", point.isPointInRegion());
@@ -320,6 +392,10 @@ public final class ToolPointer {
             result.put(geo.getLabelSimple(), state);
         }
         return result;
+    }
+
+    private static List<Double> viewCoordinates(EuclidianView view) {
+        return List.of(view.getXZero(), view.getYZero(), view.getXscale(), view.getYscale());
     }
 
     private static Field controllerField(String name) throws ReflectiveOperationException {
@@ -381,7 +457,6 @@ public final class ToolPointer {
 
         private TextBuilder textBuilder;
         private ButtonDialogModel inputBox;
-        private boolean radiusDialog;
         private final boolean requireSubmission;
 
         PointerApp(boolean submitTextAndInputBox) throws ReflectiveOperationException {
@@ -433,7 +508,6 @@ public final class ToolPointer {
                 @Override
                 public void showNumberInputDialogCirclePointRadius(String title, GeoPointND point,
                         EuclidianView view) {
-                    radiusDialog = true;
                     dialogs.add(dialog("kind", "radius", "point", point.getLabelSimple()));
                 }
             });
@@ -488,10 +562,8 @@ public final class ToolPointer {
                     List.of(a.getLabelSimple(), b.getLabelSimple())));
         }
 
-        boolean cancelRadiusDialog() {
-            boolean wasOpen = radiusDialog;
-            radiusDialog = false;
-            return wasOpen;
+        boolean radiusDialogRequested() {
+            return !dialogs.isEmpty() && "radius".equals(((Map<?, ?>) dialogs.get(dialogs.size() - 1)).get("kind"));
         }
 
         void submit(String answer) {
