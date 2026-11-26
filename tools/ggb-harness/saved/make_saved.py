@@ -858,6 +858,13 @@ case("property-final", [], [load_xml(
 )])
 
 
+# Explicit caption-and-value on an object and a slider.
+case("property-caption-value", ["A = (2, 1)", "a = Slider(0, 10)"], [
+     st("A", label_mode=9, caption="Vertex"),
+     st("a", label_mode=9, caption="Amount"),
+     {"action": "set_number", "label": "a", "value": 4},
+])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")
