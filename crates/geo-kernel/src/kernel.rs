@@ -1155,6 +1155,8 @@ pub struct Construction {
     equation_forms: HashMap<Id, (EquationForm, u64)>,
     /// Original expressions whose structure is lost when bound to a value.
     construction_sources: HashMap<Id, String>,
+    file_definitions: BTreeMap<Id, Box<str>>,
+    file_definition_bytes: usize,
     /// The stored lists of parents, one after the other (see [`IdList`]).
     lists: Vec<Id>,
     /// For each family of generated labels (see [`Construction::label_hint`]),
@@ -2296,6 +2298,9 @@ impl Construction {
         self.appearance_channels.split_off(&Id(at.len));
         self.equation_forms.retain(|id, _| id.0 < at.len);
         self.construction_sources.retain(|id, _| id.0 < at.len);
+        for source in self.file_definitions.split_off(&Id(at.len)).into_values() {
+            self.file_definition_bytes -= source.len();
+        }
         self.frozen_line_starts
             .retain(|_, &mut (_, _, order, _)| order < at.frozen_line_starts);
         // A saved text start point is a dependency. Keep its presentation
@@ -2828,6 +2833,7 @@ impl Construction {
             }
         }
         expr::replace_free_decimal(self, id, decimal);
+        self.remove_file_definition(id);
         self.construction_sources.remove(&id);
         if let Some(source) = source {
             self.remember_construction_source(id, &source);
@@ -5508,6 +5514,33 @@ impl Construction {
     /// Original source retained for definitions that need it for display.
     pub fn construction_source(&self, id: Id) -> Option<&str> {
         self.construction_sources.get(&id).map(String::as_str)
+    }
+
+    /// The accepted definition of a file object whose portable syntax cannot
+    /// always be recovered from its compact kernel definition.
+    pub fn file_definition(&self, id: Id) -> Option<&str> {
+        self.file_definitions.get(&id).map(Box::as_ref)
+    }
+
+    /// Retains the definition at creation or replacement, independently of
+    /// any undo history. An editor can still supply a definition at save time
+    /// if an unusually large construction exhausts the retention budget.
+    pub fn retain_file_definition(&mut self, id: Id, source: &str) {
+        const MAX_RETAINED_BYTES: usize = 16 * 1024 * 1024;
+        self.remove_file_definition(id);
+        if id.0 < self.defs.len()
+            && !source.is_empty()
+            && source.len() <= MAX_RETAINED_BYTES - self.file_definition_bytes
+        {
+            self.file_definition_bytes += source.len();
+            self.file_definitions.insert(id, source.into());
+        }
+    }
+
+    fn remove_file_definition(&mut self, id: Id) {
+        if let Some(source) = self.file_definitions.remove(&id) {
+            self.file_definition_bytes -= source.len();
+        }
     }
 
     pub(crate) fn remember_construction_source(&mut self, id: Id, source: &str) {

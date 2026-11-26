@@ -78,6 +78,8 @@ const SAVED_CASES: &[&str] = &[
     "saved-curve-intersections-001.xml",
     "saved-curve-intersections-002.xml",
     "saved-paths-002.xml",
+    "saved-slope-arrows-001.xml",
+    "saved-export-fixed-segment-001.xml",
     "saved-implicit-001.xml",
     "saved-images-001.ggb",
     "saved-images-002.ggb",
@@ -283,6 +285,12 @@ fn corpus() -> Vec<Case> {
         wb.load_for_export(&source, &name).unwrap();
         out.push((name, wb, None, Origin::Hand { source, applied }));
     }
+    out.push((
+        "live-fixed-segment".into(),
+        Workbench::from_script("A = (1, 1)\ns = Segment(A, 4)").unwrap(),
+        None,
+        Origin::Script,
+    ));
     let mut styled = Workbench::default();
     styled.load_for_export(STYLED_FILE, "styled").unwrap();
     out.push((
@@ -426,6 +434,141 @@ fn round_trip(name: &str, wb: &Workbench, view: Option<FileView>) -> (Vec<u8>, W
         "{name}"
     );
     (bytes, again)
+}
+
+#[test]
+fn live_geometry_keeps_command_inputs_when_the_journal_definition_is_unavailable() {
+    let wb = Workbench::from_script(
+        "A = (1, 2)\nB = (4, 3)\nC = (3, 5)\nm = Midpoint(A, B)\n\
+         s = Segment(A, m)\nr = Ray(B, m)\np = PolyLine(A, C, m)",
+    )
+    .unwrap();
+    let exported = wb.export_ggb(None).unwrap();
+    let xml = geo_import::archive::extract_xml(&exported).unwrap();
+    assert!(
+        xml.contains("<command name=\"Midpoint\">\n<input a0=\"A\" a1=\"B\"/>\n<output a0=\"m\"/>")
+    );
+    for label in ["m", "s", "r", "p"] {
+        let independent = wb
+            .export_ggb_without_definition(None, label)
+            .unwrap_or_else(|e| panic!("{label}: {e}"));
+        assert_eq!(independent, exported, "{label}");
+    }
+}
+
+#[test]
+fn native_polyline_export_checks_the_argument_limit() {
+    use geo_import::export::{ggb, Definition, Presentation};
+    use geo_kernel::algo::polygon::PolygonDef;
+
+    let mut c = Construction::new();
+    let a = c.add("A", Def::FreePoint { x: 1.0, y: 2.0 }).unwrap();
+    let b = c.add("B", Def::FreePoint { x: 4.0, y: 3.0 }).unwrap();
+    let points: Vec<_> = [a, b].into_iter().cycle().take(10_001).collect();
+    c.add_with_list("p", &points, |ids| Def::Polygon(PolygonDef::PolyLine(ids)))
+        .unwrap();
+    let definitions = [
+        Definition {
+            line: "A = (1, 2)",
+            outputs: &["A".into()],
+        },
+        Definition {
+            line: "B = (4, 3)",
+            outputs: &["B".into()],
+        },
+        Definition {
+            line: "p = $unlisted()",
+            outputs: &["p".into()],
+        },
+    ];
+    assert_eq!(
+        ggb(&c, definitions, &Presentation::default())
+            .unwrap_err()
+            .to_string(),
+        "command exceeds the import argument limit"
+    );
+}
+
+#[test]
+fn native_fixed_segment_checks_the_generated_circle_attribute_limit() {
+    use geo_import::export::{ggb, Definition, Presentation};
+    use geo_kernel::algo::polygon::Count;
+
+    let mut c = Construction::new();
+    let label = "A".repeat(geo_import::xml::MAX_ATTRIBUTE_BYTES);
+    let start = c.add(&label, Def::FreePoint { x: 1.0, y: 1.0 }).unwrap();
+    let endpoint = c
+        .add(
+            "B",
+            Def::Path(PathDef::FixedEndpoint {
+                start,
+                length: Count::Literal(4.0),
+            }),
+        )
+        .unwrap();
+    c.add("s", Def::Segment(start, endpoint)).unwrap();
+    let definitions = [
+        Definition {
+            line: "A = (1, 1)",
+            outputs: &[label],
+        },
+        Definition {
+            line: "s = $unlisted()",
+            outputs: &["B".into(), "s".into()],
+        },
+    ];
+    assert_eq!(
+        ggb(&c, definitions, &Presentation::default())
+            .unwrap_err()
+            .to_string(),
+        "fixed segment circle exceeds the import attribute size limit"
+    );
+}
+
+#[test]
+fn a_fixed_segment_saves_its_endpoint_as_a_point_on_an_inline_circle() {
+    let wb = Workbench::from_script("A = (1, 1)\ns = Segment(A, 4)").unwrap();
+    let exported = wb.export_ggb_without_definition(None, "s").unwrap();
+    let xml = geo_import::archive::extract_xml(&exported).unwrap();
+    assert!(
+        xml.contains("<command name=\"Point\">\n<input a0=\"Circle[A, 4]\"/>\n<output a0=\"B\"/>"),
+        "{xml}"
+    );
+    assert!(
+        xml.contains("<command name=\"Segment\">\n<input a0=\"A\" a1=\"B\"/>\n<output a0=\"s\"/>"),
+        "{xml}"
+    );
+    let mut again = Workbench::default();
+    again.load_for_export(&exported, "fixed segment").unwrap();
+    let c = wb.construction();
+    let restored = again.construction();
+    for label in ["B", "s"] {
+        assert_eq!(
+            restored.value(restored.id(label).unwrap()),
+            c.value(c.id(label).unwrap())
+        );
+    }
+}
+
+#[test]
+fn live_expression_definitions_survive_redefinition_and_undo() {
+    let mut wb = Workbench::from_script("a = 2\nf(x) = a x\nL = {a, f(3)}").unwrap();
+    let compare = |wb: &Workbench, expression| {
+        let export = wb.export_ggb(None).unwrap();
+        let xml = geo_import::archive::extract_xml(&export).unwrap();
+        assert!(xml.contains(expression), "{xml}");
+        for label in ["f", "L"] {
+            assert_eq!(
+                wb.export_ggb_without_definition(None, label).unwrap(),
+                export
+            );
+        }
+    };
+    compare(&wb, "f(x) = a x");
+    wb.run_line("f(x) = a + x").unwrap();
+    compare(&wb, "f(x) = a + x");
+    wb.undo();
+    compare(&wb, "f(x) = a x");
 }
 
 #[test]
@@ -581,6 +724,15 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
                 if name == "saved-styles-012" {
                     undefined_inputs_as_the_reference_reads_them(&source["styles"]);
                 }
+                if name == "saved-styles-013" {
+                    // The fixture asks GeoLocus to set arrows on the stroke.
+                    // The reference only accepts that setting on slope fields.
+                    assert_eq!(source["styles"]["s"]["draw_arrows"], json!(false));
+                }
+                if name == "saved-slope-arrows-001" {
+                    assert_eq!(source["styles"]["field"]["draw_arrows"], json!(true));
+                    assert_json(&source["objects"]["field"], &snapshot["field"], name);
+                }
                 saved_styles.insert(name, (source["styles"].clone(), stripped["styles"].clone()));
             }
             Origin::Hand { applied, .. } => {
@@ -639,7 +791,13 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
             let snap = &snapshot[label];
             let reconstructed = imported.construction();
             let restored = reconstructed.id(label).unwrap();
-            if matches!(kind, Kind::Image | Kind::Button | Kind::InputBox) {
+            if name == "saved-slope-arrows-001" && label == "field" {
+                // The two applications sample different grids. Compare the
+                // complete locus between the two reference reloads above.
+                assert_eq!(kind, Kind::Locus);
+                assert_eq!(snap["defined"], c.value(id).is_defined());
+                assert_eq!(reconstructed.kind(restored), Kind::Locus);
+            } else if matches!(kind, Kind::Image | Kind::Button | Kind::InputBox) {
                 assert_json(snap, &special(c, id), &format!("{name}: {label}"));
             } else {
                 let expected = expected_from_json(snap).unwrap();
@@ -999,7 +1157,11 @@ const WITNESSES: &[(&str, &[(&str, &str)])] = &[
     ),
     (
         "Locus",
-        &[("saved-styles-004", "path"), ("saved-styles-004", "path2")],
+        &[
+            ("saved-styles-004", "path"),
+            ("saved-styles-004", "path2"),
+            ("saved-slope-arrows-001", "field"),
+        ],
     ),
     (
         "PenStroke",
@@ -1134,8 +1296,9 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
             &["trace", "start_style", "end_style"],
         ],
         "Vector" => &[SHARED, FLAGS, LABEL, LINE, &["trace", "head_style"]],
-        // A pen stroke is a locus in the reference application.
-        "Locus" | "PenStroke" => &[SHARED, &["fixed"], LABEL, LINE, &["trace", "draw_arrows"]],
+        "Locus" => &[SHARED, &["fixed"], LABEL, LINE, &["trace", "draw_arrows"]],
+        // GeoLocus.drawAsArrows ignores pen strokes.
+        "PenStroke" => &[SHARED, &["fixed"], LABEL, LINE, &["trace"]],
         "Segment" => &[
             SHARED,
             FLAGS,

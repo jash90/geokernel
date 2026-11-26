@@ -4116,6 +4116,12 @@
       "saved": "show",
       "without": null
     },
+    "draw_arrows": {
+      "fixture": "saved-slope-arrows-001",
+      "label": "field",
+      "saved": true,
+      "without": false
+    },
     "dynamic_caption": {
       "fixture": "saved-styles-004",
       "label": "path",

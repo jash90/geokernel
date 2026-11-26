@@ -1511,13 +1511,7 @@ pub(crate) fn exec(
             })();
             return Some(checked);
         }
-        "Segment"
-            if n == 2
-                && match kind_of(c, args[1]) {
-                    Some(k) => k == Kind::Number,
-                    None => decimal(args[1]).is_some(),
-                } =>
-        {
+        "Segment" if n == 2 && is_fixed_segment_length(c, args[1]) => {
             fixed_segment_line(c, name, args[0], args[1])
         }
         "PolyLine" if kind_of(c, args[0]) == Some(Kind::List) && n <= 2 => {
@@ -1780,17 +1774,34 @@ fn defined(c: &Construction, def: Def) -> Result<bool, String> {
 
 /// `AlgoDispatcher.segmentFixed` constructs the endpoint on an internal circle.
 fn fixed_segment_line(c: &mut Construction, name: &str, a: &str, n: &str) -> Result<Id, String> {
-    use super::path::PathDef;
     let plan = Plan::new(c, name)?;
-    let start = object(c, a)?;
+    let end = next_indexed_label(c, &plan.taken, POINT_LABELS);
     let length = count_arg(c, n)?;
-    let label = next_indexed_label(c, &plan.taken, POINT_LABELS);
+    fixed_segment(c, name, &end, a, length).map(|(_, endpoint)| endpoint)
+}
+
+pub(crate) fn is_fixed_segment_length(c: &Construction, n: &str) -> bool {
+    match c.id(n) {
+        Some(id) => c.kind(id) == Kind::Number,
+        None => decimal(n).is_some(),
+    }
+}
+
+pub(crate) fn fixed_segment(
+    c: &mut Construction,
+    name: &str,
+    end: &str,
+    a: &str,
+    length: Count,
+) -> Result<(Id, Id), String> {
+    use super::path::PathDef;
+    let start = object(c, a)?;
     let checkpoint = c.checkpoint();
-    let end = c
-        .add(&label, Def::Path(PathDef::FixedEndpoint { start, length }))
+    let endpoint = c
+        .add(end, Def::Path(PathDef::FixedEndpoint { start, length }))
         .map_err(|e| e.to_string())?;
-    c.add(name, Def::Segment(start, end))
-        .map(|_| end)
+    c.add(name, Def::Segment(start, endpoint))
+        .map(|segment| (segment, endpoint))
         .map_err(|e| {
             c.discard_since(checkpoint);
             e.to_string()

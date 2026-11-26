@@ -134,13 +134,9 @@ impl Entry {
     }
 
     fn replay(&self, c: &mut Construction) -> Result<Option<Id>, String> {
-        if BoundaryOutputs::is_command(self.rhs()) {
-            let labels: Vec<_> = self.labels.iter().map(String::as_str).collect();
-            if let Some(result) = restore_boundary_labels(c, &self.line, &labels) {
-                return result;
-            }
-        }
-        exec_definition(c, &self.line)
+        let labels = BoundaryOutputs::is_command(self.rhs())
+            .then(|| self.labels.iter().map(String::as_str).collect::<Vec<_>>());
+        exec_stored_definition(c, &self.line, labels.as_deref())
     }
 }
 
@@ -526,6 +522,27 @@ pub(crate) fn is_internal_label(label: &str) -> bool {
 /// Lower the inline radius of a compasses circle to existing kernel
 /// definitions. Both additions belong to the circle's single journal entry.
 pub(crate) fn exec_definition(c: &mut Construction, line: &str) -> Result<Option<Id>, String> {
+    exec_stored_definition(c, line, None)
+}
+
+fn exec_stored_definition(
+    c: &mut Construction,
+    line: &str,
+    labels: Option<&[&str]>,
+) -> Result<Option<Id>, String> {
+    let before = c.len();
+    let first = labels
+        .and_then(|labels| restore_boundary_labels(c, line, labels))
+        .unwrap_or_else(|| construct(c, line))?;
+    let source = split_comment(line).0.trim();
+    let owner = definition_outputs(c, before, first, line).next();
+    if let Some(owner) = owner {
+        c.retain_file_definition(owner, source);
+    }
+    Ok(first)
+}
+
+fn construct(c: &mut Construction, line: &str) -> Result<Option<Id>, String> {
     if line.contains('\0') {
         return Err("an object definition contains a null character".into());
     }
@@ -2222,9 +2239,7 @@ impl Log {
             Ok(()) => reason,
             Err(e) => format!("{reason}; {e}"),
         };
-        let result = expected
-            .and_then(|labels| restore_boundary_labels(c, line, labels))
-            .unwrap_or_else(|| exec_definition(c, line));
+        let result = exec_stored_definition(c, line, expected);
         let first = match result {
             Ok(first) => first,
             Err(reason) => return Err(undo(c, reason)),
@@ -2304,11 +2319,7 @@ impl Log {
                     free_label_for(&mut c, label);
                 }
             }
-            let first = labels
-                .as_ref()
-                .and_then(|labels| restore_boundary_labels(&mut c, &line, labels))
-                .unwrap_or_else(|| exec_definition(&mut c, &line))
-                .map_err(at)?;
+            let first = exec_stored_definition(&mut c, &line, labels.as_deref()).map_err(at)?;
             log.record_new_definition(&mut c, before, first, &line);
             log.apply_hidden_requests(&mut c);
             if let Some(id) = first.filter(|_| grow) {

@@ -2296,9 +2296,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2600"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x+y=17`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `x + y = 2`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2601"
@@ -2902,9 +2902,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3167"
-category = "redefine"
-reason = "the kernel refuses the input: object `\u0000arg0` already exists"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoCurveCartesian` has no schema object (unsupported-type); string `(t^(2), cos(t) / ((2 * t)))`"
+mismatches = ["a"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3172"
@@ -3774,12 +3774,6 @@ mismatches = ["f"]
 id = "commands/CommandsTest.java:3853"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `SemiMinorAxisLength`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3864"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `4`"
 mismatches = ["step"]
 
 [[gap]]

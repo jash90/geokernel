@@ -865,6 +865,13 @@ case("property-caption-value", ["A = (2, 1)", "a = Slider(0, 10)"], [
      {"action": "set_number", "label": "a", "value": 4},
 ])
 
+# The reference attaches drawArrow only to loci made by SlopeField.
+case("slope-arrows", ["f(x) = 0", "field = SlopeField(f)"], [
+    st("field", draw_arrows=True),
+])
+
+case("export-fixed-segment", ["A = (1, 1)", "s = Segment(A, 4)"], [])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

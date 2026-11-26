@@ -988,8 +988,19 @@ impl Converter {
             _ => name,
         };
         if let ("Point", [path], [label]) = (name, args.as_slice(), outputs) {
-            if let Some((el, path_id)) = elements.get(label.as_str()).zip(self.kernel.id(path)) {
-                let kind = self.kernel.kind(path_id);
+            let kind = self
+                .kernel
+                .id(path)
+                .map(|id| self.kernel.kind(id))
+                .or_else(|| {
+                    // Segment(point, length) is saved with an anonymous circle
+                    // as the point's path. Its saved coordinates choose the
+                    // position on that circle just as for a labelled path.
+                    let inline = path.strip_prefix("$arg(")?.strip_suffix(')')?;
+                    let (command, _) = geo_kernel::script::split_call(inline)?;
+                    (command == "Circle").then_some(Kind::Circle)
+                });
+            if let Some((el, kind)) = elements.get(label.as_str()).zip(kind) {
                 if kind == Kind::Curve {
                     if let Some(t) = el.curve_parameter {
                         return Ok(vec![Step {
