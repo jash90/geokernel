@@ -2714,13 +2714,15 @@ pub enum PointIncrement {
 }
 
 /// Validates a saved point increment without changing the construction.
-/// List evaluation spends the remaining style budget.
+/// An explicit bracketed `Length` call can name an exact list label even
+/// when the construction has an object named `Length`. List evaluation
+/// spends the remaining style budget.
 pub fn validate_point_increment(
     c: &Construction,
     text: &str,
     remaining: u64,
 ) -> Result<Option<PointIncrement>, &'static str> {
-    let Ok(parsed) = parse::parse_argument(c, text) else {
+    let Ok(parsed) = parse::parse_point_increment(c, text) else {
         return Ok(None);
     };
     if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {

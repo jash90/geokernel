@@ -75,6 +75,13 @@ pub(crate) struct Token {
 }
 
 pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
+    tokens_with_square_calls(src, false)
+}
+
+pub(super) fn tokens_with_square_calls(
+    src: &str,
+    square_calls: bool,
+) -> Result<Vec<Token>, String> {
     let bytes = src.as_bytes();
     let mut out = Vec::new();
     let mut chars = src.char_indices().peekable();
@@ -173,7 +180,8 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
                     break;
                 }
             }
-            let call = bytes.get(end) == Some(&b'(');
+            let call =
+                bytes.get(end) == Some(&b'(') || square_calls && bytes.get(end) == Some(&b'[');
             out.push(Token {
                 tok: Tok::Name {
                     text: src[start..end].to_string(),
@@ -208,6 +216,8 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
             match ch {
                 '(' => Tok::LParen,
                 ')' => Tok::RParen,
+                '[' if square_calls => Tok::LParen,
+                ']' if square_calls => Tok::RParen,
                 '{' => Tok::LBrace,
                 '}' => Tok::RBrace,
                 ',' => Tok::Comma,

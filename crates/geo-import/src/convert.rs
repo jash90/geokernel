@@ -585,21 +585,7 @@ impl StyleExpressions {
         use geo_kernel::expr::{validate_point_increment, work_done, PointIncrement};
 
         self.charge_source(source)?;
-        let line = expression_line(source)?;
-        // The saved form Length[L] still names a list when an object named
-        // Length would take precedence in the expression parser.
-        if let Some(arg) = line
-            .strip_prefix("Length(")
-            .and_then(|line| line.strip_suffix(')'))
-        {
-            let label = arg.trim();
-            if let Some(id) = c
-                .id(label)
-                .filter(|&id| c.kind(id) == Kind::List && is_label(label))
-            {
-                return Ok((format!("Length[{label}]"), vec![id]));
-            }
-        }
+        let line = normalized_expression_line(source, true)?;
         let remaining = self.budget - self.used;
         let before = work_done();
         let increment = validate_point_increment(c, &line, remaining);
@@ -607,7 +593,14 @@ impl StyleExpressions {
             self.used += (work_done() - before).max(1);
         }
         match increment? {
-            Some(PointIncrement::Scalar) => Ok((line, Vec::new())),
+            Some(PointIncrement::Scalar) => {
+                let saved = if line.contains('[') {
+                    expression_line(source)?
+                } else {
+                    line
+                };
+                Ok((saved, Vec::new()))
+            }
             Some(PointIncrement::ListLength(id)) => {
                 let label = c.label(id);
                 let saved = if "Length[]".len() + label.len() <= crate::xml::MAX_ATTRIBUTE_BYTES {
@@ -2253,6 +2246,10 @@ fn object_expression(label: &str, kind: Kind, exp: &str) -> Result<String, Strin
 /// Convert saved command brackets to parentheses. The kernel already reads
 /// the saved spellings of comparisons, logical operators, powers and degrees.
 pub fn expression_line(exp: &str) -> Result<String, String> {
+    normalized_expression_line(exp, false)
+}
+
+fn normalized_expression_line(exp: &str, preserve_length_brackets: bool) -> Result<String, String> {
     let mut out = String::with_capacity(exp.len());
     let mut closers = Vec::new();
     let mut quoted = false;
@@ -2283,26 +2280,29 @@ pub fn expression_line(exp: &str) -> Result<String, String> {
                 if !name.starts_with(|ch: char| ch.is_ascii_uppercase()) {
                     return Err("a square bracket must follow a command name".into());
                 }
+                // The saved Length command uses an adjacent opening bracket.
+                let keep = preserve_length_brackets && name == "Length" && end == out.len();
                 out.truncate(end);
-                closers.push(']');
-                '('
+                closers.push((']', if keep { ']' } else { ')' }));
+                if keep {
+                    '['
+                } else {
+                    '('
+                }
             }
             '(' | '{' => {
-                closers.push(if ch == '(' { ')' } else { '}' });
+                let close = if ch == '(' { ')' } else { '}' };
+                closers.push((close, close));
                 ch
             }
             ')' | ']' | '}' => {
-                let expected = closers.pop();
-                if expected != Some(ch) {
-                    if ch == ']' || expected == Some(']') {
+                let close = closers.pop();
+                match close {
+                    Some((expected, normalized)) if expected == ch => normalized,
+                    _ if ch == ']' || close.is_some_and(|(expected, _)| expected == ']') => {
                         return Err("mismatched command square brackets in expression".into());
                     }
-                    return Err(format!("unexpected `{ch}` in expression"));
-                }
-                if ch == ']' {
-                    ')'
-                } else {
-                    ch
+                    _ => return Err(format!("unexpected `{ch}` in expression")),
                 }
             }
             '·' => '*',
@@ -2314,7 +2314,7 @@ pub fn expression_line(exp: &str) -> Result<String, String> {
     if quoted {
         return Err("unclosed text literal in expression".into());
     }
-    if let Some(closer) = closers.pop() {
+    if let Some((closer, _)) = closers.pop() {
         return Err(format!("missing `{closer}` in expression"));
     }
     Ok(out)
