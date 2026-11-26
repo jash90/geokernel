@@ -131,6 +131,40 @@ fn short_spreadsheet_keeps_cells_editable_with_analysis_open() {
 }
 
 #[test]
+fn selected_spreadsheet_cells_keep_their_gridlines() {
+    use eframe::egui::Shape;
+
+    let mut window = sheet(Profile::Desktop, (1000.0, 500.0));
+    activate(&mut window, EXTEND);
+    activate(&mut window, "A3");
+    let cell = widget(&window, "A2").rect;
+    let shapes = &window.output().shapes;
+    let fill = shapes
+        .iter()
+        .rposition(|s| match &s.shape {
+            Shape::Rect(rect) => {
+                rect.fill == crate::theme::TOOLBAR_BG && rect.rect.contains(cell.center())
+            }
+            _ => false,
+        })
+        .expect("selection highlights A2");
+    let line = shapes
+        .iter()
+        .position(|s| match &s.shape {
+            Shape::LineSegment { points, stroke } => {
+                stroke.color == crate::theme::SEPARATOR
+                    && (points[0].y - (cell.bottom() - 0.5)).abs() < 0.1
+                    && points[0].y == points[1].y
+                    && points[0].x <= cell.center().x
+                    && cell.center().x <= points[1].x
+            }
+            _ => false,
+        })
+        .expect("grid draws the line below A2");
+    assert!(fill < line, "selection must be painted behind the gridline");
+}
+
+#[test]
 fn opening_analysis_does_not_add_a_header_row_in_a_narrow_spreadsheet() {
     let mut window = sheet(Profile::Desktop, (300.0, 225.0));
     let before = widget(&window, "A1").rect;
