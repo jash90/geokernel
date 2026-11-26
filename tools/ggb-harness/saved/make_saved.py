@@ -901,6 +901,13 @@ case("export-raster-budget", ["bars = BarChart({2, 3, 4}, {2, 3, 4})"], [
     {"action": "bar_image", "label": "bars", "file": "bar.png", "large": True},
 ], archive=True)
 
+case("export-point-increments",
+     ["L = {2, 4, 8}", "P = (0, 1)", "Q = (0, 2)", "R = (0, 3)"], [
+         st("P", vertical_increment="Length(L)"),
+         st("Q", vertical_increment="Length(L) + 1"),
+         st("R", vertical_increment="Sum(L)"),
+     ])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

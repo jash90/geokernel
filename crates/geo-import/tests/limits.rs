@@ -482,6 +482,47 @@ fn point_presentation_shares_the_document_expression_budget() {
 }
 
 #[test]
+fn point_list_increments_charge_list_evaluation_to_the_style_budget() {
+    use geo_import::convert::StyleExpressions;
+    let c = geo_kernel::script::load("L = Sequence(1, 256)\nB = {true, false}\nn = 2").unwrap();
+    let length = "Length[L] + n";
+    let sum = "Sum[L]";
+    let mut measured = StyleExpressions::default();
+    assert!(measured.point_increment(&c, length).is_ok());
+    let before_sum = measured.work();
+    assert!(measured.point_increment(&c, sum).is_ok());
+    assert!(measured.work() >= before_sum + sum.len() as u64 + 256);
+
+    let mut limited = StyleExpressions::with_budget(before_sum + sum.len() as u64 + 128);
+    assert!(limited.point_increment(&c, length).is_ok());
+    let reason = limited.point_increment(&c, sum).unwrap_err();
+    assert!(reason.contains("evaluation budget"), "{reason}");
+
+    let mut exact = StyleExpressions::with_budget(measured.work());
+    assert!(exact.point_increment(&c, length).is_ok());
+    assert!(exact.point_increment(&c, sum).is_ok());
+    assert!(exact.number(&c, "n").is_err());
+
+    let mut expressions = StyleExpressions::default();
+    assert!(expressions.number(&c, length).is_err());
+    assert!(expressions.number(&c, sum).is_err());
+    for unsupported in [
+        "Sum[Sequence(1, 256)]",
+        "Sum[L, L]",
+        "Sum[B]",
+        "Length[{1, 2}] + 1",
+        "If(L == L, Length[L], n)",
+        "If(true, Length[L], SetValue(n, 7))",
+    ] {
+        assert!(
+            expressions.point_increment(&c, unsupported).is_err(),
+            "{unsupported}"
+        );
+    }
+    assert_eq!(c.arithmetic_value("n"), Some(2.0));
+}
+
+#[test]
 fn nested_chart_image_tags_count_toward_the_item_limit() {
     let chart = |count| {
         let tags = r#"<tag key="barImage" barNumber="1" value="tile.png"/>"#.repeat(count);

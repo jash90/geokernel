@@ -576,8 +576,7 @@ impl StyleExpressions {
         Ok(())
     }
 
-    /// A point increment can also measure an existing list. The reference
-    /// saves its unlabelled length as Length[L].
+    /// A point increment can also use the length or sum of an existing list.
     pub fn point_increment(&mut self, c: &Construction, source: &str) -> Result<String, String> {
         self.charge_source(source)?;
         let line = expression_line(source)?;
@@ -590,7 +589,15 @@ impl StyleExpressions {
                 return Ok(format!("Length[{label}]"));
             }
         }
-        self.number(c, &line)
+        if self.used >= self.budget {
+            return Err("the style expressions of the file exceed the evaluation budget".into());
+        }
+        let before = geo_kernel::expr::work_done();
+        let value = geo_kernel::expr::point_increment_number(c, &line, self.budget - self.used);
+        self.used += (geo_kernel::expr::work_done() - before).max(1);
+        value?
+            .map(|_| line)
+            .ok_or_else(|| format!("`{source}` is not a number of the construction"))
     }
 
     /// A dependent start point expressed as supported geometry over named

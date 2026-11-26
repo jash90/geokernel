@@ -2693,6 +2693,69 @@ pub(crate) fn arithmetic_number(c: &Construction, text: &str) -> Option<f64> {
     value_of_tree(c, &parsed)
 }
 
+/// A saved point increment can also use the length of named lists as scalar
+/// operands or take the sum of one named numeric list. List evaluation
+/// spends the remaining style budget and leaves the construction unchanged.
+pub fn point_increment_number(
+    c: &Construction,
+    text: &str,
+    remaining: u64,
+) -> Result<Option<f64>, &'static str> {
+    let Ok(parsed) = parse::parse_argument(c, text) else {
+        return Ok(None);
+    };
+    if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {
+        return Ok(None);
+    }
+    if !reads_list(&parsed.nodes, &parsed.tys) {
+        return Ok(parsed
+            .nodes
+            .iter()
+            .all(arithmetic_node)
+            .then(|| value_of_tree(c, &parsed))
+            .flatten());
+    }
+    if !point_list_increment(&parsed) {
+        return Ok(None);
+    }
+    with_evaluation_budget(remaining, || {
+        let entry = Entry::new(c, parsed, false);
+        let lists = eval::Lists::new(Vec::new());
+        let (value, _) = eval::root(c, &entry, Some(&lists));
+        if lists.over() {
+            return Err("the point increment exceeds the style evaluation budget");
+        }
+        Ok(match value {
+            Raw::Num(value) => Some(value),
+            _ => None,
+        })
+    })
+}
+
+fn point_list_increment(parsed: &parse::Parsed) -> bool {
+    let numeric = |arg: u32| matches!(parsed.tys[arg as usize], Ty::Num(_));
+    parsed
+        .nodes
+        .iter()
+        .enumerate()
+        .all(|(i, node)| match *node {
+            Node::ListOp(op, arg, NONE)
+                if op == ListOp::Length || op == ListOp::Sum && i == parsed.root as usize =>
+            {
+                matches!(parsed.nodes[arg as usize], Node::Obj(_))
+                    && matches!(
+                        (op, parsed.tys[arg as usize]),
+                        (ListOp::Length, Ty::List(_))
+                            | (ListOp::Sum, Ty::List(Elem::Num | Elem::Empty))
+                    )
+            }
+            Node::Num(_) | Node::MinusOne | Node::Degree | Node::Obj(_) => true,
+            Node::Un(_, arg) => numeric(arg),
+            Node::Bin(_, left, right) => numeric(left) && numeric(right),
+            _ => false,
+        })
+}
+
 /// Checks a saved point attachment without creating a construction object.
 pub fn arithmetic_point_inputs(c: &Construction, text: &str) -> Option<Vec<Id>> {
     let parsed = arithmetic_argument(c, text)?;
@@ -2702,29 +2765,34 @@ pub fn arithmetic_point_inputs(c: &Construction, text: &str) -> Option<Vec<Id>> 
 
 fn arithmetic_argument(c: &Construction, text: &str) -> Option<parse::Parsed> {
     let parsed = parse::parse_argument(c, text).ok()?;
-    let arithmetic = parsed.nodes.iter().all(|node| {
-        matches!(
-            node,
-            Node::Num(_)
-                | Node::MinusOne
-                | Node::Degree
-                | Node::Obj(_)
-                | Node::Bool(_)
-                | Node::Un(..)
-                | Node::Bin(..)
-                | Node::If(..)
-                | Node::Cmd(..)
-                | Node::Apply(..)
-                | Node::Tuple(..)
-                | Node::Polar(..)
-                | Node::ObjectDefined(_)
-                | Node::Defined(..)
-        )
-    });
-    if !arithmetic || reads_list(&parsed.nodes, &parsed.tys) || parsed.uses_var || parsed.uses_y {
+    if parsed.uses_var
+        || parsed.uses_y
+        || !parsed.nodes.iter().all(arithmetic_node)
+        || reads_list(&parsed.nodes, &parsed.tys)
+    {
         return None;
     }
     Some(parsed)
+}
+
+fn arithmetic_node(node: &Node) -> bool {
+    matches!(
+        node,
+        Node::Num(_)
+            | Node::MinusOne
+            | Node::Degree
+            | Node::Obj(_)
+            | Node::Bool(_)
+            | Node::Un(..)
+            | Node::Bin(..)
+            | Node::If(..)
+            | Node::Cmd(..)
+            | Node::Apply(..)
+            | Node::Tuple(..)
+            | Node::Polar(..)
+            | Node::ObjectDefined(_)
+            | Node::Defined(..)
+    )
 }
 
 /// Defines `name = rhs` as an expression. `vector_label` tells whether a
