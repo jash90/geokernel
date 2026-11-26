@@ -46,6 +46,36 @@ pub struct SpreadsheetStep {
     pub outputs: BTreeMap<String, Expected>,
     pub view: Option<SpreadsheetViewSnapshot>,
     pub visible: Option<BTreeMap<String, bool>>,
+    pub analysis: Option<SpreadsheetAnalysisSnapshot>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpreadsheetAnalysisSnapshot {
+    pub group_type: String,
+    pub values: Vec<f64>,
+    pub rows: Vec<SpreadsheetStatistic>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpreadsheetStatistic {
+    pub id: String,
+    pub command: String,
+    pub value: Option<f64>,
+    pub non_finite: Option<String>,
+}
+
+impl SpreadsheetStatistic {
+    pub(crate) fn raw_value(&self) -> Option<f64> {
+        match (self.value, self.non_finite.as_deref()) {
+            (Some(value), None) if value.is_finite() => Some(value),
+            (None, Some("NaN")) => Some(f64::NAN),
+            (None, Some("Infinity")) => Some(f64::INFINITY),
+            (None, Some("-Infinity")) => Some(f64::NEG_INFINITY),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -66,6 +96,7 @@ pub enum SpreadsheetAction {
     Load,
     Edit,
     Drag,
+    AnalyzeOneVariable,
     Undo,
     Redo,
 }
@@ -1355,6 +1386,7 @@ fn validate_case(case: &Case) -> Result<(), String> {
         };
         let mut observed = BTreeSet::new();
         let mut observed_visibility = BTreeSet::new();
+        let mut analysis_size = None;
         for (index, step) in actions.iter().enumerate() {
             let cell = step.cell.as_deref().is_some_and(valid_address);
             let valid = match step.action {
@@ -1386,6 +1418,26 @@ fn validate_case(case: &Case) -> Result<(), String> {
                         && step.observe.is_none()
                         && step.cell != step.target
                 }
+                SpreadsheetAction::AnalyzeOneVariable => {
+                    use geo_app_core::spreadsheet::{Analysis, Selection};
+                    use geo_kernel::spreadsheet::Address;
+                    let selection = step.cell.as_deref().filter(|_| cell).and_then(|anchor| {
+                        let end = step
+                            .target
+                            .as_deref()
+                            .filter(|target| valid_address(target))?;
+                        Some(Selection {
+                            anchor: Address::parse(anchor)?,
+                            end: Address::parse(end)?,
+                        })
+                    });
+                    analysis_size = selection.and_then(|selection| {
+                        Analysis::new(selection)
+                            .ok()
+                            .map(|analysis| analysis.cell_count())
+                    });
+                    analysis_size.is_some() && step.input.is_none() && step.observe.is_none()
+                }
                 SpreadsheetAction::DegreeMode => {
                     index == 0
                         && step.cell.is_none()
@@ -1403,7 +1455,28 @@ fn validate_case(case: &Case) -> Result<(), String> {
             if let Some(labels) = &step.observe {
                 observed.extend(labels.iter());
             }
+            if matches!(
+                step.action,
+                SpreadsheetAction::Load | SpreadsheetAction::Reload
+            ) {
+                analysis_size = None;
+            }
+            let valid_analysis = match (analysis_size, &step.analysis) {
+                (None, None) => true,
+                (Some(size), Some(summary)) => {
+                    use geo_app_core::spreadsheet::STATISTICS;
+                    summary.group_type == "RAWDATA"
+                        && summary.values.len() == size
+                        && summary.values.iter().all(|value| value.is_finite())
+                        && summary.rows.len() == STATISTICS.len()
+                        && summary.rows.iter().zip(STATISTICS).all(|(row, (id, _))| {
+                            row.id == id && !row.command.is_empty() && row.raw_value().is_some()
+                        })
+                }
+                _ => false,
+            };
             if !valid
+                || !valid_analysis
                 || (step.action == SpreadsheetAction::Load) != step.view.is_some()
                 || !step.cells.keys().all(|label| valid_address(label))
                 || !step.outputs.keys().eq(observed.iter().copied())

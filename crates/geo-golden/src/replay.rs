@@ -308,8 +308,10 @@ fn replay_spreadsheet(
     out: &mut CaseOutcome,
     actions: &[SpreadsheetStep],
 ) {
+    use geo_app_core::spreadsheet::{Analysis, Selection};
     use geo_kernel::spreadsheet::Address;
     use std::collections::BTreeMap;
+    let mut analysis = None;
     for (i, step) in actions.iter().enumerate() {
         let address = |cell: Option<&str>| {
             Address::parse(cell.expect("validated address")).expect("validated address")
@@ -366,6 +368,12 @@ fn replay_spreadsheet(
                 address(step.target.as_deref()),
             )
             .and_then(|line| document.run_line(&line.ok_or("empty drag source")?)),
+            SpreadsheetAction::AnalyzeOneVariable => Analysis::new(Selection {
+                anchor: address(step.cell.as_deref()),
+                end: address(step.target.as_deref()),
+            })
+            .map(|new| analysis = Some(new))
+            .map_err(|error| format!("{error:?}")),
             SpreadsheetAction::Reload => document
                 .export_ggb(None)
                 .map_err(|e| e.to_string())
@@ -390,6 +398,50 @@ fn replay_spreadsheet(
             out.mismatches
                 .push(failure(i, "spreadsheet", "the action applies", error));
             return;
+        }
+        if matches!(
+            step.action,
+            SpreadsheetAction::Load | SpreadsheetAction::Reload
+        ) {
+            analysis = None;
+        }
+        if let (Some(expected), Some(analysis)) = (&step.analysis, &mut analysis) {
+            use crate::compare::numbers_agree;
+            match analysis.refresh(document.construction()) {
+                Ok(actual) => {
+                    if actual.values.len() != expected.values.len()
+                        || actual
+                            .values
+                            .iter()
+                            .zip(&expected.values)
+                            .any(|(&got, &want)| !numbers_agree(got, want))
+                    {
+                        out.mismatches.push(failure(
+                            i,
+                            "analysis.values",
+                            &format!("{:?}", expected.values),
+                            format!("{:?}", actual.values),
+                        ));
+                    }
+                    for (row, &got) in expected.rows.iter().zip(&actual.rows) {
+                        let want = row.raw_value().expect("validated statistic");
+                        if !(want.is_nan() && got.is_nan() || numbers_agree(got, want)) {
+                            out.mismatches.push(failure(
+                                i,
+                                &format!("analysis.{}", row.id),
+                                &want.to_string(),
+                                got.to_string(),
+                            ));
+                        }
+                    }
+                }
+                Err(error) => out.mismatches.push(failure(
+                    i,
+                    "analysis",
+                    "one-variable summary",
+                    format!("{error:?}"),
+                )),
+            }
         }
         if let Some(view) = &step.view {
             let actual = document.spreadsheet_view().map(|sheet| sheet.grid());

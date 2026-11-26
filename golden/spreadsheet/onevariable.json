@@ -1,0 +1,338 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "spreadsheet-onevariable-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2",
+          "cells": { "A1": "2" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "-3",
+          "cells": { "A1": "2", "B2": "-3" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B3",
+          "input": "2",
+          "cells": { "A1": "2", "B2": "-3", "B3": "2" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B4",
+          "input": "2",
+          "cells": { "A1": "2", "B2": "-3", "B3": "2", "B4": "2" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B5",
+          "input": "=A1 + 3",
+          "cells": { "A1": "2", "B2": "-3", "B3": "2", "B4": "2", "B5": "5" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B6",
+          "input": "8",
+          "cells": { "A1": "2", "B2": "-3", "B3": "2", "B4": "2", "B5": "5", "B6": "8" },
+          "outputs": {}
+        },
+        {
+          "action": "analyze_one_variable",
+          "cell": "B2",
+          "target": "B6",
+          "analysis": {
+            "group_type": "RAWDATA",
+            "values": [-3.0, 2.0, 2.0, 5.0, 8.0],
+            "rows": [
+              { "id": "LENGTH", "command": "Length", "value": 5.0 },
+              { "id": "MEAN", "command": "mean", "value": 2.8 },
+              { "id": "SD", "command": "SD", "value": 3.655133376499413 },
+              { "id": "SAMPLE_SD", "command": "SampleSD", "value": 4.08656334834051 },
+              { "id": "SUM", "command": "Sum", "value": 14.0 },
+              { "id": "SIGMAXX", "command": "SigmaXX", "value": 106.0 },
+              { "id": "MIN", "command": "Min", "value": -3.0 },
+              { "id": "Q1", "command": "Quartile1", "value": -0.5 },
+              { "id": "MEDIAN", "command": "Median", "value": 2.0 },
+              { "id": "Q3", "command": "Q3", "value": 6.5 },
+              { "id": "MAX", "command": "Max", "value": 8.0 }
+            ]
+          },
+          "cells": { "A1": "2", "B2": "-3", "B3": "2", "B4": "2", "B5": "5", "B6": "8" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "B3",
+          "input": "-1",
+          "analysis": {
+            "group_type": "RAWDATA",
+            "values": [-3.0, -1.0, 2.0, 5.0, 8.0],
+            "rows": [
+              { "id": "LENGTH", "command": "Length", "value": 5.0 },
+              { "id": "MEAN", "command": "mean", "value": 2.2 },
+              { "id": "SD", "command": "SD", "value": 3.9698866482558417 },
+              { "id": "SAMPLE_SD", "command": "SampleSD", "value": 4.43846820423443 },
+              { "id": "SUM", "command": "Sum", "value": 11.0 },
+              { "id": "SIGMAXX", "command": "SigmaXX", "value": 103.0 },
+              { "id": "MIN", "command": "Min", "value": -3.0 },
+              { "id": "Q1", "command": "Quartile1", "value": -2.0 },
+              { "id": "MEDIAN", "command": "Median", "value": 2.0 },
+              { "id": "Q3", "command": "Q3", "value": 6.5 },
+              { "id": "MAX", "command": "Max", "value": 8.0 }
+            ]
+          },
+          "cells": { "A1": "2", "B2": "-3", "B3": "-1", "B4": "2", "B5": "5", "B6": "8" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "7",
+          "analysis": {
+            "group_type": "RAWDATA",
+            "values": [-3.0, -1.0, 2.0, 10.0, 8.0],
+            "rows": [
+              { "id": "LENGTH", "command": "Length", "value": 5.0 },
+              { "id": "MEAN", "command": "mean", "value": 3.2 },
+              { "id": "SD", "command": "SD", "value": 5.035871324805669 },
+              { "id": "SAMPLE_SD", "command": "SampleSD", "value": 5.630275304103699 },
+              { "id": "SUM", "command": "Sum", "value": 16.0 },
+              { "id": "SIGMAXX", "command": "SigmaXX", "value": 178.0 },
+              { "id": "MIN", "command": "Min", "value": -3.0 },
+              { "id": "Q1", "command": "Quartile1", "value": -2.0 },
+              { "id": "MEDIAN", "command": "Median", "value": 2.0 },
+              { "id": "Q3", "command": "Q3", "value": 9.0 },
+              { "id": "MAX", "command": "Max", "value": 10.0 }
+            ]
+          },
+          "cells": { "A1": "7", "B2": "-3", "B3": "-1", "B4": "2", "B5": "10", "B6": "8" },
+          "outputs": {}
+        },
+        {
+          "action": "undo",
+          "analysis": {
+            "group_type": "RAWDATA",
+            "values": [-3.0, -1.0, 2.0, 5.0, 8.0],
+            "rows": [
+              { "id": "LENGTH", "command": "Length", "value": 5.0 },
+              { "id": "MEAN", "command": "mean", "value": 2.2 },
+              { "id": "SD", "command": "SD", "value": 3.9698866482558417 },
+              { "id": "SAMPLE_SD", "command": "SampleSD", "value": 4.43846820423443 },
+              { "id": "SUM", "command": "Sum", "value": 11.0 },
+              { "id": "SIGMAXX", "command": "SigmaXX", "value": 103.0 },
+              { "id": "MIN", "command": "Min", "value": -3.0 },
+              { "id": "Q1", "command": "Quartile1", "value": -2.0 },
+              { "id": "MEDIAN", "command": "Median", "value": 2.0 },
+              { "id": "Q3", "command": "Q3", "value": 6.5 },
+              { "id": "MAX", "command": "Max", "value": 8.0 }
+            ]
+          },
+          "cells": { "A1": "2", "B2": "-3", "B3": "-1", "B4": "2", "B5": "5", "B6": "8" },
+          "outputs": {}
+        },
+        {
+          "action": "undo",
+          "analysis": {
+            "group_type": "RAWDATA",
+            "values": [-3.0, 2.0, 2.0, 5.0, 8.0],
+            "rows": [
+              { "id": "LENGTH", "command": "Length", "value": 5.0 },
+              { "id": "MEAN", "command": "mean", "value": 2.8 },
+              { "id": "SD", "command": "SD", "value": 3.655133376499413 },
+              { "id": "SAMPLE_SD", "command": "SampleSD", "value": 4.08656334834051 },
+              { "id": "SUM", "command": "Sum", "value": 14.0 },
+              { "id": "SIGMAXX", "command": "SigmaXX", "value": 106.0 },
+              { "id": "MIN", "command": "Min", "value": -3.0 },
+              { "id": "Q1", "command": "Quartile1", "value": -0.5 },
+              { "id": "MEDIAN", "command": "Median", "value": 2.0 },
+              { "id": "Q3", "command": "Q3", "value": 6.5 },
+              { "id": "MAX", "command": "Max", "value": 8.0 }
+            ]
+          },
+          "cells": { "A1": "2", "B2": "-3", "B3": "2", "B4": "2", "B5": "5", "B6": "8" },
+          "outputs": {}
+        },
+        {
+          "action": "redo",
+          "analysis": {
+            "group_type": "RAWDATA",
+            "values": [-3.0, -1.0, 2.0, 5.0, 8.0],
+            "rows": [
+              { "id": "LENGTH", "command": "Length", "value": 5.0 },
+              { "id": "MEAN", "command": "mean", "value": 2.2 },
+              { "id": "SD", "command": "SD", "value": 3.9698866482558417 },
+              { "id": "SAMPLE_SD", "command": "SampleSD", "value": 4.43846820423443 },
+              { "id": "SUM", "command": "Sum", "value": 11.0 },
+              { "id": "SIGMAXX", "command": "SigmaXX", "value": 103.0 },
+              { "id": "MIN", "command": "Min", "value": -3.0 },
+              { "id": "Q1", "command": "Quartile1", "value": -2.0 },
+              { "id": "MEDIAN", "command": "Median", "value": 2.0 },
+              { "id": "Q3", "command": "Q3", "value": 6.5 },
+              { "id": "MAX", "command": "Max", "value": 8.0 }
+            ]
+          },
+          "cells": { "A1": "2", "B2": "-3", "B3": "-1", "B4": "2", "B5": "5", "B6": "8" },
+          "outputs": {}
+        },
+        {
+          "action": "redo",
+          "analysis": {
+            "group_type": "RAWDATA",
+            "values": [-3.0, -1.0, 2.0, 10.0, 8.0],
+            "rows": [
+              { "id": "LENGTH", "command": "Length", "value": 5.0 },
+              { "id": "MEAN", "command": "mean", "value": 3.2 },
+              { "id": "SD", "command": "SD", "value": 5.035871324805669 },
+              { "id": "SAMPLE_SD", "command": "SampleSD", "value": 5.630275304103699 },
+              { "id": "SUM", "command": "Sum", "value": 16.0 },
+              { "id": "SIGMAXX", "command": "SigmaXX", "value": 178.0 },
+              { "id": "MIN", "command": "Min", "value": -3.0 },
+              { "id": "Q1", "command": "Quartile1", "value": -2.0 },
+              { "id": "MEDIAN", "command": "Median", "value": 2.0 },
+              { "id": "Q3", "command": "Q3", "value": 9.0 },
+              { "id": "MAX", "command": "Max", "value": 10.0 }
+            ]
+          },
+          "cells": { "A1": "7", "B2": "-3", "B3": "-1", "B4": "2", "B5": "10", "B6": "8" },
+          "outputs": {}
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-onevariable-002",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "-3",
+          "cells": { "B2": "-3" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "C2",
+          "input": "2",
+          "cells": { "B2": "-3", "C2": "2" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "D2",
+          "input": "2",
+          "cells": { "B2": "-3", "C2": "2", "D2": "2" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "E2",
+          "input": "5",
+          "cells": { "B2": "-3", "C2": "2", "D2": "2", "E2": "5" },
+          "outputs": {}
+        },
+        {
+          "action": "edit",
+          "cell": "F2",
+          "input": "8",
+          "cells": { "B2": "-3", "C2": "2", "D2": "2", "E2": "5", "F2": "8" },
+          "outputs": {}
+        },
+        {
+          "action": "analyze_one_variable",
+          "cell": "F2",
+          "target": "B2",
+          "analysis": {
+            "group_type": "RAWDATA",
+            "values": [-3.0, 2.0, 2.0, 5.0, 8.0],
+            "rows": [
+              { "id": "LENGTH", "command": "Length", "value": 5.0 },
+              { "id": "MEAN", "command": "mean", "value": 2.8 },
+              { "id": "SD", "command": "SD", "value": 3.655133376499413 },
+              { "id": "SAMPLE_SD", "command": "SampleSD", "value": 4.08656334834051 },
+              { "id": "SUM", "command": "Sum", "value": 14.0 },
+              { "id": "SIGMAXX", "command": "SigmaXX", "value": 106.0 },
+              { "id": "MIN", "command": "Min", "value": -3.0 },
+              { "id": "Q1", "command": "Quartile1", "value": -0.5 },
+              { "id": "MEDIAN", "command": "Median", "value": 2.0 },
+              { "id": "Q3", "command": "Q3", "value": 6.5 },
+              { "id": "MAX", "command": "Max", "value": 8.0 }
+            ]
+          },
+          "cells": { "B2": "-3", "C2": "2", "D2": "2", "E2": "5", "F2": "8" },
+          "outputs": {}
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-onevariable-003",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {}
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "C3",
+          "input": "4",
+          "cells": { "C3": "4" },
+          "outputs": {}
+        },
+        {
+          "action": "analyze_one_variable",
+          "cell": "C3",
+          "target": "C3",
+          "analysis": {
+            "group_type": "RAWDATA",
+            "values": [4.0],
+            "rows": [
+              { "id": "LENGTH", "command": "Length", "value": 1.0 },
+              { "id": "MEAN", "command": "mean", "value": 4.0 },
+              { "id": "SD", "command": "SD", "value": 0.0 },
+              { "id": "SAMPLE_SD", "command": "SampleSD", "value": null, "non_finite": "NaN" },
+              { "id": "SUM", "command": "Sum", "value": 4.0 },
+              { "id": "SIGMAXX", "command": "SigmaXX", "value": 16.0 },
+              { "id": "MIN", "command": "Min", "value": 4.0 },
+              { "id": "Q1", "command": "Quartile1", "value": null, "non_finite": "NaN" },
+              { "id": "MEDIAN", "command": "Median", "value": 4.0 },
+              { "id": "Q3", "command": "Q3", "value": null, "non_finite": "NaN" },
+              { "id": "MAX", "command": "Max", "value": 4.0 }
+            ]
+          },
+          "cells": { "C3": "4" },
+          "outputs": {}
+        }
+      ]
+    }
+  ]
+}

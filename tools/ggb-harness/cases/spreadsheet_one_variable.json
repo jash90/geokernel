@@ -1,0 +1,137 @@
+{
+  "cases": [
+    {
+      "id": "spreadsheet-onevariable-001",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "-3"
+        },
+        {
+          "action": "edit",
+          "cell": "B3",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "B4",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "B5",
+          "input": "=A1 + 3"
+        },
+        {
+          "action": "edit",
+          "cell": "B6",
+          "input": "8"
+        },
+        {
+          "action": "analyze_one_variable",
+          "cell": "B2",
+          "target": "B6"
+        },
+        {
+          "action": "edit",
+          "cell": "B3",
+          "input": "-1"
+        },
+        {
+          "action": "edit",
+          "cell": "A1",
+          "input": "7"
+        },
+        {
+          "action": "undo"
+        },
+        {
+          "action": "undo"
+        },
+        {
+          "action": "redo"
+        },
+        {
+          "action": "redo"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-onevariable-002",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "B2",
+          "input": "-3"
+        },
+        {
+          "action": "edit",
+          "cell": "C2",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "D2",
+          "input": "2"
+        },
+        {
+          "action": "edit",
+          "cell": "E2",
+          "input": "5"
+        },
+        {
+          "action": "edit",
+          "cell": "F2",
+          "input": "8"
+        },
+        {
+          "action": "analyze_one_variable",
+          "cell": "F2",
+          "target": "B2"
+        }
+      ]
+    },
+    {
+      "id": "spreadsheet-onevariable-003",
+      "group": "spreadsheet",
+      "script": [],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "spreadsheet": [
+        {
+          "action": "edit",
+          "cell": "C3",
+          "input": "4"
+        },
+        {
+          "action": "analyze_one_variable",
+          "cell": "C3",
+          "target": "C3"
+        }
+      ]
+    }
+  ]
+}
