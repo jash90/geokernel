@@ -518,14 +518,23 @@ mod tests {
 
         let c = Construction::new();
         let count = 512;
-        for (argument, max_slots_per_argument) in [("1 + 2", 8), ("Median(1, 3)", 16)] {
+        for (command, argument, max_slots_per_argument) in [
+            ("Median", "1 + 2", 8),
+            ("Median", "Median(1, 3)", 16),
+            ("Sum", "1 + 2", 16),
+            ("Sum", "(1, 2)", 16),
+            ("Sum", "\"x\"", 8),
+        ] {
             let args = vec![argument; count].join(", ");
-            let source = format!("Median({args})");
+            let source = format!("{command}({args})");
             let before = CHECKED_SLOTS.get();
             parse::parse(&c, &source).unwrap();
             let slots = CHECKED_SLOTS.get() - before;
             let limit = max_slots_per_argument * count + 2;
-            assert!(slots <= limit, "{slots} type-check slots, limit {limit}");
+            assert!(
+                slots <= limit,
+                "{command} of {argument}: {slots} type-check slots, limit {limit}"
+            );
         }
     }
 
