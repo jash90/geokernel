@@ -1,0 +1,34 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-nextundefinedboolean-001",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Mode({IsPrime(0), 0, 4})",
+        "r_{2} = GeometricMean({IsPrime(0), 0, 4})",
+        "r_{3} = HarmonicMean({IsPrime(0), 0, 4})",
+        "r_{4} = RootMeanSquare({IsPrime(0), 0, 4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "r_{2}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{3}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{4}": { "type": "number", "defined": true, "value": 2.309401076758503 }
+        }
+      ]
+    }
+  ]
+}

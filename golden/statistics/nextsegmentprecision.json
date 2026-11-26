@@ -1,0 +1,38 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-nextsegmentprecision-001",
+      "group": "statistics",
+      "script": [
+        "A = (0, 0)",
+        "B = (45, 108)",
+        "s = Segment(A, B)",
+        "r_{1} = Mode({s, 117})",
+        "r_{2} = GeometricMean({s, 117})",
+        "r_{3} = HarmonicMean({s, 117})",
+        "r_{4} = RootMeanSquare({s, 117})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 45.0, "y": 108.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 45.0, "y2": 108.0 },
+          "r_{1}": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r_{2}": { "type": "number", "defined": true, "value": 117.00000000000003 },
+          "r_{3}": { "type": "number", "defined": true, "value": 116.99999999999999 },
+          "r_{4}": { "type": "number", "defined": true, "value": 116.99999999999999 }
+        }
+      ]
+    }
+  ]
+}

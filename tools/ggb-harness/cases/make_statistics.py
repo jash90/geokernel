@@ -102,4 +102,7 @@ cases.case("nextreject", [
     "a = Slider(-2, 2)", "Q = (a, a^2 / 2)", "L = Locus(Q, a)", "r = 42",
 ], [{"action": "reject", "line": f"r = {name}(L, 1)"} for name in simple])
 cases.cases[-1]["observe"] = ["r"]
+cases.case("nextsegmentprecision", ["A = (0, 0)", "B = (45, 108)", "s = Segment(A, B)"]
+           + simple_outputs("{s, 117}"), [])
+cases.case("nextundefinedboolean", simple_outputs("{IsPrime(0), 0, 4}"), [])
 cases.write()
