@@ -25,8 +25,12 @@ use super::eval::{Ctx, Val};
 use super::parse::Parser;
 use super::{Bin, Elem, ListOp, Node, Ty};
 
-pub(in crate::expr) use list::{call_type, call_value, second_list};
+pub(in crate::expr) use list::{call_type, call_value};
 pub(in crate::expr) use text::call_node as text_call;
+
+pub(in crate::expr) fn second_list(op: ListOp) -> bool {
+    list::second_list(op) || statistics::is_descriptive(op)
+}
 
 /// Whether `name` is a command that expressions compute themselves (the
 /// two-number commands are built-in names instead, see

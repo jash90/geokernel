@@ -57,8 +57,16 @@ impl State {
 /// node, in the order of the arena.
 pub(crate) type Checked = (Vec<Ty>, Vec<u32>, Vec<u64>, Vec<u64>);
 
+#[cfg(test)]
+thread_local! {
+    // Each check scans the arena, including nodes unreachable from its root.
+    pub(super) static CHECKED_SLOTS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
 pub(crate) fn check(c: &Construction, nodes: &[Node], root: u32) -> Result<Checked, String> {
     let n = nodes.len();
+    #[cfg(test)]
+    CHECKED_SLOTS.set(CHECKED_SLOTS.get() + n);
     let mut reachable = vec![false; n];
     reachable[root as usize] = true;
     for i in (0..n).rev() {

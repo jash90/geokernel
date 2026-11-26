@@ -184,7 +184,15 @@ PARTIAL = {
     "Sum": "List and indexed forms, plus variadic numbers, points, functions and text. Direct vector arguments are rejected.",
     "Product": "Product(list); Product(list, number of elements); "
                 "Product(list, list of frequencies); Product(expression, variable, from, to)",
-    "Mean": "Mean(list)",
+    "mean": "Numeric list, weighted values or class midpoints, and separate numbers.",
+    "Variance": "Numeric list, weighted values or class midpoints, and separate numbers.",
+    "stdevp": "Population standard deviation of a numeric list, weighted values or class midpoints, and separate numbers.",
+    "SampleVariance": "Numeric list, weighted values or class midpoints, and separate numbers.",
+    "stdev": "Sample standard deviation of a numeric list, weighted values or class midpoints, and separate numbers.",
+    "mad": "Mean absolute deviation of a numeric list, weighted values or class midpoints, and separate numbers.",
+    "Median": "Numeric list, weighted values or grouped interpolation, and separate numbers.",
+    "Q1": "Lower quartile of a numeric list, values with frequencies, and separate numbers.",
+    "Q3": "Upper quartile of a numeric list, values with frequencies, and separate numbers.",
     "Sequence": "Sequence(end); Sequence(start, end); Sequence(start, end, step); "
                 "Sequence(expression, variable, start, end); Sequence(expression, variable, start, end, step)",
     "Reverse": "Reverse(list); Reverse(number, number, ...); Reverse(point, point, ...)",

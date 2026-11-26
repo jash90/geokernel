@@ -1,0 +1,57 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-aliases-001",
+      "group": "statistics",
+      "script": [
+        "r_{1} = mean({5, 1, 4, 2, 3})",
+        "r_{2} = stdev({5, 1, 4, 2, 3})",
+        "r_{3} = stdevp({5, 1, 4, 2, 3})",
+        "r_{4} = mad({5, 1, 4, 2, 3})",
+        "r_{5} = Quartile1({5, 1, 4, 2, 3})",
+        "r_{6} = Quartile3({5, 1, 4, 2, 3})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 3.0 },
+          "r_{2}": { "type": "number", "defined": true, "value": 1.5811388300841898 },
+          "r_{3}": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "r_{4}": { "type": "number", "defined": true, "value": 1.2 },
+          "r_{5}": { "type": "number", "defined": true, "value": 1.5 },
+          "r_{6}": { "type": "number", "defined": true, "value": 4.5 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-aliases-002",
+      "group": "statistics",
+      "script": [
+        "r_{1} = mean({1, 2, 3, 4, 5}, {1, 2, 3, 4, 5})",
+        "r_{2} = stdev({1, 2, 3, 4, 5}, {1, 2, 3, 4, 5})",
+        "r_{3} = stdevp({1, 2, 3, 4, 5}, {1, 2, 3, 4, 5})",
+        "r_{4} = mad({1, 2, 3, 4, 5}, {1, 2, 3, 4, 5})",
+        "r_{5} = Quartile1({1, 2, 3, 4, 5}, {1, 2, 3, 4, 5})",
+        "r_{6} = Quartile3({1, 2, 3, 4, 5}, {1, 2, 3, 4, 5})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 3.6666666666666665 },
+          "r_{2}": { "type": "number", "defined": true, "value": 1.2909944487358058 },
+          "r_{3}": { "type": "number", "defined": true, "value": 1.2472191289246477 },
+          "r_{4}": { "type": "number", "defined": true, "value": 1.0666666666666667 },
+          "r_{5}": { "type": "number", "defined": true, "value": 3.0 },
+          "r_{6}": { "type": "number", "defined": true, "value": 5.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -110,17 +110,17 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
         // two (`CmdSum` wants a list first). Anything else is the
         // statistics group's command, so it must fall through.
         "Sum" => {
-            return p.list_command(|p, args, _| {
-                let texty = |p: &Parser<'_>, i: u32| {
-                    p.is_text(i) || p.list_element_type(i) == Some(Elem::Text)
-                };
-                if args.is_empty() || !args.iter().all(|&a| texty(p, a)) {
+            return p.typed_list_command(|p, args| {
+                if !args
+                    .iter()
+                    .all(|&(_, ty, _)| matches!(ty, Some(Ty::Text | Ty::List(Elem::Text))))
+                    || args.len() == 2
+                    || matches!(args, [(_, Some(Ty::Text), _)])
+                {
                     return Ok(None);
                 }
-                if args.len() == 2 || (args.len() == 1 && p.is_text(args[0])) {
-                    return Ok(None);
-                }
-                Ok(Some(call_node(p, TextOp::Sum, args)))
+                let roots: Vec<_> = args.iter().map(|&(root, _, _)| root).collect();
+                Ok(Some(call_node(p, TextOp::Sum, &roots)))
             });
         }
         "First" => TextOp::First,
