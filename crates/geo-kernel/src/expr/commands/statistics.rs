@@ -75,16 +75,27 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
             return Ok(Some(node));
         }
     }
-    p.list_command(|p, args, lists| {
-        if let (&[l, f], &[true, true]) = (args, lists) {
+    p.typed_list_command(|p, arguments| {
+        let args: Vec<_> = arguments.iter().map(|&(root, _)| root).collect();
+        let lists: Vec<_> = arguments
+            .iter()
+            .map(|&(_, ty)| matches!(ty, Some(Ty::List(_))))
+            .collect();
+        if let (&[l, f], &[true, true]) = (&args[..], &lists[..]) {
             return Ok(Some(Node::ListOp(op, l, f)));
         }
         if op != ListOp::Sum {
-            if args.len() >= 2 && args.iter().all(|&a| p.is_number(a)) {
-                let list = p.wrap_list(args);
+            // wrapInList requires GeoClass.NUMERIC. Only dimension one
+            // represents an angle object (MyDouble.isAngle).
+            if args.len() >= 2
+                && arguments
+                    .iter()
+                    .all(|&(_, ty)| matches!(ty, Some(Ty::Num(dimension)) if dimension != 1))
+            {
+                let list = p.wrap_list(&args);
                 return Ok(Some(Node::ListOp(op, list, NONE)));
             }
-            return list_form(text, op, false, args, lists);
+            return list_form(text, op, false, &args, &lists);
         }
         // `Sum(a, b, ...)` of anything but a list folds the arguments,
         // which GeoGebra wraps in a list of the class of the first
@@ -93,12 +104,14 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         // same. Of two arguments the fold never runs: `CmdSum` wants a
         // list first (`argErr`).
         if args.len() >= 3 && !lists[0] {
+            if arguments.iter().any(|&(_, ty)| ty == Some(Ty::Num(1))) {
+                return Ok(None);
+            }
             // The variadic coordinate form wraps only point arguments.
             // Vectors are accepted when supplied as elements of a list.
-            if args
-                .iter()
-                .any(|&a| p.coordinate_kind(a) == Some(crate::Kind::Vector))
-            {
+            if arguments.iter().any(|&(a, ty)| {
+                ty == Some(Ty::Vec) && p.coordinate_kind(a) == Some(crate::Kind::Vector)
+            }) {
                 return Err("Sum needs vectors to be in a list".into());
             }
             let functions: Option<Vec<_>> = args.iter().map(|&a| p.applied_function(a)).collect();
@@ -113,10 +126,10 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
                 }
                 return Ok(Some(Node::Bin(Bin::Add, acc, *last)));
             }
-            let list = p.wrap_list(args);
+            let list = p.wrap_list(&args);
             return Ok(Some(Node::ListOp(op, list, NONE)));
         }
-        list_form(text, op, true, args, lists)
+        list_form(text, op, true, &args, &lists)
     })
 }
 

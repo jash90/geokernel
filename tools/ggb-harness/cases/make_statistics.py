@@ -37,4 +37,30 @@ cases.case("edit", ["a = 2", "b = 3", "l = {5, a, 1, a}", "f = {1, b, 0, 2}"]
            [setn("a", 7), setn("b", 0), setn("b", -1), setn("a", 2), setn("b", 3)])
 cases.case("rejected", [], [{"action": "reject", "line": f"r = {name}({arguments})"}
                            for name in commands for arguments in ("1", "{1, 2}, 1")])
+angle_inputs = ["a = 30°", "b = 60°", "s = Segment((0, 0), (3, 0))", "r = 42"]
+cases.case("variadictypes", angle_inputs, [
+    {"action": "reject", "line": f"r = {name}({arguments})"}
+    for name, arguments in [
+        ("Median", "a, b"),
+        ("Variance", "1, a, 2"),
+        ("SD", "30°, 60°"),
+        ("SampleVariance", "a + b, 2"),
+        ("SampleSD", "a, 2"),
+        ("MAD", "a, b"),
+        ("Q1", "a, 2"),
+        ("Q3", "1, a"),
+        ("mean", "a, b"),
+        ("Sum", "a, b, a"),
+        ("Median", "s, 1"),
+    ]
+])
+cases.case("variadictypes", angle_inputs[:-1] + [
+    "m = Median({a, b})",
+    "n = Mean({1, a, b})",
+    "p = Sum({1, a, b})",
+    "q = Median(a / b, 1, 2)",
+    "u = Median(a * b, 1, 2)",
+    "v = Mean(s + 1, s + 2)",
+    "w = Sum(s + 1, s + 2, s + 3)",
+], [])
 cases.write()

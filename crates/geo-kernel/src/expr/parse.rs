@@ -1448,7 +1448,7 @@ impl Parser<'_> {
         &mut self,
         form: impl FnOnce(&mut Self, &[u32], &[bool]) -> Result<Option<Node>, String>,
     ) -> Result<Option<u32>, String> {
-        self.command_arguments(false, form)
+        self.list_command_arguments(false, form)
     }
 
     /// Like a list command, but a bare function name in the first slot
@@ -1457,22 +1457,64 @@ impl Parser<'_> {
         &mut self,
         form: impl FnOnce(&mut Self, &[u32], &[bool]) -> Result<Option<Node>, String>,
     ) -> Result<Option<u32>, String> {
-        self.command_arguments(true, form)
+        self.list_command_arguments(true, form)
     }
 
-    fn command_arguments(
+    fn list_command_arguments(
         &mut self,
         takes_function: bool,
         form: impl FnOnce(&mut Self, &[u32], &[bool]) -> Result<Option<Node>, String>,
     ) -> Result<Option<u32>, String> {
+        self.command_arguments(
+            |p| p.parse_arguments(takes_function),
+            |p, args| {
+                let lists: Vec<bool> = args.iter().map(|&a| p.is_list(a)).collect();
+                form(p, args, &lists)
+            },
+        )
+    }
+
+    /// Variadic list commands classify each argument within its own arena
+    /// span to keep type probing independent of its siblings.
+    pub(super) fn typed_list_command(
+        &mut self,
+        form: impl FnOnce(&mut Self, &[(u32, Option<Ty>)]) -> Result<Option<Node>, String>,
+    ) -> Result<Option<u32>, String> {
+        let mut nodes = Vec::new();
+        self.command_arguments(
+            |p| {
+                p.parse_arguments_as(false, |p, start, root| {
+                    // An argument only refers to nodes created while reading
+                    // it. Rebase the probe so check keeps its own body root
+                    // and budget for nested rewrites.
+                    nodes.clear();
+                    nodes.extend_from_slice(&p.nodes[start as usize..]);
+                    for node in &mut nodes {
+                        super::map_children(node, |child| child - start);
+                    }
+                    let local_root = root - start;
+                    let ty = check(p.c, &nodes, local_root)
+                        .ok()
+                        .map(|(tys, ..)| tys[local_root as usize]);
+                    (root, ty)
+                })
+            },
+            form,
+        )
+    }
+
+    fn command_arguments<A>(
+        &mut self,
+        read: impl FnOnce(&mut Self) -> Result<Vec<A>, String>,
+        form: impl FnOnce(&mut Self, &[A]) -> Result<Option<Node>, String>,
+    ) -> Result<Option<u32>, String> {
         let saved = self.saved();
         // On an error the script parser reports what is wrong.
-        let args = self.parse_arguments(takes_function).unwrap_or_default();
-        let lists: Vec<bool> = args.iter().map(|&a| self.is_list(a)).collect();
+        let args = read(self).unwrap_or_default();
         let node = if args.is_empty() {
             None
         } else {
-            form(self, &args, &lists)?
+            form(self, &args)?
         };
         match node {
             Some(node) => Ok(Some(self.push(node))),
@@ -1586,10 +1628,23 @@ impl Parser<'_> {
     }
 
     pub(super) fn parse_arguments(&mut self, takes_function: bool) -> Result<Vec<u32>, String> {
+        self.parse_arguments_as(takes_function, |_, _, root| root)
+    }
+
+    fn parse_arguments_as<A>(
+        &mut self,
+        takes_function: bool,
+        mut classify: impl FnMut(&Self, u32, u32) -> A,
+    ) -> Result<Vec<A>, String> {
         self.expect(&Tok::LParen, "(")?;
-        let mut args = vec![self.argument(takes_function)?];
+        let mut read = |p: &mut Self| {
+            let start = p.nodes.len() as u32;
+            let root = p.argument(takes_function)?;
+            Ok::<_, String>(classify(p, start, root))
+        };
+        let mut args = vec![read(self)?];
         while self.eat(&Tok::Comma) {
-            args.push(self.argument(takes_function)?);
+            args.push(read(self)?);
         }
         self.expect(&Tok::RParen, ")")?;
         Ok(args)
