@@ -42,7 +42,7 @@ const CONSTRAINT_VERTEX_WORK: usize = hit::SHAPE_HIT_WORK;
 /// Label probes allowed for the outputs of one Roots or Extremum click.
 const ANALYSIS_LABEL_WORK: usize = 4096;
 
-/// Each candidate checks the two labels created by the polygon Area tool.
+/// Candidate labels allowed for each of the two polygon Area outputs.
 const AREA_LABEL_CANDIDATES: usize = 2048;
 
 fn polygon_area_labels(polygon: &str, taken: impl Fn(&str) -> bool) -> Option<(String, String)> {

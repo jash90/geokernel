@@ -158,6 +158,15 @@ impl<'a> Palette<'a> {
         self.file_styles?.get(self.c.label(id)).map(AsRef::as_ref)
     }
 
+    /// Text fill from a local edit or an imported style. Zero alpha clears it.
+    pub fn text_background(&self, id: Id) -> Option<[u8; 4]> {
+        self.c
+            .appearance(id)
+            .text_background
+            .or_else(|| self.imported_style(id).and_then(|style| style.background))
+            .filter(|rgba| rgba[3] != 0)
+    }
+
     /// The edited or saved colour, with the usual palette as a fallback.
     pub fn color(&self, id: Id) -> Rgba {
         let base = self.static_color(id);

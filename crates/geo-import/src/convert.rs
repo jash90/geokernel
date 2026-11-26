@@ -382,20 +382,6 @@ pub(crate) fn convert_with_assets(
                 .expect("the control kind was just checked");
             c.out.script.push(property.to_string());
         }
-        if c.kernel.kind(id) == Kind::Text {
-            if let Some(background) = saved_style.background {
-                let mut style = c.kernel.appearance(id).clone();
-                style.text_background = Some(background);
-                let property = Property::Appearance {
-                    label: el.label.clone(),
-                    style: Box::new(style),
-                };
-                property
-                    .apply(&mut c.kernel)
-                    .expect("changing a color does not change its channels");
-                c.out.script.push(property.to_string());
-            }
-        }
         c.out.object_styles.insert(el.label.clone(), saved_style);
         if let Some([x, y]) = el.label_offset.filter(|&position| {
             position != [0, 0] && !matches!(c.kernel.def(id), Def::Boolean(_) | Def::InputBox(_))

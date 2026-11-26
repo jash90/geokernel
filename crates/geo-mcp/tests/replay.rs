@@ -351,6 +351,7 @@ impl Window {
         let mut state = self.state();
         let wb = &self.server.session.headless().app.wb;
         let c = wb.construction();
+        let palette = wb.palette();
         for object in state["objects"].as_array_mut().unwrap() {
             let Some(id) = object["name"].as_str().and_then(|name| c.id(name)) else {
                 continue;
@@ -360,11 +361,7 @@ impl Window {
                 object["auxiliary"] = json!(wb.auxiliary_object(id));
             }
             if c.kind(id) == Kind::Text {
-                let background = c
-                    .appearance(id)
-                    .text_background
-                    .filter(|rgba| rgba[3] != 0)
-                    .map(|[r, g, b, _]| [r, g, b]);
+                let background = palette.text_background(id).map(|[r, g, b, _]| [r, g, b]);
                 object["background"] = json!(background);
                 if let Some((caption, value)) = c.text(id).and_then(|text| text.rsplit_once(" = "))
                 {
