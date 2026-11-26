@@ -1494,11 +1494,13 @@ impl Parser<'_> {
                         super::map_children(node, |child| child - start);
                     }
                     let local_root = root - start;
-                    let Ok((tys, ..)) = check(p.c, &nodes, local_root) else {
+                    let Ok((tys, depth, ..)) = check(p.c, &nodes, local_root) else {
                         return (root, None, false);
                     };
                     let ty = tys[local_root as usize];
+                    // The final type check rejects deep trees; don't recurse before it does.
                     let vector = ty == Ty::Vec
+                        && depth[local_root as usize] <= MAX_DEPTH
                         && super::types::vec_kind(p.c, &nodes, &tys, local_root) == Kind::Vector;
                     (root, Some(ty), vector)
                 })
