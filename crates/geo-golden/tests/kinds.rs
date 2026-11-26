@@ -1558,7 +1558,7 @@ fn formula_is_latex_text_on_the_canvas_and_in_files() {
         .unwrap();
     assert_eq!(
         CELLS.map(|col| row[col].as_str()),
-        ["yes", "yes", "yes", "yes", "no", "yes", "yes", "partial"]
+        ["yes", "yes", "yes", "yes", "no", "yes", "yes", "yes"]
     );
     let draw = code_only(&read("crates/geo-app/src/draw.rs"));
     assert!(draw.contains("Value::Text"));
@@ -1587,6 +1587,11 @@ fn formula_is_latex_text_on_the_canvas_and_in_files() {
     assert!(style.latex);
     let source = c.text(id).unwrap().to_owned();
     let bytes = wb.export_ggb(wb.file_view()).unwrap();
+    assert_eq!(
+        wb.export_ggb_without_definition(wb.file_view(), "formula")
+            .unwrap(),
+        bytes
+    );
     wb.load_for_export(&bytes, "formula").unwrap();
     let c = wb.construction();
     let id = c.id("formula").unwrap();
