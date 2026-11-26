@@ -480,6 +480,10 @@ pub(crate) enum ListOp {
     Median,
     Q1,
     Q3,
+    Mode,
+    GeometricMean,
+    HarmonicMean,
+    RootMeanSquare,
 
     // algebra (`commands/algebra.rs`)
     /// `Min(list)` and `Max(list)` (`AlgoListMinMax`).

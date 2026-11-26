@@ -809,6 +809,43 @@
           }
         }
       ]
+    },
+    {
+      "id": "statistics-nextreject-002",
+      "group": "statistics",
+      "script": [
+        "a = Slider(-2, 2)",
+        "Q = (a, a^2 / 2)",
+        "L = Locus(Q, a)",
+        "r = 42"
+      ],
+      "observe": [
+        "r"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "r = Mode(L, 1)" },
+        { "action": "reject", "line": "r = GeometricMean(L, 1)" },
+        { "action": "reject", "line": "r = HarmonicMean(L, 1)" },
+        { "action": "reject", "line": "r = RootMeanSquare(L, 1)" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 42.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 42.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 42.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 42.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 42.0 }
+        }
+      ]
     }
   ]
 }

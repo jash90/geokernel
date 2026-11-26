@@ -5,15 +5,21 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoQ1.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoQ3.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdOneListFunction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoMode.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoGeometricMean.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoHarmonicMean.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoRootMeanSquare.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 //! Sums and descriptive statistics.
 
 use crate::expr::eval::{number_of, slot_val, Ctx, Lists, Val};
-use crate::expr::parse::{list_form, Parser};
+use crate::expr::math;
+use crate::expr::parse::{list_arity, list_form, Parser};
 use crate::expr::types::of_numbers;
-use crate::expr::{Bin, Elem, ListOp, Node, Ty, NONE};
+use crate::expr::{Bin, Elem, ListOp, Node, Slot, Ty, NONE};
+use crate::{Kind, Value};
 
 /// The commands of this group (see `commands::is_command`).
 pub(super) const NAMES: &[&str] = &[
@@ -33,10 +39,14 @@ pub(super) const NAMES: &[&str] = &[
     "Quartile1",
     "Q3",
     "Quartile3",
+    "Mode",
+    "GeometricMean",
+    "HarmonicMean",
+    "RootMeanSquare",
 ];
 
-/// These statistics accept a second list of frequencies or separate numbers.
-pub(super) fn is_descriptive(op: ListOp) -> bool {
+/// These statistics also accept a second list of frequencies.
+pub(super) fn takes_frequencies(op: ListOp) -> bool {
     matches!(
         op,
         ListOp::Mean
@@ -64,6 +74,10 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         "Median" => ListOp::Median,
         "Q1" | "Quartile1" => ListOp::Q1,
         "Q3" | "Quartile3" => ListOp::Q3,
+        "Mode" => ListOp::Mode,
+        "GeometricMean" => ListOp::GeometricMean,
+        "HarmonicMean" => ListOp::HarmonicMean,
+        "RootMeanSquare" => ListOp::RootMeanSquare,
         _ => return Ok(None),
     };
     // `Sum(expression, variable, from, to)`: the four-argument fold of
@@ -76,21 +90,29 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         }
     }
     p.typed_list_command(|p, arguments| {
+        let weighted = takes_frequencies(op);
         let args: Vec<_> = arguments.iter().map(|&(root, _, _)| root).collect();
         let lists: Vec<_> = arguments
             .iter()
             .map(|&(_, ty, _)| matches!(ty, Some(Ty::List(_))))
             .collect();
         if let (&[l, f], &[true, true]) = (&args[..], &lists[..]) {
-            return Ok(Some(Node::ListOp(op, l, f)));
+            return if op == ListOp::Sum || weighted {
+                Ok(Some(Node::ListOp(op, l, f)))
+            } else {
+                Err(list_arity(text, args.len()))
+            };
         }
         if op != ListOp::Sum {
             // wrapInList requires GeoClass.NUMERIC. Only dimension one
-            // represents an angle object (MyDouble.isAngle).
+            // represents an angle object (MyDouble.isAngle). A named
+            // locus also has a numeric expression type for legacy use.
             if args.len() >= 2
-                && arguments
-                    .iter()
-                    .all(|&(_, ty, _)| matches!(ty, Some(Ty::Num(dimension)) if dimension != 1))
+                && arguments.iter().all(|&(root, ty, _)| {
+                    matches!(ty, Some(Ty::Num(dimension)) if dimension != 1)
+                        && (weighted
+                            || !matches!(p.node(root), Node::Obj(id) if p.kind(id) != Kind::Number))
+                })
             {
                 let list = p.wrap_list(&args);
                 return Ok(Some(Node::ListOp(op, list, NONE)));
@@ -146,7 +168,9 @@ pub(super) fn list_type(
         ListOp::Sum if elem == Elem::Vec => Ty::Vec,
         ListOp::Sum => of_numbers(numbers)?,
         ListOp::Mean if n == NONE => of_numbers(numbers)?,
-        op if is_descriptive(op) => Ty::Num(0),
+        ListOp::Mode => Ty::List(Elem::Num),
+        ListOp::GeometricMean | ListOp::HarmonicMean | ListOp::RootMeanSquare => Ty::Num(0),
+        op if takes_frequencies(op) => Ty::Num(0),
         _ => return Ok(None),
     }))
 }
@@ -166,12 +190,89 @@ pub(super) fn list_value<const M: bool>(
         ListOp::Median | ListOp::Q1 | ListOp::Q3 => {
             Val::N(ctx.rank_statistic(op, l, n).unwrap_or(f64::NAN))
         }
-        op if is_descriptive(op) => Val::N(ctx.moments(op, l, n).unwrap_or(f64::NAN)),
+        ListOp::Mode => Val::N(f64::NAN),
+        ListOp::GeometricMean | ListOp::HarmonicMean | ListOp::RootMeanSquare => {
+            Val::N(ctx.simple_mean(op, l).unwrap_or(f64::NAN))
+        }
+        op if takes_frequencies(op) => Val::N(ctx.moments(op, l, n).unwrap_or(f64::NAN)),
         _ => return None,
     })
 }
 
+/// These list algorithms also accept the length of a segment as a number.
+fn sample_number(slot: Slot) -> Option<f64> {
+    match (slot.kind, slot.value) {
+        (Kind::Segment, Value::Segment { x1, y1, x2, y2 }) => {
+            let length = (x2 - x1).hypot(y2 - y1);
+            Some(if math::is_zero(length) { 0.0 } else { length })
+        }
+        (Kind::Segment, _) => Some(f64::NAN),
+        _ => number_of(slot),
+    }
+}
+
 impl<const M: bool> Ctx<'_, M> {
+    pub(super) fn mode(&self, l: u32) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        let (start, len) = self.list(l)?;
+        if len == 0 || !lists.charge(u64::from(len) * u64::from(3 + len.ilog2())) {
+            return None;
+        }
+        let mut values = Vec::with_capacity(len as usize);
+        for k in 0..len {
+            let value = sample_number(lists.read(self.c, start + k))?;
+            // NaNs never compare equal in a run of repeated values.
+            if !value.is_nan() {
+                values.push(value);
+            }
+        }
+        values.sort_unstable_by(f64::total_cmp);
+        let runs = || values.chunk_by(|a, b| a == b);
+        let mut longest = 1;
+        let mut count = 0;
+        for run in runs().filter(|run| run.len() > 1) {
+            if run.len() > longest {
+                longest = run.len();
+                count = 0;
+            }
+            if run.len() == longest {
+                count += 1;
+            }
+        }
+        let result = lists.reserve(count)?;
+        if count > 0 {
+            for (k, run) in runs().filter(|run| run.len() == longest).enumerate() {
+                lists.set(result + k as u32, Slot::number(run[0]));
+            }
+        }
+        Some((result, count))
+    }
+
+    fn simple_mean(&self, op: ListOp, l: u32) -> Option<f64> {
+        let lists = self.lists?;
+        let (start, len) = self.list(l)?;
+        if len == 0 || !lists.charge(u64::from(len)) {
+            return None;
+        }
+        let mut sum = 0.0;
+        for k in 0..len {
+            let value = sample_number(lists.read(self.c, start + k))?;
+            sum += match op {
+                ListOp::GeometricMean => value.ln(),
+                ListOp::HarmonicMean => value.recip(),
+                ListOp::RootMeanSquare => value * value,
+                _ => unreachable!(),
+            };
+        }
+        let size = f64::from(len);
+        Some(match op {
+            ListOp::GeometricMean => (sum / size).exp(),
+            ListOp::HarmonicMean => size / sum,
+            ListOp::RootMeanSquare => (sum / size).sqrt(),
+            _ => unreachable!(),
+        })
+    }
+
     /// `AlgoStats1D` takes fractional weights and uses midpoints when
     /// there is one more class boundary than frequency.
     fn moments(&self, op: ListOp, l: u32, f: u32) -> Option<f64> {
@@ -606,7 +707,10 @@ mod tests {
             parse::parse(&c, &format!("{command}({args})")).unwrap();
             let slots = CHECKED_SLOTS.get() - before;
             let limit = 16 * count + 2;
-            assert!(slots <= limit, "{command}: {slots} type-check slots, limit {limit}");
+            assert!(
+                slots <= limit,
+                "{command}: {slots} type-check slots, limit {limit}"
+            );
         }
     }
 }

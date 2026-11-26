@@ -193,6 +193,10 @@ PARTIAL = {
     "Median": "Numeric list, weighted values or grouped interpolation, and separate numbers.",
     "Q1": "Lower quartile of a numeric list, values with frequencies, and separate numbers.",
     "Q3": "Upper quartile of a numeric list, values with frequencies, and separate numbers.",
+    "Mode": "Ascending modes of a numeric-compatible list or at least two separate numbers.",
+    "GeometricMean": "Geometric mean of a numeric-compatible list or at least two separate numbers.",
+    "HarmonicMean": "Harmonic mean of a numeric-compatible list or at least two separate numbers.",
+    "RootMeanSquare": "Root mean square of a numeric-compatible list or at least two separate numbers.",
     "Sequence": "Sequence(end); Sequence(start, end); Sequence(start, end, step); "
                 "Sequence(expression, variable, start, end); Sequence(expression, variable, start, end, step)",
     "Reverse": "Reverse(list); Reverse(number, number, ...); Reverse(point, point, ...)",

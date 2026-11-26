@@ -5424,3 +5424,43 @@ cases = ["statistics-frequency-001"]
 command = "Q3"
 form = "number,number,..."
 cases = ["statistics-variadic-001"]
+
+[[form]]
+command = "Mode"
+form = "list"
+cases = ["statistics-nextlists-001", "statistics-nextedges-001", "statistics-nextkinds-001", "statistics-nextedit-001", "statistics-nextpoints-001"]
+
+[[form]]
+command = "Mode"
+form = "number,number,..."
+cases = ["statistics-nextvariadic-001"]
+
+[[form]]
+command = "GeometricMean"
+form = "list"
+cases = ["statistics-nextlists-001", "statistics-nextedges-001", "statistics-nextkinds-001", "statistics-nextedit-001", "statistics-nextpoints-001"]
+
+[[form]]
+command = "GeometricMean"
+form = "number,number,..."
+cases = ["statistics-nextvariadic-001"]
+
+[[form]]
+command = "HarmonicMean"
+form = "list"
+cases = ["statistics-nextlists-001", "statistics-nextedges-001", "statistics-nextkinds-001", "statistics-nextedit-001", "statistics-nextpoints-001"]
+
+[[form]]
+command = "HarmonicMean"
+form = "number,number,..."
+cases = ["statistics-nextvariadic-001"]
+
+[[form]]
+command = "RootMeanSquare"
+form = "list"
+cases = ["statistics-nextlists-001", "statistics-nextedges-001", "statistics-nextkinds-001", "statistics-nextedit-001", "statistics-nextpoints-001"]
+
+[[form]]
+command = "RootMeanSquare"
+form = "number,number,..."
+cases = ["statistics-nextvariadic-001"]
