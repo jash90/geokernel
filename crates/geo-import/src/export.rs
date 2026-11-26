@@ -140,6 +140,12 @@ pub struct ObjectStyle {
     pub slider: Option<Box<SliderLayout>>,
     /// `<animation>` of an object that is not a slider.
     pub animation: Option<Box<SliderAnimation>>,
+    /// The angle style after loading the saved tags.
+    pub saved_angle_style: Option<geo_kernel::kernel::angle::AngleStyle>,
+    /// A decoded icon referenced by the file's button or text field.
+    pub widget_icon: Option<(Kind, std::sync::Arc<RasterAsset>)>,
+    /// Additional file properties without live fields.
+    pub preserved: Option<Box<crate::properties::Properties>>,
 }
 
 /// `<lineStyle type= thickness= typeHidden= opacity= drawArrow=>`.
@@ -453,11 +459,16 @@ impl Writer<'_> {
     fn settings(&mut self) -> Result<(), ExportError> {
         let sheet = self.presentation.spreadsheet_view.as_ref();
         let sheet_visible = sheet.and_then(|sheet| sheet.visible);
-        if self.presentation.cas_visible.is_some() || sheet_visible.is_some() {
+        let font = self.presentation.settings.gui_font_size;
+        let perspectives = self.presentation.cas_visible.is_some() || sheet_visible.is_some();
+        if font.is_some() || perspectives {
+            self.xml.buffer.push_str("<gui>\n");
+        }
+        if perspectives {
             let cas_visible = self.presentation.cas_visible.unwrap_or(false);
             let sheet_visible = sheet_visible.unwrap_or(false);
             self.xml.buffer.push_str(
-                "<gui><perspectives><perspective id=\"tmp\"><panes>\n\
+                "<perspectives><perspective id=\"tmp\"><panes>\n\
                  <pane location=\"\" divider=\"0.32\" orientation=\"1\"/>\n\
                  </panes><views>\n",
             );
@@ -485,7 +496,13 @@ impl Writer<'_> {
             }
             self.xml
                 .buffer
-                .push_str("</views></perspective></perspectives></gui>\n");
+                .push_str("</views></perspective></perspectives>\n");
+        }
+        if let Some(size) = font {
+            self.xml.tag("font", &[("size", &size.to_string())])?;
+        }
+        if font.is_some() || perspectives {
+            self.xml.buffer.push_str("</gui>\n");
         }
         let View {
             size: [width, height],
@@ -606,6 +623,7 @@ impl Writer<'_> {
 
         match def {
             Def::Image(_) | Def::Boolean(_) | Def::Button | Def::Angle(_) => return Ok(()),
+            Def::AngleObject(_) if def.is_free() => return Ok(()),
             // `AlgoLocusStroke` saves an empty command; the element holds the
             // points
             Def::PenStroke => return self.expression(id, "PenStroke[]"),
@@ -858,6 +876,12 @@ impl Xml {
         self.attributes(name, attrs)?;
         self.buffer.push_str(">\n");
         Ok(())
+    }
+
+    fn close(&mut self, name: &str) {
+        self.buffer.push_str("</");
+        self.buffer.push_str(name);
+        self.buffer.push_str(">\n");
     }
 
     fn tag(&mut self, name: &str, attrs: &[(&str, &str)]) -> Result<(), ExportError> {

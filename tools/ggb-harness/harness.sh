@@ -213,7 +213,12 @@ case "$cmd" in
     done
     ;;
   saved)
-    java "${java_opts[@]}" -cp "$build/classes:$(classpath)" \
+    probe="$(mktemp -d)"
+    trap 'rm -rf "$probe"' EXIT
+    cp="$build/classes:$(classpath)"
+    src="$here/src/main/java/geokernel/harness"
+    javac --release 17 -cp "$cp" -d "$probe" "$src/SavedExporter.java" "$src/SavedImages.java"
+    java "${java_opts[@]}" -cp "$probe:$cp" \
       geokernel.harness.SavedExporter "$here/saved/saved.json" "$repo/golden/ggb/saved" "$@"
     ;;
   tool-pointer)

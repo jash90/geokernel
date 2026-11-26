@@ -122,6 +122,9 @@ impl Sides {
     }
 }
 
+pub(crate) type ImportedStyles =
+    std::collections::HashMap<std::sync::Arc<str>, std::sync::Arc<geo_import::export::ObjectStyle>>;
+
 /// The colours of the objects of a construction (`Workbench::palette`):
 /// constant time per object from cached [`Sides`], which are used only
 /// when made for the document state the palette is for. A stale cache is
@@ -131,7 +134,7 @@ impl Sides {
 pub struct Palette<'a> {
     c: &'a Construction,
     sides: Option<&'a Sides>,
-    file_styles: Option<&'a std::collections::HashMap<String, geo_import::export::ObjectStyle>>,
+    file_styles: Option<&'a ImportedStyles>,
 }
 
 impl<'a> Palette<'a> {
@@ -145,10 +148,7 @@ impl<'a> Palette<'a> {
         }
     }
 
-    pub(crate) fn with_file_styles(
-        mut self,
-        styles: &'a std::collections::HashMap<String, geo_import::export::ObjectStyle>,
-    ) -> Self {
+    pub(crate) fn with_file_styles(mut self, styles: &'a ImportedStyles) -> Self {
         self.file_styles = (!styles.is_empty()).then_some(styles);
         self
     }

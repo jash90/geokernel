@@ -41,6 +41,7 @@
 pub mod archive;
 pub mod convert;
 pub mod export;
+mod properties;
 pub mod xml;
 
 use std::fmt;
@@ -135,10 +136,12 @@ pub struct Skipped {
     pub reason: String,
 }
 
-/// The `<kernel>` settings of the file. None of them changes a value the
+/// The GUI and kernel settings of the file. None of them changes a value the
 /// kernel computes; they are reported so that a consumer can use them.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Settings {
+    /// Base GUI font size used by older elements with additive sizes.
+    pub gui_font_size: Option<i32>,
     /// Decimal places for display (`<decimals>`).
     pub decimals: Option<u32>,
     /// Significant figures for display (`<significantfigures>`).

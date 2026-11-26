@@ -1,0 +1,14 @@
+{
+  "schema": 2,
+  "id": "saved-element-properties-001",
+  "script": [
+    "a = 3.5",
+    "field = InputBox(a)",
+    "b = Button(\"Apply\")"
+  ],
+  "objects": {
+    "a": { "type": "number", "defined": true, "value": 3.5 },
+    "field": { "type": "TextField", "defined": true },
+    "b": { "type": "Button", "defined": true }
+  }
+}

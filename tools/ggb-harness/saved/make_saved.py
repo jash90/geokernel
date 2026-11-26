@@ -752,6 +752,111 @@ case("property-equation", ["A = (2, 1)", "B = (4, 1)",
                            "k = Circle(A, B)", "v = Vector(A, B)"],
      [{"action": "conic_style", "label": "k", "form": "PARAMETRIC"},
       st("A", label_offset=[60, 45]), st("v", head_style=0)])
+case("element-properties", [
+    "a = 3.5", "field = InputBox(a)", 'b = Button("Apply")',
+], [
+    {"action": "style", "label": "field", "font": [True, 1.5, 1],
+     "symbolic": True, "content_serif": False, "text_align": "RIGHT",
+     "temp_input": ["3 +", "3+"], "input_length": 14, "decimals": 3},
+    {"action": "style", "label": "b", "font": [False, 1.25, 2],
+     "button_position": [24, 45], "button_size": [120, 42]},
+])
+case("element-properties", ['L = {1.25, 2.5, 3.75}', 'M = {}'], [
+    {"action": "style", "label": "L", "dropdown": 2, "font": [True, 1.25, 2],
+     "decimals": 4},
+    {"action": "style", "label": "M", "list_type": "point"},
+])
+case("element-properties", [
+    "A = (1, 2)", "B = (4, 2)", "C = (3, 5)", "v = (2, 1)", "s = Segment(A, B)",
+    "p = Polygon(A, B, C)", "n = Slope(Line(A, C))",
+], [
+    {"action": "style", "label": "A", "point_polar": True, "vertical_increment": "0.25"},
+    {"action": "style", "label": "v", "vector_polar": True, "vector_start": "A"},
+    {"action": "style", "label": "s", "outlying_intersections": True, "keep_type": True},
+    {"action": "style", "label": "p", "mask": True},
+    {"action": "style", "label": "n", "slope_triangle_size": 4},
+])
+case("element-properties", ["f(x) = x > 2", 't = Text("x^2", (2, 3), true, true)'], [
+    {"action": "style", "label": "f", "show_on_axis": True,
+     "simplify_coefficients": False, "table_column": 3, "line": [15, 5]},
+    {"action": "style", "label": "t", "symbolic": True, "font": [True, 1.5, 2]},
+])
+case("element-properties", ["pie = PieChart({1, 2, 3})"], [
+    {"action": "style", "label": "pie", "slice_color": [50, 70, 90]},
+])
+
+case("element-properties-extra", [
+    "h(x, y) = x + y", "n = 2", "s = PenStroke((0, 0), (1, 2))",
+], [
+    {"action": "style", "label": "h", "surface_quality": True},
+    {"action": "style", "label": "n", "spreadsheet_trace": True},
+    {"action": "style", "label": "s", "split_parent": "originalStroke"},
+])
+case("element-raster-properties", image_points, [
+    {"action": "style", "label": "anchoredImage", "interpolate": False},
+], archive=True, images=[anchor_image])
+
+case("property-review", ["L = {45°, 90°}", "chart = BarChart({2,3,4}, {2,3,4})",
+                         "pie = PieChart({1, 2, 3})"], [
+    {"action": "style", "label": "L", "angle_style": 2, "emphasize_right_angle": False},
+    {"action": "style", "label": "chart", "bar_color": [255, 0, 0]},
+    {"action": "style", "label": "pie", "bar_fill_type": "HATCH"},
+])
+case("property-review", ["A = (1, 2)", "v = (2, 1)"], [
+    {"action": "style", "label": "v", "vector_start": "A"},
+    {"action": "delete_and_run", "label": "A", "input": "A = (30, 40)"},
+])
+case("property-review", ["a = 3.5", "field = InputBox(a)", 'b = Button("Apply")'], [
+    {"action": "widget_icon", "label": "field", "file": "tile.png"},
+    {"action": "widget_icon", "label": "b", "file": "tile.png"},
+], archive=True)
+
+def load_xml(elements):
+    return {"action": "load_xml", "xml":
+            '<geogebra format="5.0"><construction>' + elements + '</construction></geogebra>'}
+
+
+case("property-final", [], [load_xml(
+    '<element type="angle" label="w"><value val="7"/>'
+    '<allowReflexAngle val="false"/><angleStyle val="3"/></element>'
+)])
+case("property-final", ["A = (1, 2)", "B = (4, 2)", "C = (3, 5)", "v = (2, 1)",
+                        "s = Segment(A, B)", "p = Polygon(A, B, C)", "n = Slope(Line(A, C))"], [
+    {"action": "style", "label": "A", "point_polar": True, "vertical_increment": "0.25"},
+    {"action": "style", "label": "v", "vector_polar": True, "vector_start": "A"},
+    {"action": "style", "label": "s", "outlying_intersections": True, "keep_type": True},
+    {"action": "style", "label": "p", "mask": True},
+    {"action": "style", "label": "n", "slope_triangle_size": 4},
+    {"action": "delete_and_undo", "label": "A"},
+])
+case("property-final", ["chart = BarChart({2,3,4}, {2,3,4})"], [
+    {"action": "style", "label": "chart", "bar_color": [255, 0, 0], "bar_alpha": "0x1.0p-1"},
+])
+case("property-final", [], [load_xml(
+    '<element type="boolean" label="b"><value val="true"/>'
+    '<show object="true" label="true"/><labelOffset x="40" y="60"/>'
+    '<absoluteScreenLocation x="90" y="110"/></element>'
+    '<element type="numeric" label="n"><value val="2"/>'
+    '<slider min="0" max="5" x="45" y="65" width="120" fixed="false" '
+    'horizontal="true" showAlgebra="true" absoluteScreenLocation="true"/>'
+    '<show object="true" label="true"/><absoluteScreenLocation x="95" y="115"/></element>'
+)])
+
+
+case("property-final", [], [load_xml(
+    '<element type="point" label="P"><coords x="1" y="2" z="1"/>'
+    '<incrementY val=" 0.25 * 2 "/></element>'
+)])
+
+
+case("property-final", [], [load_xml(
+    '<element type="angle" label="r"><value val="7"/>'
+    '<allowReflexAngle val="false"/><angleStyle val="2"/></element>'
+    '<element type="angle" label="u"><angleStyle val="3"/><value val="7"/></element>'
+    '<element type="angle" label="w"><angleStyle val="3"/><value val="7"/>'
+    '<forceReflexAngle val="true"/><angleStyle val="3"/></element>'
+)])
+
 
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)

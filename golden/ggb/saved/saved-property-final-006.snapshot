@@ -1,0 +1,10 @@
+{
+  "schema": 2,
+  "id": "saved-property-final-006",
+  "script": [],
+  "objects": {
+    "r": { "type": "angle", "defined": true, "value": 5.5663706143591725 },
+    "u": { "type": "angle", "defined": true, "value": 7.0 },
+    "w": { "type": "angle", "defined": true, "value": 0.7168146928204138 }
+  }
+}

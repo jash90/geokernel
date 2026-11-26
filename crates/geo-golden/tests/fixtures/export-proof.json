@@ -1304,6 +1304,1623 @@
       "without": 0
     }
   },
+  "ElementTags": {
+    "absoluteScreenLocation": {
+      "export": [
+        {
+          "x": "41",
+          "y": "63"
+        }
+      ],
+      "fixture": "saved-images-001",
+      "label": "fixedImage",
+      "reload": [
+        {
+          "x": "41",
+          "y": "63"
+        }
+      ],
+      "source": [
+        {
+          "x": "41",
+          "y": "63"
+        }
+      ]
+    },
+    "algebra": {
+      "export": [
+        {
+          "labelVisible": "false"
+        }
+      ],
+      "fixture": "saved-styles-001",
+      "label": "P",
+      "reload": [
+        {
+          "labelVisible": "false"
+        }
+      ],
+      "source": [
+        {
+          "labelVisible": "false"
+        }
+      ]
+    },
+    "angleStyle": {
+      "export": [
+        {
+          "val": "3"
+        }
+      ],
+      "fixture": "saved-texts-001",
+      "label": "theta",
+      "reload": [
+        {
+          "val": "3"
+        }
+      ],
+      "source": [
+        {
+          "val": "3"
+        }
+      ]
+    },
+    "animation": {
+      "export": [
+        {
+          "playing": "false",
+          "step": "0.1",
+          "type": "1"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "A",
+      "reload": [
+        {
+          "playing": "false",
+          "step": "0.1",
+          "type": "1"
+        }
+      ],
+      "source": [
+        {
+          "playing": "false",
+          "step": "0.1",
+          "type": "1"
+        }
+      ]
+    },
+    "arcSize": {
+      "export": [
+        {
+          "val": "30"
+        }
+      ],
+      "fixture": "saved-texts-001",
+      "label": "theta",
+      "reload": [
+        {
+          "val": "30"
+        }
+      ],
+      "source": [
+        {
+          "val": "30"
+        }
+      ]
+    },
+    "auxiliary": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "empty",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "bgColor": {
+      "export": [
+        {
+          "alpha": "255",
+          "b": "255",
+          "g": "255",
+          "r": "255"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "empty",
+      "reload": [
+        {
+          "alpha": "255",
+          "b": "255",
+          "g": "255",
+          "r": "255"
+        }
+      ],
+      "source": [
+        {
+          "alpha": "255",
+          "b": "255",
+          "g": "255",
+          "r": "255"
+        }
+      ]
+    },
+    "breakpoint": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "caption": {
+      "export": [
+        {
+          "val": "Show"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "check",
+      "reload": [
+        {
+          "val": "Show"
+        }
+      ],
+      "source": [
+        {
+          "val": "Show"
+        }
+      ]
+    },
+    "centered": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-images-001",
+      "label": "animatedImage",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "checkbox": {
+      "export": [
+        {
+          "fixed": "true"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "check",
+      "reload": [
+        {
+          "fixed": "true"
+        }
+      ],
+      "source": [
+        {
+          "fixed": "true"
+        }
+      ]
+    },
+    "coefficients": {
+      "export": [
+        {
+          "data": "[[-1.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.5, 0.0, 0.0, 0.0]]",
+          "rep": "array"
+        }
+      ],
+      "fixture": "saved-implicit-001",
+      "label": "p",
+      "reload": [
+        {
+          "data": "[[-1.0,0.0,0.0,1.0],[0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0],[0.5,0.0,0.0,0.0]]",
+          "rep": "array"
+        }
+      ],
+      "source": [
+        {
+          "data": "[[-1.0,0.0,0.0,1.0],[0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0],[0.5,0.0,0.0,0.0]]",
+          "rep": "array"
+        }
+      ]
+    },
+    "comboBox": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-element-properties-002",
+      "label": "L",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "condition": {
+      "export": [
+        {
+          "showObject": "check"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "A",
+      "reload": [
+        {
+          "showObject": "check"
+        }
+      ],
+      "source": [
+        {
+          "showObject": "check"
+        }
+      ]
+    },
+    "contentSerif": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "empty",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "coordStyle": {
+      "export": [
+        {
+          "style": "cartesian"
+        }
+      ],
+      "fixture": "saved-paths-002",
+      "label": "u",
+      "reload": [
+        {
+          "style": "cartesian"
+        }
+      ],
+      "source": [
+        {
+          "style": "cartesian"
+        }
+      ]
+    },
+    "coords": {
+      "export": [
+        {
+          "x": "2",
+          "y": "1",
+          "z": "1"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "A",
+      "reload": [
+        {
+          "x": "2",
+          "y": "1",
+          "z": "1"
+        }
+      ],
+      "source": [
+        {
+          "x": "2",
+          "y": "1",
+          "z": "1"
+        }
+      ]
+    },
+    "cropBox": {
+      "export": [
+        {
+          "cropped": "true",
+          "height": "6",
+          "width": "8",
+          "x": "2",
+          "y": "1"
+        }
+      ],
+      "fixture": "saved-images-001",
+      "label": "anchoredImage",
+      "reload": [
+        {
+          "cropped": "true",
+          "height": "6",
+          "width": "8",
+          "x": "2",
+          "y": "1"
+        }
+      ],
+      "source": [
+        {
+          "cropped": "true",
+          "height": "6",
+          "width": "8",
+          "x": "2",
+          "y": "1"
+        }
+      ]
+    },
+    "curveParam": {
+      "export": [
+        {
+          "t": "1"
+        }
+      ],
+      "fixture": "saved-curve-branch-001",
+      "label": "P",
+      "reload": [
+        {
+          "t": "1"
+        }
+      ],
+      "source": [
+        {
+          "t": "1"
+        }
+      ]
+    },
+    "decimals": {
+      "export": [
+        {
+          "val": "4"
+        }
+      ],
+      "fixture": "saved-styles-006",
+      "label": "tally",
+      "reload": [
+        {
+          "val": "4"
+        }
+      ],
+      "source": [
+        {
+          "val": "4"
+        }
+      ]
+    },
+    "decoration": {
+      "export": [
+        {
+          "type": "2"
+        }
+      ],
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "reload": [
+        {
+          "type": "2"
+        }
+      ],
+      "source": [
+        {
+          "type": "2"
+        }
+      ]
+    },
+    "dimensions": {
+      "export": [
+        {
+          "height": "30",
+          "width": "40"
+        }
+      ],
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "reload": [
+        {
+          "height": "30",
+          "width": "40"
+        }
+      ],
+      "source": [
+        {
+          "height": "30",
+          "width": "40"
+        }
+      ]
+    },
+    "dynamicCaption": {
+      "export": [
+        {
+          "val": "note"
+        }
+      ],
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "reload": [
+        {
+          "val": "note"
+        }
+      ],
+      "source": [
+        {
+          "val": "note"
+        }
+      ]
+    },
+    "eigenvectors": {
+      "export": [
+        {
+          "x0": "1",
+          "x1": "0",
+          "y0": "0",
+          "y1": "1",
+          "z0": "1",
+          "z1": "1"
+        }
+      ],
+      "fixture": "saved-paths-002",
+      "label": "c",
+      "reload": [
+        {
+          "x0": "1",
+          "x1": "0",
+          "y0": "0",
+          "y1": "1",
+          "z0": "1",
+          "z1": "1"
+        }
+      ],
+      "source": [
+        {
+          "x0": "1",
+          "x1": "0",
+          "y0": "0",
+          "y1": "1",
+          "z0": "1",
+          "z1": "1"
+        }
+      ]
+    },
+    "emphasizeRightAngle": {
+      "export": [
+        {
+          "val": "false"
+        }
+      ],
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "reload": [
+        {
+          "val": "false"
+        }
+      ],
+      "source": [
+        {
+          "val": "false"
+        }
+      ]
+    },
+    "endStyle": {
+      "export": [
+        {
+          "val": "default"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "s",
+      "reload": [
+        {
+          "val": "default"
+        }
+      ],
+      "source": [
+        {
+          "val": "default"
+        }
+      ]
+    },
+    "eqnStyle": {
+      "export": [
+        {
+          "style": "implicit"
+        }
+      ],
+      "fixture": "saved-curve-intersections-001",
+      "label": "g",
+      "reload": [
+        {
+          "style": "implicit"
+        }
+      ],
+      "source": [
+        {
+          "style": "implicit"
+        }
+      ]
+    },
+    "file": {
+      "export": [
+        {
+          "name": "images/image1.png"
+        }
+      ],
+      "fixture": "saved-images-001",
+      "label": "anchoredImage",
+      "reload": [
+        {
+          "name": "images/image1.png"
+        }
+      ],
+      "sha256": "84b3f64061a1fd4737ca6bcfd8537d9be10590539ac530e96b5943acfc8166af",
+      "source": [
+        {
+          "name": "generated/tile.png"
+        }
+      ]
+    },
+    "fixed": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-paths-002",
+      "label": "f",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "fixedSize": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "font": {
+      "export": [
+        {
+          "serif": "true",
+          "sizeM": "1.4",
+          "style": "3"
+        }
+      ],
+      "fixture": "saved-texts-001",
+      "label": "formula",
+      "reload": [
+        {
+          "serif": "true",
+          "size": "5",
+          "sizeM": "1.4",
+          "style": "3"
+        }
+      ],
+      "source": [
+        {
+          "serif": "true",
+          "size": "5",
+          "sizeM": "1.4",
+          "style": "3"
+        }
+      ]
+    },
+    "ggbscript": {
+      "export": [
+        {
+          "val": "SetValue(a, 7)\nSetValue(a, 6)"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "run",
+      "reload": [
+        {
+          "val": "SetValue(a, 7)\nSetValue(a, 6)"
+        }
+      ],
+      "source": [
+        {
+          "val": "SetValue(a, 7)\nSetValue(a, 6)"
+        }
+      ]
+    },
+    "headStyle": {
+      "export": [
+        {
+          "val": "1"
+        }
+      ],
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "reload": [
+        {
+          "val": "1"
+        }
+      ],
+      "source": [
+        {
+          "val": "1"
+        }
+      ]
+    },
+    "inBackground": {
+      "export": [
+        {
+          "val": "false"
+        }
+      ],
+      "fixture": "saved-images-001",
+      "label": "anchoredImage",
+      "reload": [
+        {
+          "val": "false"
+        }
+      ],
+      "source": [
+        {
+          "val": "false"
+        }
+      ]
+    },
+    "incrementY": {
+      "export": [
+        {
+          "val": "0.25"
+        }
+      ],
+      "fixture": "saved-element-properties-003",
+      "label": "A",
+      "reload": [
+        {
+          "val": "0.25"
+        }
+      ],
+      "source": [
+        {
+          "val": "0.25"
+        }
+      ]
+    },
+    "interpolate": {
+      "export": [
+        {
+          "val": "false"
+        }
+      ],
+      "fixture": "saved-element-raster-properties-001",
+      "label": "anchoredImage",
+      "reload": [
+        {
+          "val": "false"
+        }
+      ],
+      "source": [
+        {
+          "val": "false"
+        }
+      ]
+    },
+    "isLaTeX": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-texts-001",
+      "label": "formula",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "isMask": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-element-properties-003",
+      "label": "p",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "javascript": {
+      "export": [
+        {
+          "onDragEnd": "ggbApplet.setValue(\"a\", 9);"
+        },
+        {
+          "onChange": "ggbApplet.setValue(\"a\", 10);"
+        }
+      ],
+      "fixture": "saved-object-scripts-001",
+      "label": "A",
+      "reload": [
+        {
+          "onDragEnd": "ggbApplet.setValue(\"a\", 9);"
+        },
+        {
+          "onChange": "ggbApplet.setValue(\"a\", 10);"
+        }
+      ],
+      "source": [
+        {
+          "onDragEnd": "ggbApplet.setValue(\"a\", 9);"
+        },
+        {
+          "onChange": "ggbApplet.setValue(\"a\", 10);"
+        }
+      ]
+    },
+    "keepTypeOnTransform": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "s",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "labelMode": {
+      "export": [
+        {
+          "val": "0"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "A",
+      "reload": [
+        {
+          "val": "0"
+        }
+      ],
+      "source": [
+        {
+          "val": "0"
+        }
+      ]
+    },
+    "labelOffset": {
+      "export": [
+        {
+          "x": "5",
+          "y": "5"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "check",
+      "reload": [
+        {
+          "x": "5",
+          "y": "5"
+        }
+      ],
+      "source": [
+        {
+          "x": "5",
+          "y": "5"
+        }
+      ]
+    },
+    "layer": {
+      "export": [
+        {
+          "val": "0"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "A",
+      "reload": [
+        {
+          "val": "0"
+        }
+      ],
+      "source": [
+        {
+          "val": "0"
+        }
+      ]
+    },
+    "length": {
+      "export": [
+        {
+          "val": "12"
+        }
+      ],
+      "fixture": "saved-input-box-001",
+      "label": "field",
+      "reload": [
+        {
+          "val": "12"
+        }
+      ],
+      "source": [
+        {
+          "val": "12"
+        }
+      ]
+    },
+    "levelOfDetailQuality": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-element-properties-extra-001",
+      "label": "h",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "lineStyle": {
+      "export": [
+        {
+          "opacity": "100",
+          "thickness": "10",
+          "type": "0",
+          "typeHidden": "1"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "a",
+      "reload": [
+        {
+          "opacity": "100",
+          "thickness": "10",
+          "type": "0",
+          "typeHidden": "1"
+        }
+      ],
+      "source": [
+        {
+          "opacity": "100",
+          "thickness": "10",
+          "type": "0",
+          "typeHidden": "1"
+        }
+      ]
+    },
+    "listType": {
+      "export": [
+        {
+          "val": "point"
+        }
+      ],
+      "fixture": "saved-element-properties-002",
+      "label": "M",
+      "reload": [
+        {
+          "val": "point"
+        }
+      ],
+      "source": [
+        {
+          "val": "point"
+        }
+      ]
+    },
+    "matrix": {
+      "export": [
+        {
+          "A0": "1",
+          "A1": "1",
+          "A2": "-7",
+          "A3": "0",
+          "A4": "1",
+          "A5": "-1"
+        }
+      ],
+      "fixture": "saved-paths-002",
+      "label": "c",
+      "reload": [
+        {
+          "A0": "1",
+          "A1": "1",
+          "A2": "-7",
+          "A3": "0",
+          "A4": "1",
+          "A5": "-1"
+        }
+      ],
+      "source": [
+        {
+          "A0": "1",
+          "A1": "1",
+          "A2": "-7",
+          "A3": "0",
+          "A4": "1",
+          "A5": "-1"
+        }
+      ]
+    },
+    "objColor": {
+      "export": [
+        {
+          "alpha": "0",
+          "b": "255",
+          "g": "77",
+          "r": "77"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "A",
+      "reload": [
+        {
+          "alpha": "0",
+          "b": "255",
+          "g": "77",
+          "r": "77"
+        }
+      ],
+      "source": [
+        {
+          "alpha": "0",
+          "b": "255",
+          "g": "77",
+          "r": "77"
+        }
+      ]
+    },
+    "ordering": {
+      "export": [
+        {
+          "val": "1.5"
+        }
+      ],
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "reload": [
+        {
+          "val": "1.5"
+        }
+      ],
+      "source": [
+        {
+          "val": "1.5"
+        }
+      ]
+    },
+    "outlyingIntersections": {
+      "export": [
+        {
+          "val": "false"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "s",
+      "reload": [
+        {
+          "val": "false"
+        }
+      ],
+      "source": [
+        {
+          "val": "false"
+        }
+      ]
+    },
+    "parentLabel": {
+      "export": [
+        {
+          "val": "originalStroke"
+        }
+      ],
+      "fixture": "saved-element-properties-extra-001",
+      "label": "s",
+      "reload": [
+        {
+          "val": "originalStroke"
+        }
+      ],
+      "source": [
+        {
+          "val": "originalStroke"
+        }
+      ]
+    },
+    "pointSize": {
+      "export": [
+        {
+          "val": "5"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "A",
+      "reload": [
+        {
+          "val": "5"
+        }
+      ],
+      "source": [
+        {
+          "val": "5"
+        }
+      ]
+    },
+    "pointStyle": {
+      "export": [
+        {
+          "val": "0"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "A",
+      "reload": [
+        {
+          "val": "0"
+        }
+      ],
+      "source": [
+        {
+          "val": "0"
+        }
+      ]
+    },
+    "selectedIndex": {
+      "export": [
+        {
+          "val": "2"
+        }
+      ],
+      "fixture": "saved-element-properties-002",
+      "label": "L",
+      "reload": [
+        {
+          "val": "2"
+        }
+      ],
+      "source": [
+        {
+          "val": "2"
+        }
+      ]
+    },
+    "selectionAllowed": {
+      "export": [
+        {
+          "val": "false"
+        }
+      ],
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "reload": [
+        {
+          "val": "false"
+        }
+      ],
+      "source": [
+        {
+          "val": "false"
+        }
+      ]
+    },
+    "show": {
+      "export": [
+        {
+          "label": "true",
+          "object": "true"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "A",
+      "reload": [
+        {
+          "label": "true",
+          "object": "true"
+        }
+      ],
+      "source": [
+        {
+          "label": "true",
+          "object": "true"
+        }
+      ]
+    },
+    "showOnAxis": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-element-properties-004",
+      "label": "f",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "showTrimmed": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "significantfigures": {
+      "export": [
+        {
+          "val": "3"
+        }
+      ],
+      "fixture": "saved-styles-006",
+      "label": "total",
+      "reload": [
+        {
+          "val": "3"
+        }
+      ],
+      "source": [
+        {
+          "val": "3"
+        }
+      ]
+    },
+    "simplifyCoefficients": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-paths-002",
+      "label": "f",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "slider": {
+      "export": [
+        {
+          "absoluteScreenLocation": "true",
+          "fixed": "false",
+          "horizontal": "true",
+          "max": "8",
+          "min": "0",
+          "showAlgebra": "true",
+          "width": "200",
+          "x": "38",
+          "y": "58"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "a",
+      "reload": [
+        {
+          "absoluteScreenLocation": "true",
+          "fixed": "false",
+          "horizontal": "true",
+          "max": "8",
+          "min": "0",
+          "showAlgebra": "true",
+          "width": "200",
+          "x": "38",
+          "y": "58"
+        }
+      ],
+      "source": [
+        {
+          "absoluteScreenLocation": "true",
+          "fixed": "false",
+          "horizontal": "true",
+          "max": "8",
+          "min": "0",
+          "showAlgebra": "true",
+          "width": "200",
+          "x": "38",
+          "y": "58"
+        }
+      ]
+    },
+    "slopeTriangleSize": {
+      "export": [
+        {
+          "val": "4"
+        }
+      ],
+      "fixture": "saved-element-properties-003",
+      "label": "n",
+      "reload": [
+        {
+          "val": "4"
+        }
+      ],
+      "source": [
+        {
+          "val": "4"
+        }
+      ]
+    },
+    "startPoint": {
+      "export": [
+        {
+          "exp": "S"
+        }
+      ],
+      "fixture": "saved-paths-002",
+      "label": "u",
+      "reload": [
+        {
+          "exp": "S"
+        }
+      ],
+      "source": [
+        {
+          "exp": "S"
+        }
+      ]
+    },
+    "startStyle": {
+      "export": [
+        {
+          "val": "default"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "s",
+      "reload": [
+        {
+          "val": "default"
+        }
+      ],
+      "source": [
+        {
+          "val": "default"
+        }
+      ]
+    },
+    "strokeBezierCoords": {
+      "export": [
+        {
+          "val": "0.0,0.0,1.0,0.014641,0.0095393,4.0,0.029282,0.019079,4.0,0.045,0.05,3.0,0.060718,0.080921,4.0,0.077513,0.13322,4.0,0.09,0.18,3.0,0.10249,0.22678,4.0,0.11067,0.26802,4.0,0.12,0.32,3.0,0.15,0.5,0.0,0.18,0.72,0.0,0.21,0.98,0.0,0.22001,1.0476,4.0,0.23,1.0771,4.0,0.24,1.28,3.0,0.25,1.4829,4.0,0.26,1.8592,4.0,0.27,1.62,3.0,0.3,0.3,0.0,0.31,0.074021,4.0,0.32,0.47685,4.0,0.33,0.72,3.0,0.36,1.18,0.0,0.39,1.68,0.0,NaN,NaN,0.0"
+        }
+      ],
+      "fixture": "saved-strokes-001",
+      "label": "q",
+      "reload": [
+        {
+          "val": "0.0000E0,0.0000E0,1,1.4641E-2,9.5393E-3,4,2.9282E-2,1.9079E-2,4,4.5000E-2,5.0000E-2,3,6.0718E-2,8.0921E-2,4,7.7513E-2,1.3322E-1,4,9.0000E-2,1.8000E-1,3,1.0249E-1,2.2678E-1,4,1.1067E-1,2.6802E-1,4,1.2000E-1,3.2000E-1,3,1.5000E-1,5.0000E-1,0,1.8000E-1,7.2000E-1,0,2.1000E-1,9.8000E-1,0,2.2001E-1,1.0476E0,4,2.3000E-1,1.0771E0,4,2.4000E-1,1.2800E0,3,2.5000E-1,1.4829E0,4,2.6000E-1,1.8592E0,4,2.7000E-1,1.6200E0,3,3.0000E-1,3.0000E-1,0,3.1000E-1,7.4021E-2,4,3.2000E-1,4.7685E-1,4,3.3000E-1,7.2000E-1,3,3.6000E-1,1.1800E0,0,3.9000E-1,1.6800E0,0,NaN,NaN,0"
+        }
+      ],
+      "source": [
+        {
+          "val": "0.0000E0,0.0000E0,1,1.4641E-2,9.5393E-3,4,2.9282E-2,1.9079E-2,4,4.5000E-2,5.0000E-2,3,6.0718E-2,8.0921E-2,4,7.7513E-2,1.3322E-1,4,9.0000E-2,1.8000E-1,3,1.0249E-1,2.2678E-1,4,1.1067E-1,2.6802E-1,4,1.2000E-1,3.2000E-1,3,1.5000E-1,5.0000E-1,0,1.8000E-1,7.2000E-1,0,2.1000E-1,9.8000E-1,0,2.2001E-1,1.0476E0,4,2.3000E-1,1.0771E0,4,2.4000E-1,1.2800E0,3,2.5000E-1,1.4829E0,4,2.6000E-1,1.8592E0,4,2.7000E-1,1.6200E0,3,3.0000E-1,3.0000E-1,0,3.1000E-1,7.4021E-2,4,3.2000E-1,4.7685E-1,4,3.3000E-1,7.2000E-1,3,3.6000E-1,1.1800E0,0,3.9000E-1,1.6800E0,0,NaN,NaN,0"
+        }
+      ]
+    },
+    "symbolic": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "empty",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "tableview": {
+      "export": [
+        {
+          "column": "3",
+          "points": "false"
+        }
+      ],
+      "fixture": "saved-element-properties-004",
+      "label": "f",
+      "reload": [
+        {
+          "column": "3",
+          "points": "false"
+        }
+      ],
+      "source": [
+        {
+          "column": "3",
+          "points": "false"
+        }
+      ]
+    },
+    "tag": {
+      "export": [
+        {
+          "barNumber": "1",
+          "key": "barColor",
+          "value": "rgba(101,87,210,1.0)"
+        },
+        {
+          "barNumber": "2",
+          "key": "barColor",
+          "value": "rgba(224,191,0,1.0)"
+        },
+        {
+          "barNumber": "3",
+          "key": "barColor",
+          "value": "rgba(59,180,166,1.0)"
+        }
+      ],
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "reload": [
+        {
+          "barNumber": "1",
+          "key": "barColor",
+          "value": "rgba(101,87,210,1.0)"
+        },
+        {
+          "barNumber": "2",
+          "key": "barColor",
+          "value": "rgba(224,191,0,1.0)"
+        },
+        {
+          "barNumber": "3",
+          "key": "barColor",
+          "value": "rgba(59,180,166,1.0)"
+        }
+      ],
+      "source": [
+        {
+          "barNumber": "1",
+          "key": "barColor",
+          "value": "rgba(101,87,210,1.0)"
+        },
+        {
+          "barNumber": "2",
+          "key": "barColor",
+          "value": "rgba(224,191,0,1.0)"
+        },
+        {
+          "barNumber": "3",
+          "key": "barColor",
+          "value": "rgba(59,180,166,1.0)"
+        }
+      ]
+    },
+    "tags": {
+      "export": [
+        {}
+      ],
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "reload": [
+        {}
+      ],
+      "source": [
+        {}
+      ]
+    },
+    "tempUserInput": {
+      "export": [
+        {
+          "eval": ""
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "empty",
+      "reload": [
+        {
+          "eval": ""
+        }
+      ],
+      "source": [
+        {
+          "eval": ""
+        }
+      ]
+    },
+    "textAlign": {
+      "export": [
+        {
+          "val": "right"
+        }
+      ],
+      "fixture": "saved-element-properties-001",
+      "label": "field",
+      "reload": [
+        {
+          "val": "right"
+        }
+      ],
+      "source": [
+        {
+          "val": "right"
+        }
+      ]
+    },
+    "tooltipMode": {
+      "export": [
+        {
+          "val": "2"
+        }
+      ],
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "reload": [
+        {
+          "val": "2"
+        }
+      ],
+      "source": [
+        {
+          "val": "2"
+        }
+      ]
+    },
+    "trace": {
+      "export": [
+        {
+          "val": "true"
+        }
+      ],
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "reload": [
+        {
+          "val": "true"
+        }
+      ],
+      "source": [
+        {
+          "val": "true"
+        }
+      ]
+    },
+    "userinput": {
+      "export": [
+        {
+          "show": "true"
+        }
+      ],
+      "fixture": "saved-implicit-001",
+      "label": "p",
+      "reload": [
+        {
+          "show": "true"
+        }
+      ],
+      "source": [
+        {
+          "show": "true"
+        }
+      ]
+    },
+    "value": {
+      "export": [
+        {
+          "val": "3"
+        }
+      ],
+      "fixture": "saved-controls-002",
+      "label": "a",
+      "reload": [
+        {
+          "val": "3"
+        }
+      ],
+      "source": [
+        {
+          "val": "3"
+        }
+      ]
+    }
+  },
   "Function": {
     "algebra_label": {
       "fixture": "saved-styles-004",

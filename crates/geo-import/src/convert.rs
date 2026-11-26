@@ -14,12 +14,13 @@ use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
 use geo_kernel::algo::polygon::PolygonDef;
+use geo_kernel::kernel::angle::AngleStyle;
 use geo_kernel::kernel::control::{
     encode_scripts, encode_text, visibility_boolean, NumberRounding, SliderLabel,
 };
-use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
+use geo_kernel::kernel::image::{ImageCorner, ImagePlacement, RasterAsset};
 use geo_kernel::kernel::text::{TextFont, TextOverrides, TextPosition};
-use geo_kernel::kernel::{angle::AngleStyle, Def, DrawingStyle};
+use geo_kernel::kernel::{Def, DrawingStyle};
 use geo_kernel::script::equation::Style as EquationStyle;
 use geo_kernel::script::saved::Property;
 use geo_kernel::script::text::{
@@ -149,7 +150,11 @@ pub(crate) fn convert_with_assets(
                         })
                         .collect::<Option<Vec<_>>>()
                 });
-                c.element(el, points.as_deref(), doc.gui_font_size.unwrap_or(12.0))?;
+                c.element(
+                    el,
+                    points.as_deref(),
+                    f64::from(doc.settings.gui_font_size.unwrap_or(12)),
+                )?;
                 c.restore_slider_early(el);
             }
         }
@@ -208,6 +213,28 @@ pub(crate) fn convert_with_assets(
             saved_style.caption.clone_from(&el.caption);
         }
         let label = quote(&el.label);
+        if let Some(properties) = saved_style.preserved.as_deref_mut() {
+            properties.retain(|tag| {
+                if tag.validate_import(&c.kernel, id, &mut expressions) {
+                    return true;
+                }
+                c.out.notes.push(format!(
+                    "{} of `{label}`: unsupported saved attributes",
+                    tag.name
+                ));
+                false
+            });
+        }
+        saved_style.saved_angle_style = c.kernel.angle_style(id);
+        if let Some(name) = el.widget_icon.as_deref().filter(|name| !name.is_empty()) {
+            match assets.load(&mut c.kernel, archive, name) {
+                Ok(asset) => saved_style.widget_icon = Some((c.kernel.kind(id), asset)),
+                Err(reason) => c
+                    .out
+                    .notes
+                    .push(format!("icon of `{label}`: {}", quote(&reason))),
+            }
+        }
         if let Some(dynamic) = saved_style.dynamic_color.take() {
             match expressions.dynamic_color(&c.kernel, &dynamic) {
                 Ok(dynamic) => saved_style.dynamic_color = Some(Box::new(dynamic)),
@@ -585,9 +612,40 @@ impl Flags {
 
 #[derive(Default)]
 struct ImageAssets {
-    by_name: BTreeMap<Arc<str>, Result<(), String>>,
-    by_offset: BTreeMap<u64, Result<(), String>>,
+    by_name: BTreeMap<Arc<str>, Result<Arc<RasterAsset>, String>>,
+    by_offset: BTreeMap<u64, Result<Arc<RasterAsset>, String>>,
     emitted: BTreeSet<Arc<str>>,
+}
+
+impl ImageAssets {
+    fn load(
+        &mut self,
+        kernel: &mut Construction,
+        archive: Option<&AssetArchive<'_>>,
+        name: &str,
+    ) -> Result<Arc<RasterAsset>, String> {
+        if let Some(result) = self.by_name.get(name) {
+            return result.clone();
+        }
+        let result = (|| {
+            let (entry, data) = archive
+                .ok_or("the image has no archive asset")?
+                .image_entry(name)?;
+            self.by_offset
+                .entry(entry.local_offset)
+                .or_insert_with(|| {
+                    kernel.reserve_image_input(entry.size.max(data.len() as u64))?;
+                    let bytes =
+                        crate::archive::extract_entry(entry, data).map_err(|e| e.to_string())?;
+                    kernel
+                        .decode_image_asset(name.into(), bytes)?
+                        .ok_or_else(|| "the image asset was already registered".into())
+                })
+                .clone()
+        })();
+        self.by_name.insert(name.into(), result.clone());
+        result
+    }
 }
 
 #[derive(Default)]
@@ -1329,26 +1387,7 @@ impl Converter {
                     screen_coords: image.anchors_in_screen_coords,
                 },
             };
-            if !assets.by_name.contains_key(name) {
-                let result = (|| {
-                    let (entry, data) = archive
-                        .ok_or("the image has no archive asset")?
-                        .image_entry(name)?;
-                    let key = entry.local_offset;
-                    let result = assets.by_offset.entry(key).or_insert_with(|| {
-                        self.kernel
-                            .reserve_image_input(entry.size.max(data.len() as u64))?;
-                        let bytes = crate::archive::extract_entry(entry, data)
-                            .map_err(|e| e.to_string())?;
-                        self.kernel
-                            .decode_image_asset(name.into(), bytes)
-                            .map(|_| ())
-                    });
-                    result.as_ref().map(|_| ()).map_err(Clone::clone)
-                })();
-                assets.by_name.insert(name.into(), result);
-            }
-            assets.by_name[name].as_ref().map_err(Clone::clone)?;
+            assets.load(&mut self.kernel, archive, name)?;
             let rhs = geo_kernel::script::image::definition(name, placement, image.style);
             Ok(format!("{} = {rhs}", el.label))
         })();
@@ -1419,12 +1458,19 @@ impl Converter {
                         .push(format!("equation style for `{}`: {e}", quote(&el.label))),
                 }
             }
-            if let Some(code) = el
-                .angle_style
-                .filter(|_| self.kernel.kind(id) == Kind::Angle)
-            {
-                let style = AngleStyle::from_xml(code);
-                if self.kernel.angle_style(id) != Some(style) {
+            if let Some(current) = self.kernel.angle_style(id) {
+                let initial =
+                    if expression.is_none() && matches!(self.kernel.def(id), Def::Angle(_)) {
+                        AngleStyle::default()
+                    } else {
+                        current
+                    };
+                let style = el
+                    .object_style
+                    .preserved
+                    .as_deref()
+                    .map_or(initial, |properties| properties.angle_style(initial));
+                if style != current {
                     let line = format!("$angleStyle({}, {})", el.label, style.xml_code());
                     match exec(&mut self.kernel, &line) {
                         Ok(_) => self.out.script.push(line),
@@ -1897,7 +1943,7 @@ impl Converter {
                 "$implicitCoefficients({label}, {})",
                 el.implicit_coefficients.as_deref().unwrap_or("[]")
             )),
-            "angle" => match el.value.as_deref().and_then(num) {
+            "angle" => match free_angle_raw(el) {
                 Some(radians) if radians.is_finite() => Ok(format!(
                     "{label} = $saved({radians} rad, {}°)",
                     radians.to_degrees()
@@ -1996,6 +2042,14 @@ fn has_saved_literal(el: &Element, exp: &str) -> bool {
         _ => false,
     };
     has_value && is_literal(exp)
+}
+
+fn free_angle_raw(el: &Element) -> Option<f64> {
+    let raw = num(el.value.as_deref()?)?;
+    Some(match el.object_style.preserved.as_deref() {
+        Some(properties) => properties.free_angle_raw(raw, el.angle_value_position),
+        None => AngleStyle::Anticlockwise.value(raw),
+    })
 }
 
 fn exact_literal(el: &Element) -> Option<String> {
@@ -2539,8 +2593,12 @@ fn cross_check(
             .map(|saved| saved_infinity(saved) == Some(n)),
         Value::Number(n) => el.value.as_deref().and_then(num).map(|s| {
             let s = if kind == Kind::Angle {
-                el.angle_style
-                    .map_or(s, |code| AngleStyle::from_xml(code).value(s))
+                let raw = if expression.is_none() && c.def(id).is_free() {
+                    free_angle_raw(el).unwrap_or(s)
+                } else {
+                    s
+                };
+                c.angle_style(id).map_or(raw, |style| style.value(raw))
             } else {
                 s
             };

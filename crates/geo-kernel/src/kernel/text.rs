@@ -402,7 +402,8 @@ impl Construction {
         self.text_presentations.get(&id)?.position?.point()
     }
 
-    pub(crate) fn text_latex_override(&self, id: Id) -> Option<bool> {
+    /// The saved or explicitly edited mode, before the expression default.
+    pub fn text_latex_override(&self, id: Id) -> Option<bool> {
         self.text_presentations.get(&id)?.latex
     }
 
