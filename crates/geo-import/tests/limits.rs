@@ -461,15 +461,19 @@ fn the_style_expressions_of_a_document_share_one_budget() {
 #[test]
 fn point_presentation_shares_the_document_expression_budget() {
     use geo_import::convert::StyleExpressions;
-    let construction = geo_kernel::script::load("A = (1, 2)\nL = {1, 2}").unwrap();
+    let construction = geo_kernel::script::load("A = (1, 2)\nL = {1, 2}\nLength = 7").unwrap();
     let anchor = "(x(A) + 1, y(A))";
     let increment = "Length[L]";
     let budget = (anchor.len() + increment.len()) as u64;
     let mut expressions = StyleExpressions::with_budget(budget);
     assert!(expressions.point(&construction, anchor).is_ok());
-    assert!(expressions
-        .point_increment(&construction, increment)
-        .is_ok());
+    assert_eq!(
+        expressions
+            .point_increment(&construction, increment)
+            .unwrap(),
+        (increment.to_owned(), vec![construction.id("L").unwrap()])
+    );
+    assert_eq!(expressions.work(), budget);
     assert!(expressions.point(&construction, anchor).is_err());
     assert!(expressions
         .point_increment(&construction, increment)

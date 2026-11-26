@@ -2009,6 +2009,68 @@ fn point_list_increments_keep_the_reference_spelling() {
 }
 
 #[test]
+fn point_list_increment_length_survives_an_object_named_length() {
+    let shadow = r#"<element type="numeric" label="Length"><value val="7"/></element>"#;
+    for label in ["L", "L_{1}"] {
+        let increment = format!(r#"<incrementY val="Length[{label}]"/>"#);
+        let document = |extra: &str| {
+            format!(
+                r#"<geogebra><construction>
+                  <expression label="{label}" exp="{{2, 4, 8}}"/>
+                  <element type="list" label="{label}"/>
+                  {extra}
+                  <element type="point" label="P"><coords x="0" y="1" z="1"/>{increment}</element>
+                </construction></geogebra>"#
+            )
+        };
+
+        let loaded_with_shadow = review_workbench(document(shadow).as_bytes());
+        assert!(loaded_with_shadow.construction().id("Length").is_some());
+        assert!(
+            exported_xml(&loaded_with_shadow).contains(&increment),
+            "{label}"
+        );
+
+        let mut edited = review_workbench(document("").as_bytes());
+        assert!(exported_xml(&edited).contains(&increment), "{label}");
+        edited.run_line("Length = 7").unwrap();
+        assert!(edited.construction().id("Length").is_some());
+        assert!(exported_xml(&edited).contains(&increment), "{label}");
+    }
+}
+
+#[test]
+fn point_list_increment_length_alias_round_trips_at_the_attribute_limit() {
+    use geo_import::xml::MAX_ATTRIBUTE_BYTES;
+
+    let base = "l".repeat(MAX_ATTRIBUTE_BYTES - "Length[_1]".len());
+    let label = format!("{base}_{{1}}");
+    let value = format!("Length[{base}_1]");
+    assert_eq!(value.len(), MAX_ATTRIBUTE_BYTES);
+    assert!(label.len() < MAX_ATTRIBUTE_BYTES);
+    assert_eq!("Length[]".len() + label.len(), MAX_ATTRIBUTE_BYTES + 2);
+
+    // The list definition and element both fit the XML attribute cap.
+    // Its short alias is one identifier token and the increment fits too.
+    let input = format!(
+        r#"<geogebra><construction>
+          <expression label="{label}" exp="{{2, 4, 8}}"/>
+          <element type="list" label="{label}"/>
+          <element type="point" label="P"><coords x="0" y="1" z="1"/><incrementY val="{value}"/></element>
+        </construction></geogebra>"#
+    );
+    let wb = review_workbench(input.as_bytes());
+    let xml = exported_xml(&wb);
+    let increment = format!(r#"<incrementY val="{value}"/>"#);
+    assert!(xml.contains(&increment));
+
+    let reloaded = review_workbench(xml.as_bytes());
+    let c = reloaded.construction();
+    assert_eq!(c.kind(c.id(&label).unwrap()), Kind::List);
+    assert!(exported_xml(&reloaded).contains(&increment));
+}
+
+#[test]
 fn point_list_increments_require_the_list_at_export() {
     let mut wb = review_workbench(&saved_review_file(LIST_POINT_INCREMENTS));
     assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 3);
