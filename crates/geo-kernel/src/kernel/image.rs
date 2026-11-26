@@ -38,6 +38,7 @@ pub struct RasterAsset {
     bytes: Vec<u8>,
     size: [u32; 2],
     rgba: Vec<u8>,
+    decode_bytes: u64,
 }
 
 impl PartialEq for RasterAsset {
@@ -72,6 +73,7 @@ impl RasterAsset {
         limits.max_image_width = Some(MAX_DIMENSION);
         limits.max_image_height = Some(MAX_DIMENSION);
         limits.max_alloc = Some(remaining);
+        let initial_decode_budget = *decode_budget;
         let mut reserve = |width, height, native_bytes: u64| {
             if width == 0 || height == 0 || width > MAX_DIMENSION || height > MAX_DIMENSION {
                 return Err("image dimensions exceed the limit");
@@ -166,7 +168,37 @@ impl RasterAsset {
             bytes,
             size,
             rgba: pixels.into_raw(),
+            decode_bytes: initial_decode_budget - *decode_budget,
         })
+    }
+
+    /// Check the reader's combined raster allowances in the order it will
+    /// load the archive entries. The assets have already been decoded.
+    pub fn check_archive_budget<'a>(
+        entries: impl IntoIterator<Item = (&'a str, &'a Self)>,
+    ) -> Result<(), &'static str> {
+        let mut remaining = MAX_RASTER_MEMORY;
+        let mut decode_budget = MAX_DECODE_BYTES;
+        let mut contents = HashMap::<u64, Vec<&Self>>::new();
+        for (name, asset) in entries {
+            let stored = Self::source_cost(name.len() + asset.bytes.len());
+            let bucket = contents.entry(asset.digest).or_default();
+            if bucket.contains(&asset) {
+                remaining = remaining
+                    .checked_sub(stored)
+                    .ok_or("construction image assets exceed the memory limit")?;
+                continue;
+            }
+            if stored + asset.decode_bytes > remaining {
+                return Err("construction image assets exceed the memory limit");
+            }
+            decode_budget = decode_budget
+                .checked_sub(asset.decode_bytes)
+                .ok_or("construction image assets exceed the decode limit")?;
+            remaining -= stored + asset.rgba.len() as u64;
+            bucket.push(asset);
+        }
+        Ok(())
     }
 
     // Original bytes and one serialized copy for a save or conversion.
@@ -760,6 +792,30 @@ fn delta(to: [f64; 2], from: [f64; 2]) -> [f64; 2] {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn archive_budget_charges_decode_work_once_per_raster() {
+        // Model two high-precision rasters whose decoded RGBA buffers fit
+        // together, but whose native decode buffers exceed the work allowance.
+        let raster = |id| RasterAsset {
+            id,
+            digest: id,
+            bytes: vec![id as u8],
+            size: [4096, 2112],
+            rgba: vec![0; 33 << 20],
+            decode_bytes: 66 << 20,
+        };
+        let first = raster(1);
+        let second = raster(2);
+        assert_eq!(
+            RasterAsset::check_archive_budget([("first.png", &first), ("second.png", &second)]),
+            Err("construction image assets exceed the decode limit")
+        );
+        assert!(
+            RasterAsset::check_archive_budget([("first.png", &first), ("alias.png", &first)])
+                .is_ok()
+        );
+    }
 
     #[test]
     fn png_dimensions_are_charged_before_reading_image_data() {

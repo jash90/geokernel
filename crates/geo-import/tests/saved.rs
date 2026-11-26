@@ -738,8 +738,14 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
     for path in &names {
         let mut snap: Snapshot = serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap();
         set_snapshot_schema(snap.schema, &mut snap.objects).unwrap();
-        let xml = fs::read(path.with_extension("xml")).unwrap();
-        let imported = import(&xml).unwrap();
+        let xml = path.with_extension("xml");
+        let input = if xml.is_file() {
+            xml
+        } else {
+            path.with_extension("ggb")
+        };
+        let bytes = fs::read(&input).unwrap_or_else(|error| panic!("{}: {error}", input.display()));
+        let imported = import(&bytes).unwrap();
         if snap.id.starts_with("saved-firstmove-") {
             first_moves += 1;
         }
@@ -801,9 +807,11 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                 Vec::new()
             };
             let agrees = match kind {
-                Kind::ImplicitCurve | Kind::Arc | Kind::Sector | Kind::FunctionNVar => {
-                    compare_construction_object(expected, &c, id)
-                }
+                Kind::ImplicitCurve
+                | Kind::Arc
+                | Kind::Sector
+                | Kind::FunctionNVar
+                | Kind::PieChart => compare_construction_object(expected, &c, id),
                 Kind::List => compare_list(&c, expected, kind, c.elements(id)),
                 _ => compare_object(expected, kind, &c.value(id), &vertices),
             };

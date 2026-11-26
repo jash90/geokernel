@@ -339,6 +339,7 @@ pub fn ggb<'a>(
         presentation,
         xml: Xml::default(),
         images: BTreeMap::new(),
+        seen: HashSet::new(),
         expressions: crate::convert::StyleExpressions::default(),
     };
     writer.xml.buffer.push_str(
@@ -349,7 +350,6 @@ pub fn ggb<'a>(
         .xml
         .buffer
         .push_str("<construction title=\"\" author=\"\" date=\"\">\n");
-    let mut seen = HashSet::new();
     for definition in definitions {
         let mut ids = definition
             .outputs
@@ -358,7 +358,7 @@ pub fn ggb<'a>(
                 let id = construction
                     .id(label)
                     .ok_or_else(|| failure(format!("missing output `{label}`")))?;
-                if !seen.insert(id) {
+                if !writer.seen.insert(id) {
                     return Err(failure(format!("duplicate output `{label}`")));
                 }
                 Ok(id)
@@ -383,7 +383,7 @@ pub fn ggb<'a>(
     if let Some(id) = construction.ids().find(|&id| {
         !construction.label(id).starts_with('\0')
             && !construction.is_blank_cell(id)
-            && !seen.contains(&id)
+            && !writer.seen.contains(&id)
     }) {
         return Err(failure(format!(
             "missing definition for `{}`",
@@ -404,6 +404,15 @@ pub fn ggb<'a>(
         return Err(failure("construction exceeds the import archive limits"));
     }
 
+    let mut rasters: Vec<_> = writer.images.values().collect();
+    rasters.sort_unstable_by_key(|entry| entry.read_order);
+    RasterAsset::check_archive_budget(
+        rasters
+            .into_iter()
+            .map(|entry| (entry.name.as_str(), entry.asset)),
+    )
+    .map_err(failure)?;
+
     let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
     let options = zip::write::SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated);
@@ -412,8 +421,8 @@ pub fn ggb<'a>(
             .map_err(|e| failure(e.to_string()))?;
         zip.write_all(bytes).map_err(|e| failure(e.to_string()))
     };
-    for (name, asset) in writer.images.values() {
-        write(name, asset.bytes())?;
+    for entry in writer.images.values() {
+        write(&entry.name, entry.asset.bytes())?;
     }
     if let Some(metadata) = spreadsheet {
         write(crate::spreadsheet::METADATA_FILE, metadata.as_bytes())?;
@@ -457,9 +466,25 @@ struct Writer<'a> {
     c: &'a Construction,
     presentation: &'a Presentation<'a>,
     xml: Xml,
-    images: BTreeMap<u64, (String, &'a RasterAsset)>,
+    images: BTreeMap<u64, RasterEntry<'a>>,
+    seen: HashSet<Id>,
     /// The budget of the style expressions written in this export.
     expressions: crate::convert::StyleExpressions,
+}
+
+struct RasterEntry<'a> {
+    name: String,
+    asset: &'a RasterAsset,
+    read_order: RasterReadOrder<'a>,
+}
+
+/// The importer loads Image objects in construction order, retries images
+/// with forward anchors, then loads chart textures and icons by object label.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum RasterReadOrder<'a> {
+    Image(usize),
+    DeferredImage(usize),
+    Style(&'a str, usize),
 }
 
 impl Writer<'_> {

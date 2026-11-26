@@ -1,0 +1,14 @@
+{
+  "schema": 2,
+  "id": "saved-export-limits-002",
+  "script": [
+    "A = (1, 2)",
+    "B = (5, 4)",
+    "v = (2, 1)"
+  ],
+  "objects": {
+    "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+    "B": { "type": "point", "defined": true, "x": 5.0, "y": 4.0 },
+    "v": { "type": "vector", "defined": true, "x": 2.0, "y": 1.0 }
+  }
+}

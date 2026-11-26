@@ -4278,6 +4278,26 @@
       "saved": true,
       "without": false
     },
+    "barImage": {
+      "export": {
+        "barNumber": "2",
+        "key": "barImage",
+        "value": "images/image1.png"
+      },
+      "fixture": "saved-export-limits-003",
+      "label": "bars",
+      "reload": {
+        "barNumber": "2",
+        "key": "barImage",
+        "value": "images/image1.png"
+      },
+      "sha256": "84b3f64061a1fd4737ca6bcfd8537d9be10590539ac530e96b5943acfc8166af",
+      "source": {
+        "barNumber": "2",
+        "key": "barImage",
+        "value": "bar.png"
+      }
+    },
     "breakpoint": {
       "fixture": "saved-styles-003",
       "label": "a",
@@ -4649,6 +4669,26 @@
       "saved": true,
       "without": false
     },
+    "barImage": {
+      "export": {
+        "barNumber": "2",
+        "key": "barImage",
+        "value": "images/image2.jpg"
+      },
+      "fixture": "saved-export-limits-003",
+      "label": "pie",
+      "reload": {
+        "barNumber": "2",
+        "key": "barImage",
+        "value": "images/image2.jpg"
+      },
+      "sha256": "6a7e7c4e0925333de19564445045d9c9cc7d028cea5b95e07a24448a8c9f0f79",
+      "source": {
+        "barNumber": "2",
+        "key": "barImage",
+        "value": "slice.jpg"
+      }
+    },
     "breakpoint": {
       "fixture": "saved-styles-005",
       "label": "chart",
@@ -4910,6 +4950,26 @@
       "saved": true,
       "without": false
     },
+    "incrementY": {
+      "export": [
+        {
+          "val": "Length[L]"
+        }
+      ],
+      "fixture": "saved-export-limits-001",
+      "label": "P",
+      "reload": [
+        {
+          "val": "Length[L]"
+        }
+      ],
+      "source": [
+        {
+          "val": "Length[L]"
+        }
+      ],
+      "value": 2.0
+    },
     "label_mode": {
       "fixture": "saved-styles-001",
       "label": "A",
@@ -4945,6 +5005,25 @@
       "label": "A",
       "saved": 1.5,
       "without": "NaN"
+    },
+    "pointSize": {
+      "export": [
+        {
+          "val": "7"
+        }
+      ],
+      "fixture": "saved-export-limits-001",
+      "label": "P",
+      "reload": [
+        {
+          "val": "7"
+        }
+      ],
+      "source": [
+        {
+          "val": "7"
+        }
+      ]
     },
     "point_size": {
       "fixture": "saved-styles-001",
@@ -6299,6 +6378,29 @@
       "label": "v2",
       "saved": false,
       "without": true
+    },
+    "startPoint": {
+      "export": [
+        {
+          "exp": "((x(A) + x(B)) / 2, (y(A) + y(B)) / 2)"
+        }
+      ],
+      "fixture": "saved-export-limits-002",
+      "label": "v",
+      "reload": [
+        {
+          "exp": "((x(A) + x(B)) / 2, (y(A) + y(B)) / 2)"
+        }
+      ],
+      "source": [
+        {
+          "exp": "((x(A) + x(B)) / 2, (y(A) + y(B)) / 2)"
+        }
+      ],
+      "value": [
+        3.0,
+        3.0
+      ]
     },
     "tooltip_mode": {
       "fixture": "saved-styles-001",

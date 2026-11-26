@@ -215,15 +215,29 @@ pub(crate) fn convert_with_assets(
         }
         let label = quote(&el.label);
         if let Some(properties) = saved_style.preserved.as_deref_mut() {
+            properties.retain_effective_chart_images();
             properties.retain(|tag| {
-                if tag.validate_import(&c.kernel, id, &mut expressions) {
-                    return true;
+                if !tag.validate_import(&c.kernel, id, &mut expressions) {
+                    c.out.notes.push(format!(
+                        "{} of `{label}`: unsupported saved attributes",
+                        tag.name
+                    ));
+                    return false;
                 }
-                c.out.notes.push(format!(
-                    "{} of `{label}`: unsupported saved attributes",
-                    tag.name
-                ));
-                false
+                if let Some(name) = tag.chart_image_name() {
+                    match assets.load(&mut c.kernel, archive, name) {
+                        Ok(asset) => tag.set_chart_image(asset),
+                        Err(reason) => {
+                            c.out.notes.push(format!(
+                                "chart image of `{label}` (`{}`): {}",
+                                quote(name),
+                                quote(&reason)
+                            ));
+                            return false;
+                        }
+                    }
+                }
+                true
             });
         }
         saved_style.saved_angle_style = c.kernel.angle_style(id);
@@ -552,6 +566,41 @@ impl StyleExpressions {
         value
             .map(|_| line)
             .ok_or_else(|| format!("`{source}` is not a number of the construction"))
+    }
+
+    fn charge_source(&mut self, source: &str) -> Result<(), String> {
+        self.used = self.used.saturating_add((source.len() as u64).max(1));
+        if self.used > self.budget {
+            return Err("the style expressions of the file exceed the evaluation budget".into());
+        }
+        Ok(())
+    }
+
+    /// A point increment can also measure an existing list. The reference
+    /// saves its unlabelled length as Length[L].
+    pub fn point_increment(&mut self, c: &Construction, source: &str) -> Result<String, String> {
+        self.charge_source(source)?;
+        let line = expression_line(source)?;
+        if let Some(arg) = line
+            .strip_prefix("Length(")
+            .and_then(|line| line.strip_suffix(')'))
+        {
+            let label = arg.trim();
+            if is_label(label) && c.id(label).is_some_and(|id| c.kind(id) == Kind::List) {
+                return Ok(format!("Length[{label}]"));
+            }
+        }
+        self.number(c, &line)
+    }
+
+    /// A dependent start point expressed as supported geometry over named
+    /// objects. Charge parsing even if the expression is later rejected.
+    pub fn point(&mut self, c: &Construction, source: &str) -> Result<(String, Vec<Id>), String> {
+        self.charge_source(source)?;
+        let line = expression_line(source)?;
+        let inputs = geo_kernel::expr::arithmetic_point_inputs(c, &line)
+            .ok_or_else(|| "expected a point expression over the construction".to_owned())?;
+        Ok((line, inputs))
     }
 
     /// The channels of a dynamic colour as expressions the kernel evaluates.

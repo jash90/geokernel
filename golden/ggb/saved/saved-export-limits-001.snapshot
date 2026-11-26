@@ -1,0 +1,19 @@
+{
+  "schema": 2,
+  "id": "saved-export-limits-001",
+  "script": [
+    "L = {1, 2}",
+    "P = (2, 3)"
+  ],
+  "objects": {
+    "L": {
+      "type": "list",
+      "defined": true,
+      "elements": [
+        { "type": "number", "defined": true, "value": 1.0 },
+        { "type": "number", "defined": true, "value": 2.0 }
+      ]
+    },
+    "P": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+  }
+}

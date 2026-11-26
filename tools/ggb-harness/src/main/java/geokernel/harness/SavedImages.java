@@ -82,6 +82,11 @@ final class SavedImages {
                 button.getKernel().getApplication().getExternalImageAdapter(name, WIDTH, HEIGHT));
     }
 
+    static void addAsset(String name, boolean large, Map<String, byte[]> assets) throws IOException {
+        String format = name.substring(name.lastIndexOf('.') + 1);
+        assets.put(name, large ? raster(format, 4096, 4096) : raster(format));
+    }
+
     private static double number(Object value) {
         return ((Number) value).doubleValue();
     }
@@ -114,11 +119,15 @@ final class SavedImages {
     }
 
     private static byte[] raster(String format) throws IOException {
-        var first = new BufferedImage(WIDTH, HEIGHT, "png".equals(format)
+        return raster(format, WIDTH, HEIGHT);
+    }
+
+    private static byte[] raster(String format, int width, int height) throws IOException {
+        var first = new BufferedImage(width, height, "png".equals(format)
                 ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB);
-        for (int y = 0; y < HEIGHT; y++) {
-            for (int x = 0; x < WIDTH; x++) {
-                first.setRGB(x, y, x < WIDTH / 2 ? 0xffff0000 : 0x8000ff00);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                first.setRGB(x, y, x < width / 2 ? 0xffff0000 : 0x8000ff00);
             }
         }
         var bytes = new ByteArrayOutputStream();
@@ -128,7 +137,7 @@ final class SavedImages {
                 writer.setOutput(stream);
                 writer.prepareWriteSequence(null);
                 writer.writeToSequence(new IIOImage(first, null, null), null);
-                var second = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
+                var second = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
                 writer.writeToSequence(new IIOImage(second, null, null), null);
                 writer.endWriteSequence();
             } finally {
@@ -148,6 +157,13 @@ final class SavedImages {
         try (var source = new ZipInputStream(new ByteArrayInputStream(archive));
                 var target = new ZipOutputStream(bytes)) {
             for (ZipEntry entry; (entry = source.getNextEntry()) != null;) {
+                if (assets.containsKey(entry.getName())) {
+                    // The headless writer creates an empty entry for a chart texture.
+                    if (source.read() != -1) {
+                        throw new IOException("unexpected bitmap data for " + entry.getName());
+                    }
+                    continue;
+                }
                 target.putNextEntry(new ZipEntry(entry.getName()));
                 source.transferTo(target);
                 target.closeEntry();
