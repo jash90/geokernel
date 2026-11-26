@@ -460,6 +460,63 @@ mod tests {
     use crate::{script, Value};
 
     #[test]
+    fn variadic_statistics_require_numbers_and_keep_list_and_numeric_expression_forms() {
+        let mut c = script::load("a = 30°\nb = 60°\ns = Segment((0, 0), (3, 0))\nr = 42").unwrap();
+        for (command, arguments) in [
+            ("Median", "a, b"),
+            ("Variance", "1, a, 2"),
+            ("SD", "30°, 60°"),
+            ("SampleVariance", "a + b, 2"),
+            ("SampleSD", "a, 2"),
+            ("MAD", "a, b"),
+            ("Q1", "a, 2"),
+            ("Q3", "1, a"),
+            ("mean", "a, b"),
+            ("Sum", "a, b, a"),
+            ("Median", "s, 1"),
+        ] {
+            let line = format!("r = {command}({arguments})");
+            assert!(script::exec(&mut c, &line).is_err(), "accepted {line}");
+            assert_eq!(c.value(c.id("r").unwrap()), Value::Number(42.0));
+        }
+        for (call, expected) in [
+            ("Median({a, b})", std::f64::consts::FRAC_PI_4),
+            ("Mean({1, a, b})", (1.0 + std::f64::consts::FRAC_PI_2) / 3.0),
+            ("Sum({1, a, b})", 1.0 + std::f64::consts::FRAC_PI_2),
+            ("Median(a / b, 1, 2)", 1.0),
+            ("Median(a * b, 1, 2)", 1.0),
+            ("Mean(s + 1, s + 2)", 4.5),
+            ("Sum(s + 1, s + 2, s + 3)", 15.0),
+        ] {
+            let id = script::exec(&mut c, &format!("out = {call}"))
+                .unwrap()
+                .unwrap();
+            let Value::Number(actual) = c.value(id) else {
+                panic!("{call} did not produce a number");
+            };
+            assert!((actual - expected).abs() < 1e-12, "{call} gave {actual}");
+        }
+    }
+
+    #[test]
+    fn variadic_statistics_classify_arguments_with_linear_work() {
+        use crate::expr::{parse, types::CHECKED_SLOTS};
+        use crate::Construction;
+
+        let c = Construction::new();
+        let count = 512;
+        for (argument, max_slots_per_argument) in [("1 + 2", 8), ("Median(1, 3)", 16)] {
+            let args = vec![argument; count].join(", ");
+            let source = format!("Median({args})");
+            let before = CHECKED_SLOTS.get();
+            parse::parse(&c, &source).unwrap();
+            let slots = CHECKED_SLOTS.get() - before;
+            let limit = max_slots_per_argument * count + 2;
+            assert!(slots <= limit, "{slots} type-check slots, limit {limit}");
+        }
+    }
+
+    #[test]
     fn statistics_charge_input_rows_without_expanding_frequencies() {
         let mut c =
             script::load("l = {9, 1, 9}\nf = {2, 2, 2}\ng = {20000000, 20000000, 20000000}")
