@@ -63,4 +63,46 @@ cases.case("variadictypes", angle_inputs[:-1] + [
     "v = Mean(s + 1, s + 2)",
     "w = Sum(s + 1, s + 2, s + 3)",
 ], [])
+
+simple = ("Mode", "GeometricMean", "HarmonicMean", "RootMeanSquare")
+
+
+def simple_outputs(*datasets):
+    return [
+        f"r_{{{i * len(simple) + j}}} = {name}({data})"
+        for i, data in enumerate(datasets)
+        for j, name in enumerate(simple, 1)
+    ]
+
+
+cases.case("nextlists", simple_outputs("{1, 2, 3, 4, 5}") + [
+    "r_{5} = Mode({5, 2, 5, 2, 3})",
+    "r_{6} = Mode({4})",
+    "r_{7} = Mode({1, 1, 1.0000000001, 1.0000000001})",
+    "r_{8} = Sum(Mode({5, 2, 5, 2, 3}))",
+], [])
+cases.case("nextedges", ["u = 0 / 0", "e = If(false, {2, 2})"] + simple_outputs(
+    "{}", "e", "{1, 1, u, u}", "{u, u}", "{0, 4}", "{-1, 4}", "{-3, 3}", "{0, -1}",
+), [])
+cases.case("nextvariadic", simple_outputs("1, 4", "1, 4, 4"), [])
+cases.case("nextkinds", angle_inputs[:-1] + simple_outputs(
+    "{1, true, false}", "{s, s, 1}", "{a, a, b}", '{"1", "1"}',
+), [])
+cases.case("nextedit", ["a = 3", "l = {a, 2, a, 4}"] + simple_outputs("l"),
+           [setn("a", 0), setn("a", -1), setn("a", 2)])
+cases.case("nextpoints", ["P = (-1, 8)", "Q = (3, 2)"] + simple_outputs(
+    "{P, Q}", "{1, P}", "{P, 1}",
+), [])
+cases.case("nextreject", angle_inputs + ["g(x) = x^2"], [
+    {"action": "reject", "line": f"r = {name}({arguments})"}
+    for name in simple
+    for arguments in ("1", "1, a", "a, b", "s, 1", "true, 1", "{1, 2}, {1, 2}", "{1, 2}, 1", "g")
+])
+cases.case("nextreject", [
+    "a = Slider(-2, 2)", "Q = (a, a^2 / 2)", "L = Locus(Q, a)", "r = 42",
+], [{"action": "reject", "line": f"r = {name}(L, 1)"} for name in simple])
+cases.cases[-1]["observe"] = ["r"]
+cases.case("nextsegmentprecision", ["A = (0, 0)", "B = (45, 108)", "s = Segment(A, B)"]
+           + simple_outputs("{s, 117}"), [])
+cases.case("nextundefinedboolean", simple_outputs("{IsPrime(0), 0, 4}"), [])
 cases.write()

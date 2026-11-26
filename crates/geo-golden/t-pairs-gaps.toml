@@ -1791,18 +1791,6 @@ reason = "the kernel refuses the input: unknown object `g`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1918"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `GeometricMean`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1923"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `HarmonicMean`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1928"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Height`"
@@ -2568,12 +2556,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:2838"
 category = "incomplete-context"
 reason = "the kernel refuses the input: unknown object `picT`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2846"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Mode`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3534,12 +3516,6 @@ mismatches = ["U"]
 id = "commands/CommandsTest.java:3710"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `Root(If(-.1<x<2,x^3-x))`: a command inside a command is not supported"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3728"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `RootMeanSquare`"
 mismatches = ["step"]
 
 [[gap]]

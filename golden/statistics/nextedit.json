@@ -1,0 +1,119 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-nextedit-001",
+      "group": "statistics",
+      "script": [
+        "a = 3",
+        "l = {a, 2, a, 4}",
+        "r_{1} = Mode(l)",
+        "r_{2} = GeometricMean(l)",
+        "r_{3} = HarmonicMean(l)",
+        "r_{4} = RootMeanSquare(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "r_{1}": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "r_{2}": { "type": "number", "defined": true, "value": 2.9129506302439405 },
+          "r_{3}": { "type": "number", "defined": true, "value": 2.823529411764706 },
+          "r_{4}": { "type": "number", "defined": true, "value": 3.082207001484488 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "r_{1}": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "r_{2}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{3}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{4}": { "type": "number", "defined": true, "value": 2.23606797749979 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "r_{1}": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 }
+            ]
+          },
+          "r_{2}": { "type": "number", "defined": false },
+          "r_{3}": { "type": "number", "defined": true, "value": -3.2 },
+          "r_{4}": { "type": "number", "defined": true, "value": 2.345207879911715 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "r_{1}": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r_{2}": { "type": "number", "defined": true, "value": 2.378414230005442 },
+          "r_{3}": { "type": "number", "defined": true, "value": 2.2857142857142856 },
+          "r_{4}": { "type": "number", "defined": true, "value": 2.6457513110645907 }
+        }
+      ]
+    }
+  ]
+}

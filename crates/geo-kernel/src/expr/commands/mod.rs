@@ -29,7 +29,7 @@ pub(in crate::expr) use list::{call_type, call_value};
 pub(in crate::expr) use text::call_node as text_call;
 
 pub(in crate::expr) fn second_list(op: ListOp) -> bool {
-    list::second_list(op) || statistics::is_descriptive(op)
+    list::second_list(op) || statistics::takes_frequencies(op)
 }
 
 /// Whether `name` is a command that expressions compute themselves (the
@@ -116,7 +116,7 @@ pub(super) fn binary(op: Bin, a: f64, b: f64) -> f64 {
 
 /// Whether the result of the list command `op` is a list.
 pub(super) fn makes_list(op: ListOp) -> bool {
-    matches!(op, ListOp::Normalize | ListOp::Svd)
+    matches!(op, ListOp::Normalize | ListOp::Svd | ListOp::Mode)
         || geometry::makes_list(op)
         || list::makes_list(op)
 }
@@ -197,6 +197,7 @@ pub(super) fn list_fn<const M: bool>(
     match op {
         ListOp::Normalize => function_analysis::normalize(ctx, l),
         ListOp::Svd => function_analysis::svd(ctx, l),
+        ListOp::Mode => ctx.mode(l),
         _ if geometry::makes_list(op) => geometry::list_fn(ctx, node, op, l, n),
         _ => ctx.list_fn(op, l, n),
     }

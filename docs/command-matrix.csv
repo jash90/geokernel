@@ -231,7 +231,7 @@ Q1,,statistics,P2,partial,5,3,"Lower quartile of a numeric list, values with fre
 Quartile1,Q1,statistics,P2,partial,,,
 Q3,,statistics,P2,partial,5,3,"Upper quartile of a numeric list, values with frequencies, and separate numbers."
 Quartile3,Q3,statistics,P2,partial,,,
-Mode,,statistics,,out_of_scope,,,
+Mode,,statistics,P2,partial,4,2,Ascending modes of a numeric-compatible list or at least two separate numbers.
 SigmaXX,,statistics,,out_of_scope,,,
 SigmaXY,,statistics,,out_of_scope,,,
 SigmaYY,,statistics,,out_of_scope,,,
@@ -278,9 +278,9 @@ TMean2Estimate,,statistics,,out_of_scope,,,
 ChiSquaredTest,,statistics,,out_of_scope,,,
 ANOVA,,statistics,,out_of_scope,,,
 Percentile,,statistics,,out_of_scope,,,
-GeometricMean,,statistics,,out_of_scope,,,
-HarmonicMean,,statistics,,out_of_scope,,,
-RootMeanSquare,,statistics,,out_of_scope,,,
+GeometricMean,,statistics,P2,partial,4,2,Geometric mean of a numeric-compatible list or at least two separate numbers.
+HarmonicMean,,statistics,P2,partial,4,2,Harmonic mean of a numeric-compatible list or at least two separate numbers.
+RootMeanSquare,,statistics,P2,partial,4,2,Root mean square of a numeric-compatible list or at least two separate numbers.
 Random,,probability,,out_of_scope,,,
 RandomNormal,,probability,,out_of_scope,,,
 RandomUniform,,probability,,out_of_scope,,,

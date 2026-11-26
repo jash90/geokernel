@@ -1,0 +1,46 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-nextvariadic-001",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Mode(1, 4)",
+        "r_{2} = GeometricMean(1, 4)",
+        "r_{3} = HarmonicMean(1, 4)",
+        "r_{4} = RootMeanSquare(1, 4)",
+        "r_{5} = Mode(1, 4, 4)",
+        "r_{6} = GeometricMean(1, 4, 4)",
+        "r_{7} = HarmonicMean(1, 4, 4)",
+        "r_{8} = RootMeanSquare(1, 4, 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r_{2}": { "type": "number", "defined": true, "value": 2.0 },
+          "r_{3}": { "type": "number", "defined": true, "value": 1.6 },
+          "r_{4}": { "type": "number", "defined": true, "value": 2.9154759474226504 },
+          "r_{5}": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "r_{6}": { "type": "number", "defined": true, "value": 2.519842099789746 },
+          "r_{7}": { "type": "number", "defined": true, "value": 2.0 },
+          "r_{8}": { "type": "number", "defined": true, "value": 3.3166247903554 }
+        }
+      ]
+    }
+  ]
+}

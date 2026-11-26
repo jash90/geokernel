@@ -1,0 +1,76 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-nextkinds-001",
+      "group": "statistics",
+      "script": [
+        "a = 30°",
+        "b = 60°",
+        "s = Segment((0, 0), (3, 0))",
+        "r_{1} = Mode({1, true, false})",
+        "r_{2} = GeometricMean({1, true, false})",
+        "r_{3} = HarmonicMean({1, true, false})",
+        "r_{4} = RootMeanSquare({1, true, false})",
+        "r_{5} = Mode({s, s, 1})",
+        "r_{6} = GeometricMean({s, s, 1})",
+        "r_{7} = HarmonicMean({s, s, 1})",
+        "r_{8} = RootMeanSquare({s, s, 1})",
+        "r_{9} = Mode({a, a, b})",
+        "r_{10} = GeometricMean({a, a, b})",
+        "r_{11} = HarmonicMean({a, a, b})",
+        "r_{12} = RootMeanSquare({a, a, b})",
+        "r_{13} = Mode({\"1\", \"1\"})",
+        "r_{14} = GeometricMean({\"1\", \"1\"})",
+        "r_{15} = HarmonicMean({\"1\", \"1\"})",
+        "r_{16} = RootMeanSquare({\"1\", \"1\"})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r_{1}": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r_{2}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{3}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{4}": { "type": "number", "defined": true, "value": 0.816496580927726 },
+          "r_{5}": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "r_{6}": { "type": "number", "defined": true, "value": 2.0800838230519045 },
+          "r_{7}": { "type": "number", "defined": true, "value": 1.8000000000000003 },
+          "r_{8}": { "type": "number", "defined": true, "value": 2.516611478423583 },
+          "r_{9}": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.5235987755982989 }
+            ]
+          },
+          "r_{10}": { "type": "number", "defined": true, "value": 0.6596931190754789 },
+          "r_{11}": { "type": "number", "defined": true, "value": 0.6283185307179587 },
+          "r_{12}": { "type": "number", "defined": true, "value": 0.7404804896930611 },
+          "r_{13}": { "type": "list", "defined": false },
+          "r_{14}": { "type": "number", "defined": false },
+          "r_{15}": { "type": "number", "defined": false },
+          "r_{16}": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}

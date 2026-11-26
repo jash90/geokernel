@@ -1,0 +1,851 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-nextreject-001",
+      "group": "statistics",
+      "script": [
+        "a = 30°",
+        "b = 60°",
+        "s = Segment((0, 0), (3, 0))",
+        "r = 42",
+        "g(x) = x^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "r = Mode(1)" },
+        { "action": "reject", "line": "r = Mode(1, a)" },
+        { "action": "reject", "line": "r = Mode(a, b)" },
+        { "action": "reject", "line": "r = Mode(s, 1)" },
+        { "action": "reject", "line": "r = Mode(true, 1)" },
+        { "action": "reject", "line": "r = Mode({1, 2}, {1, 2})" },
+        { "action": "reject", "line": "r = Mode({1, 2}, 1)" },
+        { "action": "reject", "line": "r = Mode(g)" },
+        { "action": "reject", "line": "r = GeometricMean(1)" },
+        { "action": "reject", "line": "r = GeometricMean(1, a)" },
+        { "action": "reject", "line": "r = GeometricMean(a, b)" },
+        { "action": "reject", "line": "r = GeometricMean(s, 1)" },
+        { "action": "reject", "line": "r = GeometricMean(true, 1)" },
+        { "action": "reject", "line": "r = GeometricMean({1, 2}, {1, 2})" },
+        { "action": "reject", "line": "r = GeometricMean({1, 2}, 1)" },
+        { "action": "reject", "line": "r = GeometricMean(g)" },
+        { "action": "reject", "line": "r = HarmonicMean(1)" },
+        { "action": "reject", "line": "r = HarmonicMean(1, a)" },
+        { "action": "reject", "line": "r = HarmonicMean(a, b)" },
+        { "action": "reject", "line": "r = HarmonicMean(s, 1)" },
+        { "action": "reject", "line": "r = HarmonicMean(true, 1)" },
+        { "action": "reject", "line": "r = HarmonicMean({1, 2}, {1, 2})" },
+        { "action": "reject", "line": "r = HarmonicMean({1, 2}, 1)" },
+        { "action": "reject", "line": "r = HarmonicMean(g)" },
+        { "action": "reject", "line": "r = RootMeanSquare(1)" },
+        { "action": "reject", "line": "r = RootMeanSquare(1, a)" },
+        { "action": "reject", "line": "r = RootMeanSquare(a, b)" },
+        { "action": "reject", "line": "r = RootMeanSquare(s, 1)" },
+        { "action": "reject", "line": "r = RootMeanSquare(true, 1)" },
+        { "action": "reject", "line": "r = RootMeanSquare({1, 2}, {1, 2})" },
+        { "action": "reject", "line": "r = RootMeanSquare({1, 2}, 1)" },
+        { "action": "reject", "line": "r = RootMeanSquare(g)" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "b": { "type": "angle", "defined": true, "value": 1.0471975511965979 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 42.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "statistics-nextreject-002",
+      "group": "statistics",
+      "script": [
+        "a = Slider(-2, 2)",
+        "Q = (a, a^2 / 2)",
+        "L = Locus(Q, a)",
+        "r = 42"
+      ],
+      "observe": [
+        "r"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "r = Mode(L, 1)" },
+        { "action": "reject", "line": "r = GeometricMean(L, 1)" },
+        { "action": "reject", "line": "r = HarmonicMean(L, 1)" },
+        { "action": "reject", "line": "r = RootMeanSquare(L, 1)" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 42.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 42.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 42.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 42.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 42.0 }
+        }
+      ]
+    }
+  ]
+}

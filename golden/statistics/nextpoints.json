@@ -1,0 +1,48 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-nextpoints-001",
+      "group": "statistics",
+      "script": [
+        "P = (-1, 8)",
+        "Q = (3, 2)",
+        "r_{1} = Mode({P, Q})",
+        "r_{2} = GeometricMean({P, Q})",
+        "r_{3} = HarmonicMean({P, Q})",
+        "r_{4} = RootMeanSquare({P, Q})",
+        "r_{5} = Mode({1, P})",
+        "r_{6} = GeometricMean({1, P})",
+        "r_{7} = HarmonicMean({1, P})",
+        "r_{8} = RootMeanSquare({1, P})",
+        "r_{9} = Mode({P, 1})",
+        "r_{10} = GeometricMean({P, 1})",
+        "r_{11} = HarmonicMean({P, 1})",
+        "r_{12} = RootMeanSquare({P, 1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": 8.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "r_{1}": { "type": "list", "defined": false },
+          "r_{2}": { "type": "number", "defined": false },
+          "r_{3}": { "type": "number", "defined": false },
+          "r_{4}": { "type": "number", "defined": false },
+          "r_{5}": { "type": "list", "defined": false },
+          "r_{6}": { "type": "number", "defined": false },
+          "r_{7}": { "type": "number", "defined": false },
+          "r_{8}": { "type": "number", "defined": false },
+          "r_{9}": { "type": "list", "defined": false },
+          "r_{10}": { "type": "number", "defined": false },
+          "r_{11}": { "type": "number", "defined": false },
+          "r_{12}": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}
