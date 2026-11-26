@@ -99,7 +99,7 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
             app.cancel_cas_edit();
             app.cancel_spreadsheet_edit();
-            app.input.clear();
+            app.set_input_draft(String::new());
             app.input_error = None;
             app.keyboard.open = false;
             ctx.memory_mut(|m| {
@@ -562,7 +562,13 @@ fn number_dialog(app: &mut App, ctx: &egui::Context) {
             };
             app.apply_outcome(outcome);
         }
-        Some(None) => app.reset_tool(),
+        Some(None) => {
+            if app.tool.tool() == crate::tools::Tool::CircleRadius {
+                app.wb.end_tool_use();
+                app.select_only(None);
+            }
+            app.reset_tool();
+        }
         None => {}
     }
 }
@@ -658,7 +664,12 @@ fn control_dialog(app: &mut App, ctx: &egui::Context) {
         } else {
             app.tool.finish_checkbox(&app.control_fields[0], taken)
         };
+        let clear_selection =
+            (text || input_box) && matches!(outcome, geo_app_core::tools::Outcome::Run(_));
         app.apply_outcome(outcome);
+        if clear_selection {
+            app.select_only(None);
+        }
     } else if cancel || modal.should_close() {
         app.reset_tool();
     }

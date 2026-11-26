@@ -190,8 +190,7 @@ pub(super) fn paint(
                 text_rects.push((id, bounds.translate(-rect.min.to_vec2()).core()));
             }
             let color = color(id);
-            if let Some([r, g, b, a]) = c.appearance(id).text_background.filter(|rgba| rgba[3] != 0)
-            {
+            if let Some([r, g, b, a]) = scene.palette.text_background(id) {
                 painter.rect_filled(bounds, 0.0, Color32::from_rgba_unmultiplied(r, g, b, a));
             }
             if let Some(formula) = formula {

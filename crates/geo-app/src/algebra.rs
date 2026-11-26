@@ -704,6 +704,12 @@ fn input_row(app: &mut App, ui: &mut Ui) {
     );
 
     let id = egui::Id::unique("algebra_input");
+    let point_definition = std::mem::take(&mut app.focus_point_definition);
+    if point_definition {
+        // The canvas can open the editor after this row was drawn. Focus it
+        // before processing the next frame's text or Enter.
+        ui.memory_mut(|memory| memory.request_focus(id));
+    }
     let mut recalled_by_history = false;
     if ui.memory(|m| m.has_focus(id)) {
         let (up, down) = ui.input_mut(|i| {
@@ -719,8 +725,8 @@ fn input_row(app: &mut App, ui: &mut Ui) {
         } else {
             None
         };
-        if let Some(t) = recalled {
-            app.input = t.to_owned();
+        if let Some(input) = recalled.map(str::to_owned) {
+            app.set_input_draft(input);
             recalled_by_history = true;
         }
     }
@@ -747,11 +753,11 @@ fn input_row(app: &mut App, ui: &mut Ui) {
             text::label(Label::InputHint),
         )
     });
-    if app.focus_input {
+    let focus_input = std::mem::take(&mut app.focus_input);
+    if focus_input {
         response.request_focus();
-        app.focus_input = false;
     }
-    if response.gained_focus() {
+    if response.gained_focus() && !point_definition {
         // As in the reference, the keyboard comes up with the input row.
         app.keyboard.open = true;
     }
@@ -790,13 +796,15 @@ fn input_row(app: &mut App, ui: &mut Ui) {
         && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
     {
         // Escape leaves the field and puts the keyboard away.
-        app.input.clear();
+        app.set_input_draft(String::new());
         app.input_error = None;
         app.keyboard.open = false;
         response.surrender_focus();
         return;
     }
-    if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+    // If this frame just focused the editor, egui has no previous focus to lose.
+    if (response.lost_focus() || point_definition) && ui.input(|i| i.key_pressed(egui::Key::Enter))
+    {
         app.submit_input();
     }
     if let Some(e) = &app.input_error {

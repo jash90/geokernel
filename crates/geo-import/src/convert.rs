@@ -988,6 +988,28 @@ impl Converter {
             "Function" if legacy_interval => "$functionInterval",
             _ => name,
         };
+        if let ("PointIn", [region], [label]) = (name, args.as_slice(), outputs) {
+            let element = elements.get(label.as_str());
+            if let Some((second, third, u, v)) = element.and_then(|el| el.polygon_region) {
+                return Ok(vec![Step {
+                    line: format!(
+                        "{label} = $pointInRegion({region}, {second}, {third}, {u}, {v})"
+                    ),
+                    labels: vec![label.clone()],
+                    auto: false,
+                }]);
+            }
+            if let Some([x, y, z]) = element.and_then(|el| coords3(el)) {
+                let (x, y) = (x / z, y / z);
+                if x.is_finite() && y.is_finite() {
+                    return Ok(vec![Step {
+                        line: format!("{label} = $pointInRegion({region}, {x}, {y})"),
+                        labels: vec![label.clone()],
+                        auto: false,
+                    }]);
+                }
+            }
+        }
         if let ("Point", [path], [label]) = (name, args.as_slice(), outputs) {
             let kind = self
                 .kernel

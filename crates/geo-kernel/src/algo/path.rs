@@ -190,6 +190,53 @@ impl PathState {
         state
     }
 
+    /// Restore a region point from the coordinates stored in its element.
+    pub(crate) fn saved_region(c: &Construction, region: Id, x: f64, y: f64) -> Self {
+        let mut state = Self::new();
+        state.place_in_region(c, region, (x, y));
+        state
+    }
+
+    /// The vertex indices and interior weights of a point on a polygon region.
+    pub fn polygon_region_parameters(self) -> Option<(usize, usize, f64, f64)> {
+        match self.region {
+            RegionState::Polygon {
+                second,
+                third,
+                u,
+                v,
+            } => Some((second, third, u, v)),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn saved_polygon_region(
+        c: &Construction,
+        region: Id,
+        (second, third, u, v): (usize, usize, f64, f64),
+    ) -> Option<Self> {
+        if c.kind(region) != Kind::Polygon
+            || second == 0
+            || second >= third
+            || third >= REGION_VERTEX_WORK
+            || !u.is_finite()
+            || !v.is_finite()
+        {
+            return None;
+        }
+        let mut state = Self {
+            region: RegionState::Polygon {
+                second,
+                third,
+                u,
+                v,
+            },
+            ..Self::new()
+        };
+        state.follow_region(c, region);
+        Some(state)
+    }
+
     /// Restore a curve point from its saved parameter, which identifies its
     /// branch even when multiple parameters share the same coordinates.
     pub(crate) fn saved_curve(c: &Construction, curve: Id, t: f64) -> Self {
@@ -319,6 +366,10 @@ impl PathState {
         self.temp_t = self.t;
         self.temp_ty = self.ty;
         path.point_changed(self);
+        self.finish_projection();
+    }
+
+    fn finish_projection(&mut self) {
         self.update_coords();
         if self.is_defined() {
             self.temp_t = self.t;
@@ -700,8 +751,12 @@ impl Geom<'_> {
             }
             Geom::Segment(s) => s.point_changed(p),
             Geom::Conic(d) => super::conic_path::point_changed(d, p),
-            &Geom::Polygon { c, id, n } => polygonal_point_changed(c, id, n, true, p),
-            &Geom::PolyLine { c, id, n } => polygonal_point_changed(c, id, n, false, p),
+            &Geom::Polygon { c, id, n } => {
+                polygonal_point_changed(c.vertices(id).take(n).map(vertex_or_nan), true, p)
+            }
+            &Geom::PolyLine { c, id, n } => {
+                polygonal_point_changed(c.vertices(id).take(n).map(vertex_or_nan), false, p)
+            }
             Geom::Arc(a) => a.point_changed(p),
             Geom::Curve { c, id, .. } => {
                 let (x, y) = (p.x / p.z, p.y / p.z);
@@ -849,7 +904,15 @@ fn vertex(c: &Construction, id: Id, i: usize) -> (f64, f64) {
 /// `i + 1` (and the last side of a polygon back to vertex 0). One path
 /// parameter is threaded through the sides, as there: a side of length 0
 /// keeps the parameter the previous side left when it lies in `[0, 1]`.
-fn polygonal_point_changed(c: &Construction, id: Id, n: usize, closed: bool, p: &mut PathState) {
+fn vertex_or_nan(vertex: Option<(f64, f64)>) -> (f64, f64) {
+    vertex.unwrap_or((f64::NAN, f64::NAN))
+}
+
+fn polygonal_point_changed(
+    vertices: impl Iterator<Item = (f64, f64)>,
+    closed: bool,
+    p: &mut PathState,
+) {
     let qx = p.x / p.z;
     let qy = p.y / p.z;
     let mut best = Best {
@@ -858,8 +921,9 @@ fn polygonal_point_changed(c: &Construction, id: Id, n: usize, closed: bool, p: 
     };
     let mut first = (f64::NAN, f64::NAN);
     let mut prev = (f64::NAN, f64::NAN);
-    for (k, v) in c.vertices(id).enumerate().take(n) {
-        let v = v.unwrap_or((f64::NAN, f64::NAN));
+    let mut n = 0;
+    for (k, v) in vertices.enumerate() {
+        n = k + 1;
         if k == 0 {
             first = v;
         } else {
@@ -1481,25 +1545,14 @@ impl PathState {
     fn place_in_region(&mut self, c: &Construction, region: Id, p: (f64, f64)) {
         self.set_coords_2d(p.0, p.1, 1.0);
         if c.kind(region) == Kind::Polygon {
-            let vertices: Vec<_> = c.vertices(region).collect();
-            if let Some(vertices) = vertices.into_iter().collect::<Option<Vec<_>>>() {
-                if polygon_contains(&vertices, p) {
-                    if let Some((second, third)) = polygon_basis(&vertices) {
-                        let a = vertices[0];
-                        let (u, v) = (sub(vertices[second], a), sub(vertices[third], a));
-                        let q = sub(p, a);
-                        let determinant = cross(u, v);
-                        self.region = RegionState::Polygon {
-                            second,
-                            third,
-                            u: cross(q, v) / determinant,
-                            v: cross(u, q) / determinant,
-                        };
-                        return;
-                    }
-                }
+            if let Some(vertices) = region_polygon(c, region) {
+                self.place_in_polygon(&vertices, p);
+            } else {
+                self.set_undefined();
             }
-        } else if let Some(d) = super::conic_object(c, region) {
+            return;
+        }
+        if let Some(d) = super::conic_object(c, region) {
             if conic_contains(&d, p) && c.arc(region).is_none_or(|a| part_contains(&a, p)) {
                 super::conic_path::rw_to_ev(&d, self);
                 let (x, y, _) = self.coords();
@@ -1523,7 +1576,75 @@ impl PathState {
         self.set_coords(&geom(c, region), p.0, p.1);
     }
 
+    fn place_in_polygon(&mut self, vertices: &[(f64, f64)], p: (f64, f64)) {
+        self.set_coords_2d(p.0, p.1, 1.0);
+        if polygon_contains(vertices, p) {
+            if let Some((second, third)) = polygon_basis(vertices) {
+                let a = vertices[0];
+                let (u, v) = (sub(vertices[second], a), sub(vertices[third], a));
+                let q = sub(p, a);
+                let determinant = cross(u, v);
+                self.region = RegionState::Polygon {
+                    second,
+                    third,
+                    u: cross(q, v) / determinant,
+                    v: cross(u, q) / determinant,
+                };
+                return;
+            }
+        }
+        self.region = RegionState::Boundary;
+        // Match set_coords: keep the last valid parameter when a projection fails.
+        self.temp_t = self.t;
+        self.temp_ty = self.ty;
+        polygonal_point_changed(vertices.iter().copied(), true, self);
+        self.finish_projection();
+    }
+
+    fn follow_polygon_region(&mut self, vertices: &[(f64, f64)]) {
+        if let RegionState::Polygon {
+            second,
+            third,
+            u,
+            v,
+        } = self.region
+        {
+            let p = (self.x, self.y);
+            if let Some((&b, &d)) = vertices.get(second).zip(vertices.get(third)) {
+                let a = vertices[0];
+                let (ab, ad) = (sub(b, a), sub(d, a));
+                let p = (a.0 + u * ab.0 + v * ad.0, a.1 + u * ab.1 + v * ad.1);
+                if polygon_contains(vertices, p) {
+                    self.set_coords_2d(p.0, p.1, 1.0);
+                    return;
+                }
+                self.place_in_polygon(vertices, p);
+            } else {
+                self.place_in_polygon(vertices, p);
+            }
+        } else {
+            let n = vertices.len();
+            self.t %= n as f64;
+            if self.t < 0.0 {
+                self.t += n as f64;
+            }
+            let index = self.t.floor() as usize;
+            let seg = Seg::new(vertices[index], vertices[(index + 1) % n]);
+            let (x, y) = seg.point_at(self.t - index as f64);
+            self.set_coords_2d(x, y, 1.0);
+        }
+    }
+
     fn follow_region(&mut self, c: &Construction, region: Id) {
+        if c.kind(region) == Kind::Polygon {
+            if let Some(vertices) = region_polygon(c, region) {
+                self.follow_polygon_region(&vertices);
+                self.update_coords();
+            } else {
+                self.set_undefined();
+            }
+            return;
+        }
         let path = geom(c, region);
         if !path.is_defined() {
             self.set_undefined();
@@ -1555,34 +1676,23 @@ impl PathState {
                     }
                 }
             }
-            RegionState::Polygon {
-                second,
-                third,
-                u,
-                v,
-            } => {
-                let vertices: Option<Vec<_>> = c.vertices(region).collect();
-                let Some(vertices) = vertices else {
-                    self.set_undefined();
-                    return;
-                };
-                let basis = vertices.get(second).zip(vertices.get(third));
-                let Some((&b, &d)) = basis else {
-                    self.place_in_region(c, region, (self.x, self.y));
-                    return;
-                };
-                let a = vertices[0];
-                let (ab, ad) = (sub(b, a), sub(d, a));
-                let p = (a.0 + u * ab.0 + v * ad.0, a.1 + u * ab.1 + v * ad.1);
-                if !polygon_contains(&vertices, p) {
-                    self.place_in_region(c, region, p);
-                } else {
-                    self.set_coords_2d(p.0, p.1, 1.0);
-                }
-            }
+            RegionState::Polygon { .. } => unreachable!("polygon regions were handled above"),
         }
         self.update_coords();
     }
+}
+
+const REGION_VERTEX_WORK: usize = 4096;
+
+/// Charge shape preparation and vertex reads before projecting a region point.
+fn region_polygon(c: &Construction, region: Id) -> Option<Vec<(f64, f64)>> {
+    if !c.value(region).is_defined() {
+        return None;
+    }
+    let mut work = REGION_VERTEX_WORK;
+    let vertices = c.vertices_with_work(region, &mut work)?;
+    (vertices.size_hint().0 > 0).then_some(())?;
+    vertices.collect()
 }
 
 fn conic_region_axes(d: &ConicData) -> [f64; 2] {

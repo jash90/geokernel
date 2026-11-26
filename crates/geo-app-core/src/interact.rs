@@ -189,8 +189,8 @@ pub const REFUSED_DRAG_NOTICE: bool = true;
 
 /// The owner's choice where the reference app is not followed (spec F2):
 /// every drag that changed something is one undo step, however short. The
-/// reference app keeps a drag's step only when the drag went beyond the
-/// click threshold (`wrapMouseReleasedND` stores the undo info only when
+/// reference app skips the step when a point is released outside the canvas
+/// or when the drag stayed within the click threshold (`wrapMouseReleasedND` stores the undo info only when
 /// `draggingBeyondThreshold`); a shorter drag keeps its motion with no step
 /// of its own. `false` follows the reference app. The window reads it
 /// through `app::OwnerRules`.

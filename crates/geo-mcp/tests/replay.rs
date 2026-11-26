@@ -14,16 +14,16 @@
 //! Every scenario of the fixture is named below: it belongs to a part of
 //! the pointer work that has landed (it must pass), it encodes a behaviour
 //! the owner keeps our way (our outcome is asserted instead, and the
-//! reference app's too where a switch of `OwnerRules` gives it), or it is
-//! skipped until a later group, named with its group. A fixture scenario
-//! that is in no list fails the test, and the numbers replayed and skipped
-//! are asserted.
+//! reference app's too where a switch of `OwnerRules` gives it). A fixture
+//! scenario that is in no list fails the test, and the replay totals are
+//! asserted.
 
 use geo_mcp::protocol::Server;
 use serde_json::{json, Value};
 
 const FIXTURE: &str = include_str!("fixtures/pointer_scenarios.json");
 const EDITOR_FIXTURE: &str = include_str!("fixtures/editor_tool_scenarios.json");
+const PARITY_CAPTURE: &str = include_str!("fixtures/parity_scenario_capture.json");
 const TOOL_CAPTURE: &str = include_str!("fixtures/tool_pointer_capture.json");
 
 /// The graphics view of the observations, and where the standard view puts
@@ -45,16 +45,8 @@ const LANDED: &[(u8, &[&str])] = &[
             "tool_freehand_function",
         ],
     ),
-    (16, &["tool_input_box_places_empty_widget"]),
     (17, &["tool_create_list_from_rectangle"]),
-    (
-        18,
-        &[
-            "tool_text_places_literal",
-            "tool_pen_records_drag",
-            "tool_locus_uses_path_point",
-        ],
-    ),
+    (18, &["tool_pen_records_drag", "tool_locus_uses_path_point"]),
     (
         1,
         &[
@@ -213,20 +205,13 @@ const OURS: &[(&str, bool)] = &[
     ("pinch_spread_symmetric", true),
 ];
 
-/// The scenarios skipped until a later group, with the group and why.
-const SKIPPED: &[(u8, &str, &[&str])] = &[
-    (
-        5,
-        "the kernel has no lines typed as equations (`f: y=c`); a line with free \
-         points would rightly move",
-        &["free_equation_line_not_draggable"],
-    ),
-    (
-        6,
-        "deferred: no texts in the kernel (area tool)",
-        &["area_tool_on_polygon"],
-    ),
-    (8, "the input row", &["enter_on_empty_input_row"]),
+/// Legacy cases replayed from fresh controller captures with the same inputs.
+const RECORDED: &[&str] = &[
+    "free_equation_line_not_draggable",
+    "area_tool_on_polygon",
+    "enter_on_empty_input_row",
+    "tool_text_places_literal",
+    "tool_input_box_places_empty_widget",
 ];
 
 /// How a fixture scenario is treated.
@@ -234,7 +219,7 @@ const SKIPPED: &[(u8, &str, &[&str])] = &[
 enum Part {
     Landed(u8),
     Ours { has_switch: bool },
-    Skipped(u8, &'static str),
+    Recorded,
 }
 
 fn part(name: &str) -> Option<Part> {
@@ -248,10 +233,8 @@ fn part(name: &str) -> Option<Part> {
             return Some(Part::Ours { has_switch });
         }
     }
-    for &(g, why, names) in SKIPPED {
-        if names.contains(&name) {
-            return Some(Part::Skipped(g, why));
-        }
+    if RECORDED.contains(&name) {
+        return Some(Part::Recorded);
     }
     None
 }
@@ -361,6 +344,46 @@ impl Window {
     fn state(&mut self) -> Value {
         call(&mut self.server, "state", json!({})).expect("state")
     }
+
+    fn capture_state(&mut self) -> Value {
+        use geo_kernel::{kernel::text::TextPosition, Kind};
+
+        let mut state = self.state();
+        let wb = &self.server.session.headless().app.wb;
+        let c = wb.construction();
+        let palette = wb.palette();
+        for object in state["objects"].as_array_mut().unwrap() {
+            let Some(id) = object["name"].as_str().and_then(|name| c.id(name)) else {
+                continue;
+            };
+            if c.kind(id) == Kind::Point {
+                object["label_visible"] = json!(c.drawing_style(id).show_label);
+                object["auxiliary"] = json!(wb.auxiliary_object(id));
+            }
+            if c.kind(id) == Kind::Text {
+                let background = palette.text_background(id).map(|[r, g, b, _]| [r, g, b]);
+                object["background"] = json!(background);
+                if let Some((caption, value)) = c.text(id).and_then(|text| text.rsplit_once(" = "))
+                {
+                    object["measure_subject"] = json!(caption.split_whitespace().last());
+                    object["measure_value"] = json!(value);
+                }
+            }
+            match c.kind(id) {
+                Kind::Text => match c.text_position(id) {
+                    Some(TextPosition::Point(anchor)) => object["anchor"] = json!(c.label(anchor)),
+                    Some(TextPosition::World { x, y }) => object["world_position"] = json!([x, y]),
+                    Some(TextPosition::Screen { x, y }) => {
+                        object["screen_position"] = json!([x, y])
+                    }
+                    _ => {}
+                },
+                Kind::InputBox => object["screen_position"] = json!(c.input_box_style(id).position),
+                _ => {}
+            }
+        }
+        state
+    }
 }
 
 fn tool_name(mode: i64) -> Option<&'static str> {
@@ -401,6 +424,7 @@ fn tool_name(mode: i64) -> Option<&'static str> {
         24 => "semicircle",
         26 => "image",
         28 => "show_hide_label",
+        34 => "circle_radius",
         35 => "copy_visual_style",
         39 => "move_rotate",
         68 => "function_inspector",
@@ -470,6 +494,27 @@ fn frame_events(
             vec![t]
         }
         "text" => vec![json!({"type": "text", "text": e["text"]})],
+        "snapshot" => Vec::new(),
+        "mouse_exit" => vec![json!({ "type": "gone" })],
+        "touch_gesture_start" | "touch_gesture_move" => {
+            let phase = if kind == "touch_gesture_start" {
+                "start"
+            } else {
+                "move"
+            };
+            e["fingers"]
+                .as_array()
+                .ok_or("touch gesture needs fingers")?
+                .iter()
+                .enumerate()
+                .map(|(id, pos)| {
+                    json!({
+                        "type": "touch", "phase": phase, "id": id,
+                        "x": w.view_min.0 + num(&pos[0]), "y": w.view_min.1 + num(&pos[1]),
+                    })
+                })
+                .collect()
+        }
         "key" => {
             let key = e["key"].as_str().ok_or("a key event names no key")?;
             vec![json!({"type": "key", "key": key})]
@@ -604,26 +649,23 @@ fn our_definition(d: &str, st: &Value) -> String {
     d.to_owned()
 }
 
-/// The measurements the app can expose. The reference web build creates
-/// text and anchor points for Area labels, and uses a generic numeric label.
-/// The app exposes conic measurements under the controller's area prefix.
-fn supported_area_outcome(observed: &Value) -> Option<Value> {
+/// The conic Area tool exposes the numeric measurement without the reference's
+/// text and anchor. Polygon Area has no numeric output and is compared as recorded.
+fn supported_conic_area_outcome(observed: &Value) -> Option<Value> {
     let mut expected = observed.clone();
     let created = expected.get_mut("created")?.as_array_mut()?;
-    let displayed_text = created.iter().any(|o| o["type"] == "text");
-    created.retain(|o| o["type"] == "numeric");
-    if displayed_text && created.is_empty() {
-        expected["undo_steps_added"] = json!(0);
-    } else {
-        for measure in created {
-            let definition = measure["definition"].as_str().unwrap();
-            let input = definition
-                .strip_prefix("Area(")
-                .unwrap()
-                .strip_suffix(')')
-                .unwrap();
-            measure["label"] = json!(format!("area{}", input.replace(['_', '{', '}'], "")));
-        }
+    if !created.iter().any(|object| object["type"] == "numeric") {
+        return None;
+    }
+    created.retain(|object| object["type"] == "numeric");
+    for measure in created {
+        let definition = measure["definition"].as_str().unwrap();
+        let input = definition
+            .strip_prefix("Area(")
+            .unwrap()
+            .strip_suffix(')')
+            .unwrap();
+        measure["label"] = json!(format!("area{}", input.replace(['_', '{', '}'], "")));
     }
     Some(expected)
 }
@@ -634,6 +676,7 @@ struct Outcome {
     before: Value,
     after: Value,
     origin0: (f64, f64),
+    reloaded: Option<Value>,
     undo_added: i64,
     tool_frames: Vec<(Value, Value)>,
     tool_undo: Vec<Value>,
@@ -654,7 +697,13 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
         .filter_map(Value::as_str)
         // Every label is shown here: the command that shows one is moot.
         .filter(|l| !l.starts_with("ShowLabel("))
-        .map(equation_line)
+        .map(|line| {
+            if s["interaction"].is_array() {
+                line.to_owned()
+            } else {
+                equation_line(line)
+            }
+        })
         .collect();
     let touch = s["events"]
         .as_array()
@@ -663,7 +712,12 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
         .any(|e| e["type"].as_str().is_some_and(|t| t.starts_with("touch")));
     let profile = if touch { "touch" } else { "desktop" };
     let mut w = Window::open(&(script.join("\n") + "\n"), profile, rules)?;
-    let before = w.state();
+    let capture = s["frames"].is_array();
+    let before = if capture {
+        w.capture_state()
+    } else {
+        w.state()
+    };
     let origin0 = (
         num(&before["view"]["origin"][0]),
         num(&before["view"]["origin"][1]),
@@ -681,7 +735,6 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
     let mut frames = Vec::new();
     let mut fingers = Vec::new();
     let mut tool_frames = Vec::new();
-    let capture = s["frames"].is_array();
     for (i, e) in events.iter().enumerate() {
         let t = num(&e["t"]) / 1000.0;
         let dt = match last_t {
@@ -744,7 +797,7 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
                 "input",
                 json!({"frames": std::mem::take(&mut frames), "settle": false}),
             )?;
-            tool_frames.push((e["t"].clone(), w.state()));
+            tool_frames.push((e["t"].clone(), w.capture_state()));
         }
     }
     call(
@@ -756,19 +809,54 @@ fn replay(s: &Value, idle: bool, rules: &str) -> Result<Outcome, String> {
         insert_fixture_image(&mut w)?;
     }
     compare_editor(expected, &w.server.session.headless().app, &mut diffs);
-    let after = w.state();
+    let after = if capture {
+        w.capture_state()
+    } else {
+        w.state()
+    };
+    let saved = if s.get("reloaded").is_some() {
+        Some(
+            w.server
+                .session
+                .headless()
+                .app
+                .wb
+                .export_ggb(None)
+                .map_err(|e| e.to_string())?,
+        )
+    } else {
+        None
+    };
     let undo_added = undo_depth(&after) - depth0;
     let mut tool_undo = Vec::new();
     if capture {
         for _ in 0..undo_added {
             call(&mut w.server, "undo", json!({}))?;
-            tool_undo.push(w.state());
+            tool_undo.push(w.capture_state());
         }
     }
+    let reloaded = if let Some(bytes) = saved {
+        call(
+            &mut w.server,
+            "open",
+            json!({ "base64": geo_mcp::base64_encode(&bytes), "name": "replay.ggb" }),
+        )?;
+        w.server
+            .session
+            .headless()
+            .app
+            .wb
+            .export_ggb(None)
+            .map_err(|e| e.to_string())?;
+        Some(w.capture_state())
+    } else {
+        None
+    };
     Ok(Outcome {
         before,
         after,
         origin0,
+        reloaded,
         undo_added,
         tool_frames,
         tool_undo,
@@ -1275,7 +1363,11 @@ fn compare_tool_objects(reference: &Value, state: &Value, when: &str, diffs: &mu
             continue;
         };
         let kind = geo["type"].as_str().unwrap();
-        let actual_kind = if kind == "stroke" { "pen stroke" } else { kind };
+        let actual_kind = match kind {
+            "stroke" => "pen stroke",
+            "input_box" => "input box",
+            _ => kind,
+        };
         if actual["type"] != actual_kind || actual["defined"] != geo["defined"] {
             diffs.push(format!(
                 "{when}: {name} is {} (defined: {}), reference {kind} (defined: {})",
@@ -1294,6 +1386,57 @@ fn compare_tool_objects(reference: &Value, state: &Value, when: &str, diffs: &mu
         }
         if geo["defined"] != true {
             continue;
+        }
+        if matches!(kind, "text" | "input_box")
+            && geo.get("text").is_some()
+            && actual["value"] != geo["text"]
+        {
+            diffs.push(format!(
+                "{when}: {name} has text {}, reference {}",
+                actual["value"], geo["text"]
+            ));
+        }
+        for field in [
+            "anchor",
+            "visible",
+            "label_visible",
+            "auxiliary",
+            "background",
+            "measure_subject",
+            "measure_value",
+            "screen_position",
+            "world_position",
+        ] {
+            if let Some(expected) = geo.get(field) {
+                let got = &actual[field];
+                let matches = if let (Some(a), Some(b)) = (got.as_array(), expected.as_array()) {
+                    a.len() == b.len() && a.iter().zip(b).all(|(x, y)| same(num(x), num(y)))
+                } else {
+                    got == expected
+                };
+                if !matches {
+                    diffs.push(format!(
+                        "{when}: {name} {field} is {got}, reference {expected}"
+                    ));
+                }
+            }
+        }
+        if kind == "line" {
+            let normalize = |a: f64, b: f64, c: f64| {
+                let norm = a.hypot(b).copysign(if a.abs() > b.abs() { a } else { b });
+                [a / norm, b / norm, c / norm]
+            };
+            let got = normalize(
+                num(&actual["coords"]["a"]),
+                num(&actual["coords"]["b"]),
+                num(&actual["coords"]["c"]),
+            );
+            let want = normalize(num(&geo["a"]), num(&geo["b"]), num(&geo["c"]));
+            if !got.into_iter().zip(want).all(|(a, b)| same(a, b)) {
+                diffs.push(format!(
+                    "{when}: {name} has normalized coefficients {got:?}, reference {want:?}"
+                ));
+            }
         }
         let fields: &[&str] = match kind {
             "point" | "vector" => &["x", "y"],
@@ -1319,8 +1462,6 @@ fn compare_tool_capture(capture: &Value, out: &Outcome) -> Vec<String> {
     let frames = capture["frames"].as_array().unwrap();
     let undo = capture["undo"].as_array().unwrap();
     let desktop_only = match capture["name"].as_str() {
-        Some("tool_text_places_literal") => Some("text1"),
-        Some("tool_input_box_places_empty_widget") => Some("InputBox1"),
         Some("tool_create_list_from_rectangle") => Some("l1"),
         _ => None,
     };
@@ -1352,11 +1493,10 @@ fn compare_tool_capture(capture: &Value, out: &Outcome) -> Vec<String> {
         }
         compare_frame(frame, state, &when, &mut diffs);
     }
-    if let Some(frame) = frames.last() {
+    if let Some(frame) = frames.last().filter(|_| capture.get("settled").is_none()) {
         compare_frame(frame, &out.after, "settled", &mut diffs);
     }
-    // Desktop submits the two dialogs and creates the list. Their one
-    // additional undo step must return to the reference's initial state.
+    // The desktop list action adds one undo step, returning to the initial state.
     let expected_undo: Vec<_> = if desktop_only.is_some() {
         assert!(undo.is_empty(), "reference acquired a new undo step");
         vec![&capture["initial"]]
@@ -1381,6 +1521,311 @@ fn compare_tool_capture(capture: &Value, out: &Outcome) -> Vec<String> {
         diffs.push("missing relation report".to_owned());
     }
     diffs
+}
+
+fn compare_parity_capture(capture: &Value, out: &Outcome) -> Vec<String> {
+    let mut diffs = compare_tool_capture(capture, out);
+    compare_tool_objects(&capture["settled"], &out.after, "settled", &mut diffs);
+    if let Some(reference) = capture.get("reloaded") {
+        compare_tool_objects(
+            reference,
+            out.reloaded.as_ref().unwrap(),
+            "reloaded",
+            &mut diffs,
+        );
+    }
+    let last = capture["interaction"].as_array().unwrap().last().unwrap();
+    let selection = out.after["selected"]
+        .as_str()
+        .into_iter()
+        .collect::<Vec<_>>();
+    if json!(selection) != last["selection"] {
+        diffs.push(format!(
+            "selection {selection:?}, reference {}",
+            last["selection"]
+        ));
+    }
+    if json!(out.undo_added) != last["undo_steps_added"] {
+        diffs.push(format!(
+            "{} undo steps, reference {}",
+            out.undo_added, last["undo_steps_added"]
+        ));
+    }
+    if tool_name(last["mode"].as_i64().unwrap()) != out.after["tool"]["id"].as_str() {
+        diffs.push(format!(
+            "tool {}, reference mode {}",
+            out.after["tool"]["id"], last["mode"]
+        ));
+    }
+    diffs
+}
+
+#[test]
+fn parity_capture_undo_matches_checkpoint_depth() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let mut mismatches = Vec::new();
+    for case in capture["scenarios"].as_array().unwrap() {
+        let last = case["interaction"].as_array().unwrap().last().unwrap();
+        let depth = last["undo_steps_added"].as_u64().unwrap() as usize;
+        let recorded = case["undo"].as_array().unwrap().len();
+        assert!(
+            recorded <= 4,
+            "{} has too many undo snapshots",
+            case["name"]
+        );
+        assert_eq!(
+            case["undo_views"].as_array().unwrap().len(),
+            recorded,
+            "{}",
+            case["name"]
+        );
+        if depth != recorded {
+            mismatches.push(format!(
+                "{}: {depth} checkpoints, {recorded} undos",
+                case["name"]
+            ));
+        }
+    }
+    assert!(mismatches.is_empty(), "{}", mismatches.join("\n"));
+}
+
+#[test]
+fn radius_escape_is_marked_as_a_platform_boundary() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let case = capture["scenarios"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "circle_radius_dialog_cancel")
+        .unwrap();
+    assert_eq!(case["dialogs"], json!([{ "kind": "radius", "point": "A" }]));
+    assert_eq!(
+        case["metadata"],
+        json!({ "unhandled_platform_key": "Escape" })
+    );
+    assert_eq!(case["frames"][0]["objects"], case["frames"][1]["objects"]);
+    assert_eq!(case["interaction"][1]["undo_steps_added"], 1);
+}
+
+#[test]
+fn the_area_anchor_collision_leaves_the_text_label_available() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let case = capture["scenarios"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "area_polygon_occupied_anchor_label")
+        .unwrap();
+    assert_eq!(case["settled"]["Textp"]["anchor"], "Pointp");
+    assert_eq!(case["settled"]["Pointp_{1}"]["x"], 0.0);
+    for idle in [false, true] {
+        let out = replay(case, idle, "ours").unwrap();
+        assert_eq!(object(&out.after, "Pointp").unwrap()["coords"]["x"], 0.0);
+        let text = object(&out.after, "Textp").unwrap();
+        assert_eq!(text["anchor"], "Pointp_{1}");
+        assert_eq!(
+            text["measure_subject"],
+            case["settled"]["Textp"]["measure_subject"]
+        );
+        assert_eq!(text["background"], case["settled"]["Textp"]["background"]);
+        assert_eq!(out.undo_added, 1);
+    }
+}
+
+#[test]
+fn zoom_drag_respects_the_recorded_press_delay() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let scenarios = capture["scenarios"].as_array().unwrap();
+    let case = scenarios
+        .iter()
+        .find(|case| case["name"] == "zoom_in_tool_rectangle_fills_canvas")
+        .unwrap();
+    let states = case["interaction"].as_array().unwrap();
+    assert!(states
+        .iter()
+        .filter(|state| num(&state["t"]) < 100.0)
+        .all(|state| state.get("rectangle").is_none()));
+    assert!(states.iter().any(|state| state.get("rectangle").is_some()));
+}
+
+#[test]
+fn replay_fresh_controller_gestures() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let mut mismatches = Vec::new();
+    for case in capture["scenarios"].as_array().unwrap() {
+        let name = case["name"].as_str().unwrap();
+        if !matches!(
+            name,
+            "circle_radius_dialog_cancel"
+                | "segment_tool_twice_stays_selected"
+                | "zoom_rectangle_near_view_aspect"
+                | "two_fingers_scale_x_axis"
+                | "two_fingers_scale_circle"
+                | "two_fingers_move_line"
+                | "drag_release_outside_canvas"
+                | "rapid_second_press_on_point"
+        ) {
+            continue;
+        }
+        for idle in [false, true] {
+            let out = replay(case, idle, "ours").unwrap_or_else(|error| panic!("{name}: {error}"));
+            let last = case["interaction"].as_array().unwrap().last().unwrap();
+            for (index, field) in [(2, "scale"), (3, "yscale")] {
+                let expected = num(&last["view"][index]);
+                let got = num(&out.after["view"][field]);
+                if !same(got, expected) {
+                    mismatches.push(format!("{name}: {field} {got}, reference {expected}"));
+                }
+            }
+            let mut diffs = Vec::new();
+            if name == "drag_release_outside_canvas" {
+                // The owner adds a step restoring the pre-drag construction.
+                assert_eq!(last["undo_steps_added"], 0);
+                let mut expected = case.clone();
+                expected["undo"] = json!([case["initial"]]);
+                expected["interaction"]
+                    .as_array_mut()
+                    .unwrap()
+                    .last_mut()
+                    .unwrap()["undo_steps_added"] = json!(1);
+                diffs.extend(compare_parity_capture(&expected, &out));
+            } else if name.starts_with("two_fingers_") {
+                compare_tool_objects(&case["settled"], &out.after, "settled", &mut diffs);
+            } else if name == "rapid_second_press_on_point" {
+                diffs.extend(compare_parity_capture(case, &out));
+                let request = &case["dialogs"][0];
+                assert_eq!(request["kind"], "redefine");
+                let label = request["object"].as_str().unwrap();
+                if !out.after["input"]["text"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with(&format!("{label} = "))
+                {
+                    diffs.push(format!("definition of {label} was not opened"));
+                }
+            } else if name == "zoom_rectangle_near_view_aspect" {
+                // The owner makes a completed view change an immediate undo step.
+                if out.undo_added != 1 {
+                    diffs.push(format!("{} undo steps, expected one", out.undo_added));
+                }
+            } else {
+                diffs.extend(compare_parity_capture(case, &out));
+            }
+            mismatches.extend(diffs.into_iter().map(|diff| format!("{name}: {diff}")));
+        }
+    }
+    assert!(mismatches.is_empty(), "{}", mismatches.join("\n"));
+}
+
+#[test]
+fn accepting_a_point_redefine_keeps_the_drag() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let case = capture["scenarios"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "point_redefine_after_drag")
+        .unwrap();
+    assert!(case["dialogs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|request| { request["kind"] == "redefine" && request["object"] == "A" }));
+    for idle in [false, true] {
+        let out = replay(case, idle, "ours").unwrap();
+        let (_, opened) = &out.tool_frames[2];
+        assert_eq!(opened["input"]["text"], "A = (3, 2)");
+        assert_eq!(opened["keyboard_open"], false);
+        assert_eq!(out.after["input"]["text"], "");
+        let mut diffs = Vec::new();
+        compare_tool_objects(&case["settled"], &out.after, "after Enter", &mut diffs);
+        assert!(diffs.is_empty(), "{}", diffs.join("\n"));
+        assert_eq!(out.undo_added, 1, "only the drag adds a desktop checkpoint");
+        compare_tool_objects(&case["initial"], &out.tool_undo[0], "undo drag", &mut diffs);
+        assert!(diffs.is_empty(), "{}", diffs.join("\n"));
+    }
+}
+
+#[test]
+fn releasing_a_point_outside_undoes_its_drag_before_the_previous_edit() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let case = capture["scenarios"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "outside_point_release_after_creation")
+        .unwrap();
+    for idle in [false, true] {
+        let reference = replay(case, idle, "reference").unwrap();
+        let diffs = compare_parity_capture(case, &reference);
+        assert!(diffs.is_empty(), "{}", diffs.join("\n"));
+
+        let out = replay(case, idle, "ours").unwrap();
+        let mut diffs = Vec::new();
+        compare_tool_objects(&case["settled"], &out.after, "outside release", &mut diffs);
+        assert!(diffs.is_empty(), "{}", diffs.join("\n"));
+        assert_eq!(out.undo_added, 2);
+        compare_tool_objects(
+            &case["frames"][0]["objects"],
+            &out.tool_undo[0],
+            "undo drag",
+            &mut diffs,
+        );
+        compare_tool_objects(
+            &case["initial"],
+            &out.tool_undo[1],
+            "undo creation",
+            &mut diffs,
+        );
+        assert!(diffs.is_empty(), "{}", diffs.join("\n"));
+    }
+}
+
+#[test]
+fn returning_both_fingers_restores_the_original_line() {
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    let case = capture["scenarios"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "two_fingers_return_line_to_start")
+        .unwrap();
+    assert!(!same(num(&case["metadata"]["displaced"]["A"]["y"]), 2.0));
+    assert!(same(num(&case["settled"]["A"]["y"]), 1.39));
+    for idle in [false, true] {
+        let out = replay(case, idle, "ours").unwrap();
+        let mut diffs = Vec::new();
+        compare_tool_objects(&case["initial"], &out.after, "fingers returned", &mut diffs);
+        assert!(diffs.is_empty(), "{}", diffs.join("\n"));
+    }
+}
+
+#[test]
+fn grid_steps_follow_the_recorded_view_scales() {
+    use geo_app_core::ticks::grid_steps;
+
+    let capture: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    for name in [
+        "grid_steps_during_zoom",
+        "zoom_in_tool_rectangle_fills_canvas",
+    ] {
+        let case = capture["scenarios"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|scenario| scenario["name"] == name)
+            .unwrap();
+        for frame in case["interaction"].as_array().unwrap() {
+            for axis in 0..2 {
+                assert_eq!(
+                    grid_steps(num(&frame["view"][axis + 2]), 100.0).major,
+                    num(&frame["grid_step"][axis]),
+                    "{name} at t = {}",
+                    frame["t"]
+                );
+            }
+        }
+    }
 }
 
 #[test]
@@ -1422,7 +1867,9 @@ fn the_observed_pointer_scenarios_replay() {
     let mut table = Vec::new();
     let mut failed = Vec::new();
     let (mut replayed, mut ours) = (0, 0);
-    let mut skipped = std::collections::BTreeMap::<u8, usize>::new();
+    let parity: Value = serde_json::from_str(PARITY_CAPTURE).unwrap();
+    assert_eq!(parity["generator"], "ggb-harness");
+    let parity = parity["scenarios"].as_array().unwrap();
     // Both frame pacings; the differences of the second are marked.
     let both = |s: &Value, rules: &str, run: &dyn Fn(&Outcome) -> Vec<String>| {
         let mut diffs = Vec::new();
@@ -1459,6 +1906,9 @@ fn the_observed_pointer_scenarios_replay() {
             }
             recaptured += 1;
         }
+        if RECORDED.contains(&name) {
+            continue;
+        }
         let diffs = both(capture, "ours", &|out| compare_tool_capture(capture, out));
         if !diffs.is_empty() {
             failed.push(name.to_owned());
@@ -1481,17 +1931,39 @@ fn the_observed_pointer_scenarios_replay() {
             "{name}: missing observation source"
         );
         let area_outcome = (s["tool_mode"] == 49)
-            .then(|| supported_area_outcome(&s["expected"]))
+            .then(|| supported_conic_area_outcome(&s["expected"]))
             .flatten();
         let expected = area_outcome.as_ref().unwrap_or(&s["expected"]);
         let status = match part(name) {
             None => {
                 failed.push(name.to_owned());
-                "FAIL: in no list (landed, ours or skipped)".to_owned()
+                "FAIL: in no list (landed, recorded or ours)".to_owned()
             }
-            Some(Part::Skipped(g, why)) => {
-                *skipped.entry(g).or_default() += 1;
-                format!("skipped (group {g}: {why})")
+            Some(Part::Recorded) => {
+                replayed += 1;
+                let capture = parity.iter().find(|c| c["name"] == name).unwrap();
+                for key in ["tool_mode", "initial_script", "events"] {
+                    assert_eq!(capture[key], s[key], "{name} {key}");
+                }
+                let mut diffs = both(capture, "ours", &|out| compare_parity_capture(capture, out));
+                if name == "enter_on_empty_input_row" {
+                    // The Java input preview has no platform keyboard. Retain the
+                    // original web observation for the application's input row.
+                    assert_eq!(capture["metadata"]["normalized_input"], "");
+                    diffs.extend(both(s, "ours", &|out| {
+                        let mut diffs = compare(expected, out, true);
+                        if out.after["keyboard_open"] != expected["keyboard_stays_open"] {
+                            diffs.push("empty Enter closed the keyboard".to_owned());
+                        }
+                        diffs
+                    }));
+                }
+                if diffs.is_empty() {
+                    "pass (controller capture)".to_owned()
+                } else {
+                    failed.push(name.to_owned());
+                    format!("FAIL: {}", diffs.join("; "))
+                }
             }
             Some(Part::Landed(g)) => {
                 replayed += 1;
@@ -1541,21 +2013,20 @@ fn the_observed_pointer_scenarios_replay() {
         .iter()
         .flat_map(|(_, n)| n.iter())
         .chain(OURS.iter().map(|(n, _)| n))
-        .chain(SKIPPED.iter().flat_map(|(_, _, n)| n.iter()));
+        .chain(RECORDED.iter());
     let mut count = 0;
     for n in listed {
         assert_eq!(names.iter().filter(|m| *m == n).count(), 1, "{n}");
         count += 1;
     }
     assert_eq!(count, names.len());
-    assert_eq!((replayed, ours), (104, 4), "scenarios replayed");
+    assert_eq!((replayed, ours), (107, 4), "scenarios replayed");
     let unique_replayed = replayed + ours + captured_passes;
     let unique_scenarios = names.len() + captures.len() - recaptured;
-    assert_eq!((unique_replayed, unique_scenarios), (131, 138));
-    assert_eq!(
-        skipped.into_iter().collect::<Vec<_>>(),
-        [(5, 1), (6, 1), (8, 1)],
-        "scenarios skipped, by group"
+    assert_eq!((unique_replayed, unique_scenarios), (134, 138));
+    println!(
+        "{replayed} reference cases, {ours} application expectations, 0 skipped; \
+         {unique_replayed} unique replays, {bounded} over the shape cap"
     );
 }
 

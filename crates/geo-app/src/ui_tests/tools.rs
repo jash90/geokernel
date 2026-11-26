@@ -202,20 +202,21 @@ fn scene_labels() -> Vec<String> {
 }
 
 #[test]
-fn cancelling_the_number_dialog_takes_the_new_point_away() {
-    // Circle with radius on empty space: the centre is made at once, as a
-    // pending point of the tool use; cancelling the dialog ends the use
-    // unfinished and takes it away (spec E5; what the reference does on a
-    // cancelled dialog is unconfirmed, this follows its Escape rule).
+fn cancelling_the_radius_dialog_keeps_the_new_centre() {
+    // The radius dialog's cancel action leaves the centre in the construction.
     let mut h = with_clicks(Tool::CircleRadius, &[(0.0, 2.0)]);
     assert!(h.state().tool.asking().is_some());
     assert!(h.state().wb.construction().id("F").is_some());
     h.key_press(egui::Key::Escape);
     h.run();
-    assert_eq!(labels(&h), scene_labels());
+    let mut expected = scene_labels();
+    expected.push("F".to_owned());
+    assert_eq!(labels(&h), expected);
     let app = h.state();
     assert!(app.tool.asking().is_none() && app.tool.picks().is_empty());
-    assert_eq!(app.wb.undo_depth(), (0, 0));
+    assert_eq!(app.wb.undo_depth(), (1, 0));
+    undo(&mut h);
+    assert_eq!(labels(&h), scene_labels());
 }
 
 #[test]
@@ -765,8 +766,31 @@ fn area_uses_the_conic_label_and_prefers_a_conic_over_polygon_fill() {
     click(&mut h, world(2.0, -2.0));
     assert_eq!(h.state().wb.definition("areac_1"), Some("Area(c)"));
     click(&mut h, world(1.5, -2.0));
-    assert!(h.state().wb.construction().id("areap").is_none());
-    assert_eq!(h.state().wb.undo_depth(), (2, 0));
+    let wb = &h.state().wb;
+    let c = wb.construction();
+    let text = c.id("Textp").expect("polygon area label");
+    let point = c.id("Pointp").expect("polygon area anchor");
+    assert_eq!(c.text(text).unwrap().rsplit_once(" = ").unwrap().1, "12");
+    assert_eq!(
+        c.text_position(text),
+        Some(geo_kernel::kernel::text::TextPosition::Point(point))
+    );
+    assert_eq!(wb.definition("Pointp"), Some("PointIn(p)"));
+    assert!(!wb.is_visible(point));
+    assert_eq!(wb.undo_depth(), (3, 0));
+    let d = c.id("D").unwrap();
+    assert!(h.state_mut().wb.move_point(d, 1.0, -4.5));
+    assert_eq!(
+        h.state()
+            .wb
+            .construction()
+            .text(text)
+            .unwrap()
+            .rsplit_once(" = ")
+            .unwrap()
+            .1,
+        "14"
+    );
 }
 
 #[test]

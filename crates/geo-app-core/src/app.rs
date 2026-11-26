@@ -115,6 +115,13 @@ pub struct InputBoxEdit {
     pub changed: bool,
 }
 
+struct PointDefinitionDraft {
+    input: String,
+    point: Id,
+    definition: geo_kernel::Def,
+    rebuilds: u64,
+}
+
 pub struct App {
     pub wb: Workbench,
     pub show_cas: bool,
@@ -139,6 +146,7 @@ pub struct App {
     /// The tool each toolbar group shows (the last one chosen in it).
     pub group_tools: Vec<Tool>,
     pub input: String,
+    point_definition_draft: Option<PointDefinitionDraft>,
     pub input_error: Option<String>,
     pub tool_error: Option<String>,
     pub relation_report: Option<Vec<geo_kernel::algo::predicate::RelationReport>>,
@@ -152,6 +160,7 @@ pub struct App {
     /// The object under the pointer in the drawing area.
     pub hovered: Option<Id>,
     pub focus_input: bool,
+    pub focus_point_definition: bool,
     /// The input row's cursor (in characters), kept while the on-screen
     /// keyboard takes the focus for a moment.
     pub input_cursor: usize,
@@ -205,6 +214,7 @@ pub struct App {
     /// The pinch in progress (`twoTouchStart` .. `twoTouchEnd`), while
     /// two fingers hold the view.
     pub pinch: Option<crate::camera::Pinch>,
+    pub touch_target: Option<crate::camera::TouchTarget>,
     /// An axis the current drag rescales (`camera::axis_scale`), with the
     /// world value the press grabbed on it.
     pub axis: Option<crate::camera::AxisDrag>,
@@ -263,6 +273,7 @@ impl App {
             tool: ToolState::new(Tool::Move),
             group_tools: GROUPS.iter().map(|g| g[0]).collect(),
             input: String::new(),
+            point_definition_draft: None,
             input_error: None,
             tool_error: None,
             relation_report: None,
@@ -273,6 +284,7 @@ impl App {
             decor,
             hovered: None,
             focus_input: false,
+            focus_point_definition: false,
             input_cursor: 0,
             cursor_request: None,
             keyboard: Keyboard::default(),
@@ -302,6 +314,7 @@ impl App {
             pinching: false,
             fingers: std::collections::BTreeMap::new(),
             pinch: None,
+            touch_target: None,
             axis: None,
             rect_from: None,
             rect_to: None,
@@ -375,6 +388,45 @@ impl App {
         } else {
             self.properties = crate::properties::Dialog::open(&self.wb, [id]);
         }
+    }
+
+    /// Starts an edit of a point's definition through the input row.
+    pub fn edit_point_definition(&mut self, id: Id) {
+        let c = self.wb.construction();
+        if c.kind(id) != geo_kernel::Kind::Point || c.appearance(id).fixed == Some(true) {
+            return;
+        }
+        let label = c.label(id);
+        let Some(definition) = self.wb.definition(label) else {
+            return;
+        };
+        if label.len().saturating_add(definition.len()) > crate::tools::MAX_PLACED_TEXT_CHARS {
+            return;
+        }
+        let input = match (c.def(id), c.construction_source(id), c.value(id)) {
+            (geo_kernel::Def::FreePoint { .. }, None, geo_kernel::Value::Point { x, y }) => {
+                let point = if geo_kernel::script::is_vector_label(label) {
+                    "$point"
+                } else {
+                    ""
+                };
+                format!("{label} = {point}({x}, {y})")
+            }
+            _ => format!("{label} = {definition}"),
+        };
+        if input.len() > crate::tools::MAX_PLACED_TEXT_CHARS {
+            return;
+        }
+        self.point_definition_draft = Some(PointDefinitionDraft {
+            input: input.clone(),
+            point: id,
+            definition: c.def(id),
+            rebuilds: self.wb.rebuilds(),
+        });
+        self.input = input;
+        self.input_error = None;
+        self.cursor_request = Some(self.input.chars().count());
+        self.focus_point_definition = true;
     }
 
     /// Replaces the algebra selection with a single object, or clears it.
@@ -542,16 +594,36 @@ impl App {
         self.style_bar = false;
     }
 
+    /// Replaces the draft with a new input, such as a recalled history entry.
+    pub fn set_input_draft(&mut self, input: String) {
+        self.input = input;
+        self.point_definition_draft = None;
+    }
+
     /// Runs the input row's text.
     pub fn submit_input(&mut self) {
-        match self.wb.run_line(&self.input) {
+        // A move can change a free point's definition while the draft is open.
+        // A rebuild can also replace its ID. In either case submit the draft.
+        let unchanged = self.point_definition_draft.as_ref().is_some_and(|draft| {
+            let c = self.wb.construction();
+            draft.input == self.input
+                && draft.rebuilds == self.wb.rebuilds()
+                && draft.point.index() < c.len()
+                && draft.definition == c.def(draft.point)
+        });
+        let result = if unchanged {
+            Ok(())
+        } else {
+            self.wb.run_line(&self.input)
+        };
+        match result {
             Ok(()) => {
                 // A tool use that does not finish ends (its points went
                 // with it, `Workbench::run_lines`); a failed line changes
                 // nothing, the use goes on.
                 self.tool.reset();
                 self.tool_press = None;
-                self.input.clear();
+                self.set_input_draft(String::new());
                 self.input_cursor = 0;
                 self.input_error = None;
                 self.select_only(None);
@@ -598,7 +670,11 @@ impl App {
                 Ok(()) => {
                     self.tool_error = None;
                     let id = self.wb.construction().ids().last();
-                    self.select_only(id);
+                    self.select_only(if self.tool.tool() == Tool::Segment {
+                        None
+                    } else {
+                        id
+                    });
                 }
                 Err(e) => {
                     self.tool_error = Some(errors::polish(&e));
@@ -665,6 +741,35 @@ pub fn parse_number(s: &str) -> Option<f64> {
 #[cfg(test)]
 mod tests {
     use super::parse_number;
+
+    #[test]
+    fn point_definition_edit_caps_the_input_copy() {
+        let mut app = super::App::new(crate::workbench::Workbench::default(), None);
+        let padding = " ".repeat(crate::tools::MAX_PLACED_TEXT_CHARS);
+        app.wb.load_script(&format!("A = (1,{padding}2)")).unwrap();
+        let id = app.wb.construction().id("A").unwrap();
+        app.edit_point_definition(id);
+        assert!(app.input.is_empty());
+        assert!(!app.focus_point_definition);
+    }
+
+    #[test]
+    fn point_definition_draft_can_be_submitted_after_the_point_moves_again() {
+        let mut wb = crate::workbench::Workbench::default();
+        wb.load_script("A = (3, 2)").unwrap();
+        let id = wb.construction().id("A").unwrap();
+        let mut app = super::App::new(wb, None);
+        app.edit_point_definition(id);
+        assert_eq!(app.input, "A = (3, 2)");
+        assert!(app.wb.move_point(id, 5.0, 5.0));
+        app.submit_input();
+        let c = app.wb.construction();
+        assert_eq!(
+            c.value(c.id("A").unwrap()),
+            geo_kernel::Value::Point { x: 3.0, y: 2.0 }
+        );
+        assert_eq!(app.wb.undo_depth(), (2, 0));
+    }
 
     #[test]
     fn typed_numbers_accept_a_comma_and_a_degree_sign() {

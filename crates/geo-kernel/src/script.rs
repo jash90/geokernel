@@ -57,6 +57,7 @@ use crate::algo::intersect;
 use crate::algo::lines::LineDef;
 use crate::algo::measure::MeasureDef;
 use crate::algo::optimize::OptimizeDef;
+use crate::algo::path::PathState;
 use crate::algo::point::PointDef;
 use crate::algo::polygon::PolygonDef;
 use crate::algo::predicate::PredicateDef;
@@ -1155,6 +1156,7 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
 fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id, String>> {
     if !rhs.starts_with("$saved(")
         && !rhs.starts_with("$pointOnPath(")
+        && !rhs.starts_with("$pointInRegion(")
         && !rhs.starts_with("$homogeneousPoint(")
         && !rhs.starts_with("$slider(")
         && !rhs.starts_with("$penStroke(")
@@ -1195,6 +1197,34 @@ fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id
                 )
                 .map_err(|e| e.to_string()),
             ("$penStroke", coords) => c.add_saved_stroke(name, coords),
+            ("$pointInRegion", [region, values @ ..]) => {
+                let region = object(c, region)?;
+                let state = match values {
+                    [x, y] => {
+                        PathState::saved_region(c, region, parse_number(x)?, parse_number(y)?)
+                    }
+                    [second, third, u, v] => {
+                        let index = |n: &str| {
+                            n.parse::<usize>()
+                                .map_err(|_| "invalid polygon vertex index")
+                        };
+                        PathState::saved_polygon_region(
+                            c,
+                            region,
+                            (
+                                index(second)?,
+                                index(third)?,
+                                parse_number(u)?,
+                                parse_number(v)?,
+                            ),
+                        )
+                        .ok_or("invalid polygon region parameters")?
+                    }
+                    _ => return Err("invalid saved region point".into()),
+                };
+                c.add_saved_region_point(name, region, state)
+                    .map_err(|e| e.to_string())
+            }
             ("$pointOnPath", [curve, parameter]) => c
                 .add_saved_curve_point(name, object(c, curve)?, parse_number(parameter)?)
                 .map_err(|e| e.to_string()),

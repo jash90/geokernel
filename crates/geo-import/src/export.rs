@@ -658,12 +658,13 @@ impl Writer<'_> {
         if c.is_independent_text(id) {
             return self.expression(id, &text_expression(c.text(id).unwrap_or_default()));
         }
-        if call
-            .as_ref()
-            .is_some_and(|(name, _)| *name == "$pointOnPath")
-        {
-            let (_, args) = call.expect("saved path point has arguments");
-            return self.command("Point", &args[..1], outputs);
+        if let Some((form @ ("$pointOnPath" | "$pointInRegion"), args)) = &call {
+            let command = if *form == "$pointOnPath" {
+                "Point"
+            } else {
+                "PointIn"
+            };
+            return self.command(command, &args[..1], outputs);
         }
         if matches!(c.kind(id), Kind::Function | Kind::FunctionNVar) && lhs.ends_with(')') {
             return self.expression(id, &format!("{lhs} = {}", syntax(source)?));
