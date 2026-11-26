@@ -2081,6 +2081,26 @@ fn point_list_increment_length_alias_round_trips_at_the_attribute_limit() {
     assert!(exported_xml(&reloaded).contains(&increment));
 }
 
+#[test]
+fn bracketed_segment_length_still_exports_in_point_arithmetic() {
+    let wb = review_workbench(
+        br#"<geogebra><construction>
+      <element type="point" label="A"><coords x="0" y="0" z="1"/></element>
+      <element type="point" label="B"><coords x="3" y="4" z="1"/></element>
+      <command name="Segment"><input a0="A" a1="B"/><output a0="s"/></command>
+      <element type="segment" label="s"/>
+      <element type="point" label="P"><coords x="0" y="1" z="1"/>
+        <incrementY val="Length[s] + 1"/>
+      </element>
+    </construction></geogebra>"#,
+    );
+    assert_eq!(
+        wb.construction().kind(wb.construction().id("s").unwrap()),
+        Kind::Segment
+    );
+    assert!(exported_xml(&wb).contains(r#"<incrementY val="Length(s) + 1"/>"#));
+}
+
 const SHADOWED_POINT_INCREMENTS: &str = "saved-export-point-increment-shadow-001.xml";
 const SHADOWED_LIST_LENGTHS: [(&str, &str, f64); 4] = [
     ("P", "Length[L]", 3.0),
