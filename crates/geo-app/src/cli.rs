@@ -4,7 +4,7 @@ use crate::workbench::Workbench;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
-pub const USAGE: &str = "usage: geokernel-app [--touch] [script.geo | file.ggb]\n  --touch  larger hit areas and buttons, as on a touch screen";
+pub const USAGE: &str = "usage: geokernel-app [--touch] [script.geo | file.ggb] | --version\n  --touch  larger hit areas and buttons, as on a touch screen";
 
 /// What the command line asked for.
 #[derive(Debug, PartialEq, Eq)]
@@ -16,6 +16,7 @@ pub enum Command {
         touch: bool,
     },
     Help,
+    Version,
 }
 
 /// Parses the arguments after the program name. A path need not be valid
@@ -26,6 +27,7 @@ pub fn parse_args<I: IntoIterator<Item = OsString>>(args: I) -> Result<Command, 
     for arg in args {
         match arg.to_str() {
             Some("-h" | "--help") => return Ok(Command::Help),
+            Some("--version") => return Ok(Command::Version),
             Some("--touch") => touch = true,
             Some(a) if a.starts_with('-') && a.len() > 1 => {
                 return Err(format!("unknown option `{a}`"));
@@ -120,6 +122,11 @@ mod tests {
     fn help_flags() {
         assert_eq!(parse(&["--help"]), Ok(Command::Help));
         assert_eq!(parse(&["a.geo", "-h"]), Ok(Command::Help));
+    }
+
+    #[test]
+    fn version_is_a_separate_command() {
+        assert_eq!(parse(&["--version"]), Ok(Command::Version));
     }
 
     #[test]

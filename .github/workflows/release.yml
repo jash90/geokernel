@@ -1,0 +1,299 @@
+name: Release packages
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - tools/release/**
+      - tools/giac/fetch*.sh
+      - tools/giac/source-offer.txt
+      - docs/releases/1.0.md
+      - crates/geo-app/src/cli.rs
+      - crates/geo-app/src/main.rs
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (for example 1.0.0)
+        type: string
+        default: '1.0.0'
+        required: true
+      product:
+        description: Display name used by the installers (D7)
+        type: string
+        default: geokernel
+      identifier:
+        description: Reverse-DNS identifier, with the geokernel icon (D8)
+        type: string
+        default: org.example.geokernel
+      macos_sign:
+        description: Sign and notarize with Apple credentials when available (D9)
+        type: boolean
+        default: false
+      windows_sign:
+        description: Sign with the Windows certificate when available (D10)
+        type: boolean
+        default: false
+      linux_formats:
+        description: Linux package formats (D11)
+        type: choice
+        options: [both, appimage, deb]
+        default: both
+      giac_source_url:
+        description: HTTPS URL of the pinned Giac 70507 publisher archive
+        type: string
+      giac_source_sha256:
+        description: SHA-256 of the Giac 70507 publisher archive
+        type: string
+      dry_run:
+        description: Build and smoke-test workflow artifacts only
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-packages-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PRODUCT_NAME: ${{ inputs.product || 'geokernel' }}
+  APP_IDENTIFIER: ${{ inputs.identifier || 'org.example.geokernel' }}
+  LINUX_FORMATS: ${{ inputs.linux_formats || 'both' }}
+  GIAC_SOURCE_URL: ${{ github.event_name != 'pull_request' && (inputs.giac_source_url || vars.GIAC_SOURCE_URL) || '' }}
+  GIAC_SOURCE_SHA256: ${{ github.event_name != 'pull_request' && (inputs.giac_source_sha256 || vars.GIAC_SOURCE_SHA256) || '' }}
+  GIAC_DEPENDENCY_SOURCE_URL: ${{ vars.GIAC_DEPENDENCY_SOURCE_URL }}
+  GIAC_DEPENDENCY_SOURCE_SHA256: ${{ vars.GIAC_DEPENDENCY_SOURCE_SHA256 }}
+
+jobs:
+  plan:
+    name: Validate release settings
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      giac: ${{ steps.plan.outputs.giac }}
+      publish: ${{ steps.plan.outputs.publish }}
+      commit: ${{ steps.plan.outputs.commit }}
+      macos_sign: ${{ steps.plan.outputs.macos_sign }}
+      windows_sign: ${{ steps.plan.outputs.windows_sign }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test packaging logic
+        run: python3 -m unittest discover -s tools/release -v
+      - name: Select packages
+        id: plan
+        env:
+          INPUT_VERSION: ${{ inputs.version || '1.0.0' }}
+          DRY_RUN: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          MACOS_SIGN: ${{ inputs.macos_sign || (github.event_name == 'push' && vars.RELEASE_MACOS_SIGN == 'true') }}
+          WINDOWS_SIGN: ${{ inputs.windows_sign || (github.event_name == 'push' && vars.RELEASE_WINDOWS_SIGN == 'true') }}
+        run: |
+          version="$INPUT_VERSION"
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          if [ "$DRY_RUN" = false ] && [ "$GITHUB_REF" != "refs/tags/v$version" ] &&
+            [ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
+            echo "::error::Publishing requires the release tag or the default branch."
+            exit 1
+          fi
+          export RELEASE_VERSION="$version"
+          python3 tools/release/packaging_release.py validate
+          giac='Omitted. The pinned Giac publisher source and reviewed GMP/MPFR source must both pass verification.'
+          gpl=false
+          if [ -n "$GIAC_SOURCE_URL" ] && [ -n "$GIAC_SOURCE_SHA256" ] &&
+            [ -n "$GIAC_DEPENDENCY_SOURCE_URL" ] && [ -n "$GIAC_DEPENDENCY_SOURCE_SHA256" ]; then
+            if python3 tools/release/packaging_release.py source-gate; then
+              giac='Included. The verified Giac 70507 publisher archive and reviewed GMP/MPFR source ship with each GPL package.'
+              gpl=true
+            else
+              giac='Omitted. The Giac 70507 source gate failed. See the workflow log for details.'
+            fi
+          fi
+          echo "$giac" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "version=$version"
+            echo "commit=$(git rev-parse HEAD)"
+            if [ "$GITHUB_EVENT_NAME" != pull_request ] &&
+              { [ "$GITHUB_REF_TYPE" = tag ] || [ "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH" ]; }; then
+              echo "macos_sign=$MACOS_SIGN"
+              echo "windows_sign=$WINDOWS_SIGN"
+            fi
+            echo "giac=$giac"
+            if [ "$DRY_RUN" = false ]; then
+              echo 'publish=true'
+            else
+              echo 'publish=false'
+            fi
+            printf 'matrix='
+            python3 tools/release/release_matrix.py "$gpl"
+          } >> "$GITHUB_OUTPUT"
+
+  package:
+    name: ${{ matrix.platform }} ${{ matrix.arch }} (${{ matrix.variant }})
+    needs: plan
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      RELEASE_VERSION: ${{ needs.plan.outputs.version }}
+      PLATFORM: ${{ matrix.platform }}
+      ARCHITECTURE: ${{ matrix.arch }}
+      VARIANT: ${{ matrix.variant }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Rust 1.100.0
+        run: rustup toolchain install 1.100.0 --profile minimal
+      - name: Install Linux build and packaging dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libxkbcommon-dev libxcb-render0-dev \
+            libxcb-shape0-dev libxcb-xfixes0-dev desktop-file-utils file
+      - name: Build desktop application
+        run: |
+          export GEOKERNEL_RELEASE_VERSION="$RELEASE_VERSION"
+          args=()
+          if [ "$VARIANT" = gpl ]; then
+            args+=(--features geo-kernel/giac)
+          fi
+          cargo +1.100.0 build --release --locked -p geo-app "${args[@]}"
+      - name: Package and smoke-test
+        env:
+          APPLE_CERTIFICATES_P12: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_CERTIFICATES_P12 || '' }}
+          APPLE_CERTIFICATES_PASSWORD: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_CERTIFICATES_PASSWORD || '' }}
+          APPLE_APPLICATION_IDENTITY: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_APPLICATION_IDENTITY || '' }}
+          APPLE_INSTALLER_IDENTITY: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_INSTALLER_IDENTITY || '' }}
+          APPLE_NOTARY_KEY: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_NOTARY_KEY || '' }}
+          APPLE_NOTARY_KEY_ID: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_NOTARY_KEY_ID || '' }}
+          APPLE_NOTARY_ISSUER: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_NOTARY_ISSUER || '' }}
+          WINDOWS_SIGN_PFX: ${{ runner.os == 'Windows' && needs.plan.outputs.windows_sign == 'true' && secrets.WINDOWS_SIGN_PFX || '' }}
+          WINDOWS_SIGN_PASSWORD: ${{ runner.os == 'Windows' && needs.plan.outputs.windows_sign == 'true' && secrets.WINDOWS_SIGN_PASSWORD || '' }}
+        run: |
+          python=python3
+          binary=target/release/geokernel-app
+          status='unsigned'
+          flags=()
+          if [ "$PLATFORM" = macos ]; then
+            status='unsigned and un-notarized'
+            if [ -n "$APPLE_CERTIFICATES_P12" ] &&
+              [ -n "$APPLE_CERTIFICATES_PASSWORD" ] && [ -n "$APPLE_APPLICATION_IDENTITY" ] &&
+              [ -n "$APPLE_INSTALLER_IDENTITY" ] && [ -n "$APPLE_NOTARY_KEY" ] &&
+              [ -n "$APPLE_NOTARY_KEY_ID" ] && [ -n "$APPLE_NOTARY_ISSUER" ]; then
+              flags+=(--sign)
+              status='signed and notarized'
+            fi
+          elif [ "$PLATFORM" = windows ]; then
+            python=python
+            binary="$binary.exe"
+            if [ -n "$WINDOWS_SIGN_PFX" ] &&
+              [ -n "$WINDOWS_SIGN_PASSWORD" ]; then
+              flags+=(--sign)
+              status='signed'
+            fi
+          fi
+          "$python" tools/release/packaging_release.py package "$PLATFORM" "$ARCHITECTURE" "$VARIANT" "$binary" dist "${flags[@]}"
+          echo "- $PLATFORM $ARCHITECTURE ($VARIANT) — smoke tests passed, $status." \
+            > "dist/status-$PLATFORM-$ARCHITECTURE-$VARIANT.md"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.variant }}
+          path: dist/
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: true
+
+  collect:
+    name: Collect packages and checksums
+    needs: [plan, package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: package-*
+          path: dist
+          merge-multiple: true
+      - name: Write release notes and checksums
+        env:
+          RELEASE_VERSION: ${{ needs.plan.outputs.version }}
+          GIAC_STATUS: ${{ needs.plan.outputs.giac }}
+        run: |
+          {
+            echo "# geokernel $RELEASE_VERSION"
+            echo
+            cat docs/releases/1.0.md
+            echo
+            echo '## This build'
+            echo
+            printf -- '- Product name **%s**, application identifier **%s**.\n' "$PRODUCT_NAME" "$APP_IDENTIFIER"
+            echo "- Linux formats **$LINUX_FORMATS**."
+            echo "- Giac variant. $GIAC_STATUS"
+            cat dist/status-*.md
+          } > dist/RELEASE-NOTES.md
+          rm dist/status-*.md
+          python3 tools/release/packaging_release.py checksums dist
+          (
+            cd dist
+            sha256sum --check SHA256SUMS
+          )
+          cat dist/RELEASE-NOTES.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-${{ needs.plan.outputs.version }}
+          path: dist/
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: true
+
+  publish:
+    name: Publish GitHub Release
+    if: needs.plan.outputs.publish == 'true' && github.event_name != 'pull_request'
+    needs: [plan, collect]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.plan.outputs.version }}
+      PACKAGED_COMMIT: ${{ needs.plan.outputs.commit }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets-${{ needs.plan.outputs.version }}
+          path: dist
+      - name: Publish the verified assets
+        run: |
+          tag="v$VERSION"
+          ref="refs/tags/$tag"
+          tagged_sha="$(git ls-remote "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" "$ref" "$ref^{}" |
+            awk '$2 ~ /\^\{\}$/ { peeled = $1; next } { direct = $1 } END { print peeled ? peeled : direct }')"
+          if [ "$tagged_sha" != "$PACKAGED_COMMIT" ]; then
+            echo "::error::$tag must point to the commit that was packaged."
+            exit 1
+          fi
+          (
+            cd dist
+            sha256sum --check SHA256SUMS
+          )
+          gh release create "$tag" dist/* --repo "$GITHUB_REPOSITORY" --verify-tag --draft \
+            --title "geokernel $VERSION" --notes-file dist/RELEASE-NOTES.md
+          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --draft=false

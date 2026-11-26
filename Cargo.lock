@@ -1196,6 +1196,7 @@ dependencies = [
  "eframe",
  "egui_kittest",
  "geo-app-core",
+ "geo-giac",
  "geo-kernel",
  "geo-latex",
  "image",
