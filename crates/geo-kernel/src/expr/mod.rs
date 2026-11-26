@@ -2651,6 +2651,25 @@ pub(crate) fn spreadsheet_coordinate(
     Ok(value_of_tree(c, &parsed))
 }
 
+/// Prepares a numeric presentation expression without adding a graph object.
+pub(crate) fn presentation_number(c: &Construction, text: &str) -> Option<Box<Entry>> {
+    let parsed = parse::parse_argument(c, text).ok()?;
+    if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {
+        return None;
+    }
+    Some(Box::new(Entry::new(c, parsed, false)))
+}
+
+pub(crate) fn presentation_value(c: &Construction, entry: &Entry) -> Option<f64> {
+    const MAX_PRESENTATION_WORK: u64 = 2048;
+    with_evaluation_budget(MAX_PRESENTATION_WORK, || {
+        match eval::root(c, entry, None).0 {
+            Raw::Num(value) => Some(value),
+            _ => None,
+        }
+    })
+}
+
 pub(crate) fn argument_number(c: &Construction, text: &str) -> Option<f64> {
     let parsed = parse::parse_argument(c, text).ok()?;
     if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {

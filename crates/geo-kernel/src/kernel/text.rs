@@ -29,6 +29,10 @@ pub enum TextPosition<Point = Id> {
 }
 
 impl<P> TextPosition<P> {
+    pub fn is_screen(&self) -> bool {
+        matches!(self, Self::Screen { .. } | Self::ScreenPoint(_))
+    }
+
     fn point(self) -> Option<P> {
         match self {
             Self::Point(point) | Self::ScreenPoint(point) => Some(point),
@@ -36,7 +40,7 @@ impl<P> TextPosition<P> {
         }
     }
 
-    pub(crate) fn try_map_point<Q, E>(
+    pub fn try_map_point<Q, E>(
         self,
         map: impl FnOnce(P) -> Result<Q, E>,
     ) -> Result<TextPosition<Q>, E> {

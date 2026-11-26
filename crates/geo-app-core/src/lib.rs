@@ -26,6 +26,7 @@ pub mod labels;
 pub mod layout;
 pub mod metrics;
 pub mod palette;
+pub mod properties;
 pub mod scriptlog;
 pub mod shape;
 pub mod snap;

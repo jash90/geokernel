@@ -19,6 +19,7 @@ mod grid;
 mod icons;
 mod keyboard;
 mod latex;
+mod properties;
 mod spreadsheet;
 mod theme;
 mod tool_icons;

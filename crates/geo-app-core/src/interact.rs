@@ -97,7 +97,7 @@ impl ViewTransform {
 /// Whether `id` is a free point (`GeoElement.isFreeInputPoint`; the kernel
 /// has no points on paths, which the reference app also counts).
 fn free_point(c: &Construction, id: Id) -> bool {
-    matches!(c.def(id), Def::FreePoint { .. })
+    matches!(c.def(id), Def::FreePoint { .. }) && !c.appearance(id).fixed.unwrap_or(false)
 }
 
 /// Whether the move tool can move the dependent object `id` by its free
@@ -156,6 +156,7 @@ pub fn free_input_points(c: &Construction, id: Id) -> Vec<Id> {
 /// refused.
 pub fn movable(c: &Construction, id: Id) -> bool {
     id.index() < c.len()
+        && !c.appearance(id).fixed.unwrap_or(false)
         && match c.def(id) {
             Def::FreePoint { .. } => matches!(c.value(id), Value::Point { .. }),
             _ if c.kind(id) == Kind::Text => text_drag_origin(c, id).is_some(),
@@ -293,7 +294,7 @@ pub enum TextMove {
 /// The location or offset that the text's drag can change.
 fn text_drag_origin(c: &Construction, id: Id) -> Option<TextMove> {
     let style = c.text_presentation(id)?;
-    if style.fixed {
+    if c.appearance(id).fixed.unwrap_or(style.fixed) {
         return None;
     }
     Some(match style.position {
@@ -313,6 +314,9 @@ const MAX_ROTATION_INPUTS: usize = 256;
 const MAX_ROTATION_DEPENDENCIES: usize = 2048;
 
 pub(crate) fn rotation_points(c: &Construction, id: Id) -> Option<Vec<Id>> {
+    if c.appearance(id).fixed.unwrap_or(false) {
+        return None;
+    }
     if free_point(c, id) {
         return Some(vec![id]);
     }

@@ -14,6 +14,7 @@ use geo_kernel::kernel::Value;
 mod chrome;
 mod gestures;
 mod pointer;
+mod properties;
 mod tangents;
 mod tools;
 mod upstream_tools;

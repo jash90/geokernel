@@ -25,8 +25,9 @@ const TEXT_X: f32 = theme::MARKER_CELL + 13.0;
 /// What the user did in the list this frame.
 #[derive(Default)]
 struct Actions {
-    select: Option<Option<Id>>,
+    select: Option<(Id, bool)>,
     toggle: Option<Id>,
+    properties: Option<Id>,
     delete: Option<Id>,
     set_number: Option<(Id, f64)>,
     set_boolean: Option<(Id, bool)>,
@@ -105,8 +106,11 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             d.remove::<String>(kept_id());
         }
     });
-    if let Some(s) = actions.select {
-        app.wb.selected = s;
+    if let Some((id, extend)) = actions.select {
+        app.select_algebra_object(id, extend);
+    }
+    if let Some(id) = actions.properties {
+        crate::properties::open(app, id);
     }
     if let Some(id) = actions.toggle {
         app.wb.toggle_visible(id);
@@ -126,7 +130,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     }
     // Last: deleting rebuilds the construction and invalidates every id.
     if let Some(id) = actions.delete {
-        app.wb.delete(id);
+        app.delete_object(id);
     }
 }
 
@@ -352,7 +356,7 @@ fn paint_row(
     let id = row_id(&row.label);
     let [(_, body), (_, cell), (_, kebab_rect)] = row_parts(row, rect);
     let mut keep = false;
-    let selected = app.wb.selected == Some(row.id);
+    let selected = app.wb.selected == Some(row.id) || app.property_selection.contains(&row.label);
     let hovered = app.hovered == Some(row.id);
     let painter = ui.painter_at(rect);
     if selected {
@@ -374,7 +378,10 @@ fn paint_row(
     // The body selects the object.
     let body_response = ui.interact(body, id.with("body"), Sense::click());
     if body_response.clicked() {
-        actions.select = Some(if selected { None } else { Some(row.id) });
+        actions.select = Some((
+            row.id,
+            ui.input(|i| i.modifiers.command || i.modifiers.shift),
+        ));
     }
 
     // The marker toggles visibility.
@@ -384,6 +391,19 @@ fn paint_row(
     let base = app.wb.palette().color(row.id);
     let (fill, ring) = style::marker_of(base);
     let (fill, ring) = (fill.egui(), ring.egui());
+    let ring = if app.wb.auxiliary_object(row.id) {
+        ring.gamma_multiply(0.45)
+    } else {
+        ring
+    };
+    marker.widget_info(|| {
+        egui::WidgetInfo::selected(
+            egui::Role::CheckBox,
+            true,
+            visible,
+            format!("Widoczność: {}", row.label),
+        )
+    });
     if visible {
         painter.circle(center, 10.0, fill, Stroke::new(1.5, ring));
     } else {
@@ -444,6 +464,10 @@ fn paint_row(
         } else {
             text::label(Label::ShowObject)
         };
+        if ui.button(crate::properties::TITLE).clicked() {
+            actions.properties = Some(row.id);
+            ui.close();
+        }
         if ui.button(toggle).clicked() {
             actions.toggle = Some(row.id);
             ui.close();

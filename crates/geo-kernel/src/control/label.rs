@@ -12,7 +12,7 @@ use std::borrow::Cow;
 use std::fmt::Write as _;
 use std::sync::Arc;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum NumberRounding {
     Decimals(u32),
     SignificantFigures(u32),
@@ -28,6 +28,16 @@ impl Default for NumberRounding {
 pub struct SliderLabel {
     pub mode: i32,
     pub caption: Arc<str>,
+}
+
+/// Resolves the imported codes used by default object styles.
+pub fn resolve_label_mode(mode: i32, default: i32) -> i32 {
+    match mode {
+        0..=3 | 9 => mode,
+        4 => default,
+        5..=8 => mode - 5,
+        _ => 0,
+    }
 }
 
 /// The graphics view accepts trailing spaces after the closing dollar.
@@ -47,6 +57,20 @@ impl Construction {
         self.slider_labels.insert(id, label);
     }
 
+    pub fn input_box_rounded_number(&self, id: Id, link: Id) -> Option<String> {
+        let rounding = self.appearance(id).input_rounding?;
+        let Value::Number(value) = self.value(link) else {
+            return None;
+        };
+        let angle = self.kind(link) == crate::Kind::Angle;
+        let mut text = String::new();
+        rounding.write(&mut text, if angle { value.to_degrees() } else { value });
+        if angle {
+            text.push('°');
+        }
+        Some(text)
+    }
+
     pub fn format_display_number(&self, value: f64) -> String {
         let mut out = String::new();
         self.number_rounding.write(&mut out, value);
@@ -56,13 +80,26 @@ impl Construction {
     pub fn slider_label(&self, id: Id, value: f64) -> Cow<'_, str> {
         let name = self.label(id);
         let saved = self.slider_labels.get(&id);
-        let mode = saved.map_or(1, |label| label.mode);
-        let caption = || self.expand_caption(id, saved.map_or("", |label| label.caption.as_ref()));
-        let prefix = match mode {
-            1 | 6 | -1 => Cow::Borrowed(name),
-            2 | 7 => return Cow::Owned(self.format_display_number(value)),
-            3 | 8 => return caption(),
-            4 => caption(),
+        let edited = self.appearance(id);
+        let mode = edited
+            .label_mode()
+            .unwrap_or_else(|| saved.map_or(1, |label| label.mode));
+        let caption = || {
+            let text = edited
+                .caption
+                .as_deref()
+                .or_else(|| saved.map(|label| label.caption.as_ref()));
+            self.expand_caption(id, text.unwrap_or_default())
+        };
+        let prefix = match if mode == -1 {
+            1
+        } else {
+            resolve_label_mode(mode, 1)
+        } {
+            1 => Cow::Borrowed(name),
+            2 => return Cow::Owned(self.format_display_number(value)),
+            3 => return caption(),
+            9 => caption(),
             _ => return Cow::Borrowed(name),
         };
         let mut out = match prefix {
@@ -79,19 +116,38 @@ impl Construction {
     }
 
     pub fn checkbox_caption(&self, id: Id) -> Cow<'_, str> {
-        self.expand_caption(id, self.control(id).map_or("", |control| &control.caption))
+        self.object_caption(id)
     }
 
-    fn expand_caption<'a>(&'a self, id: Id, caption: &'a str) -> Cow<'a, str> {
-        // Caption substitutions can repeat long object values. Cap expansion
-        // work and use the literal caption if the result exceeds the cap.
+    pub fn object_caption(&self, id: Id) -> Cow<'_, str> {
+        let caption = self
+            .appearance(id)
+            .caption
+            .as_deref()
+            .or_else(|| self.control(id).map(|control| control.caption.as_str()))
+            .unwrap_or_default();
+        self.expand_caption(id, caption)
+    }
+
+    pub fn next_cell_tooltip(&self, id: Id) -> Option<Cow<'_, str>> {
+        let next = next_cell_in_first_row(self.label(id)).and_then(|label| self.id(&label))?;
+        Some(self.caption_value(next))
+    }
+
+    /// Expands the saved caption's substitutions and falls back to the object name.
+    pub fn expand_caption<'a>(&'a self, id: Id, caption: &'a str) -> Cow<'a, str> {
+        // Bound the text handed to the renderer. Caption substitutions can
+        // repeat long object values, so fall back to the literal on overflow.
         const MAX_EXPANSION: usize = 16_384;
 
         let name = self.label(id);
         if caption.is_empty() {
             return Cow::Borrowed(name);
         }
-        if caption.len() > MAX_EXPANSION || !caption.contains('%') {
+        if caption.len() > MAX_EXPANSION {
+            return Cow::Borrowed(&caption[..caption.floor_char_boundary(MAX_EXPANSION)]);
+        }
+        if !caption.contains('%') {
             return Cow::Borrowed(caption);
         }
         let mut out = String::with_capacity(caption.len());

@@ -595,13 +595,15 @@ pub struct AngleGeometry {
 
 impl AngleGeometry {
     pub fn radius(self, scale: f64) -> f64 {
+        self.radius_with_cap(scale, DEFAULT_ARC_SIZE)
+    }
+
+    pub fn radius_with_cap(self, scale: f64, max: f64) -> f64 {
         let Some([a, b]) = self.arms else {
-            return DEFAULT_ARC_SIZE;
+            return max;
         };
         let shortest_squared = (a.0 * a.0 + a.1 * a.1).min(b.0 * b.0 + b.1 * b.1);
-        (0.5 * shortest_squared.sqrt() * scale)
-            .floor()
-            .min(DEFAULT_ARC_SIZE)
+        (0.5 * shortest_squared.sqrt() * scale).floor().min(max)
     }
 
     pub fn is_right(self) -> bool {
@@ -609,10 +611,14 @@ impl AngleGeometry {
     }
 
     pub fn contains(self, (x, y): XY, radius: f64) -> bool {
+        self.contains_with_decoration((x, y), radius, true)
+    }
+
+    pub fn contains_with_decoration(self, (x, y): XY, radius: f64, emphasize_right: bool) -> bool {
         if radius <= 0.0 || x * x + y * y >= radius * radius {
             return false;
         }
-        if self.is_right() {
+        if emphasize_right && self.is_right() {
             let (sin, cos) = self.start.sin_cos();
             let side = radius * FRAC_1_SQRT_2;
             let (u, v) = (x * cos + y * sin, -x * sin + y * cos);

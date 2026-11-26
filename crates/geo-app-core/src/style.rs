@@ -17,6 +17,9 @@ pub const FILL_OPACITY: f64 = 0.1;
 
 /// The default fill opacity saved for a canvas object, 0 for an outline.
 pub fn fill_opacity(c: &Construction, id: Id) -> f64 {
+    if let Some(alpha) = c.appearance(id).fill_opacity {
+        return alpha;
+    }
     match c.kind(id) {
         Kind::Polygon | Kind::Angle => FILL_OPACITY,
         Kind::Sector if !c.drawing_style(id).sector_outline_only => FILL_OPACITY,
@@ -150,8 +153,20 @@ impl<'a> Palette<'a> {
         self
     }
 
+    /// Presentation retained from the source file, before any local edits.
+    pub fn imported_style(&self, id: Id) -> Option<&'a geo_import::export::ObjectStyle> {
+        self.file_styles?.get(self.c.label(id)).map(AsRef::as_ref)
+    }
+
     /// The edited or saved colour, with the usual palette as a fallback.
     pub fn color(&self, id: Id) -> Rgba {
+        let base = self.static_color(id);
+        self.c
+            .dynamic_color(id, [base.r, base.g, base.b])
+            .map_or(base, |[r, g, b]| Rgba::from_rgb(r, g, b))
+    }
+
+    pub fn static_color(&self, id: Id) -> Rgba {
         if let Some(styles) = self.file_styles {
             let rgb = self
                 .c

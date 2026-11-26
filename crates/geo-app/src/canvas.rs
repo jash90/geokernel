@@ -38,6 +38,17 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let size = ui.available_size();
     let (response, painter) = ui.allocate_painter(size, Sense::click_and_drag());
     let rect = response.rect;
+    // Keep the return target registered while the inspector is open.
+    if app.properties.is_some() || ui.memory(|m| m.has_focus(crate::properties::canvas_id())) {
+        let focus = ui.interact(
+            rect,
+            crate::properties::canvas_id(),
+            Sense::focusable_noninteractive(),
+        );
+        focus.widget_info(|| {
+            egui::WidgetInfo::labeled(egui::Role::GenericContainer, true, "Widok graficzny")
+        });
+    }
     let (w, h) = (rect.width() as f64, rect.height() as f64);
     // A press, or a finger going down, belongs to the area when it lands
     // on it, no area (a menu, a dialog) lies over it there and no widget
@@ -75,7 +86,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     });
     let owned = starts.map(|p| {
         p.is_some_and(|p| {
-            rect.contains(p)
+            app.properties.is_none()
+                && rect.contains(p)
                 && ui.ctx().layer_id_at(p) == Some(response.layer_id)
                 && !app.overlays.contains(p.core())
         })
@@ -348,7 +360,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                     .wb
                     .recognize_stroke(&samples, &t, tool == Tool::FreehandFunction)
                 {
-                    Ok(Some(id)) => app.wb.selected = Some(id),
+                    Ok(Some(id)) => app.select_only(Some(id)),
                     Ok(None) => {}
                     Err(error) => {
                         app.wb.cancel_tool_use();
@@ -369,6 +381,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         let c = app.wb.construction();
         let accept = |id| {
             shown(app, id)
+                && (show_all || c.appearance(id).selection_allowed.unwrap_or(true))
                 && (move_tool
                     || if tool == Tool::MoveRotate {
                         app.rotation_center.is_some() || c.kind(id) == Kind::Point
@@ -384,7 +397,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // the transform `pt`) takes hold of.
     let target = |app: &App, pt: &ViewTransform, pos: (f64, f64)| -> Target {
         let c = app.wb.construction();
-        let accept = |id| shown(app, id);
+        let accept = |id| shown(app, id) && c.appearance(id).selection_allowed.unwrap_or(true);
         let text = app.text_at(pos, app.wb.selected, accept);
         let Some(id) = hit::pick_with_text(c, pt, pos, &press_reach, app.wb.selected, text, accept)
         else {
@@ -407,6 +420,29 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         Target::Object(id)
     };
     app.hovered = response.hover_pos().and_then(|p| pick_at(app, to_local(p)));
+    if let Some(id) = app.hovered {
+        let c = app.wb.construction();
+        match c.appearance(id).tooltip {
+            Some(1) => {
+                response.clone().on_hover_text(format!(
+                    "{} = {}",
+                    c.label(id),
+                    crate::describe::object_text(c, id)
+                ));
+            }
+            Some(3) => {
+                response
+                    .clone()
+                    .on_hover_text(c.object_caption(id).as_ref());
+            }
+            Some(4) => {
+                if let Some(value) = c.next_cell_tooltip(id) {
+                    response.clone().on_hover_text(value.as_ref());
+                }
+            }
+            _ => {}
+        }
+    }
 
     // Remember what the user saw when the button went down (the area may
     // change in this very frame, e.g. the keyboard closes on a press). The
@@ -484,10 +520,11 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     }
     let mut fixed_checkbox = None;
     if let (true, Some(pos)) = (move_tool, fed.owned) {
+        app.property_selection.clear();
         let (local, pt) = at_press(app, pos);
         if app.label_at(local).is_none() {
             if let Target::Object(id) = target(app, &pt, local) {
-                app.wb.selected = Some(id);
+                app.select_only(Some(id));
                 if !modifiers_pan {
                     let c = app.wb.construction();
                     if c.kind(id) == Kind::Number {
@@ -689,7 +726,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 app.wb.begin_gesture();
             }
             if !matches!(drag.hold(), Hold::Label { .. }) {
-                app.wb.selected = Some(drag.id());
+                app.select_only(Some(drag.id()));
             }
         }
         // A drag that only changes the view (a pan, an axis rescale, a
@@ -1426,7 +1463,7 @@ fn toggle_checkbox(app: &mut App, id: Id) {
 /// A click on the drawing area, with the object under it.
 fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     if app.tool.tool() == Tool::Move {
-        app.wb.selected = hit;
+        app.select_only(hit);
         if let Some(id) = hit.filter(|&id| !app.wb.construction().checkbox_style(id).fixed) {
             toggle_checkbox(app, id);
         }
@@ -2079,6 +2116,30 @@ fn style_bar(app: &mut App, ui: &mut Ui, rect: Rect, cam: &mut Camera) {
     }
     if !app.style_bar {
         return;
+    }
+    if let Some(id) = app
+        .wb
+        .selected
+        .filter(|&id| app.wb.construction().exists(id))
+    {
+        let r = Rect::from_min_size(
+            pos2(toggle.left() - 4.0 * 44.0 - 6.0, rect.top()),
+            vec2(44.0, 40.0),
+        );
+        let response = floating::square_button(
+            ui,
+            &mut app.overlays,
+            "object_properties_button",
+            r,
+            Icon::Kebab,
+            false,
+        );
+        response.widget_info(|| {
+            egui::WidgetInfo::labeled(egui::Role::Button, true, crate::properties::TITLE)
+        });
+        if response.on_hover_text(crate::properties::TITLE).clicked() {
+            crate::properties::open(app, id);
+        }
     }
     let items = [
         (Icon::Axes, text::label(Label::Axes), app.decor.axes),

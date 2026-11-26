@@ -191,7 +191,11 @@ impl Construction {
             let Some(id) = self.id(old.label(old_id)) else {
                 continue;
             };
-            if !self.animations.contains_key(&id) || !matches!(self.def(id), Def::Number(_)) {
+            if !self.animations.contains_key(&id)
+                || !matches!(self.def(id), Def::Number(_))
+                || self.appearance(id).playback != old.appearance(old_id).playback
+                || self.slider_style(id).step != old.slider_style(old_id).step
+            {
                 continue;
             }
             // only a value a frame set: one set by hand is in the journal,

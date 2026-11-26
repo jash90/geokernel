@@ -783,7 +783,7 @@ impl App {
             let Some(&id) = found.first() else {
                 break;
             };
-            if !self.wb.delete(id) {
+            if !self.delete_object(id) {
                 break;
             }
             deleted = true;

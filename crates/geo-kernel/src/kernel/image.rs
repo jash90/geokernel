@@ -326,7 +326,7 @@ pub(super) struct Images {
     input_budget: u64,
     attempts: usize,
     decode_budget: u64,
-    instances: BTreeMap<Id, RasterImage>,
+    pub(super) instances: BTreeMap<Id, RasterImage>,
 }
 
 impl Default for Images {
