@@ -11,6 +11,7 @@ pub use analysis::{Analysis, AnalysisError, Summary, STATISTICS};
 pub struct Editor {
     pub selected: Address,
     pub selection: Selection,
+    pub range_extension_armed: bool,
     pub draft: String,
     pub focus: bool,
     pub reveal: bool,
@@ -32,6 +33,7 @@ impl App {
                 anchor: selected,
                 end: selected,
             },
+            range_extension_armed: false,
             draft: input.clone(),
             original: input,
             focus: true,
@@ -41,6 +43,7 @@ impl App {
     }
 
     pub fn extend_spreadsheet_selection(&mut self, end: Address) {
+        self.cancel_spreadsheet_range_extension();
         if self.commit_spreadsheet_input() {
             if let Some(editor) = &mut self.spreadsheet_editor {
                 editor.selection.end = end;
@@ -56,6 +59,7 @@ impl App {
     }
 
     pub fn launch_spreadsheet_analysis(&mut self) {
+        self.cancel_spreadsheet_range_extension();
         if !self.commit_spreadsheet_input() {
             return;
         }
@@ -76,6 +80,7 @@ impl App {
     }
 
     pub fn submit_spreadsheet_input(&mut self) {
+        self.cancel_spreadsheet_range_extension();
         let Some(editor) = self.spreadsheet_editor.as_ref() else {
             return;
         };
@@ -131,6 +136,7 @@ impl App {
     }
 
     pub fn drag_spreadsheet_cell(&mut self, from: Address, to: Address) {
+        self.cancel_spreadsheet_range_extension();
         if !self.commit_spreadsheet_input() {
             return;
         }
@@ -154,7 +160,14 @@ impl App {
         }
     }
 
+    pub fn cancel_spreadsheet_range_extension(&mut self) {
+        if let Some(editor) = &mut self.spreadsheet_editor {
+            editor.range_extension_armed = false;
+        }
+    }
+
     pub fn cancel_spreadsheet_edit(&mut self) {
+        self.cancel_spreadsheet_range_extension();
         if let Some(editor) = self.spreadsheet_editor.as_mut() {
             editor.draft.clone_from(&editor.original);
             editor.error = None;

@@ -88,6 +88,7 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
     if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
         app.input_box_edit = None;
         app.gesture.stop();
+        app.cancel_spreadsheet_range_extension();
     }
     if app.tool.asking().is_some()
         || app.tool.control_request().is_some()
