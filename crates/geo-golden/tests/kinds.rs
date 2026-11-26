@@ -38,12 +38,11 @@
 //!   (`the_export_column_follows_the_journal_rule_and_the_recorded_proof`,
 //!   part of every `cargo test`): `yes` for editor objects serialized from
 //!   their own stored data and references, whatever the journal says, whose
-//!   every presentation property the reload oracle has proven and of which
-//!   nothing the reference application saves is known to be lost. `partial`
-//!   for construction kinds, whose export also depends on supported journal
-//!   forms and command history, and for a kind with a named loss; the note
-//!   of the row says which. `no` for kinds without a writer. The Java oracle
-//!   checks a defined example of each `yes` and `partial` kind.
+//!   modeled presentation properties the reload oracle has proven. Each
+//!   `yes` row qualifies the definition and element forms the writer supports.
+//!   `partial` records a specific missing property or dependency on journal
+//!   syntax in the corpus. `no` means no defined example has a writer.
+//!   The Java oracle checks a defined example of each supported kind.
 //!
 //! Tool coverage is declared in the table.
 //! Axis uses graphics-view settings and Formula uses the LaTeX subset of
@@ -1558,7 +1557,7 @@ fn formula_is_latex_text_on_the_canvas_and_in_files() {
         .unwrap();
     assert_eq!(
         CELLS.map(|col| row[col].as_str()),
-        ["yes", "yes", "yes", "yes", "no", "yes", "yes", "partial"]
+        ["yes", "yes", "yes", "yes", "no", "yes", "yes", "yes"]
     );
     let draw = code_only(&read("crates/geo-app/src/draw.rs"));
     assert!(draw.contains("Value::Text"));
@@ -1587,6 +1586,11 @@ fn formula_is_latex_text_on_the_canvas_and_in_files() {
     assert!(style.latex);
     let source = c.text(id).unwrap().to_owned();
     let bytes = wb.export_ggb(wb.file_view()).unwrap();
+    assert_eq!(
+        wb.export_ggb_without_definition(wb.file_view(), "formula")
+            .unwrap(),
+        bytes
+    );
     wb.load_for_export(&bytes, "formula").unwrap();
     let c = wb.construction();
     let id = c.id("formula").unwrap();

@@ -234,8 +234,10 @@ pub(crate) fn define_prepared_cell(
     name: &str,
     rhs: &str,
 ) -> Result<Option<Id>, String> {
-    let result =
-        c.write_spreadsheet_cell(name, false, |c| define_assignment(c, name, rhs, false))?;
+    c.reserve_definition_sources(rhs.len())?;
+    let result = c.write_spreadsheet_cell(name, false, |c| define_assignment(c, name, rhs, false));
+    c.release_definition_sources(rhs.len());
+    let result = result?;
     if let Some(id) = result {
         c.remember_construction_source(id, rhs);
     }
@@ -792,7 +794,9 @@ fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
     if conic_reader.is_some() && c.id(command).is_some() {
         return None;
     }
-    let equations = conic_reader.is_some()
+    let line_pair = command == "Line" && args.len() == 2;
+    let equations = line_pair
+        || conic_reader.is_some()
         || matches!(
             command,
             "Intersect"
@@ -824,21 +828,23 @@ fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
                 | "UnitVector"
                 | "Tangent"
         );
-    let point_arguments = matches!(
-        command,
-        "Circle"
-            | "Segment"
-            | "Polygon"
-            | "PolyLine"
-            | "Arc"
-            | "Sector"
-            | "CircleArc"
-            | "CircularArc"
-            | "CircleSector"
-            | "CircularSector"
-    ) || (command == "ClosestPoint"
-        && args.len() == 2
-        && args.iter().any(|arg| c.id(arg).is_some()));
+    let point_arguments = line_pair
+        || matches!(
+            command,
+            "Circle"
+                | "Segment"
+                | "Polygon"
+                | "PolyLine"
+                | "Arc"
+                | "Sector"
+                | "CircleArc"
+                | "CircularArc"
+                | "CircleSector"
+                | "CircularSector"
+        )
+        || (command == "ClosestPoint"
+            && args.len() == 2
+            && args.iter().any(|arg| c.id(arg).is_some()));
     let mut rewritten = false;
     let args = args
         .iter()
@@ -1282,7 +1288,8 @@ fn define_cartesian_curve(c: &mut Construction, name: &str, args: &[&str]) -> Re
     let result = (|| {
         let packed = |id: Id| u32::try_from(id.0).map_err(|_| "too many objects".to_owned());
         let mut coordinate = |text| {
-            let label = format!("\0arg{}", c.len());
+            // The caller can already have reserved the next inline argument label.
+            let label = format!("\0curveCoordinate{}", c.len());
             packed(crate::expr::define_parametric_coordinate(
                 c, &label, text, parameter,
             )?)
@@ -2604,6 +2611,13 @@ pub fn multi_output_count(c: &Construction, rhs: &str) -> Option<Result<usize, S
     if let Some(def) = conic_clip(c, rhs.trim()) {
         return Some(Ok(def.segments(c).len().max(1)));
     }
+    if let Some(("Segment", args)) = split_call(rhs.trim()) {
+        if let [_, length] = args.as_slice() {
+            if crate::algo::polygon::is_fixed_segment_length(c, length) {
+                return Some(Ok(2));
+            }
+        }
+    }
     if let Some(("Intersect", args)) = split_call(rhs.trim()) {
         if intersect::curves::CurveIntersection::seed_pair(c, &args).is_some() {
             return Some(Ok(1));
@@ -2674,6 +2688,22 @@ fn exec_slots(c: &mut Construction, slots: &[&str], rhs: &str) -> Result<Option<
         return add_named_outputs(c, slots, defs);
     }
     if let Some((func, args)) = split_call(rhs) {
+        if let ("Segment", [start, length]) = (func, args.as_slice()) {
+            if crate::algo::polygon::is_fixed_segment_length(c, length) {
+                let length = crate::algo::polygon::count_arg(c, length)?;
+                let [segment, endpoint] = slots else {
+                    return Err("a fixed segment needs the segment and endpoint labels".into());
+                };
+                for label in [segment, endpoint] {
+                    if !is_output_label(label) {
+                        return Err(format!("`{label}` is not a valid object name"));
+                    }
+                    check_label(label)?;
+                }
+                return crate::algo::polygon::fixed_segment(c, segment, endpoint, start, length)
+                    .map(|(segment, _)| Some(segment));
+            }
+        }
         if let Some(source) = PointDef::inequality_source(c, func, &args) {
             if slots.len() > crate::expr::inequality::MAX_VERTICES {
                 return Err("too many output labels for the inequality".into());
@@ -2789,6 +2819,69 @@ pub(crate) fn add_named_outputs(
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn retained_file_definitions_share_a_byte_budget_and_release_rolled_back_entries() {
+        let mut c = Construction::new();
+        let a = exec(&mut c, "a = 1").unwrap().unwrap();
+        let before = c.checkpoint();
+        let b = exec(&mut c, "b = 2").unwrap().unwrap();
+        let source = " ".repeat(16 * 1024 * 1024);
+        c.retain_file_definition(b, &source);
+        assert_eq!(c.file_definition(b), Some(source.as_str()));
+        c.retain_file_definition(a, "a = 1");
+        assert_eq!(c.file_definition(a), None);
+        let inline = exec(&mut c, "f = Line((1,1),x+y=17)").unwrap().unwrap();
+        assert!(c.value(inline).is_defined());
+        assert_eq!(c.construction_source(inline), None);
+        assert!(exec(&mut c, "FillRow(1,{7})")
+            .unwrap_err()
+            .contains("source budget"));
+        assert!(c.id("A1").is_none());
+        c.rollback(before).unwrap();
+        c.retain_file_definition(a, "a = 1");
+        assert_eq!(c.file_definition(a), Some("a = 1"));
+        assert_eq!(c.file_definition(b), None);
+        let before = c.checkpoint();
+        let b = exec(&mut c, "b = 2").unwrap().unwrap();
+        let remaining = &source[..source.len() - "a = 1".len()];
+        c.remember_construction_source(b, remaining);
+        assert_eq!(c.construction_source(b), Some(remaining));
+        c.retain_file_definition(b, "b = 2");
+        assert_eq!(c.file_definition(b), None);
+        c.rollback(before).unwrap();
+        let b = exec(&mut c, "b = 2").unwrap().unwrap();
+        c.retain_file_definition(b, "b = 2");
+        assert_eq!(c.file_definition(b), Some("b = 2"));
+    }
+
+    #[test]
+    fn a_parallel_line_accepts_an_inline_equation() {
+        // CommandsTest.java:2600 supplies both the point and the equation inline.
+        let c = load("f = Line((1,1), x+y=17)").unwrap();
+        let f = c.id("f").unwrap();
+        assert_eq!(
+            c.value(f),
+            Value::Line {
+                a: 1.0,
+                b: 1.0,
+                c: -2.0
+            }
+        );
+    }
+
+    #[test]
+    fn an_inline_curve_uses_distinct_labels_for_its_coordinates() {
+        // CommandsTest.java:3167 creates the curve inside the derivative.
+        let c = load("g = ParametricDerivative(Curve(t^2,sin(t),t,-7,7))").unwrap();
+        let g = c.id("g").unwrap();
+        assert_eq!(c.kind(g), Kind::Curve);
+        assert!(c.value(g).is_defined());
+        assert_eq!(
+            c.ids().filter(|&id| !c.label(id).starts_with('\0')).count(),
+            1
+        );
+    }
     #[test]
     fn an_empty_implicit_tangent_discards_inline_arguments() {
         let mut c = load("f(x,y) = x^2 + y^2 - 1\nc = ImplicitCurve(f)").unwrap();

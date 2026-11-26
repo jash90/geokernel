@@ -5,8 +5,10 @@
 //! definitions ran.
 
 mod element;
+mod live;
 
 use crate::{archive, Settings};
+use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::image::RasterAsset;
 use geo_kernel::{script, Construction, Def, Id, Kind};
 use std::collections::{BTreeMap, HashSet};
@@ -364,9 +366,14 @@ pub fn ggb<'a>(
             .collect::<Result<Vec<_>, _>>()?;
         ids.retain(|&id| !construction.is_blank_cell(id));
         if let Some(&first) = ids.first() {
-            writer.definition(first, &ids, definition.line)?;
-            for id in ids {
-                writer.element(id, definition.line)?;
+            let source = construction
+                .file_definition(first)
+                .unwrap_or(definition.line);
+            if !writer.live_fixed_segment(&ids, source)? {
+                writer.definition(first, &ids, source)?;
+                for id in ids {
+                    writer.element(id, source)?;
+                }
             }
         }
         if writer.xml.buffer.len() as u64 > archive::MAX_XML_BYTES {
@@ -607,6 +614,21 @@ impl Writer<'_> {
                 "relation report `{label}` has no saved object form"
             )));
         }
+        // A stored inline expression can describe inputs without public
+        // labels. The live command path is for definitions with named inputs.
+        if c.construction_source(id).is_none() && self.live_definition(def, outputs)? {
+            return Ok(());
+        }
+        // The element already stores these values. A spreadsheet edit can
+        // clear the cell source while its journal still names a fill command.
+        match def {
+            Def::Angle(_) => return Ok(()),
+            Def::AngleObject(_) if def.is_free() => return Ok(()),
+            Def::Number(_) | Def::FreePoint { .. } if c.construction_source(id).is_none() => {
+                return Ok(());
+            }
+            _ => {}
+        }
         let line = script::split_comment(line).0;
         if line.starts_with("$implicitCoefficients(") {
             return Ok(());
@@ -622,13 +644,10 @@ impl Writer<'_> {
         let call = script::split_call(source);
 
         match def {
-            Def::Image(_) | Def::Boolean(_) | Def::Button | Def::Angle(_) => return Ok(()),
-            Def::AngleObject(_) if def.is_free() => return Ok(()),
+            Def::Image(_) | Def::Boolean(_) | Def::Button => return Ok(()),
             // `AlgoLocusStroke` saves an empty command; the element holds the
             // points
             Def::PenStroke => return self.expression(id, "PenStroke[]"),
-            Def::Number(_) if c.construction_source(id).is_none() => return Ok(()),
-            Def::FreePoint { .. } if c.construction_source(id).is_none() => return Ok(()),
             Def::InputBox(link) => {
                 let args = link.map(|id| c.label(id)).into_iter().collect::<Vec<_>>();
                 return self.command("Textfield", &args, outputs);
@@ -657,7 +676,7 @@ impl Writer<'_> {
                 name
             };
             if name == "$point" || name == "$vector" {
-                return self.expression(id, &syntax(&format!("({})", inputs.join(", ")))?);
+                return self.expression(id, syntax(&format!("({})", inputs.join(", ")))?);
             }
             if name == "Intersect"
                 && inputs.len() == 2
@@ -687,11 +706,15 @@ impl Writer<'_> {
                     "Curve" => "CurveCartesian",
                     other => other,
                 };
-                let inputs = inputs
+                let mut inputs = inputs
                     .iter()
                     .copied()
                     .filter(|arg| !arg.is_empty())
                     .collect::<Vec<_>>();
+                if name == "Distance" && matches!(def, Def::Measure(MeasureDef::DistanceLines(..)))
+                {
+                    inputs.reverse();
+                }
                 if name == "Polygon"
                     && inputs.len() == 3
                     && outputs.get(1).is_some_and(|&id| c.kind(id) == Kind::Point)
@@ -722,7 +745,7 @@ impl Writer<'_> {
                 "no command for multi-output object `{label}`"
             )));
         }
-        self.expression(id, &syntax(source)?)
+        self.expression(id, syntax(source)?)
     }
 
     fn expression(&mut self, id: Id, source: &str) -> Result<(), ExportError> {
@@ -759,7 +782,7 @@ impl Writer<'_> {
 }
 
 /// Lower journal-only inline arguments before writing the command parameters.
-fn syntax(mut source: &str) -> Result<String, ExportError> {
+fn syntax(mut source: &str) -> Result<&str, ExportError> {
     if let Some(inner) = source
         .strip_prefix("$arg(")
         .and_then(|s| s.strip_suffix(')'))
@@ -775,7 +798,7 @@ fn syntax(mut source: &str) -> Result<String, ExportError> {
     if source.contains('\0') || internal {
         return Err(failure(format!("unsupported definition `{source}`")));
     }
-    Ok(source.to_owned())
+    Ok(source)
 }
 
 // File expressions use literal backslashes. An ASCII quote inside a text
@@ -869,6 +892,9 @@ impl Xml {
                 ));
             }
             self.buffer.push('"');
+            if self.buffer.len() as u64 > archive::MAX_XML_BYTES {
+                return Err(failure("construction XML exceeds the import size limit"));
+            }
         }
         Ok(())
     }

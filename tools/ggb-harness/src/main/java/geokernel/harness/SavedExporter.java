@@ -42,6 +42,7 @@ import org.geogebra.common.kernel.geos.GeoLocus;
 import org.geogebra.common.kernel.geos.GeoList;
 import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoPoint;
+import org.geogebra.common.kernel.geos.GeoRay;
 import org.geogebra.common.kernel.geos.GeoPolygon;
 import org.geogebra.common.kernel.geos.GeoSegment;
 import org.geogebra.common.kernel.geos.GeoText;
@@ -275,11 +276,12 @@ public final class SavedExporter {
         }
         // The state to save, and what GeoGebra computes in it.
         Map<String, Object> objects = new LinkedHashMap<>();
+        boolean typedSnapshot = Boolean.TRUE.equals(input.get("typed_snapshot"));
         Iterable<GeoElement> saved = reloaded
                 ? kernel.getConstruction().getGeoSetConstructionOrder() : created;
         for (GeoElement geo : saved) {
             if (geo.isLabelSet() && kernel.lookupLabel(geo.getLabelSimple()) == geo) {
-                objects.put(geo.getLabelSimple(), describe(geo));
+                objects.put(geo.getLabelSimple(), describe(geo, typedSnapshot));
             }
         }
         if (Boolean.TRUE.equals(input.get("archive"))) {
@@ -620,7 +622,11 @@ public final class SavedExporter {
     }
 
     /** The golden-file form of an object (only the types the saved cases use). */
-    private static Map<String, Object> describe(GeoElement geo) {
+    private static Map<String, Object> describe(GeoElement geo, boolean typedSnapshot) {
+        // Opt in to the typed forms while keeping the legacy snapshots reproducible.
+        if (typedSnapshot && (geo instanceof GeoRay || geo instanceof GeoFunctionNVar)) {
+            return Session.describe(geo, Session.typeOf(geo));
+        }
         if (geo instanceof org.geogebra.common.kernel.geos.GeoImage image) {
             return SavedImages.describe(image);
         }

@@ -3,7 +3,7 @@
 
 use geo_app_core::workbench::{FileView, Workbench};
 use geo_golden::compare::{compare_construction_object, numbers_agree};
-use geo_golden::model::{expected_from_json, load_all, Step};
+use geo_golden::model::{expected_from_json, load_all, Expected, ExpectedData, Step};
 use geo_golden::repo_root;
 use geo_kernel::algo::path::PathDef;
 use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
@@ -78,6 +78,8 @@ const SAVED_CASES: &[&str] = &[
     "saved-curve-intersections-001.xml",
     "saved-curve-intersections-002.xml",
     "saved-paths-002.xml",
+    "saved-slope-arrows-001.xml",
+    "saved-export-fixed-segment-001.xml",
     "saved-implicit-001.xml",
     "saved-images-001.ggb",
     "saved-images-002.ggb",
@@ -283,6 +285,12 @@ fn corpus() -> Vec<Case> {
         wb.load_for_export(&source, &name).unwrap();
         out.push((name, wb, None, Origin::Hand { source, applied }));
     }
+    out.push((
+        "live-fixed-segment".into(),
+        Workbench::from_script("A = (1, 1)\ns = Segment(A, 4)").unwrap(),
+        None,
+        Origin::Script,
+    ));
     let mut styled = Workbench::default();
     styled.load_for_export(STYLED_FILE, "styled").unwrap();
     out.push((
@@ -426,6 +434,141 @@ fn round_trip(name: &str, wb: &Workbench, view: Option<FileView>) -> (Vec<u8>, W
         "{name}"
     );
     (bytes, again)
+}
+
+#[test]
+fn live_geometry_keeps_command_inputs_when_the_journal_definition_is_unavailable() {
+    let wb = Workbench::from_script(
+        "A = (1, 2)\nB = (4, 3)\nC = (3, 5)\nm = Midpoint(A, B)\n\
+         s = Segment(A, m)\nr = Ray(B, m)\np = PolyLine(A, C, m)",
+    )
+    .unwrap();
+    let exported = wb.export_ggb(None).unwrap();
+    let xml = geo_import::archive::extract_xml(&exported).unwrap();
+    assert!(
+        xml.contains("<command name=\"Midpoint\">\n<input a0=\"A\" a1=\"B\"/>\n<output a0=\"m\"/>")
+    );
+    for label in ["m", "s", "r", "p"] {
+        let independent = wb
+            .export_ggb_without_definition(None, label)
+            .unwrap_or_else(|e| panic!("{label}: {e}"));
+        assert_eq!(independent, exported, "{label}");
+    }
+}
+
+#[test]
+fn native_polyline_export_checks_the_argument_limit() {
+    use geo_import::export::{ggb, Definition, Presentation};
+    use geo_kernel::algo::polygon::PolygonDef;
+
+    let mut c = Construction::new();
+    let a = c.add("A", Def::FreePoint { x: 1.0, y: 2.0 }).unwrap();
+    let b = c.add("B", Def::FreePoint { x: 4.0, y: 3.0 }).unwrap();
+    let points: Vec<_> = [a, b].into_iter().cycle().take(10_001).collect();
+    c.add_with_list("p", &points, |ids| Def::Polygon(PolygonDef::PolyLine(ids)))
+        .unwrap();
+    let definitions = [
+        Definition {
+            line: "A = (1, 2)",
+            outputs: &["A".into()],
+        },
+        Definition {
+            line: "B = (4, 3)",
+            outputs: &["B".into()],
+        },
+        Definition {
+            line: "p = $unlisted()",
+            outputs: &["p".into()],
+        },
+    ];
+    assert_eq!(
+        ggb(&c, definitions, &Presentation::default())
+            .unwrap_err()
+            .to_string(),
+        "command exceeds the import argument limit"
+    );
+}
+
+#[test]
+fn native_fixed_segment_checks_the_generated_circle_attribute_limit() {
+    use geo_import::export::{ggb, Definition, Presentation};
+    use geo_kernel::algo::polygon::Count;
+
+    let mut c = Construction::new();
+    let label = "A".repeat(geo_import::xml::MAX_ATTRIBUTE_BYTES);
+    let start = c.add(&label, Def::FreePoint { x: 1.0, y: 1.0 }).unwrap();
+    let endpoint = c
+        .add(
+            "B",
+            Def::Path(PathDef::FixedEndpoint {
+                start,
+                length: Count::Literal(4.0),
+            }),
+        )
+        .unwrap();
+    c.add("s", Def::Segment(start, endpoint)).unwrap();
+    let definitions = [
+        Definition {
+            line: "A = (1, 1)",
+            outputs: &[label],
+        },
+        Definition {
+            line: "s = $unlisted()",
+            outputs: &["B".into(), "s".into()],
+        },
+    ];
+    assert_eq!(
+        ggb(&c, definitions, &Presentation::default())
+            .unwrap_err()
+            .to_string(),
+        "fixed segment circle exceeds the import attribute size limit"
+    );
+}
+
+#[test]
+fn a_fixed_segment_saves_its_endpoint_as_a_point_on_an_inline_circle() {
+    let wb = Workbench::from_script("A = (1, 1)\ns = Segment(A, 4)").unwrap();
+    let exported = wb.export_ggb_without_definition(None, "s").unwrap();
+    let xml = geo_import::archive::extract_xml(&exported).unwrap();
+    assert!(
+        xml.contains("<command name=\"Point\">\n<input a0=\"Circle[A, 4]\"/>\n<output a0=\"B\"/>"),
+        "{xml}"
+    );
+    assert!(
+        xml.contains("<command name=\"Segment\">\n<input a0=\"A\" a1=\"B\"/>\n<output a0=\"s\"/>"),
+        "{xml}"
+    );
+    let mut again = Workbench::default();
+    again.load_for_export(&exported, "fixed segment").unwrap();
+    let c = wb.construction();
+    let restored = again.construction();
+    for label in ["B", "s"] {
+        assert_eq!(
+            restored.value(restored.id(label).unwrap()),
+            c.value(c.id(label).unwrap())
+        );
+    }
+}
+
+#[test]
+fn live_expression_definitions_survive_redefinition_and_undo() {
+    let mut wb = Workbench::from_script("a = 2\nf(x) = a x\nL = {a, f(3)}").unwrap();
+    let compare = |wb: &Workbench, expression| {
+        let export = wb.export_ggb(None).unwrap();
+        let xml = geo_import::archive::extract_xml(&export).unwrap();
+        assert!(xml.contains(expression), "{xml}");
+        for label in ["f", "L"] {
+            assert_eq!(
+                wb.export_ggb_without_definition(None, label).unwrap(),
+                export
+            );
+        }
+    };
+    compare(&wb, "f(x) = a x");
+    wb.run_line("f(x) = a + x").unwrap();
+    compare(&wb, "f(x) = a + x");
+    wb.undo();
+    compare(&wb, "f(x) = a x");
 }
 
 #[test]
@@ -581,6 +724,15 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
                 if name == "saved-styles-012" {
                     undefined_inputs_as_the_reference_reads_them(&source["styles"]);
                 }
+                if name == "saved-styles-013" {
+                    // The fixture asks GeoLocus to set arrows on the stroke.
+                    // The reference only accepts that setting on slope fields.
+                    assert_eq!(source["styles"]["s"]["draw_arrows"], json!(false));
+                }
+                if name == "saved-slope-arrows-001" {
+                    assert_eq!(source["styles"]["field"]["draw_arrows"], json!(true));
+                    assert_json(&source["objects"]["field"], &snapshot["field"], name);
+                }
                 saved_styles.insert(name, (source["styles"].clone(), stripped["styles"].clone()));
             }
             Origin::Hand { applied, .. } => {
@@ -639,7 +791,13 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
             let snap = &snapshot[label];
             let reconstructed = imported.construction();
             let restored = reconstructed.id(label).unwrap();
-            if matches!(kind, Kind::Image | Kind::Button | Kind::InputBox) {
+            if name == "saved-slope-arrows-001" && label == "field" {
+                let expected = slope_field_shafts(snap);
+                for (kernel, id) in [(c, id), (reconstructed, restored)] {
+                    compare_construction_object(&expected, kernel, id)
+                        .unwrap_or_else(|why| panic!("{name}: {label}: {why}"));
+                }
+            } else if matches!(kind, Kind::Image | Kind::Button | Kind::InputBox) {
                 assert_json(snap, &special(c, id), &format!("{name}: {label}"));
             } else {
                 let expected = expected_from_json(snap).unwrap();
@@ -999,7 +1157,11 @@ const WITNESSES: &[(&str, &[(&str, &str)])] = &[
     ),
     (
         "Locus",
-        &[("saved-styles-004", "path"), ("saved-styles-004", "path2")],
+        &[
+            ("saved-styles-004", "path"),
+            ("saved-styles-004", "path2"),
+            ("saved-slope-arrows-001", "field"),
+        ],
     ),
     (
         "PenStroke",
@@ -1134,8 +1296,9 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
             &["trace", "start_style", "end_style"],
         ],
         "Vector" => &[SHARED, FLAGS, LABEL, LINE, &["trace", "head_style"]],
-        // A pen stroke is a locus in the reference application.
-        "Locus" | "PenStroke" => &[SHARED, &["fixed"], LABEL, LINE, &["trace", "draw_arrows"]],
+        "Locus" => &[SHARED, &["fixed"], LABEL, LINE, &["trace", "draw_arrows"]],
+        // GeoLocus.drawAsArrows ignores pen strokes.
+        "PenStroke" => &[SHARED, &["fixed"], LABEL, LINE, &["trace"]],
         "Segment" => &[
             SHARED,
             FLAGS,
@@ -1342,10 +1505,10 @@ fn journal_independence() -> BTreeMap<String, bool> {
 /// `yes` needs all of: every object of the kind in the corpus is exported
 /// from its own stored data, whatever its journal line says (a construction
 /// kind also depends on a saved form of its definition and on the command
-/// history); the recorded proof of the reload oracle has a witness for every
-/// property of the kind; and nothing the reference application saves for the
-/// kind is known not to be kept. Otherwise the cell is `partial` and the
-/// note says why. A kind without a defined example in the corpus is `no`.
+/// history); the reload oracle has a witness for each modeled property; and
+/// none of the listed property limits apply. The note qualifies the forms
+/// the writer supports. A kind with a missing witness or a listed loss is
+/// `partial`. A kind without a defined example in the corpus is `no`.
 #[test]
 fn the_export_column_follows_the_journal_rule_and_the_recorded_proof() {
     let proof: BTreeMap<String, BTreeMap<String, Value>> =
@@ -1355,6 +1518,16 @@ fn the_export_column_follows_the_journal_rule_and_the_recorded_proof() {
     let matrix = geo_golden::table::Table::parse(&table, "docs/kinds.csv").unwrap();
     let mut errors = Vec::new();
     for row in matrix.records() {
+        if row["export"] == "yes"
+            && row["notes"]
+                .split_once("Export: ")
+                .is_none_or(|(_, limits)| limits.trim().is_empty())
+        {
+            errors.push(format!(
+                "{}: qualify the supported export forms",
+                row["kind"]
+            ));
+        }
         let kind = match row["kind"] {
             // View settings round-trip in `archive_preserves_view_kernel_settings_and_application_edits`.
             "Axis" => continue,
@@ -1400,9 +1573,7 @@ fn the_export_column_follows_the_journal_rule_and_the_recorded_proof() {
                 "{kind}: export is `{}`, derived `{cell}`. {note}",
                 row["export"]
             ));
-        } else if !row["notes"].ends_with(&note)
-            || (note.is_empty() && row["notes"].contains("Export:"))
-        {
+        } else if !note.is_empty() && !row["notes"].ends_with(&note) {
             errors.push(format!("{kind}: the note must end with `{note}`"));
         }
     }
@@ -1740,6 +1911,260 @@ fn review_oracle(source: &[u8], exported: &[u8]) -> (Value, Value) {
             .unwrap()
     };
     (read("source"), read("export"))
+}
+
+fn compare_saved_regression(file: &str, script: &str, labels: &[&str]) {
+    let live = Workbench::from_script(script).unwrap();
+    let archive = live
+        .export_ggb(None)
+        .unwrap_or_else(|e| panic!("{file}: {e}"));
+    let source = review_workbench(&saved_review_file(file));
+    let restored = review_workbench(&archive);
+    for label in labels {
+        let value = |wb: &Workbench| {
+            let c = wb.construction();
+            c.value(c.id(label).unwrap())
+        };
+        assert_eq!(value(&source), value(&live), "{file}: {label}");
+        assert_eq!(value(&restored), value(&source), "{file}: {label}");
+    }
+}
+
+#[test]
+fn a_spreadsheet_fill_can_be_saved_and_reopened() {
+    compare_saved_regression("saved-export-fill-row-001.xml", "FillRow(1,{7})", &["A1"]);
+}
+
+const EDITED_FILL_FILE: &str = "saved-export-edited-fill-001.xml";
+const EDITED_FILL_SCRIPT: &str = "FillRow(1,{7})\nSetValue(A1,9)";
+const MOVED_FILL_FILE: &str = "saved-export-moved-fill-001.xml";
+const MOVED_FILL_SCRIPT: &str = "FillRow(1,{(7,8)})\nSetCoords(A1,9,10)";
+const RAY_AND_FUNCTION_FILE: &str = "saved-export-ray-and-function-001.xml";
+const RAY_AND_FUNCTION_SCRIPT: &str = "A = (1,2)\nB = (3,4)\nr = Ray(A,B)\nf(x,y)=x+y";
+
+#[test]
+fn an_edited_spreadsheet_fill_can_be_saved_and_reopened() {
+    compare_saved_regression(EDITED_FILL_FILE, EDITED_FILL_SCRIPT, &["A1"]);
+}
+
+#[test]
+fn a_moved_spreadsheet_fill_can_be_saved_and_reopened() {
+    compare_saved_regression(MOVED_FILL_FILE, MOVED_FILL_SCRIPT, &["A1"]);
+}
+
+#[test]
+fn ray_and_multivariable_function_export_notes_follow_the_xml() {
+    use geo_import::xml::{parse, Item};
+
+    let live = Workbench::from_script(RAY_AND_FUNCTION_SCRIPT).unwrap();
+    let output = live.export_ggb(None).unwrap();
+    let source = saved_review_file(RAY_AND_FUNCTION_FILE);
+    for bytes in [&source, &output] {
+        let xml = geo_import::archive::extract_xml(bytes).unwrap();
+        let document = parse(&xml).unwrap();
+        assert!(document.items.iter().any(|item| matches!(
+            item,
+            Item::Command { name, inputs, outputs }
+                if name == "Ray" && inputs == &["A", "B"] && outputs == &["r"]
+        )));
+        assert!(document.items.iter().any(|item| matches!(
+            item,
+            Item::Element(el)
+                if el.label == "r" && el.kind == "ray" && el.coords.is_some() && !el.start_point
+        )));
+        assert!(document.items.iter().any(|item| matches!(
+            item,
+            Item::Element(el) if el.label == "f" && el.kind == "functionnvar"
+        )));
+        assert!(xml
+            .lines()
+            .any(|line| line.starts_with("<expression label=\"f\" ")
+                && line.contains("type=\"function\"")));
+    }
+    let table = fs::read_to_string(repo_root().join("docs/kinds.csv")).unwrap();
+    let matrix = geo_golden::table::Table::parse(&table, "docs/kinds.csv").unwrap();
+    let mut missing = Vec::new();
+    for (kind, clauses) in [
+        (
+            "Ray",
+            [
+                "command carries the start",
+                "element carries the line coefficients",
+            ],
+        ),
+        (
+            "FunctionNVar",
+            [
+                "expression type is `function`",
+                "element type is `functionnvar`",
+            ],
+        ),
+    ] {
+        let row = matrix
+            .records()
+            .into_iter()
+            .find(|row| row["kind"] == kind)
+            .unwrap();
+        for clause in clauses {
+            if !row["notes"].contains(clause) {
+                missing.push(format!("{kind}: missing {clause}"));
+            }
+        }
+    }
+    assert!(missing.is_empty(), "{}", missing.join("\n"));
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn edited_fill_ray_and_multivariable_function_match_the_reference_reader() {
+    for (file, script) in [
+        (EDITED_FILL_FILE, EDITED_FILL_SCRIPT),
+        (MOVED_FILL_FILE, MOVED_FILL_SCRIPT),
+        (RAY_AND_FUNCTION_FILE, RAY_AND_FUNCTION_SCRIPT),
+    ] {
+        let live = Workbench::from_script(script).unwrap();
+        let output = live.export_ggb(None).unwrap();
+        let (source, exported) = review_oracle(&saved_review_file(file), &output);
+        if file == EDITED_FILL_FILE {
+            assert_eq!(source["objects"]["A1"]["value"], 9.0);
+        }
+        assert_json(&source["objects"], &exported["objects"], file);
+    }
+}
+
+#[test]
+fn an_inline_fixed_segment_can_be_saved_and_reopened() {
+    compare_saved_regression(
+        "saved-export-inline-fixed-segment-001.xml",
+        "s = Segment((1,1),4)",
+        &["A", "s"],
+    );
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn fill_and_inline_fixed_segment_match_the_reference_reader() {
+    for (file, script) in [
+        ("saved-export-fill-row-001.xml", "FillRow(1,{7})"),
+        (
+            "saved-export-inline-fixed-segment-001.xml",
+            "s = Segment((1,1),4)",
+        ),
+    ] {
+        let live = Workbench::from_script(script).unwrap();
+        let output = live.export_ggb(None).unwrap();
+        let (source, exported) = review_oracle(&saved_review_file(file), &output);
+        assert_json(&source["objects"], &exported["objects"], file);
+    }
+}
+
+#[test]
+fn stored_line_distances_import_at_the_reference_reload_values() {
+    let root = repo_root();
+    let recordings: BTreeMap<String, BTreeMap<String, f64>> = serde_json::from_str(
+        &fs::read_to_string(root.join("golden/ggb/distance-reload.snapshot")).unwrap(),
+    )
+    .unwrap();
+    for case in load_all(&root)
+        .unwrap()
+        .into_iter()
+        .filter(|case| recordings.contains_key(&case.id))
+    {
+        let source = fs::read(
+            root.join("golden/ggb")
+                .join(&case.group)
+                .join(format!("{}.xml", case.id)),
+        )
+        .unwrap();
+        let wb = review_workbench(&source);
+        let c = wb.construction();
+        for (label, value) in &recordings[&case.id] {
+            let geo_kernel::Value::Number(actual) = c.value(c.id(label).unwrap()) else {
+                panic!("{}: {label} is not a distance", case.id);
+            };
+            assert!(numbers_agree(actual, *value), "{}: {label}", case.id);
+        }
+    }
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn line_distances_save_in_the_reference_argument_order() {
+    let root = repo_root();
+    let recordings: BTreeMap<String, BTreeMap<String, f64>> = serde_json::from_str(
+        &fs::read_to_string(root.join("golden/ggb/distance-reload.snapshot")).unwrap(),
+    )
+    .unwrap();
+    for case in load_all(&root)
+        .unwrap()
+        .into_iter()
+        .filter(|case| recordings.contains_key(&case.id))
+    {
+        let live = Workbench::from_script(&case.script.join("\n")).unwrap();
+        let exported = live.export_ggb(None).unwrap();
+        let source = fs::read(
+            root.join("golden/ggb")
+                .join(&case.group)
+                .join(format!("{}.xml", case.id)),
+        )
+        .unwrap();
+        let (source, snapshot) = review_oracle(&source, &exported);
+        let restored = review_workbench(&exported);
+        for (label, value) in &recordings[&case.id] {
+            let expected = expected_from_json(&source["objects"][label]).unwrap();
+            assert!(numbers_agree(
+                source["objects"][label]["value"].as_f64().unwrap(),
+                *value
+            ));
+            assert_json(
+                &source["objects"][label],
+                &snapshot["objects"][label],
+                &case.id,
+            );
+            let c = restored.construction();
+            compare_construction_object(&expected, c, c.id(label).unwrap()).unwrap();
+        }
+    }
+}
+
+// GeoGebra appends three head vertices to each two-point shaft. The
+// kernel stores the shaft; the archive preserves the separate arrow flag.
+fn slope_field_shafts(reference: &Value) -> Expected {
+    let mut expected = expected_from_json(reference).unwrap();
+    let Some(ExpectedData::Locus(points)) = &mut expected.data else {
+        panic!("the arrow witness must contain a defined slope field");
+    };
+    let (glyphs, remainder) = points.as_chunks::<5>();
+    assert!(remainder.is_empty());
+    let shafts = glyphs
+        .iter()
+        .flat_map(|glyph| {
+            assert_eq!(glyph.map(|point| point.1), [false, true, false, true, true]);
+            assert_eq!(
+                glyph[1], glyph[3],
+                "the head must meet the tip of the shaft"
+            );
+            [glyph[0], glyph[1]]
+        })
+        .collect();
+    *points = shafts;
+    expected
+}
+
+#[test]
+fn slope_field_samples_match_the_recorded_arrows() {
+    let witness = "saved-slope-arrows-001";
+    let source: Value =
+        serde_json::from_slice(&saved_review_file(&format!("{witness}.snapshot"))).unwrap();
+    let live = review_workbench(&saved_review_file(&format!("{witness}.xml")));
+    let saved = live.export_ggb(live.file_view()).unwrap();
+    let restored = review_workbench(&saved);
+    let expected = slope_field_shafts(&source["objects"]["field"]);
+    for wb in [&live, &restored] {
+        let c = wb.construction();
+        compare_construction_object(&expected, c, c.id("field").unwrap())
+            .unwrap_or_else(|why| panic!("{witness}: {why}"));
+    }
 }
 
 #[test]

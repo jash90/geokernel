@@ -500,10 +500,13 @@ tools/ggb-harness/harness.sh reload <file.xml> <label>...
 ```
 
 loads a saved file into a fresh GeoGebra (`getXMLio().processXMLString`) and prints
-the values it computes for the labels, as `<file> <label> = <value>`. It is how
-the entries of `crates/geo-import/known-import-gaps.toml` were checked: for
-`conic-diameter-009.xml` and `d` it prints `1.7888543819998317`, the value the
-importer gives, not the `0.8944271909999159` that GeoGebra computed before saving.
+the values it computes for the labels, as `<file> <label> = <value>`.
+`GEOGEBRA_SRC=<checkout> python3 -I tools/ggb-harness/saved/make_distance_reload.py`
+runs this probe in the Linux x86_64 container on the four files whose saved
+Distance argument order changes a computed value. For
+`conic-diameter-009.xml` and `d`, reload gives `1.7888543819998317`.
+The file still caches the pre-save value `0.8944271909999159`. The import
+oracle reads the recording in `golden/ggb/distance-reload.snapshot`.
 
 
 ### Classic editor tools
