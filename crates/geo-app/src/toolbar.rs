@@ -226,6 +226,7 @@ fn main_menu(app: &mut App, button: &Response) {
         if ui.button(text::label(view)).clicked() {
             app.show_cas = !app.show_cas;
             app.show_spreadsheet = false;
+            app.cancel_spreadsheet_range_extension();
             app.cancel_cas_edit();
             app.keyboard.open = false;
             ui.close();

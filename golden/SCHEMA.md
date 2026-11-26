@@ -509,6 +509,18 @@ subsequent step records the visibility of those cells under `visible`.
 A `load` opens the XML in `input` and records `view.show_grid` and
 `view.first_column_width` from its spreadsheet settings.
 
+An `analyze_one_variable` action gives the selection anchor in `cell` and
+the other endpoint in `target`. Both may be the same address. It records
+the raw statistics model for a finite numeric row or column, including
+after subsequent actions until another launch or document replacement.
+The optional `analysis` record contains `group_type: "RAWDATA"`, raw
+numeric `values` in sheet order, and the ordered `rows`. Each row carries
+its reference statistic `id`, `command`, and raw `value`. A non-finite
+result has a null value and a `non_finite` string (`NaN`, `Infinity`, or
+`-Infinity`). The harness drives the shared source and statistics models
+headlessly and checks construction membership after their temporary
+objects are removed. This action models the confirmed source in Classic.
+
 Each action records `cells`, the occupied canonical addresses mapped to
 the strings drawn by the reference spreadsheet. An absent cell is absent
 from this map. The strings are compared exactly, including rounding and
