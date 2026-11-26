@@ -70,11 +70,15 @@ public final class ExportSnapshot {
     private static boolean elementTags;
 
     public static void main(String[] args) throws Exception {
-        lenient = args.length == 2 && "--lenient".equals(args[0]);
-        elementTags = args.length == 2 && "--element-tags".equals(args[0]);
-        if (args.length != (lenient || elementTags ? 2 : 1)) {
-            throw new IllegalArgumentException(
-                    "usage: ExportSnapshot [--lenient|--element-tags] <directory of .ggb files>");
+        if (args.length == 0) {
+            throw new IllegalArgumentException("missing directory of .ggb files");
+        }
+        for (int i = 0; i < args.length - 1; i++) {
+            switch (args[i]) {
+                case "--lenient" -> lenient = true;
+                case "--element-tags" -> elementTags = true;
+                default -> throw new IllegalArgumentException("unknown option " + args[i]);
+            }
         }
         Path dir = Path.of(args[args.length - 1]);
         try (var files = Files.list(dir)) {

@@ -215,6 +215,7 @@ pub(crate) fn convert_with_assets(
         }
         let label = quote(&el.label);
         if let Some(properties) = saved_style.preserved.as_deref_mut() {
+            properties.retain_effective_chart_images();
             properties.retain(|tag| {
                 if !tag.validate_import(&c.kernel, id, &mut expressions) {
                     c.out.notes.push(format!(

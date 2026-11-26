@@ -202,6 +202,7 @@
     {"id": "saved-export-ray-and-function-001", "script": ["A = (1,2)", "B = (3,4)", "r = Ray(A,B)", "f(x,y)=x+y"], "typed_snapshot": true, "steps": []},
     {"id": "saved-export-limits-001", "script": ["L = {1, 2}", "P = (2, 3)"], "steps": [{"action": "style", "label": "P", "point": [7, 2], "vertical_increment": "Length(L)"}]},
     {"id": "saved-export-limits-002", "script": ["A = (1, 2)", "B = (5, 4)", "v = (2, 1)"], "steps": [{"action": "style", "label": "v", "vector_start": "((x(A) + x(B)) / 2, (y(A) + y(B)) / 2)"}]},
-    {"id": "saved-export-limits-003", "archive": true, "script": ["bars = BarChart({2, 3, 4}, {2, 3, 4})", "pie = PieChart({1, 2, 3})"], "steps": [{"action": "bar_image", "label": "bars", "file": "bar.png"}, {"action": "bar_image", "label": "pie", "file": "slice.jpg"}]}
+    {"id": "saved-export-limits-003", "archive": true, "script": ["bars = BarChart({2, 3, 4}, {2, 3, 4})", "pie = PieChart({1, 2, 3})"], "steps": [{"action": "bar_image", "label": "bars", "file": "bar.png"}, {"action": "bar_image", "label": "pie", "file": "slice.jpg"}]},
+    {"id": "saved-export-raster-budget-001", "archive": true, "script": ["bars = BarChart({2, 3, 4}, {2, 3, 4})"], "steps": [{"action": "bar_image", "label": "bars", "file": "candidate.jpg", "large": true}, {"action": "bar_image", "label": "bars", "file": "bar.png", "large": true}]}
   ]
 }

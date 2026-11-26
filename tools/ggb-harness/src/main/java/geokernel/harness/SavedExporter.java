@@ -201,7 +201,7 @@ public final class SavedExporter {
                 String name = (String) step.get("file");
                 chart.getStyle().setBarFillType(FillType.IMAGE, 2);
                 chart.getStyle().setBarImage(name, 2);
-                SavedImages.addAsset(name, imageAssets);
+                SavedImages.addAsset(name, Boolean.TRUE.equals(step.get("large")), imageAssets);
             } else if ("move".equals(action) && geo instanceof GeoPoint p
                     && (p.isIndependent() || p.isPointOnPath())) {
                 p.setCoords(number(step.get("x")), number(step.get("y")), 1.0);

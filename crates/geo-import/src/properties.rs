@@ -7,7 +7,7 @@ use geo_kernel::kernel::angle::AngleStyle;
 use geo_kernel::kernel::image::RasterAsset;
 use geo_kernel::{Construction, Def, Id, Kind};
 use quick_xml::events::BytesStart;
-use std::{fmt, sync::Arc};
+use std::{collections::BTreeSet, fmt, sync::Arc};
 
 /// Additional presentation attached to a saved object. Storing its original
 /// class prevents old properties from being applied after a change of kind.
@@ -86,6 +86,19 @@ impl Properties {
                 2
             }
         });
+    }
+
+    /// The reader assigns each bar's image name in file order, even when
+    /// the final name has no matching asset. Skip shadowed tags before loading.
+    pub(crate) fn retain_effective_chart_images(&mut self) {
+        let mut bars = BTreeSet::new();
+        for parent in self.tags.iter_mut().rev().filter(|tag| tag.name == "tags") {
+            parent.children.reverse();
+            parent.children.retain(|tag| {
+                !tag.is_chart_image() || tag.chart_bar().is_none_or(|bar| bars.insert(bar))
+            });
+            parent.children.reverse();
+        }
     }
 
     pub(crate) fn retain(&mut self, mut keep: impl FnMut(&mut Tag) -> bool) {
@@ -208,13 +221,19 @@ impl Tag {
                 self.extra = Some(Box::new(TagExtra::PointInputs(inputs)));
                 true
             }
-            "tag" if self.chart_image_name().is_some() => is_chart(c, id) && self.valid_chart_bar(),
+            "tag" if self.chart_image_name().is_some() => {
+                is_chart(c, id) && self.chart_bar().is_some()
+            }
             _ => self.can_write(c, id, expressions),
         }
     }
 
+    fn is_chart_image(&self) -> bool {
+        self.name == "tag" && self.attr("key") == Some("barImage")
+    }
+
     pub(crate) fn chart_image_name(&self) -> Option<&str> {
-        (self.name == "tag" && self.attr("key") == Some("barImage"))
+        self.is_chart_image()
             .then(|| self.attr("value").filter(|value| !value.is_empty()))
             .flatten()
     }
@@ -290,10 +309,10 @@ impl Tag {
         }
     }
     fn valid_chart_tag(&self) -> bool {
-        if !self.valid_chart_bar() {
+        if self.chart_bar().is_none() {
             return false;
         }
-        if self.attr("key") == Some("barImage") {
+        if self.is_chart_image() {
             return self.chart_image().is_some();
         }
         let Some(value) = self.attr("value").filter(|value| !value.is_empty()) else {
@@ -324,8 +343,8 @@ impl Tag {
         }
     }
 
-    fn valid_chart_bar(&self) -> bool {
-        self.attr("barNumber").and_then(xml::java_int).is_some()
+    fn chart_bar(&self) -> Option<i32> {
+        self.attr("barNumber").and_then(xml::java_int)
     }
 }
 

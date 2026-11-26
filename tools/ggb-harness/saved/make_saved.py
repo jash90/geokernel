@@ -895,6 +895,12 @@ case("export-limits", [
     {"action": "bar_image", "label": "pie", "file": "slice.jpg"},
 ], archive=True)
 
+# The first asset stays in the archive for the image tool to insert separately.
+case("export-raster-budget", ["bars = BarChart({2, 3, 4}, {2, 3, 4})"], [
+    {"action": "bar_image", "label": "bars", "file": "candidate.jpg", "large": True},
+    {"action": "bar_image", "label": "bars", "file": "bar.png", "large": True},
+], archive=True)
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

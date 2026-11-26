@@ -2013,6 +2013,10 @@ fn review_workbench(input: &[u8]) -> Workbench {
 }
 
 fn review_oracle(source: &[u8], exported: &[u8]) -> (Value, Value) {
+    review_oracle_with(source, exported, &["--element-tags"])
+}
+
+fn review_oracle_with(source: &[u8], exported: &[u8], args: &[&str]) -> (Value, Value) {
     let scratch = Scratch::new("property-review");
     for (name, bytes) in [("source", source), ("export", exported)] {
         let bytes = if geo_import::archive::is_zip(bytes) {
@@ -2022,7 +2026,7 @@ fn review_oracle(source: &[u8], exported: &[u8]) -> (Value, Value) {
         };
         fs::write(scratch.0.join(format!("{name}.ggb")), bytes).unwrap();
     }
-    let result = tag_snapshots(&scratch.0);
+    let result = oracle_command(args, &scratch.0).output().unwrap();
     assert!(
         result.status.success(),
         "{}",
@@ -2506,6 +2510,120 @@ fn chart_images_obey_the_raster_entry_limit_and_report_missing_assets() {
         .unwrap()
         .contains(r#"key="barImage""#));
     assert_eq!(zip::ZipArchive::new(Cursor::new(export)).unwrap().len(), 1);
+}
+
+const RASTER_BUDGET_FILE: &str = "saved-export-raster-budget-001.ggb";
+
+#[test]
+fn save_rejects_images_that_together_would_evict_a_chart_texture_on_reload() {
+    use geo_app_core::{app::App, editor::ImageRequest};
+    use std::io::{Cursor, Read};
+
+    let input = saved_review_file(RASTER_BUDGET_FILE);
+    let mut source = zip::ZipArchive::new(Cursor::new(&input)).unwrap();
+    let mut candidate = Vec::new();
+    source
+        .by_name("candidate.jpg")
+        .unwrap()
+        .read_to_end(&mut candidate)
+        .unwrap();
+
+    let mut app = App::new(review_workbench(&input), None);
+    let before = app.wb.export_ggb(None).unwrap();
+    let request = ImageRequest {
+        anchor: None,
+        at: (0.0, 0.0),
+        scale: 50.0,
+        xmax: 8.0,
+        ymax: 6.0,
+    };
+    app.image_request = Some(request.clone());
+    app.finish_image(candidate.clone()).unwrap();
+    let err = app.wb.export_ggb(None).err().unwrap_or_else(|| {
+        panic!("save accepted two 4096×4096 rasters that exceed the shared limit")
+    });
+    assert!(err.to_string().contains("memory limit"), "{err}");
+
+    assert!(app.wb.undo());
+    assert_eq!(app.wb.export_ggb(None).unwrap(), before);
+    let mut image_only = App::new(Workbench::default(), None);
+    image_only.image_request = Some(request);
+    image_only.finish_image(candidate).unwrap();
+    assert!(image_only.wb.export_ggb(None).is_ok());
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_reloads_the_large_chart_texture() {
+    let input = saved_review_file(RASTER_BUDGET_FILE);
+    let output = review_workbench(&input).export_ggb(None).unwrap();
+    let (source, exported) = review_oracle(&input, &output);
+    let texture = &source["chartRasterHashes"]["bars"]["2"];
+    assert!(texture.is_string());
+    assert_eq!(exported["chartRasterHashes"]["bars"]["2"], *texture);
+}
+
+fn duplicate_chart_image_input() -> Vec<u8> {
+    use std::io::{Cursor, Write};
+
+    let input = saved_review_file("saved-export-limits-003.ggb");
+    let xml = geo_import::archive::extract_xml(&input).unwrap();
+    let first = r#"<tag key="barImage" barNumber="2" value="bar.png"/>"#;
+    let last = r#"<tag key="barImage" barNumber="2" value="missing.png"/>"#;
+    assert_eq!(xml.matches(first).count(), 1);
+    let mut source = zip::ZipArchive::new(Cursor::new(&input)).unwrap();
+    let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    for index in 0..source.len() {
+        let entry = source.by_index(index).unwrap();
+        if entry.name().unwrap() == "geogebra.xml" {
+            zip.start_file("geogebra.xml", zip::write::SimpleFileOptions::default())
+                .unwrap();
+            zip.write_all(
+                xml.replacen(first, &format!("{first}\n{last}"), 1)
+                    .as_bytes(),
+            )
+            .unwrap();
+        } else {
+            zip.raw_copy_file(entry).unwrap();
+        }
+    }
+    zip.finish().unwrap().into_inner()
+}
+
+#[test]
+fn an_unavailable_last_chart_image_does_not_restore_an_earlier_texture() {
+    let input = duplicate_chart_image_input();
+    let imported = geo_import::import_for_replay(&input).unwrap();
+    assert!(imported
+        .notes
+        .iter()
+        .any(|note| { note.contains("chart image of `bars`") && note.contains("missing.png") }));
+    let xml = exported_xml(&review_workbench(&input));
+    assert_eq!(
+        xml.matches(r#"key="barImage""#).count(),
+        1,
+        "only the pie texture survives"
+    );
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_reloads_only_the_effective_chart_texture() {
+    let input = duplicate_chart_image_input();
+    let output = review_workbench(&input).export_ggb(None).unwrap();
+    let (source, exported) = review_oracle_with(&input, &output, &["--lenient", "--element-tags"]);
+    assert!(source["reported"].as_array().unwrap().iter().any(|note| {
+        note.as_str()
+            .is_some_and(|note| note.contains("missing raster missing.png"))
+    }));
+    assert!(source["reloadedTags"]["bars"]["tags/tag"]
+        .as_array()
+        .unwrap()
+        .contains(&json!({"key": "barImage", "barNumber": "2", "value": "missing.png"})));
+    assert!(source["chartRasterHashes"]["bars"]["2"].is_null());
+    assert!(source["chartRasterHashes"]["pie"]["2"].is_string());
+    assert_eq!(exported["chartRasterHashes"], source["chartRasterHashes"]);
+    assert_eq!(exported["reported"], json!([]));
 }
 
 #[test]
