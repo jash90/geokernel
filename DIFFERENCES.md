@@ -500,3 +500,764 @@ is needed.
 | Oversized shapes in Point on Object, Rigid Polygon and Relation | In the 4,097-vertex recordings, GeoGebra places a polygon-region point and a polyline-path point, creates a rigid copy with 8,195 new objects, and opens Relation for the polygon and point. | The pointer query spends at most 4,096 units on shape preparation and reads. These picks create no point or copy and cannot select the polygon for Relation. If shape work is refused and there is no hit other than a list, Point on Object and Rigid Polygon ignore the click. The numerical polygon–point comparison also refuses that shape before reading its edges. | Bounds interactive work. Recorded as `tool_point_on_large_polygon`, `tool_point_on_large_polyline`, `tool_rigid_copy_large_polygon` and `tool_relation_compares_large_polygon`. |
 | Roots and Extremum with occupied output labels | Searches for the next available point names. | Refuses the tool action if selecting the output labels requires more than 4,096 label lookups. | Bounds synchronous label search separately from the solver. |
 | Headless toolbar captures | `tool_create_list_from_rectangle` creates no list. `tool_text_places_literal` and `tool_input_box_places_empty_widget` reach dialog hooks without submitting. | The original desktop gestures create `l1`, `text1` and `InputBox1` respectively. Each is undone back to the recorded initial construction. | The fixtures retain the desktop submission assertions. |
+
+## Golden corpus gap families
+
+Each row lists the corpus IDs sharing a reason. The default ledger also covers the CAS cases that differ in builds without the Giac backend. The ledger pins the individual snapshot positions.
+
+| Cases | Difference and reason |
+| --- | --- |
+| `algebralogic-logic-022` | GeoFunction.isInRegion reads the separately stored GeoPoint x2D coordinate, which can be stale at construction and after a direct headless move. The kernel evaluates the inequality at the point's current Cartesian coordinates. The construction mismatch is recorded separately in algebralogic-logic-025. |
+| `algebralogic-logic-025` | GeoFunction.isInRegion also reads stale GeoPoint x2D at point construction. In the headless harness, IsInRegion((3,0), f) reads x2D = 0 for f(x) = x < 1 and reports true. The kernel evaluates f at x = 3. |
+| `calculus-degree-010` | intended difference, recorded in DIFFERENCES.md: the reference exhausts its heap expanding (a x + b)^300. Its native CAS fallback returns degree zero when a is zero, but leaves the other snapshots undefined. The kernel shares the coefficient subtrees and evaluates each once, so all snapshots get a degree. At 1:f the file records null at x = -8 and x = 8, where the kernel evaluates (2x + 1)^300 to positive infinity. The file cannot be recorded again with signed samples, because the reference runs out of heap expanding the power for Degree (Function.expandToPolyFunctionNoCas) before the case ends. infinity-outputs-031 records the same function without the Degree line, with positive infinity at x = -8 and x = 8 for a = 2. |
+| `cas-assume-001`, `cas-assume-002`, `cas-cfactor-001`, `cas-cfactor-002`, `cas-cfactor-003`, `cas-cifactor-001`, `cas-cifactor-002`, `cas-cifactor-003`, `cas-integralsymbolic-001`, `cas-integralsymbolic-002`, `cas-integralsymbolic-003`, `cas-eliminate-001`, `cas-eliminate-002`, `cas-groebnerlex-001`, `cas-groebnerlex-002`, `cas-groebnerlex-003`, `cas-groebnerdegrevlex-001`, `cas-groebnerdegrevlex-002`, `cas-groebnerdegrevlex-003`, `cas-groebnerlexdeg-001`, `cas-groebnerlexdeg-002`, `cas-groebnerlexdeg-003`, `cas-numeric-001`, `cas-numeric-002`, `cas-mixednumber-001`, `cas-mixednumber-002`, `cas-rationalize-001`, `cas-rationalize-002`, `cas-solvecubic-001`, `cas-solvecubic-002`, `cas-solvecubic-003`, `cas-solvequartic-001`, `cas-solvequartic-002`, `cas-jordandiagonalization-001`, `cas-jordandiagonalization-002`, `cas-eigenvectors-001`, `cas-eigenvectors-002`, `cas-eigenvalues-001`, `cas-eigenvalues-002`, `cas-laplace-001`, `cas-laplace-002`, `cas-laplace-003`, `cas-laplace-004`, `cas-inverselaplace-001`, `cas-inverselaplace-002`, `cas-inverselaplace-003`, `cas-inverselaplace-004`, `cas-substitute-001`, `cas-substitute-002`, `cas-substitute-003`, `cas-substitute-004`, `cas-substitute-005`, `cas-toexponential-001`, `cas-toexponential-002`, `cas-extendedgcd-001`, `cas-extendedgcd-002`, `cas-extendedgcd-003`, `cas-modularexponent-001`, `cas-modularexponent-002`, `cas-characteristicpolynomial-001`, `cas-characteristicpolynomial-002`, `cas-minimalpolynomial-001`, `cas-minimalpolynomial-002`, `cas-ludecomposition-001`, `cas-ludecomposition-002`, `cas-qrdecomposition-001`, `cas-qrdecomposition-002` | This row requires the Giac CAS backend. |
+| `cas-coefficient-001`, `cas-coefficient-002`, `cas-coefficient-003`, `cas-coefficient-004`, `cas-coefficient-005`, `cas-conic-012`, `cas-conic-014`, `cas-conic-015`, `cas-conic-016`, `cas-conic-017`, `cas-conic-018`, `cas-conic-019`, `cas-conic-020`, `cas-conic-021`, `cas-conic-022`, `cas-conic-023`, `cas-conic-024`, `cas-conic-025`, `cas-conic-026`, `cas-conic-027`, `cas-conic-028`, `cas-conic-029`, `cas-conic-030`, `cas-conic-031`, `cas-conic-032`, `cas-conic-033`, `cas-conic-034`, `cas-conic-035`, `cas-conic-040`, `cas-conic-048`, `cas-conic-049`, `cas-conic-052`, `cas-conic-057`, `cas-conic-060`, `cas-edge-003`, `cas-edge-011`, `cas-edge-019`, `cas-edge-020`, `cas-family-003`, `cas-freevariable-005`, `cas-freevariable-006`, `cas-freevariable-007`, `cas-hint-005`, `cas-hint-006`, `cas-hint-009`, `cas-hint-010`, `cas-hint-016`, `cas-implicit-012`, `cas-magnitude-030`, `cas-magnitude-043`, `cas-name-005`, `cas-name-006`, `cas-name-009`, `cas-order-001`, `cas-order-003`, `cas-order-004`, `cas-order-005`, `cas-order-006`, `cas-order-007`, `cas-order-008`, `cas-order-009`, `cas-order-010`, `cas-order-011`, `cas-order-012`, `cas-order-013`, `cas-order-014`, `cas-order-015`, `cas-order-016`, `cas-order-017`, `cas-order-018`, `cas-order-019`, `cas-order-020`, `cas-order-021`, `cas-order-022`, `cas-order-023`, `cas-order-024`, `cas-order-025`, `cas-order-026`, `cas-order-027`, `cas-order-028`, `cas-order-029`, `cas-order-030`, `cas-order-031`, `cas-order-032`, `cas-order-033`, `cas-order-034`, `cas-order-035`, `cas-order-036`, `cas-order-037`, `cas-order-076`, `cas-order-077`, `cas-order-078`, `cas-order-079`, `cas-order-080`, `cas-order-081`, `cas-order-082`, `cas-order-083`, `cas-order-084`, `cas-order-085`, `cas-order-086`, `cas-order-087`, `cas-order-088`, `cas-order-089`, `cas-order-090`, `cas-order-093`, `cas-order-094`, `cas-order-095`, `cas-order-096`, `cas-order-097`, `cas-shape-021`, `cas-shape-024`, `cas-shape-026` | Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work. |
+| `cas-conic-009`, `cas-conic-010`, `cas-conic-036`, `cas-conic-037`, `cas-conic-038`, `cas-conic-039`, `cas-conic-041`, `cas-conic-042`, `cas-conic-043`, `cas-conic-044`, `cas-conic-045`, `cas-conic-046`, `cas-conic-047`, `cas-conic-050`, `cas-conic-051`, `cas-conic-054`, `cas-conic-056`, `cas-degree-002`, `cas-edge-004`, `cas-edge-006`, `cas-edge-012`, `cas-edge-015`, `cas-edge-018`, `cas-family-001`, `cas-family-002`, `cas-freevariable-008`, `cas-freevariable-009`, `cas-freevariable-010`, `cas-freevariable-011`, `cas-hint-013`, `cas-hint-014`, `cas-hint-015`, `cas-hint-027`, `cas-hint-028`, `cas-hint-029`, `cas-hintobject-001`, `cas-hintobject-002`, `cas-hintobject-003`, `cas-magnitude-039`, `cas-magnitude-040`, `cas-magnitude-041`, `cas-magnitude-042`, `cas-name-001`, `cas-name-004`, `cas-name-007`, `cas-name-010`, `cas-name-011`, `cas-name-014`, `cas-order-002`, `cas-order-038`, `cas-order-039`, `cas-order-040`, `cas-order-041`, `cas-order-042`, `cas-order-043`, `cas-order-044`, `cas-order-045`, `cas-order-046`, `cas-order-047`, `cas-order-048`, `cas-order-049`, `cas-order-050`, `cas-order-051`, `cas-order-052`, `cas-order-053`, `cas-order-054`, `cas-order-055`, `cas-order-056`, `cas-order-057`, `cas-order-058`, `cas-order-059`, `cas-order-060`, `cas-order-061`, `cas-order-062`, `cas-order-063`, `cas-order-064`, `cas-order-065`, `cas-order-066`, `cas-order-067`, `cas-order-068`, `cas-order-069`, `cas-order-070`, `cas-order-071`, `cas-order-072`, `cas-order-073`, `cas-order-074`, `cas-order-075`, `cas-order-092`, `cas-order-098`, `cas-order-099`, `cas-rows-001`, `cas-rows-002`, `cas-rows-003`, `cas-rows-004`, `cas-rows-005`, `cas-rows-006`, `cas-rows-007`, `cas-rows-009`, `cas-shape-001`, `cas-shape-002`, `cas-shape-003`, `cas-shape-004`, `cas-shape-005`, `cas-shape-006`, `cas-shape-008`, `cas-shape-010`, `cas-shape-011`, `cas-shape-012`, `cas-shape-016`, `cas-shape-017`, `cas-shape-018`, `cas-shape-019`, `cas-shape-023`, `cas-shape-025`, `cas-shape-028`, `cas-shape-029`, `cas-shape-030`, `cas-shape-031`, `cas-shape-032`, `cas-shape-033`, `cas-solve-013`, `cas-solve-040`, `cas-solve-041`, `cas-solve-045` | Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver. |
+| `cas-conic-058`, `cas-conic-059`, `cas-edge-001`, `cas-edge-002`, `cas-edge-007`, `cas-edge-008`, `cas-edge-014`, `cas-edge-021`, `cas-hint-017`, `cas-hint-018`, `cas-hint-019`, `cas-hint-020`, `cas-hint-021`, `cas-hint-022`, `cas-hint-023`, `cas-hint-024`, `cas-hint-025`, `cas-hint-026`, `cas-magnitude-001`, `cas-magnitude-002`, `cas-magnitude-003`, `cas-magnitude-004`, `cas-magnitude-005`, `cas-magnitude-006`, `cas-magnitude-007`, `cas-magnitude-008`, `cas-magnitude-009`, `cas-magnitude-010`, `cas-magnitude-011`, `cas-magnitude-012`, `cas-magnitude-013`, `cas-magnitude-014`, `cas-magnitude-015`, `cas-magnitude-016`, `cas-magnitude-017`, `cas-magnitude-018`, `cas-magnitude-019`, `cas-magnitude-020`, `cas-magnitude-021`, `cas-magnitude-022`, `cas-magnitude-023`, `cas-magnitude-024`, `cas-magnitude-025`, `cas-magnitude-026`, `cas-magnitude-027`, `cas-magnitude-028`, `cas-magnitude-029`, `cas-name-002`, `cas-name-003`, `cas-name-008`, `cas-name-012`, `cas-name-013`, `cas-shape-014`, `cas-shape-015`, `cas-start-001`, `cas-start-002`, `cas-start-003`, `cas-start-004`, `cas-start-005`, `cas-start-006`, `cas-start-007`, `cas-start-008`, `cas-start-009`, `cas-start-010`, `cas-start-011`, `cas-start-012`, `cas-start-013`, `cas-start-014`, `cas-start-015`, `cas-start-016`, `cas-start-017`, `cas-start-018`, `cas-start-019`, `cas-start-020`, `cas-start-021`, `cas-start-022`, `cas-start-023`, `cas-start-024`, `cas-start-025`, `cas-start-026` | Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work. |
+| `cas-curve-001`, `cas-curve-002`, `cas-curve-003`, `cas-curve-004`, `cas-curve-005`, `cas-curve-006`, `cas-curve-007`, `cas-curve-008`, `cas-curve-009`, `cas-curve-010`, `cas-curve-011`, `cas-curve-012`, `cas-curve-013`, `cas-curve-014`, `cas-curve-015`, `cas-curve-016`, `cas-curve-017`, `cas-curve-018`, `cas-curve-019`, `cas-curve-020`, `cas-curve-021`, `cas-curve-022`, `cas-curve-023`, `cas-curve-024`, `cas-curve-025`, `cas-curve-026`, `cas-curve-027`, `cas-curve-028`, `cas-curve-029`, `cas-edge-022`, `cas-implicitrewrite-001`, `cas-implicitrewrite-002`, `cas-implicitrewrite-003`, `cas-implicitrewrite-004`, `cas-implicitrewrite-005`, `cas-implicitrewrite-006`, `cas-implicitrewrite-007`, `cas-implicitrewrite-008`, `cas-implicitrewrite-009`, `cas-implicitrewrite-010`, `cas-implicitrewrite-011`, `cas-implicitrewrite-012`, `cas-simplify-007`, `cas-simplify-008`, `cas-simplify-009`, `cas-simplify-010`, `cas-simplify-011`, `cas-simplify-012`, `cas-simplify-013`, `cas-simplify-014`, `cas-simplify-015`, `cas-simplify-016`, `cas-simplify-017` | Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work. |
+| `cas-degree-001`, `cas-degree-003`, `cas-degree-004`, `cas-shape-007`, `cas-shape-009`, `cas-shape-013` | Refused as on main; the reference answers. Future work. |
+| `cas-implicit-001`, `cas-implicit-002`, `cas-implicit-003`, `cas-implicit-004`, `cas-implicit-005`, `cas-implicit-006`, `cas-implicit-007`, `cas-implicit-008`, `cas-implicit-009`, `cas-implicit-010`, `cas-implicit-011`, `cas-implicit-013`, `cas-plot-001`, `cas-plot-002`, `cas-plot-003`, `cas-plot-004`, `cas-plot-005`, `cas-plot-006`, `cas-plot-007`, `cas-plot-008`, `cas-plot-009`, `cas-plot-010`, `cas-plot-011`, `cas-plot-012`, `cas-plot-013`, `cas-plot-014`, `cas-plot-015`, `cas-plot-016`, `cas-plot-017`, `cas-plot-018`, `cas-plot-019`, `cas-plot-020`, `cas-plot-021`, `cas-plot-023`, `cas-plot-024`, `cas-plot-025` | PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work). |
+| `cas-literal-001` | Without the giac feature the kernel's own solver reads Solve(x+y=-0.75, y) with the free x in the place of the solving variable y and answers the line y = -0.375; the reference's CAS answers y = -x - 3/4 (recorded with Giac). The case was added to check typed decimals between -1 and 0 in the Giac input, and agrees with the feature (known-gaps-giac.toml). |
+| `cas-numeric-003` | The default build returns "Numeric requires a CAS build" and empty LaTeX. The reference fallback prints 1 and \mathbf{1}. |
+| `cascell-closing-004` | Kernel-only CAS rows refuse NSolutions with a starting value (text ?, LaTeX \mathbf{?}). The reference prints {1.41} and \mathbf{ \left\{ 1.41 \right\} }. See crates/geo-kernel/src/expr/cas/row.rs:131. |
+| `cascell-lastcommands-001` | The default build returns "Numeric requires a CAS build" with empty LaTeX (crates/geo-kernel/src/expr/cas/row.rs:62). GeoGebra prints 9 and \mathbf{9}. |
+| `cascell-lastround-006` | The CAS row reader rejects the comparison before cloning a middle operand that would exceed the 10,000-node limit (crates/geo-kernel/src/expr/cas/syntax.rs:111). The kernel prints ? and \mathbf{?}. GeoGebra prints false and \mathbf{false}. |
+| `cascell-stackclose-001` | The default build returns "Numeric requires a CAS build" and empty LaTeX. The reference prints 150 and \mathbf{150}. See crates/geo-kernel/src/expr/cas/row.rs:63. |
+| `cascell-stackclose-002` | The default build returns "Numeric requires a CAS build" and empty LaTeX. The reference prints 0.13 and \mathbf{0.13}. See crates/geo-kernel/src/expr/cas/row.rs:63. |
+| `cascell-stackclose-003` | The default build returns "Numeric requires a CAS build" and empty LaTeX. The reference prints 0 and \mathbf{0}. See crates/geo-kernel/src/expr/cas/row.rs:63. |
+| `cascell-stackclose-004` | The default build returns "Numeric requires a CAS build" and empty LaTeX. The reference prints 1 * 10²⁰ and \mathbf{1 \cdot 10^{20}}. See crates/geo-kernel/src/expr/cas/row.rs:63. |
+| `cascell-stackclose-005` | The default build returns "Assume requires a CAS build" and empty LaTeX. The reference prints {-3 / 4 π, 1 / 4 π} and \mathbf{ \left\{ \frac{-3}{4} \; \pi , \frac{1}{4} \; \pi  \right\} }. See crates/geo-kernel/src/expr/cas/row.rs:63. |
+| `cascell-stackclose-006` | The default build returns "Numeric requires a CAS build" and empty LaTeX. The reference prints 9 and \mathbf{9}. See crates/geo-kernel/src/expr/cas/row.rs:63. |
+| `cascell-stackclose-007` | The default build returns "ExtendedGCD requires a CAS build" and empty LaTeX. The reference prints {1, 0, ?} and \mathbf{ \left\{ 1, 0, ? \right\} }. See crates/geo-kernel/src/expr/cas/row.rs:63. |
+| `cascell-stackclose-008` | The default build returns "Eigenvalues requires a CAS build" and empty LaTeX. The reference prints ? and \mathbf{?}. See crates/geo-kernel/src/expr/cas/row.rs:63. |
+| `casview-closing-001` | The reference prints a:=2 and binds a, so the next row gives 3. The single-row evaluator prints ? and leaves a + 1 symbolic. CAS assignment state and its construction twins are outside the row API. |
+| `casview-closing-007` | The reference collapses 4,095 spaces to one. The desktop keeps the typed string and agrees on the result 3. |
+| `casview-closing-008` | The reference trims the 4,096-byte row to one digit and keeps the repeated input-reference result 4 through an edit. Preserving the padding makes the expanded row exceed 16 KiB and print ?. |
+| `casview-closing-009` | The reference collapses the saved input to one digit and a single trailing space. The importer preserves all 16,385 bytes and marks the row unevaluated with the same saved output 1. |
+| `corners-textbounds-006` | when the text anchor becomes undefined, GeoGebra keeps the drawable corner at its previous position; the kernel has no stale value for an undefined parent (W1) |
+| `curvepairs-bounded-001` | The symbolic solution puts the positive integer root in the first slot. The kernel orders parameters ascending, so it puts that root in the second slot even when the negative root is outside the curve domain. |
+| `curvepairs-growth-001` | The reference orders the positive integer root first when the height reaches one. The kernel orders the real solutions by ascending first parameter. |
+| `curvepairs-independent-001` | The symbolic system solver orders the parameter equations differently from ascending first parameter. The numerical coordinates agree for the two roots, and the labels are exchanged. |
+| `curvepairs-order-001` | The symbolic system returns the four integer roots in descending first-parameter order. The numerical solver orders them ascending. |
+| `curvepairs-parabola-001`, `curvepairs-parabola-002` | The symbolic solution returns the positive integer root before the negative one. The numerical solver orders them by ascending first parameter, including an undefined slot when the earlier parameter falls outside the curve domain. |
+| `curvepairs-radical-001` | The reference solves the square-root coordinate symbolically. The unseeded solver requires two polynomial coordinate pairs. |
+| `curvepairs-radical-002`, `curvepairs-radical-003`, `curvepairs-radical-004`, `curvepairs-radical-005` | The symbolic solution orders irrational roots negative first and switches to positive first at height four. The numerical solver orders all real solutions by ascending first parameter. |
+| `discrete-path-004` | Identity-hash iteration in SparseMultigraph can select either equal-cost route through the diamond across recomputations. The kernel settles tied endpoints by first occurrence in the segment list. |
+| `discrete-tree-003` | UndirectedSparseMultigraph iteration can change which equal-weight edges Prim selects, and the HashSet of TreeLink edges uses identity hashes for emission order. Both orders can vary across rebuilds. The kernel uses input-pair order. |
+| `discrete-tree-005` | The reference emits the two spanning edges of the copied point list in HashSet iteration order, which depends on the identity hashes of the TreeLink edges. The kernel uses input-pair order. The single-point state and zero-length edges agree. |
+| `discrete-tree-007` | The reference emits both spanning edges of the repeated-point list in HashSet iteration order, which depends on the identity hashes of the TreeLink edges. The kernel uses input-pair order. |
+| `discrete-upstream-019` | AlgoDelauneyTriangulation takes Cartesian input coordinates and TriangleDt.circumcircleContains tests squared distances with a strict comparison. MyDouble.cos calls Math.cos. The recorded cos(6) is 0x1.eb9b7097822f6p-1, also returned by StrictMath and by Math.cos on the x86_64 test JVM with its libm intrinsic disabled. The warmed intrinsic and the kernel libm both return 0x1.eb9b7097822f5p-1. Substituting only the recorded coordinate reproduces all nine ordered edges. The recording depends on how the JVM evaluates the cosine, so there is no portable Math.cos result to port. Literal cocircular sites exercise the exact tie rule separately. |
+| `expr-decimal-027` | intended difference, recorded in DIFFERENCES.md: aligning 1E-100001 with 1 needs 100002 digits, above the kernel's 100000-digit result limit. The remaining binary64 operations leave a rounding residual which multiplication by 1E20 turns into 5551.115123125783. GeoGebra uses BigDecimal addition and subtraction and its result rounds to 0 |
+| `funcrest-derivative-004` | The 260-point spline system is solved with the reference elimination. Its y inputs come from MyDouble.sin, which calls Math.sin; on the recording JVM (HotSpot x86_64, OpenJDK 17) that call runs the libm intrinsic stub, which differs by one ulp from StrictMath (fdlibm, the kernel's algorithm) for k = 18, 24, 26, 62, 89, 131, 202 and 233 in 1..260. The ill-conditioned 260-piece monomial system amplifies these ulps to a relative 1.5e-9 in y(0.875). Black-box check: substituting the intrinsic's Math.sin values for those inputs makes the case agree, and with -XX:-UseLibmIntrinsic the JVM's Math.sin equals StrictMath.sin. The stub is HotSpot assembly under GPLv2 with no EUPL or published description, so the kernel does not port it. |
+| `funcrest-splinelong-003` | Platform rounding of Math.pow in the spline matrix. The kernel computes the integer powers of the knots correctly rounded; the recording JVM (HotSpot x86_64, OpenJDK 17) runs Math.pow as its libm intrinsic stub, which is off by one ulp from that for 24 entries of this 120-point quartic system (for example (1/119)^3). The ill-conditioned system amplifies those ulps beyond 1e-9 in the curve and its derivative. Black-box check: substituting the intrinsic's Math.pow values for all 3963 powers the kernel's spline code asks for makes the case agree. The stub is HotSpot assembly under GPLv2 with no EUPL or published description, so the kernel does not port it. The later steps, including the stale point-count check, agree. |
+| `geomclip-difference-001` | The contours agree geometrically. GeoGebra's sweep selects a different first vertex, which rotates the polygon vertices and the emitted point and segment slots. |
+| `geomclip-difference-002` | The contours agree geometrically. GeoGebra's sweep selects a different first vertex for the subject-only contour, which rotates the polygon vertices and the emitted point and segment slots. |
+| `geomclip-difference-006` | The symmetric difference contours agree geometrically. GeoGebra's sweep selects different first vertices for the right and lower contours, which rotates the emitted point and segment slots. |
+| `geomclip-polygon-003` | The contours agree geometrically. After the right boundaries cross, GeoGebra's sweep starts the intersection at the crossing and the kernel starts at the top of the contour. |
+| `georestclip-overlay-001` | The polygon overlay traces contours with the interior on the left and chooses its own start vertex. Labelled vertices and edges follow that order. |
+| `georestclip-overlaylabels-001` | For the same area-2 diamond, GeoGebra starts the contour at (1, 0) and the kernel starts at (0, 1). This rotates the labelled output vertices and edges by one position, as documented for IntersectPath(polygon, polygon) in DIFFERENCES.md. |
+| `georestsmall-matrixcurve-005` | The reference simplifies the transformed expression symbolically; the kernel uses plain arithmetic as on main. ApplyMatrix with the projective matrix {{1, 0, 0}, {0, n, 0}, {0, 0, 1}} on Curve(t, sqrt(t), t, -1, 1): GeoCurveCartesian.matrixTransform builds each coordinate with ExpressionNode.multiply and plus, which turn a zero entry into the constant itself and leave out a zero addend. For t < 0, where sqrt(t) is NaN, the recording keeps x = t finite, and y = 0 while n = 0. Plain arithmetic computes 0 * NaN = NaN in x, y and the denominator. |
+| `georestsmall-matrixcurve-006` | The reference simplifies the transformed expression symbolically; the kernel uses plain arithmetic as on main. The projective row (-1, 0, 0) applied to Curve(0, t, t, -1, 1): the reference multiplies the literal 0 coordinate into -0 and leaves out the zero addends, so the denominator is -0 and the recording has negative infinity in both coordinates. Plain arithmetic adds the +0 terms, gets a +0 denominator and positive infinity. The chain e through a zero row agrees. |
+| `georestsmall-matrixfunction-002` | The reference simplifies the transformed expression symbolically; the kernel uses plain arithmetic as on main. ApplyMatrix({{1, 0}, {1, 2}}, f) for f = Function(sin(x) + x(A), -1, 2): outside its domain f is NaN, and the reference builds x = t * 1 + f(t) * 0 with the zero term left out, so the signed recording keeps x = t finite. Plain arithmetic computes 0 * NaN = NaN, so x is NaN. Main compared this case with its schema 2 recording, which wrote the whole coordinate pair as null. |
+| `georestsmall-surdcomplex-001` | The kernel has no complex point mode, so the input point cannot be constructed. |
+| `implicit-pair-009` | The reduced Sylvester eliminant has nearly repeated roots near y = ±0.930605. The reference projects the real parts of its complex roots and polishes pairs to a 1e-8 residual. The kernel refines projected roots differently and uses up to 16 Newton iterations toward a 1e-13 residual before accepting contacts at 1e-8. It still produces four slots, including for the offset -1e-10 where the exact curves are disjoint, but the near-singular Jacobian makes their coordinates differ by more than 1e-9. |
+| `keptvalues-pointgrowth-003` | The journal owns the group by its first output label. Deleting P invalidates A's recorded slot, although GeoGebra keeps A at (3, 4). Keeping A live requires a growth-group owner independent of P. |
+| `keptvalues-pointpath-001` | The list literal rejects the inline CircumcircleArc. A list of paths also needs stable element identities and a composite path parameter, which the coordinate-row Point machinery does not store. |
+| `locus-samplingbudget-002` | GeoGebra completes the finite diagonal locus with 149 samples. The kernel returns L undefined after repeated evaluation of the 200,000-element Sequence exhausts the shared 80,000,000-unit sampling meter (crates/geo-kernel/src/algo/locus.rs:1578). |
+| `locusequation-classic-001`, `locusequation-classic-002`, `locusequation-classic-005`, `locusequation-classic-006`, `envelope-classic-001` | The kernel's curve is the reference's up to the overall sign. The reference takes the sign from its CAS's elimination of the Botana system (`locusEqu`), whose polynomial and variable lists come in hash-set order: the recorded inputs of `locusequation-midpoint-001` step 2 and `locusequation-classic-005` both have the curve variables v9 and v10, yet every coefficient sign is opposite, so no fixed variable order decides it. The kernel keeps its own normalization, a positive coefficient on the largest power of x (then of y). |
+| `locusequation-classic-008` | The traced point is an intersection of a line and a circle that are both drawn through the mover. The reference excludes the mover from that intersection with an extra equation (its recorded system has t*&#124;MP&#124;^2 = 1), but only for the indexed `Intersect(a, b, n)`; the locus-equation translator omits that equation, leaving the curve undefined. |
+| `matrixdilate-dilateleaves-001` | GeoGebra allocates a dilated polygon as a list element. The kernel's expression list slots cannot store the transformed polygon vertices, so the dilation is undefined. |
+| `matrixdilate-dilateleaves-002` | GeoGebra allocates a dilated Cartesian curve as a list element. The kernel's expression list slots cannot store the transformed curve definition and parameter interval, so the dilation is undefined. |
+| `misc-alias-003` | The contours agree geometrically. Once the moved vertex makes the triangles overlap, GeoGebra's sweep starts the intersection at the crossing of the boundaries and the kernel starts at the top of the contour, which also moves the first output point; the same difference as geomclip-polygon-003. |
+| `misc-optimize-009` | The point-path locus holds the current optimum and agrees through the final wrap (a move-to). The recording then has two line-to samples at exactly the same coordinates, 151 samples against 149. AlgoLocusND inserts a closing point if the next step passes the start and the point is close, then inserts the restored point only if its coordinates differ from the last insertion. GeoLocus.insertPoint appends one point per call. The extra identical append is unexplained. |
+| `misc-optimize-010` | The slider locus holds the current optimum and agrees through the final wrap (a move-to). The recording then has two line-to samples at exactly the same coordinates, 152 samples against 150. AlgoLocusSliderND inserts a closing point if the next step passes the start and the point is close, then inserts the restored point only if its coordinates differ from the last insertion. GeoLocus.insertPoint appends one point per call. The extra identical append is unexplained. |
+| `odesymbolic-cas-001` | The kernel has no symbolic antiderivative for sin(x) in SolveODE and no adjustable integration constant for the form without an initial point. |
+| `odesymbolic-cas-002` | The kernel has no logarithmic antiderivative for 1/x in SolveODE and no adjustable integration constant for the form without an initial point. |
+| `odesymbolic-cas-003` | The kernel has no symbolic solver for differential equations whose slope expression reads y. The supplied initial points therefore do not select particular solutions. |
+| `odesymbolic-cas-004` | The kernel has no symbolic solver for a two-variable slope function and cannot compute the general or initial-value solution. |
+| `odesymbolic-cas-005` | The kernel has no piecewise symbolic integration for a conditional slope in SolveODE. |
+| `odesymbolic-cas-006` | The polynomial solver cannot integrate a slope with a noninteger power during slider edits. The reference returns a defined symbolic function for those powers. |
+| `odesymbolic-nocas-001` | intended difference, recorded in DIFFERENCES.md: the reference returns undefined for symbolic SolveODE when its CAS is disabled. The kernel integrates supported polynomial slopes directly, so both forms are defined when a is nonzero. |
+| `optimizerreview-locus-004` | GeoGebra samples L as soon as the lower endpoint of s clamps it, while t's upper endpoint is still 4. The kernel resolves the slider values as each endpoint changes, then visits Q and L once in dependency order, after t's endpoint has reached 6. Both resample to the new endpoint when t moves. |
+| `optimizerreview-mixedmover-002` | A nested optimizer final update refreshes q in GeoGebra before the point search reads its objective. The kernel refreshes optimizers on other movers after the outer search, so the trials still use q = 3. |
+| `optimizerreview-redefine-008` | The upper endpoint reads its own slider through d. GeoGebra clamps a when b lowers that endpoint, both before and after reload in the recorded construction. During reload, the XML endpoint pass rejects the circular upper endpoint and retains the lower one (ConsElementXMLHandler.java:2647). The kernel has no cyclic listener edge and retains a = 3 and d = 6. |
+| `optimizerreview-undefinedtransform-001` | At t = 1, GeoGebra dilates the retained undefined point slots and keeps M as the defined list {{?}, {?}}. The kernel returns a wholly undefined M because expr/eval.rs:1912 drops the undefined source's shape before dilation reads it (expr/eval.rs:1728). |
+| `prove-expression-012`, `prove-expression-014`, `prove-expression-020`, `prove-expression-021` | `ProveDetails` of an arithmetic statement: the reference words the conditions from its CAS's factorization of the rewritten polynomial divided by the user's formula, read back through `NDGDetector`'s formula parser. The kernel decides `Prove` (the truth does not depend on the CAS's normalization) but answers an undefined list here. |
+| `prove-expression-019` | The reference uses the CAS factorization and NDGDetector's formula parser to report the symbolic condition s = t in both forms of ProveDetails. The kernel returns an undefined list for each form. |
+| `prove-focalconic-001` | The focus-and-point ellipse adapter uses four auxiliary focal distances, four squared-distance equations and one equation equating the sums of the distances. The prover has no translation for that adapter or its substitution at the intersection, so Prove and ProveDetails are undefined. |
+| `prove-focalconic-002` | The focus-and-point hyperbola adapter uses four auxiliary focal distances, four squared-distance equations and one equation equating the differences of the distances. The prover has no translation for that adapter or its substitution at the intersection, so Prove and ProveDetails are undefined. |
+| `prove-peer-001` | The reference's peer choice depends on identity-hash iteration order. This recording returns false and {false}; the kernel reports true on components. |
+| `prove-recoveryundo-001` | Undoing the move restores a radius-1 circle. GeoGebra rebuilds p_2 as true. The kernel replays its creation while the circle is undefined and leaves p_2 undefined after the snapshot restore (workbench/mod.rs:636, kernel.rs:4043). Fresh proof replay needs ordered helper history and an aggregate solver budget. |
+| `prove-recoveryundo-002` | Undoing the move restores a radius-1 circle. GeoGebra rebuilds the proof of the inline-line intersection as true. The kernel replays its creation while the circle is undefined and leaves p_2 undefined after the snapshot restore (workbench/mod.rs:636, kernel.rs:4043). Fresh proof replay needs ordered helper history and an aggregate solver budget. |
+| `prove-relation-001`, `prove-relation-002` | intended difference, recorded in DIFFERENCES.md: the relation-tool form of ProveDetails returns an undefined list when the reference supplies a localized condition sentence. |
+| `prove-replay-003` | GeoGebra replays the unaffected surviving proof before the pair is labelled and caches the indexed output's common-point exclusion. The kernel clears the cache and only recomputes proofs in the edited object's dependency graph. Replaying independent proofs in order to reseed their shared helpers requires construction-wide proof history and a replay budget. |
+| `spreadsheet-filldistinctbudget-001` | GeoGebra fills A1 with ? and B1 with 0. geokernel rejects the entire fill before writing because the shifted formulas and destinations visit more than 1,024 distinct cells. See DIFFERENCES.md. |
+| `spreadsheet-fillslider-001` | GeoGebra fills A1 with 7 and replaces slider B1 with 8. The kernel requires an existing slider to keep its bounds on replacement and rejects the fill before writing A1. |
+| `spreadsheet-labelledfill-001` | GeoGebra writes text to A1 and 9 to B1. The kernel refuses to change A1 from a number to text because the labelled result reads it as a number. A1 stays 3, B1 remains absent, and no result is created. |
+| `stroke-limits-001` | intended difference, recorded in DIFFERENCES.md: GeoGebra keeps a defined stroke with 32,489 smoothed points. The kernel marks it undefined at creation because the exact coordinates exceed the 1 MiB limit for a saved XML attribute and cannot round-trip through its importer |
+
+## Verified t-pairs gap families
+
+The test IDs identify the recorded source steps. The ledger pins the disagreeing labels. Application scripting requires the app or its view state. Text-formatting gaps need the corresponding reference string template. Incomplete-context gaps need the test method’s missing setup, settings, or prior state before they can be compared in isolation.
+
+| Cases | Difference and reason |
+| --- | --- |
+| `commands/CommandsTest.java:1166`, `commands/CommandsTest.java:1538`, `commands/CommandsTest.java:1614`, `commands/CommandsTest.java:1632`, `commands/CommandsTest.java:3733`, `commands/CommandsTest.java:4896`, `commands/CommandsTest.java:4897`, `commands/CommandsTest.java:4898`, `commands/CommandsTest.java:4899`, `commands/CommandsTest.java:4900`, `commands/RedefineTest.java:305` | **app-command.** the kernel refuses the input: unknown command `ZoomIn` |
+| `commands/CommandsTest.java:1286` | **app-command.** the kernel refuses the input: unknown command `CenterView` |
+| `commands/CommandsTest.java:1322`, `implicit/GeoImplicitCurveTest.java:59` | **app-command.** the kernel refuses the input: unknown command `Delete` |
+| `commands/CommandsTest.java:1599`, `commands/CommandsTest.java:1600` | **app-command.** the kernel refuses the input: unknown command `Execute` |
+| `commands/CommandsTest.java:1615`, `commands/CommandsTest.java:1616`, `commands/CommandsTest.java:1617`, `commands/CommandsTest.java:1618`, `commands/CommandsTest.java:1619`, `commands/CommandsTest.java:1620`, `commands/CommandsTest.java:1621`, `commands/CommandsTest.java:1622` | **app-command.** the kernel refuses the input: unknown command `ExportImage` |
+| `commands/CommandsTest.java:173`, `commands/CommandsTest.java:174`, `commands/CommandsTest.java:176`, `commands/CommandsTest.java:177`, `commands/CommandsTest.java:185`, `commands/CommandsTest.java:186`, `commands/CommandsTest.java:188`, `commands/CommandsTest.java:189`, `commands/CommandsTest.java:2703`, `commands/CommandsTest.java:4012`, `commands/CommandsTest.java:4013`, `commands/CommandsTest.java:4014`, `commands/CommandsTest.java:499`, `commands/RedefineTest.java:198`, `commands/RedefineTest.java:206`, `commands/RedefineTest.java:214`, `commands/RedefineTest.java:236`, `commands/RedefineTest.java:382`, `commands/RedefineTest.java:384`, `implicit/GeoImplicitCurveTest.java:60` | **app-command.** the kernel refuses the input: unknown command `SetValue` |
+| `commands/CommandsTest.java:1934` | **app-command.** the kernel refuses the input: unknown command `HideLayer` |
+| `commands/CommandsTest.java:3152` | **app-command.** the kernel refuses the input: unknown command `Pan` |
+| `commands/CommandsTest.java:3230`, `commands/CommandsTest.java:3231`, `commands/CommandsTest.java:3232`, `commands/CommandsTest.java:3233`, `commands/CommandsTest.java:3234`, `commands/CommandsTest.java:3235` | **app-command.** the kernel refuses the input: unknown command `PlaySound` |
+| `commands/CommandsTest.java:3639`, `commands/CommandsTest.java:3641`, `commands/CommandsTest.java:3644`, `commands/CommandsTest.java:3655` | **app-command.** the kernel refuses the input: unknown command `Rename` |
+| `commands/CommandsTest.java:3673` | **app-command.** the kernel refuses the input: unknown command `Repeat` |
+| `commands/CommandsTest.java:3771` | **app-command.** the kernel refuses the input: unknown command `RunClickScript` |
+| `commands/CommandsTest.java:3776` | **app-command.** the kernel refuses the input: unknown command `RunUpdateScript` |
+| `commands/CommandsTest.java:3880`, `commands/CommandsTest.java:3881` | **app-command.** the kernel refuses the input: unknown command `SelectObjects` |
+| `commands/CommandsTest.java:3891`, `commands/CommandsTest.java:3892` | **app-command.** the kernel refuses the input: unknown command `SetActiveView` |
+| `commands/CommandsTest.java:3897` | **app-command.** the kernel refuses the input: unknown command `SetAxesRatio` |
+| `commands/CommandsTest.java:3902` | **app-command.** the kernel refuses the input: unknown command `SetCaption` |
+| `commands/CommandsTest.java:3907` | **app-command.** the kernel refuses the input: unknown command `SetConditionToShowObject` |
+| `commands/CommandsTest.java:3912`, `commands/CommandsTest.java:3913`, `commands/CommandsTest.java:3914` | **app-command.** the kernel refuses the input: unknown command `SetViewDirection` |
+| `commands/CommandsTest.java:3919`, `commands/CommandsTest.java:3920` | **app-command.** the kernel refuses the input: unknown command `SetDynamicColor` |
+| `commands/CommandsTest.java:3925` | **app-command.** the kernel refuses the input: unknown command `SetFilling` |
+| `commands/CommandsTest.java:3930`, `commands/CommandsTest.java:3931` | **app-command.** the kernel refuses the input: unknown command `SetFixed` |
+| `commands/CommandsTest.java:3945` | **app-command.** the kernel refuses the input: unknown command `SetLabelMode` |
+| `commands/CommandsTest.java:3950` | **app-command.** the kernel refuses the input: unknown command `SetLayer` |
+| `commands/CommandsTest.java:3955` | **app-command.** the kernel refuses the input: unknown command `SetLineStyle` |
+| `commands/CommandsTest.java:3960`, `commands/CommandsTest.java:3961` | **app-command.** the kernel refuses the input: unknown command `SetDecoration` |
+| `commands/CommandsTest.java:3966` | **app-command.** the kernel refuses the input: unknown command `SetLineOpacity` |
+| `commands/CommandsTest.java:3971` | **app-command.** the kernel refuses the input: unknown command `SetLineThickness` |
+| `commands/CommandsTest.java:3976` | **app-command.** the kernel refuses the input: unknown command `SetSeed` |
+| `commands/CommandsTest.java:3981` | **app-command.** the kernel refuses the input: unknown command `SetPerspective` |
+| `commands/CommandsTest.java:3986` | **app-command.** the kernel refuses the input: unknown command `SetSpinSpeed` |
+| `commands/CommandsTest.java:3991` | **app-command.** the kernel refuses the input: unknown command `SetPointSize` |
+| `commands/CommandsTest.java:3996` | **app-command.** the kernel refuses the input: unknown command `SetPointStyle` |
+| `commands/CommandsTest.java:4001` | **app-command.** the kernel refuses the input: unknown command `SetTooltipMode` |
+| `commands/CommandsTest.java:4006`, `commands/CommandsTest.java:4007` | **app-command.** the kernel refuses the input: unknown command `SetTrace` |
+| `commands/CommandsTest.java:4019` | **app-command.** the kernel refuses the input: unknown command `SetVisibleInView` |
+| `commands/CommandsTest.java:4025`, `commands/CommandsTest.java:4028`, `commands/CommandsTest.java:4030`, `commands/CommandsTest.java:4031`, `commands/CommandsTest.java:4033` | **app-command.** the kernel refuses the input: unknown command `SetColor` |
+| `commands/CommandsTest.java:4043`, `commands/CommandsTest.java:4045`, `commands/CommandsTest.java:4047`, `commands/CommandsTest.java:4051`, `commands/CommandsTest.java:4055` | **app-command.** the kernel refuses the input: unknown command `SetCoords` |
+| `commands/CommandsTest.java:4063`, `commands/CommandsTest.java:4066`, `commands/CommandsTest.java:4069`, `commands/CommandsTest.java:4072`, `commands/CommandsTest.java:4075`, `commands/CommandsTest.java:4079`, `commands/CommandsTest.java:4081`, `commands/CommandsTest.java:4083`, `commands/CommandsTest.java:4084` | **app-command.** the kernel refuses the input: unknown command `SetBackgroundColor` |
+| `commands/CommandsTest.java:4093`, `commands/CommandsTest.java:4096` | **app-command.** the kernel refuses the input: unknown command `SetLevelOfDetail` |
+| `commands/CommandsTest.java:4148` | **app-command.** the kernel refuses the input: unknown command `ShowLabel` |
+| `commands/CommandsTest.java:4153` | **app-command.** the kernel refuses the input: unknown command `ShowLayer` |
+| `commands/CommandsTest.java:4158`, `commands/CommandsTest.java:4161`, `commands/CommandsTest.java:4164`, `commands/CommandsTest.java:4166` | **app-command.** the kernel refuses the input: unknown command `ShowAxes` |
+| `commands/CommandsTest.java:4172`, `commands/CommandsTest.java:4175`, `commands/CommandsTest.java:4178` | **app-command.** the kernel refuses the input: unknown command `ShowGrid` |
+| `commands/CommandsTest.java:4250`, `commands/CommandsTest.java:4251`, `commands/CommandsTest.java:4252` | **app-command.** the kernel refuses the input: unknown command `StartRecord` |
+| `commands/CommandsTest.java:4293`, `commands/CommandsTest.java:4294`, `commands/CommandsTest.java:4295`, `commands/CommandsTest.java:4296` | **app-command.** the kernel refuses the input: unknown command `StartAnimation` |
+| `commands/CommandsTest.java:4571`, `commands/CommandsTest.java:4572`, `commands/CommandsTest.java:4573` | **app-command.** the kernel refuses the input: unknown command `ToolImage` |
+| `commands/CommandsTest.java:4699` | **app-command.** the kernel refuses the input: unknown command `TurtleForward` |
+| `commands/CommandsTest.java:4704` | **app-command.** the kernel refuses the input: unknown command `TurtleBack` |
+| `commands/CommandsTest.java:4709` | **app-command.** the kernel refuses the input: unknown command `TurtleLeft` |
+| `commands/CommandsTest.java:4714` | **app-command.** the kernel refuses the input: unknown command `TurtleRight` |
+| `commands/CommandsTest.java:4719` | **app-command.** the kernel refuses the input: unknown command `TurtleUp` |
+| `commands/CommandsTest.java:4724` | **app-command.** the kernel refuses the input: unknown command `TurtleDown` |
+| `commands/CommandsTest.java:4788`, `commands/CommandsTest.java:4789` | **app-command.** the kernel refuses the input: unknown command `UpdateConstruction` |
+| `commands/CommandsTest.java:4905`, `commands/CommandsTest.java:4906`, `commands/CommandsTest.java:763`, `commands/CommandsTest.java:770` | **app-command.** the kernel refuses the input: unknown command `ZoomOut` |
+| `commands/CommandsTest.java:1643` | **cas.** the kernel refuses the input: unknown command `Factor` |
+| `commands/CommandsTest.java:2949`, `commands/CommandsTest.java:2951` | **cas.** the kernel refuses the input: unknown command `NIntegral` |
+| `commands/CommandsUsingMockedCasTest.java:105` | **cas.** the kernel refuses the input: unknown command `LimitBelow` |
+| `commands/CommandsUsingMockedCasTest.java:117` | **cas.** the kernel refuses the input: unknown command `PartialFractions` |
+| `commands/CommandsUsingMockedCasTest.java:142` | **cas.** the kernel refuses the input: unknown command `CSolutions` |
+| `commands/CommandsUsingMockedCasTest.java:148` | **cas.** the kernel refuses the input: unknown command `CSolve` |
+| `commands/CommandsUsingMockedCasTest.java:194` | **cas.** the kernel refuses the input: unknown command `TrigSimplify` |
+| `commands/CommandsUsingMockedCasTest.java:99` | **cas.** the kernel refuses the input: unknown command `Limit` |
+| `arithmetic/ArithmeticTest.java:283` | **cascade.** the kernel refuses the input: unknown object `list1`; the method's step `arithmetic/ArithmeticTest.java:280` fails earlier here, so the object is missing only in its wake |
+| `arithmetic/ArithmeticTest.java:387`, `arithmetic/ArithmeticTest.java:388` | **cascade.** the kernel refuses the input: unknown object `f`; the method's step `arithmetic/ArithmeticTest.java:382` fails earlier here, so the object is missing only in its wake |
+| `arithmetic/ArithmeticTest.java:445`, `arithmetic/ArithmeticTest.java:446`, `arithmetic/ArithmeticTest.java:447`, `arithmetic/ArithmeticTest.java:448` | **cascade.** the kernel refuses the input: unknown object `i`; the method's step `arithmetic/ArithmeticTest.java:443` fails earlier here, so the object is missing only in its wake |
+| `commands/CmdCopyFreeObjectTest.java:31` | **cascade.** the kernel refuses the input: unknown object `myCopy`; the method's step `commands/CmdCopyFreeObjectTest.java:27` fails earlier here, so the object is missing only in its wake |
+| `commands/CmdCopyFreeObjectTest.java:41` | **cascade.** the kernel refuses the input: unknown object `myCopy2`; the method's step `commands/CmdCopyFreeObjectTest.java:37` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:1376` | **cascade.** the kernel refuses the input: unknown object `x+y+z=1`; the method's step `commands/CommandsTest.java:1374` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:1430` | **cascade.** the kernel refuses the input: unknown object `(4`; the method's step `commands/CommandsTest.java:1429` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:1431` | **cascade.** the kernel refuses the input: unknown object `y=-3x-6`; the method's step `commands/CommandsTest.java:1429` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:1433` | **cascade.** the kernel refuses the input: unknown object `r`; the method's step `commands/CommandsTest.java:1429` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:175` | **cascade.** the kernel refuses the input: unknown object `e1`; the method's step `commands/CommandsTest.java:171` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:178` | **cascade.** the kernel refuses the input: unknown object `g`; the method's step `commands/CommandsTest.java:171` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:184` | **cascade.** the kernel refuses the input: unknown object `X`; the method's step `commands/CommandsTest.java:183` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:187` | **cascade.** the kernel refuses the input: unknown object `e1`; the method's step `commands/CommandsTest.java:183` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:190` | **cascade.** the kernel refuses the input: unknown object `g`; the method's step `commands/CommandsTest.java:183` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:2147` | **cascade.** the kernel refuses the input: unknown object `x^2+y^2=25`; the method's step `commands/CommandsTest.java:2138` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:2224` | **cascade.** the kernel refuses the input: unknown object `x^2+y^2+z^2=4`; the method's step `commands/CommandsTest.java:2223` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:2578` | **cascade.** the kernel refuses the input: unknown object `3/4x`; the method's step `commands/CommandsTest.java:2576` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:2579` | **cascade.** the kernel refuses the input: unknown object `x^2`; the method's step `commands/CommandsTest.java:2576` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:2635` | **cascade.** the kernel refuses the input: unknown object `SlopeField( x/y )`; the method's step `commands/CommandsTest.java:2634` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:2748` | **cascade.** the kernel refuses the input: unknown object `(x-1)^2+(y-1)^2=pi`; the method's step `commands/CommandsTest.java:2745` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:2834` | **cascade.** the kernel refuses the input: unknown object `x+y`; the method's step `commands/CommandsTest.java:2827` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:2836` | **cascade.** the kernel refuses the input: unknown object `x^3+y^3=0`; the method's step `commands/CommandsTest.java:2827` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:2838` | **cascade.** the kernel refuses the input: unknown object `picT`; the method's step `commands/CommandsTest.java:2827` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:3040`, `commands/CommandsTest.java:3041` | **cascade.** the kernel refuses the input: unknown object `nint_1`; the method's step `commands/CommandsTest.java:3033` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:3132` | **cascade.** the kernel refuses the input: unknown object `x=1`; the method's step `commands/CommandsTest.java:3114` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:3147` | **cascade.** the kernel refuses the input: unknown object `2x+2y+z=1`; the method's step `commands/CommandsTest.java:3143` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:3308` | **cascade.** the kernel refuses the input: unknown object `0x < 1`; the method's step `commands/CommandsTest.java:3305` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:3309` | **cascade.** the kernel refuses the input: unknown object `0x > 1`; the method's step `commands/CommandsTest.java:3305` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:3325` | **cascade.** the kernel refuses the input: unknown object `x+y=17`; the method's step `commands/CommandsTest.java:3324` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:348` | **cascade.** the kernel refuses the input: unknown object `pi1`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:349` | **cascade.** the kernel refuses the input: unknown object `pi1a`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:350` | **cascade.** the kernel refuses the input: unknown object `pie`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:351` | **cascade.** the kernel refuses the input: unknown object `pii`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:352` | **cascade.** the kernel refuses the input: unknown object `pix`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:353` | **cascade.** the kernel refuses the input: unknown object `sinx`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:4046`, `commands/CommandsTest.java:4048` | **cascade.** the kernel refuses the input: unknown object `B`; the method's step `commands/CommandsTest.java:4042` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:437` | **cascade.** the kernel refuses the input: unknown object `list1`; the method's step `commands/CommandsTest.java:431` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:438` | **cascade.** the kernel refuses the input: unknown object `list2`; the method's step `commands/CommandsTest.java:431` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:4466` | **cascade.** the kernel refuses the input: unknown object `Point(Curve(sin(t),cos(t),t,0,3),0.05)`; the method's step `commands/CommandsTest.java:4463` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:4469`, `commands/CommandsTest.java:4470` | **cascade.** the kernel refuses the input: unknown object `(1,1)`; the method's step `commands/CommandsTest.java:4463` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:4476` | **cascade.** the kernel refuses the input: unknown object `(0,1)`; the method's step `commands/CommandsTest.java:4463` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:4742` | **cascade.** the kernel refuses the input: unknown object `2x+2y+z=1`; the method's step `commands/CommandsTest.java:4738` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:4840` | **cascade.** the kernel refuses the input: unknown object `Polygon((0,0),(1,0),(0,1))`; the method's step `commands/CommandsTest.java:4835` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:4841` | **cascade.** the kernel refuses the input: unknown object `Segment((1,0),(0,1))`; the method's step `commands/CommandsTest.java:4835` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:4956` | **cascade.** the kernel refuses the input: unknown object `f`; the method's step `commands/CommandsTest.java:4955` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:594` | **cascade.** the kernel refuses the input: unknown object `combined`; the method's step `commands/CommandsTest.java:590` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsTest.java:629` | **cascade.** the kernel refuses the input: unknown object `f`; the method's step `commands/CommandsTest.java:628` fails earlier here, so the object is missing only in its wake |
+| `commands/RedefineTest.java:179` | **cascade.** the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:172` fails earlier here, so the object is missing only in its wake |
+| `commands/RedefineTest.java:191` | **cascade.** the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:187` fails earlier here, so the object is missing only in its wake |
+| `commands/RedefineTest.java:199` | **cascade.** the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:197` fails earlier here, so the object is missing only in its wake |
+| `commands/RedefineTest.java:207` | **cascade.** the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:205` fails earlier here, so the object is missing only in its wake |
+| `commands/RedefineTest.java:215` | **cascade.** the kernel refuses the input: unknown object `L_1`; the method's step `commands/RedefineTest.java:213` fails earlier here, so the object is missing only in its wake |
+| `commands/RedefineTest.java:229` | **cascade.** the kernel refuses the input: unknown object `L_1`; the method's step `commands/RedefineTest.java:222` fails earlier here, so the object is missing only in its wake |
+| `commands/RedefineTest.java:237` | **cascade.** the kernel refuses the input: unknown object `P`; the method's step `commands/RedefineTest.java:235` fails earlier here, so the object is missing only in its wake |
+| `commands/RedefineTest.java:311` | **cascade.** the kernel refuses the input: unknown object `A`; the method's step `commands/RedefineTest.java:305` fails earlier here, so the object is missing only in its wake |
+| `commands/RedefineTest.java:772` | **cascade.** the kernel refuses the input: unknown object `f'`; the method's step `commands/RedefineTest.java:771` fails earlier here, so the object is missing only in its wake |
+| `commands/RedefineTest.java:779` | **cascade.** the kernel refuses the input: unknown object `f'`; the method's step `commands/RedefineTest.java:778` fails earlier here, so the object is missing only in its wake |
+| `commands/TranslateTest.java:29` | **cascade.** the kernel refuses the input: unknown object `u`; the method's step `commands/TranslateTest.java:27` fails earlier here, so the object is missing only in its wake |
+| `geos/GeoInputBoxLinkedGeoTest.java:888` | **cascade.** the kernel refuses the input: unknown object `f`; the method's step `geos/GeoInputBoxLinkedGeoTest.java:881` fails earlier here, so the object is missing only in its wake |
+| `commands/CommandsUsingMockedCasTest.java:154`, `commands/CommandsUsingMockedCasTest.java:160`, `commands/CommandsUsingMockedCasTest.java:166`, `commands/CommandsUsingMockedCasTest.java:172` | **dummy-cas-expectation.** List { len: 3 } does not match `?` (expected undefined, kernel has a value) |
+| `commands/CommandsUsingMockedCasTest.java:211` | **dummy-cas-expectation.** Bool(true) does not match `false` (values differ) |
+| `commands/CommandsUsingMockedCasTest.java:216` | **dummy-cas-expectation.** List { len: 1 } does not match `{}` (expected 0 elements, kernel has 1) |
+| `commands/CommandsUsingMockedCasTest.java:63` | **dummy-cas-expectation.** Number(5.0) does not match `NaN` (expected undefined, kernel has a value) |
+| `commands/CommandsUsingMockedCasTest.java:69` | **dummy-cas-expectation.** Number(3.0) does not match `NaN` (expected undefined, kernel has a value) |
+| `commands/CommandsTest.java:183` | **error-behaviour.** the kernel refuses the input: unknown object `X` |
+| `commands/CommandsTest.java:2600` | **error-behaviour.** the kernel refuses the input: unknown object `x+y=17` |
+| `commands/CommandsTest.java:2634` | **error-behaviour.** the kernel refuses the input: unknown object `x+y` |
+| `commands/CommandsTest.java:313` | **error-behaviour.** the kernel refuses the input: unknown object `s` |
+| `commands/CommandsTest.java:3662` | **error-behaviour.** the kernel refuses the input: unknown object `sin(x)+sin(y)` |
+| `commands/CommandsTest.java:3864` | **error-behaviour.** the kernel refuses the input: unknown object `4` |
+| `commands/CommandsTest.java:444` | **error-behaviour.** the kernel refuses the input: unknown object `i` |
+| `commands/CommandsTest.java:628` | **error-behaviour.** the kernel refuses the input: unknown object `t` |
+| `algos/AlgoExtremumMultiTest.java:66` | **incomplete-context.** the kernel refuses the input: unknown command `Extremum` |
+| `arithmetic/ArithmeticTest.java:176`, `arithmetic/ArithmeticTest.java:177`, `arithmetic/ArithmeticTest.java:178`, `arithmetic/ArithmeticTest.java:179`, `arithmetic/ArithmeticTest.java:180` | **incomplete-context.** string `6.740340335894E10`, the reference prints `67403403358.94` |
+| `arithmetic/ArithmeticTest.java:182` | **incomplete-context.** string `6.74034033589E10`, the reference prints `67403403358.9` |
+| `arithmetic/ArithmeticTest.java:184` | **incomplete-context.** string `6.740340335894E9`, the reference prints `6740340335.894` |
+| `arithmetic/ArithmeticTest.java:185` | **incomplete-context.** string `6.740340335894E8`, the reference prints `674034033.5894` |
+| `arithmetic/ArithmeticTest.java:186` | **incomplete-context.** string `6.740340335894E7`, the reference prints `67403403.35894` |
+| `arithmetic/ArithmeticTest.java:226` | **incomplete-context.** the kernel refuses the input: `1..5` is not a number |
+| `arithmetic/ArithmeticTest.java:249` | **incomplete-context.** the kernel refuses the input: `x+y` is not a valid object name |
+| `arithmetic/ArithmeticTest.java:255`, `arithmetic/ArithmeticTest.java:259`, `arithmetic/ArithmeticTest.java:263` | **incomplete-context.** the kernel refuses the input: `f(r)` is not a valid object name |
+| `arithmetic/ArithmeticTest.java:267`, `arithmetic/ArithmeticTest.java:268` | **incomplete-context.** the kernel refuses the input: `1..2` is not a valid object name |
+| `arithmetic/ArithmeticTest.java:316` | **incomplete-context.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x` |
+| `arithmetic/ArithmeticTest.java:317`, `commands/RedefineTest.java:346` | **incomplete-context.** the kernel refuses the input: unknown object `f'` |
+| `arithmetic/ArithmeticTest.java:318`, `commands/RedefineTest.java:350` | **incomplete-context.** the kernel refuses the input: unknown command `f'` |
+| `arithmetic/ArithmeticTest.java:443`, `arithmetic/ArithmeticTest.java:453` | **incomplete-context.** the kernel refuses the input: unknown object `i` |
+| `arithmetic/ArithmeticTest.java:733` | **incomplete-context.** string `-0.000000000000002220446049250313`, GeoGebra prints `0` |
+| `cas/AlgoDerivativeTest.java:35`, `cas/AlgoDerivativeTest.java:37` | **incomplete-context.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `x * y * z` |
+| `cas/AlgoDerivativeTest.java:42` | **incomplete-context.** the kernel refuses the input: unknown command `Dirac` |
+| `cas/AlgoDerivativeTest.java:43` | **incomplete-context.** the kernel refuses the input: unknown command `Heaviside` |
+| `commands/CommandsTest.java:140`, `commands/RedefineTest.java:345` | **incomplete-context.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(2)` |
+| `commands/CommandsTest.java:141` | **incomplete-context.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `1 / x` |
+| `commands/CommandsTest.java:1429` | **incomplete-context.** the kernel refuses the input: `Dilate` does not take 5 argument(s) |
+| `commands/CommandsTest.java:142` | **incomplete-context.** string `If[0 < x ≤ 2, x^(2), If[x > 2, 1 / x]]`, the reference prints `If[0 < x ≤ 2, x^(2), x > 2, 1 / x]` |
+| `commands/CommandsTest.java:145` | **incomplete-context.** string `If[x ≤ 2, x^(2), If[x > 2, 1 / x]]`, the reference prints `If[x ≤ 2, x^(2), x > 2, 1 / x]` |
+| `commands/CommandsTest.java:146` | **incomplete-context.** string `If[0 < x ≤ 2, f(x), If[x > 2, g(x)]]`, the reference prints `If[0 < x ≤ 2, x^(2), x > 2, 1 / x]` |
+| `commands/CommandsTest.java:149` | **incomplete-context.** string `If[0 < x ≤ 2, f(x), If[2 < x < 4, g(x)]]`, the reference prints `If[0 < x ≤ 2, x^(2), 2 < x < 4, 1 / x]` |
+| `commands/CommandsTest.java:152` | **incomplete-context.** string `If[x ≥ 2, x^(2), If[x < 2, 1 / x]]`, the reference prints `If[x ≥ 2, x^(2), x < 2, 1 / x]` |
+| `commands/CommandsTest.java:162`, `commands/CommandsTest.java:163`, `commands/CommandsTest.java:164`, `commands/CommandsTest.java:165`, `commands/CommandsTest.java:166` | **incomplete-context.** the kernel refuses the input: unknown command `Integral` |
+| `commands/CommandsTest.java:1711` | **incomplete-context.** the kernel refuses the input: `Translate` does not take 7 argument(s) |
+| `commands/CommandsTest.java:1775` | **incomplete-context.** the kernel refuses the input: unknown command `FitPoly` |
+| `commands/CommandsTest.java:1777`, `commands/CommandsTest.java:1778`, `commands/CommandsTest.java:1779`, `commands/CommandsTest.java:1782` | **incomplete-context.** the kernel refuses the input: unknown command `Coefficients` |
+| `commands/CommandsTest.java:2138`, `commands/CommandsTest.java:2287`, `commands/CommandsTest.java:485` | **incomplete-context.** the kernel refuses the input: unknown command `ZoomIn` |
+| `commands/CommandsTest.java:2223` | **incomplete-context.** the kernel refuses the input: unknown object `x+y+z=1` |
+| `commands/CommandsTest.java:2228`, `commands/CommandsTest.java:2242`, `commands/CommandsTest.java:2253`, `commands/CommandsTest.java:2263`, `commands/CommandsTest.java:2267` | **incomplete-context.** the kernel refuses the input: unknown command `IntersectPath` |
+| `commands/CommandsTest.java:2392`, `commands/CommandsTest.java:2401` | **incomplete-context.** values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `asin(x)` |
+| `commands/CommandsTest.java:2393` | **incomplete-context.** values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `If[cbrt(x - 1) > 1, cbrt(x - 1)]` |
+| `commands/CommandsTest.java:2394` | **incomplete-context.** values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `If[x - 1 > 2, x - 1]` |
+| `commands/CommandsTest.java:2398` | **incomplete-context.** values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `2 / (x - 3)` |
+| `commands/CommandsTest.java:2827`, `commands/CommandsTest.java:3937`, `commands/CommandsTest.java:506`, `commands/CommandsTest.java:516`, `commands/CommandsTest.java:526`, `commands/CommandsTest.java:536`, `commands/CommandsTest.java:546`, `commands/CommandsTest.java:592`, `commands/CommandsTest.java:70`, `commands/RedefineTest.java:251`, `commands/RedefineTest.java:274`, `commands/RedefineTest.java:771`, `commands/RedefineTest.java:778`, `commands/RedefineTest.java:780` | **incomplete-context.** the kernel refuses the input: unexpected `=` |
+| `commands/CommandsTest.java:2828`, `commands/CommandsTest.java:2835` | **incomplete-context.** the kernel refuses the input: `Reflect` does not take 3 argument(s) |
+| `commands/CommandsTest.java:2831` | **incomplete-context.** the kernel refuses the input: `Reflect` does not take 6 argument(s) |
+| `commands/CommandsTest.java:2832` | **incomplete-context.** the kernel refuses the input: `Reflect` does not take 7 argument(s) |
+| `commands/CommandsTest.java:2833` | **incomplete-context.** the kernel refuses the input: `Reflect` does not take 5 argument(s) |
+| `commands/CommandsTest.java:2837`, `commands/CommandsTest.java:3938` | **incomplete-context.** the kernel refuses the input: unknown command `ToolImage` |
+| `commands/CommandsTest.java:3258` | **incomplete-context.** the kernel refuses the input: unknown object `x^2+y^2=1` |
+| `commands/CommandsTest.java:3259` | **incomplete-context.** the kernel refuses the input: `Perimeter` does not take 6 argument(s) |
+| `commands/CommandsTest.java:3263` | **incomplete-context.** class `GeoLocus` has no schema object (unsupported-type); string `Locus[Q, P]` |
+| `commands/CommandsTest.java:3264` | **incomplete-context.** the kernel refuses the input: unexpected `[` |
+| `commands/CommandsTest.java:347` | **incomplete-context.** the kernel refuses the input: unknown object `pia` |
+| `commands/CommandsTest.java:354` | **incomplete-context.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `sin(x)` |
+| `commands/CommandsTest.java:355`, `commands/CommandsTest.java:358` | **incomplete-context.** the kernel refuses the input: `f(θ)` is not a valid object name |
+| `commands/CommandsTest.java:361`, `commands/CommandsTest.java:362` | **incomplete-context.** the kernel refuses the input: `f(t)` is not a valid object name |
+| `commands/CommandsTest.java:3627` | **incomplete-context.** the kernel refuses the input: unknown command `SetActiveView` |
+| `commands/CommandsTest.java:3628` | **incomplete-context.** the kernel refuses the input: unknown command `ReadText` |
+| `commands/CommandsTest.java:363` | **incomplete-context.** string `(x * π)`, the reference prints `(x * pi)` |
+| `commands/CommandsTest.java:3939` | **incomplete-context.** the kernel refuses the input: unknown command `SetImage` |
+| `commands/CommandsTest.java:431`, `commands/CommandsTest.java:433`, `commands/CommandsTest.java:434` | **incomplete-context.** the kernel refuses the input: unknown command `Zip` |
+| `commands/CommandsTest.java:4464` | **incomplete-context.** values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `x + y = 1.4142135623730951` |
+| `commands/CommandsTest.java:4465` | **incomplete-context.** the kernel refuses the input: unknown object `42` |
+| `commands/CommandsTest.java:508`, `commands/CommandsTest.java:518`, `commands/CommandsTest.java:528`, `commands/CommandsTest.java:538`, `commands/CommandsTest.java:548`, `commands/RedefineTest.java:423`, `commands/RedefineTest.java:424`, `geos/GeoInputBoxLinkedGeoTest.java:355`, `geos/GeoInputBoxLinkedGeoTest.java:362` | **incomplete-context.** the kernel refuses the input: unknown command `SetValue` |
+| `commands/CommandsTest.java:590` | **incomplete-context.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `(2 * x) + (0 * y)` |
+| `commands/CommandsTest.java:591` | **incomplete-context.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `(0 * x) + (3 * y)` |
+| `commands/CommandsTest.java:603` | **incomplete-context.** string `2.7088378687594363`, GeoGebra prints `2.70883786875944` |
+| `commands/CommandsTest.java:605` | **incomplete-context.** string `2.7088378687594363`, the reference prints `2.70883786875944` |
+| `commands/CommandsTest.java:607` | **incomplete-context.** string `2.714891744381287`, GeoGebra prints `2.71489174438129` |
+| `commands/CommandsTest.java:609` | **incomplete-context.** string `2.714891744381287`, the reference prints `2.71489174438129` |
+| `commands/CommandsTest.java:69` | **incomplete-context.** the kernel refuses the input: `-y^2` is not a valid object name |
+| `commands/CommandsTest.java:750` | **incomplete-context.** the kernel refuses the input: unknown command `AttachCopyToView` |
+| `commands/CommandsTest.java:907`, `commands/CommandsTest.java:910` | **incomplete-context.** the kernel refuses the input: `Circle` does not take 4 argument(s) |
+| `commands/CommandsUsingMockedCasTest.java:111` | **incomplete-context.** the kernel refuses the input: unknown command `LimitAbove` |
+| `commands/CommandsUsingMockedCasTest.java:130` | **incomplete-context.** List { len: 2 } does not match `{}` (expected 0 elements, kernel has 2) |
+| `commands/CommandsUsingMockedCasTest.java:187`, `commands/CommandsUsingMockedCasTest.java:188` | **incomplete-context.** the kernel refuses the input: unknown command `TrigExpand` |
+| `commands/CommandsUsingMockedCasTest.java:200`, `commands/CommandsUsingMockedCasTest.java:201` | **incomplete-context.** the kernel refuses the input: unknown command `TrigCombine` |
+| `commands/CommandsUsingMockedCasTest.java:75` | **incomplete-context.** Point { x: 0.0, y: 1.0 } does not match `(NaN, NaN)` (expected undefined, kernel has a value) |
+| `commands/FormulaTextTest.java:34`, `commands/FormulaTextTest.java:38` | **incomplete-context.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `sin((1 * x) + (1 * x) - (1 * x))` |
+| `commands/FormulaTextTest.java:42` | **incomplete-context.** the kernel refuses the input: unknown command `FormulaText` |
+| `commands/FormulaTextTest.java:43`, `commands/FormulaTextTest.java:45`, `commands/FormulaTextTest.java:47` | **incomplete-context.** the kernel refuses the input: a function must give a number or a boolean |
+| `commands/RedefineTest.java:163` | **incomplete-context.** the kernel refuses the input: object `a_1` already exists: a replacement must define an object |
+| `commands/RedefineTest.java:172` | **incomplete-context.** the kernel refuses the input: unknown command `random` |
+| `commands/RedefineTest.java:187` | **incomplete-context.** the kernel refuses the input: unknown command `randomUniform` |
+| `commands/RedefineTest.java:222` | **incomplete-context.** the kernel refuses the input: unknown command `Shuffle` |
+| `commands/RedefineTest.java:250` | **incomplete-context.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `x^(2) + y` |
+| `commands/RedefineTest.java:275` | **incomplete-context.** Number(0.0) does not match `x^(2) + y = 0` (type mismatch: expected conic, got number) |
+| `commands/RedefineTest.java:417` | **incomplete-context.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `-3 < x < 6` |
+| `commands/RedefineTest.java:418` | **incomplete-context.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x < 3` |
+| `commands/RedefineTest.java:425` | **incomplete-context.** Bool(true) does not match `false` (values differ) |
+| `geos/GeoFunctionTest.java:117` | **incomplete-context.** values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `1 + If[x > 1, 3, NaN]` |
+| `geos/GeoInputBoxLinkedGeoTest.java:118`, `geos/GeoInputBoxLinkedGeoTest.java:85`, `geos/GeoInputBoxLinkedGeoTest.java:97` | **incomplete-context.** the kernel refuses the input: unknown object `txt` |
+| `geos/GeoInputBoxLinkedGeoTest.java:881` | **incomplete-context.** the kernel refuses the input: `f(w)` is not a valid object name |
+| `geos/GeoInputBoxLinkedGeoTest.java:882` | **incomplete-context.** the kernel refuses the input: unknown command `InputBox` |
+| `commands/CommandsTest.java:1281` | **kernel-mismatch.** recorded without a CAS, where CommonDenominator of two rational functions is the function NaN; the kernel's polynomial CAS answers x^2 - 1 |
+| `commands/CommandsTest.java:1633` | **kernel-mismatch.** Point { x: 4.712388980384689, y: -1.0 } does not match `(4.71239, -1)` (values differ) |
+| `commands/CommandsTest.java:1649` | **kernel-mismatch.** recorded without a CAS, where Factors of a polynomial is undefined; the kernel's polynomial CAS answers {{x, 2}} |
+| `commands/CommandsTest.java:1822` | **kernel-mismatch.** Frequency of two lists of texts is a contingency table in GeoGebra; the kernel's Frequency reads two lists as class boundaries and data, numbers only, and is undefined here |
+| `commands/CommandsTest.java:2282` | **kernel-mismatch.** the reference creates a `GeoSegment` here, the kernel has no object with this label |
+| `commands/CommandsTest.java:2704` | **kernel-mismatch.** Number(3.0) does not match `NaN` (expected undefined, kernel has a value) |
+| `commands/CommandsTest.java:3734` | **kernel-mismatch.** the values agree within the tolerance, but a numerically polished root differs from the reference's in its last digits (6.28318530725133 against 6.283185305816606), so the full-precision strings cannot agree |
+| `commands/CommandsTest.java:4044` | **kernel-mismatch.** Point { x: 1.0, y: 1.0 } does not match `(3, 3)` (values differ) |
+| `commands/CommandsTest.java:4052` | **kernel-mismatch.** Point { x: 0.0, y: 0.0 } does not match `(Infinity, 0)` (expected undefined, kernel has a value) |
+| `commands/CommandsTest.java:4056` | **kernel-mismatch.** Point { x: 2.0, y: 0.0 } does not match `(2, Infinity)` (expected undefined, kernel has a value) |
+| `commands/CommandsTest.java:4225`, `commands/CommandsTest.java:4226` | **kernel-mismatch.** the reference creates the function (and a hidden animated number) but its scripting command reports no result; the kernel's line creates the function under the label the runner gives it |
+| `commands/CommandsTest.java:4238`, `commands/CommandsTest.java:4239` | **kernel-mismatch.** Function does not match `?` (expected undefined, kernel has a value) |
+| `commands/CommandsTest.java:764`, `commands/CommandsTest.java:771` | **kernel-mismatch.** follows ZoomOut(2000), an app command the kernel does not run: the axis step stays the 1 of the view it has, GeoGebra's zoomed view has 2000 |
+| `commands/RedefineTest.java:383` | **kernel-mismatch.** Point { x: 1.0, y: 1.0 } does not match `(NaN, NaN)` (expected undefined, kernel has a value) |
+| `commands/CommandsTest.java:1237` | **redefine.** the kernel refuses the input: object `k` already exists: this definition cannot be replaced in place |
+| `commands/CommandsTest.java:1244`, `commands/CommandsTest.java:1245` | **redefine.** the kernel refuses the input: object `cv` already exists: this definition cannot be replaced in place |
+| `commands/CommandsTest.java:1667` | **redefine.** the kernel refuses the input: object `A1` already exists: a replacement must have one visible output |
+| `commands/CommandsTest.java:3167` | **redefine.** the kernel refuses the input: object `\0arg0` already exists |
+| `arithmetic/ArithmeticTest.java:204`, `commands/CommandsTest.java:1386`, `commands/CommandsTest.java:443` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(2)` |
+| `arithmetic/ArithmeticTest.java:302` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `abs(x + 2)` |
+| `arithmetic/ArithmeticTest.java:386`, `commands/CommandsTest.java:128` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x + 1` |
+| `arithmetic/ArithmeticTest.java:404`, `commands/RedefineTest.java:129` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x` |
+| `arithmetic/ArithmeticTest.java:414` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `4 < x < 5` |
+| `arithmetic/ArithmeticTest.java:417` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `1 < x` |
+| `arithmetic/ArithmeticTest.java:418` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `1 < x < 2` |
+| `arithmetic/ArithmeticTest.java:419` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(1 < x) + (x < 2)` |
+| `arithmetic/ArithmeticTest.java:420` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `1 < x + x < 2` |
+| `arithmetic/ArithmeticTest.java:504` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(3)` |
+| `arithmetic/ArithmeticTest.java:505` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(-x^(3))` |
+| `arithmetic/ArithmeticTest.java:514` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(3 * x) + 2` |
+| `arithmetic/ArithmeticTest.java:515`, `commands/CommandsTest.java:120` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `1` |
+| `arithmetic/ArithmeticTest.java:581` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `If[x / abs(x) < 0, 1, 2]` |
+| `arithmetic/ArithmeticTest.java:716` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x - 0` |
+| `arithmetic/FractionTest.java:104` | **text-formatting.** string `19.69`, the reference prints `1969 / 100` |
+| `arithmetic/FractionTest.java:122` | **text-formatting.** string `-0.1`, the reference prints `-0.096910013` |
+| `arithmetic/FractionTest.java:123`, `arithmetic/FractionTest.java:124` | **text-formatting.** string `-0.05`, the reference prints `-0.0484550065` |
+| `arithmetic/FractionTest.java:39` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(3 / 2)^x` |
+| `arithmetic/FractionTest.java:40` | **text-formatting.** string `2.25`, the reference prints `9 / 4` |
+| `arithmetic/FractionTest.java:41` | **text-formatting.** string `0.67`, the reference prints `2 / 3` |
+| `arithmetic/FractionTest.java:42` | **text-formatting.** string `0.44`, the reference prints `4 / 9` |
+| `arithmetic/FractionTest.java:63` | **text-formatting.** string `0.05`, the reference prints `1 / 20` |
+| `arithmetic/SurdTest.java:25` | **text-formatting.** string `2.83`, the reference prints `2√(2)` |
+| `arithmetic/SurdTest.java:26` | **text-formatting.** string `78.38`, the reference prints `32√(6)` |
+| `commands/CmdCopyFreeObjectTest.java:27` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(3 * 1)` |
+| `commands/CmdCopyFreeObjectTest.java:28` | **text-formatting.** values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{(3 * 1)}` |
+| `commands/CommandsTest.java:100`, `commands/CommandsTest.java:121`, `commands/CommandsTest.java:129` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `0` |
+| `commands/CommandsTest.java:101` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(4) - (3 * x^(2)) + x - 4` |
+| `commands/CommandsTest.java:103` | **text-formatting.** values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{x^(2) - x - 3, (5 * x) - 1}` |
+| `commands/CommandsTest.java:104` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(2) - x - 3` |
+| `commands/CommandsTest.java:105` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(5 * x) - 1` |
+| `commands/CommandsTest.java:115` | **text-formatting.** values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{2, -1}` |
+| `commands/CommandsTest.java:116`, `commands/CommandsTest.java:124` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `2` |
+| `commands/CommandsTest.java:117` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `-1` |
+| `commands/CommandsTest.java:119` | **text-formatting.** values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{1, 0}` |
+| `commands/CommandsTest.java:123` | **text-formatting.** values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{2, 3}` |
+| `commands/CommandsTest.java:125` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `3` |
+| `commands/CommandsTest.java:127` | **text-formatting.** values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{x + 1, 0}` |
+| `commands/CommandsTest.java:1358` | **text-formatting.** values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `x - y = 0` |
+| `commands/CommandsTest.java:1459` | **text-formatting.** values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{x - 1, 1}` |
+| `commands/CommandsTest.java:1691` | **text-formatting.** values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `y = 0` |
+| `commands/CommandsTest.java:1875` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `DataFunction[{}, {},x]` |
+| `commands/CommandsTest.java:1876` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `If[4 ≤ x ≤ 13, sin(x)]` |
+| `commands/CommandsTest.java:1877`, `commands/CommandsTest.java:2588` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `freehand(x)` |
+| `commands/CommandsTest.java:2450` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(x * ((2 * x) - 2))` |
+| `commands/CommandsTest.java:2451` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(x^(50) * (x - 1))` |
+| `commands/CommandsTest.java:2454`, `commands/CommandsTest.java:2455` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(x * (x - 1))` |
+| `commands/CommandsTest.java:2601` | **text-formatting.** values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `0.5x + y = 1.5` |
+| `commands/CommandsTest.java:2698` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `2 < x < 3` |
+| `commands/CommandsTest.java:2853` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `4` |
+| `commands/CommandsTest.java:2950` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `NIntegral[x^(2)]` |
+| `commands/CommandsTest.java:2962` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `NInvert[sin(x)]` |
+| `commands/CommandsTest.java:2988`, `commands/CommandsTest.java:2994` | **text-formatting.** string `1.6666666666666667`, GeoGebra prints `1.66666666666667` |
+| `commands/CommandsTest.java:2991` | **text-formatting.** string `-1.6666666666666667`, GeoGebra prints `-1.66666666666667` |
+| `commands/CommandsTest.java:3020` | **text-formatting.** values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{(2, -0.8193286198336103), (3, 0), (4, 0.8193286198336103), 2.8284271247461903}` |
+| `commands/CommandsTest.java:3178` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(3 * x^(2)) + 2` |
+| `commands/CommandsTest.java:3559` | **text-formatting.** the bisection and Newton result agrees numerically with the reference but prints different final decimal digits |
+| `commands/CommandsTest.java:3561` | **text-formatting.** the Newton iteration reaches -1 exactly, while the reference prints a nearby approximation within the golden tolerance |
+| `commands/CommandsTest.java:3709` | **text-formatting.** string `(-0.000000000000000009178449016447598, 0)`, GeoGebra prints `(0, 0)` |
+| `commands/CommandsTest.java:3739` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(2.00011 * sin(x / 2)) - x` |
+| `commands/CommandsTest.java:3848` | **text-formatting.** values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `x = 0` |
+| `commands/CommandsTest.java:446` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x > 1` |
+| `commands/CommandsTest.java:658` | **text-formatting.** values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `0.9238795325112867x + 0.3826834323650897y = 8.670402750791315` |
+| `commands/CommandsTest.java:692` | **text-formatting.** string `7.054542994541887`, the reference prints `7.054542994541888` |
+| `commands/CommandsTest.java:896` | **text-formatting.** values agree but `GeoConic` of kind circle has no the reference-style text yet; the reference prints `(x - 1)² + (y - 1)² = 1764` |
+| `commands/CommandsTest.java:897` | **text-formatting.** values agree but `GeoConic` of kind circle has no the reference-style text yet; the reference prints `(x - 1)² + (y - 1)² = 1.2500000000000002` |
+| `commands/CommandsTest.java:898` | **text-formatting.** values agree but `GeoConic` of kind circle has no the reference-style text yet; the reference prints `(x - 3.083333333333333)² + (y - 3.916666666666666)² = 12.847222222222216` |
+| `commands/CommandsTest.java:95` | **text-formatting.** values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{x^(3) - x^(2) - (2 * x) + 3, -7}` |
+| `commands/CommandsTest.java:96` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(3) - x^(2) - (2 * x) + 3` |
+| `commands/CommandsTest.java:97` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `-7` |
+| `commands/CommandsTest.java:99` | **text-formatting.** values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{0, x^(4) - (3 * x^(2)) + x - 4}` |
+| `commands/CommandsUsingMockedCasTest.java:80` | **text-formatting.** values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(2 * x)` |
+| `commands/CommandsUsingMockedCasTest.java:82`, `commands/CommandsUsingMockedCasTest.java:85` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(6 * x)` |
+| `commands/CommandsUsingMockedCasTest.java:84` | **text-formatting.** values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(3 * x^(2))` |
+| `commands/CommandsUsingMockedCasTest.java:90` | **text-formatting.** values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(1 / 2 * x^(2))` |
+| `commands/CommandsUsingMockedCasTest.java:91` | **text-formatting.** values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(1 / 3 * x^(3))` |
+| `commands/RedefineTest.java:296` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(1 * x^(2))` |
+| `commands/RedefineTest.java:308` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `If[x ≟ 0, 1, NaN]` |
+| `commands/TranslateTest.java:27` | **text-formatting.** values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `If[0 < x < 1, 2 + x, 1 < x < 2, -1]` |
+| `arithmetic/ArithmeticTest.java:339`, `commands/CommandsTest.java:1029`, `commands/CommandsTest.java:1030`, `commands/CommandsTest.java:1031` | **unsupported-command.** the kernel refuses the input: unknown command `Cross` |
+| `arithmetic/ArithmeticTest.java:372` | **unsupported-command.** the kernel refuses the input: `y` needs arguments |
+| `arithmetic/ArithmeticTest.java:375`, `commands/CommandsTest.java:4955`, `kernelND/GeoSurfaceCartesian3DTest.java:54` | **unsupported-command.** the kernel refuses the input: a list in a function is not supported |
+| `arithmetic/ArithmeticTest.java:384` | **unsupported-command.** the kernel refuses the input: `f(x):` is not a valid object name |
+| `commands/CmdCopyFreeObjectTest.java:29`, `commands/CmdCopyFreeObjectTest.java:39`, `commands/CommandsTest.java:1208` | **unsupported-command.** the kernel refuses the input: unknown command `CopyFreeObject` |
+| `commands/CmdImplicitSurfaceTest.java:38` | **unsupported-command.** the kernel refuses the input: unknown command `ImplicitSurface` |
+| `commands/CommandsIn2DAppTest.java:44` | **unsupported-command.** the kernel refuses the input: `OrthogonalLine` does not take 3 argument(s) |
+| `commands/CommandsIn2DAppTest.java:45` | **unsupported-command.** the kernel refuses the input: `OrthogonalLine` does not take 4 argument(s) |
+| `commands/CommandsTest.java:1038`, `commands/CommandsTest.java:1064`, `commands/CommandsTest.java:1090` | **unsupported-command.** the kernel refuses the input: unknown command `Cube` |
+| `commands/CommandsTest.java:1165`, `commands/CommandsTest.java:1167`, `commands/CommandsTest.java:1170`, `commands/CommandsTest.java:1175`, `commands/CommandsTest.java:1176` | **unsupported-command.** the kernel refuses the input: `ClosestPoint` does not take 3 argument(s) |
+| `commands/CommandsTest.java:1173` | **unsupported-command.** the kernel refuses the input: `ClosestPoint` does not take 8 argument(s) |
+| `commands/CommandsTest.java:1181`, `commands/CommandsTest.java:1183` | **unsupported-command.** the kernel refuses the input: unknown command `Coefficients` |
+| `commands/CommandsTest.java:1224`, `commands/CommandsTest.java:1225` | **unsupported-command.** the kernel refuses the input: unknown command `Covariance` |
+| `commands/CommandsTest.java:1230`, `commands/CommandsTest.java:1231` | **unsupported-command.** the kernel refuses the input: `CrossRatio` does not take 8 argument(s) |
+| `commands/CommandsTest.java:1291` | **unsupported-command.** the kernel refuses the input: unknown command `ClosestPointRegion` |
+| `commands/CommandsTest.java:1296`, `commands/CommandsTest.java:1297`, `commands/CommandsTest.java:2543` | **unsupported-command.** the kernel refuses the input: unknown command `DataFunction` |
+| `commands/CommandsTest.java:1359` | **unsupported-command.** the kernel refuses the input: `ConjugateDiameter` does not take 3 argument(s) |
+| `commands/CommandsTest.java:1369` | **unsupported-command.** the kernel refuses the input: unknown command `Directrix` |
+| `commands/CommandsTest.java:1374` | **unsupported-command.** the kernel refuses the input: `Distance` does not take 7 argument(s) |
+| `commands/CommandsTest.java:1377` | **unsupported-command.** the kernel refuses the input: `Distance` does not take 8 argument(s) |
+| `commands/CommandsTest.java:1378`, `commands/CommandsTest.java:1379` | **unsupported-command.** the kernel refuses the input: `Distance` does not take 10 argument(s) |
+| `commands/CommandsTest.java:1380` | **unsupported-command.** the kernel refuses the input: `Distance` does not take 12 argument(s) |
+| `commands/CommandsTest.java:1531`, `commands/CommandsTest.java:1532` | **unsupported-command.** the kernel refuses the input: unknown command `Dot` |
+| `commands/CommandsTest.java:1548` | **unsupported-command.** the kernel refuses the input: unknown command `DynamicCoordinates` |
+| `commands/CommandsTest.java:1553` | **unsupported-command.** the kernel refuses the input: unknown command `Eccentricity` |
+| `commands/CommandsTest.java:1558` | **unsupported-command.** the kernel refuses the input: `Element` takes a list and one index |
+| `commands/CommandsTest.java:1565` | **unsupported-command.** the kernel refuses the input: `Ellipse` does not take 6 argument(s) |
+| `commands/CommandsTest.java:1569` | **unsupported-command.** the kernel refuses the input: `Ellipse` does not take 5 argument(s) |
+| `commands/CommandsTest.java:1572` | **unsupported-command.** the kernel refuses the input: `Ellipse` does not take 8 argument(s) |
+| `commands/CommandsTest.java:1580` | **unsupported-command.** the kernel refuses the input: unknown command `Ends` |
+| `commands/CommandsTest.java:1696` | **unsupported-command.** the kernel refuses the input: unknown command `SemiMajorAxisLength` |
+| `commands/CommandsTest.java:1716` | **unsupported-command.** the kernel refuses the input: unknown command `FitExp` |
+| `commands/CommandsTest.java:1723` | **unsupported-command.** the kernel refuses the input: unknown command `FitGrowth` |
+| `commands/CommandsTest.java:1730` | **unsupported-command.** the kernel refuses the input: unknown command `FitLineX` |
+| `commands/CommandsTest.java:1737` | **unsupported-command.** the kernel refuses the input: unknown command `FitLine` |
+| `commands/CommandsTest.java:1753` | **unsupported-command.** the kernel refuses the input: unknown command `FitLogistic` |
+| `commands/CommandsTest.java:1789`, `commands/CommandsTest.java:1790` | **unsupported-command.** the kernel refuses the input: unknown command `FitImplicit` |
+| `commands/CommandsTest.java:1802` | **unsupported-command.** the kernel refuses the input: unknown command `Focus` |
+| `commands/CommandsTest.java:1834`, `commands/CommandsTest.java:1839`, `commands/CommandsTest.java:1844`, `commands/CommandsTest.java:1848`, `commands/CommandsTest.java:1853`, `commands/CommandsTest.java:1858`, `commands/CommandsTest.java:1862` | **unsupported-command.** the kernel refuses the input: unknown command `FrequencyTable` |
+| `commands/CommandsTest.java:1918` | **unsupported-command.** the kernel refuses the input: unknown command `GeometricMean` |
+| `commands/CommandsTest.java:1923` | **unsupported-command.** the kernel refuses the input: unknown command `HarmonicMean` |
+| `commands/CommandsTest.java:1928`, `commands/CommandsTest.java:1929` | **unsupported-command.** the kernel refuses the input: unknown command `Height` |
+| `commands/CommandsTest.java:1960` | **unsupported-command.** the kernel refuses the input: `Hyperbola` does not take 6 argument(s) |
+| `commands/CommandsTest.java:1964` | **unsupported-command.** the kernel refuses the input: `Hyperbola` does not take 5 argument(s) |
+| `commands/CommandsTest.java:1967` | **unsupported-command.** the kernel refuses the input: `Hyperbola` does not take 8 argument(s) |
+| `commands/CommandsTest.java:2059` | **unsupported-command.** the kernel refuses the input: unknown command `IFactor` |
+| `commands/CommandsTest.java:2073` | **unsupported-command.** the kernel refuses the input: `Incircle` does not take 6 argument(s) |
+| `commands/CommandsTest.java:2090` | **unsupported-command.** the kernel refuses the input: unknown command `Insert` |
+| `commands/CommandsTest.java:2095`, `commands/CommandsTest.java:2096` | **unsupported-command.** the kernel refuses the input: unknown command `IntegralBetween` |
+| `commands/CommandsTest.java:2106` | **unsupported-command.** the kernel refuses the input: unknown command `IntersectRegion` |
+| `commands/CommandsTest.java:2214`, `commands/CommandsTest.java:2217` | **unsupported-command.** the kernel refuses the input: unknown command `IntersectConic` |
+| `commands/CommandsTest.java:2294` | **unsupported-command.** the kernel refuses the input: unknown command `InverseBinomial` |
+| `commands/CommandsTest.java:2299`, `commands/CommandsTest.java:2300`, `commands/CommandsTest.java:2301`, `commands/CommandsTest.java:2302`, `commands/CommandsTest.java:2303`, `commands/CommandsTest.java:2304`, `commands/CommandsTest.java:2305`, `commands/CommandsTest.java:2306`, `commands/CommandsTest.java:2307`, `commands/CommandsTest.java:2308`, `commands/CommandsTest.java:2309`, `commands/CommandsTest.java:2310`, `commands/CommandsTest.java:2311` | **unsupported-command.** the kernel refuses the input: unknown command `InverseBinomialMinimumTrials` |
+| `commands/CommandsTest.java:2316` | **unsupported-command.** the kernel refuses the input: unknown command `InverseCauchy` |
+| `commands/CommandsTest.java:2346` | **unsupported-command.** the kernel refuses the input: unknown command `InverseHyperGeometric` |
+| `commands/CommandsTest.java:2351` | **unsupported-command.** the kernel refuses the input: unknown command `InverseLogistic` |
+| `commands/CommandsTest.java:2356` | **unsupported-command.** the kernel refuses the input: unknown command `InverseLogNormal` |
+| `commands/CommandsTest.java:2361` | **unsupported-command.** the kernel refuses the input: unknown command `InverseNormal` |
+| `commands/CommandsTest.java:2366` | **unsupported-command.** the kernel refuses the input: unknown command `InversePascal` |
+| `commands/CommandsTest.java:2371` | **unsupported-command.** the kernel refuses the input: unknown command `InversePoisson` |
+| `commands/CommandsTest.java:2376` | **unsupported-command.** the kernel refuses the input: unknown command `InverseTDistribution` |
+| `commands/CommandsTest.java:2386` | **unsupported-command.** the kernel refuses the input: unknown command `InverseZipf` |
+| `commands/CommandsTest.java:2412`, `commands/CommandsTest.java:2413`, `commands/CommandsTest.java:2415`, `commands/CommandsTest.java:2465` | **unsupported-command.** the kernel refuses the input: unknown command `IsFactored` |
+| `commands/CommandsTest.java:2483`, `commands/CommandsTest.java:2484`, `commands/CommandsTest.java:2485`, `commands/CommandsTest.java:2486`, `commands/CommandsTest.java:2488` | **unsupported-command.** the kernel refuses the input: unknown command `IsInRegion` |
+| `commands/CommandsTest.java:2570` | **unsupported-command.** the kernel refuses the input: unknown command `LeftSum` |
+| `commands/CommandsTest.java:2581` | **unsupported-command.** the kernel refuses the input: `Length` does not take 5 argument(s) |
+| `commands/CommandsTest.java:2589` | **unsupported-command.** the kernel refuses the input: `freehandFunc` is a function, expected a segment or point or locus |
+| `commands/CommandsTest.java:2603`, `commands/CommandsTest.java:2604`, `commands/CommandsTest.java:2606`, `commands/CommandsTest.java:2607` | **unsupported-command.** the kernel refuses the input: `Line` does not take 5 argument(s) |
+| `commands/CommandsTest.java:2605`, `commands/CommandsTest.java:2608` | **unsupported-command.** the kernel refuses the input: `Line` does not take 6 argument(s) |
+| `commands/CommandsTest.java:2613`, `commands/CommandsTest.java:2614` | **unsupported-command.** the kernel refuses the input: `PerpendicularBisector` does not take 4 argument(s) |
+| `commands/CommandsTest.java:2645` | **unsupported-command.** the kernel refuses the input: `Locus(Q, slider)` needs a point that depends on the slider `slider` |
+| `commands/CommandsTest.java:2672` | **unsupported-command.** the kernel refuses the input: unknown command `LowerSum` |
+| `commands/CommandsTest.java:2678`, `commands/CommandsTest.java:2679`, `commands/CommandsTest.java:2680` | **unsupported-command.** the kernel refuses the input: unknown command `MAD` |
+| `commands/CommandsTest.java:2718` | **unsupported-command.** the kernel refuses the input: `Mean` of a list does not take 2 arguments |
+| `commands/CommandsTest.java:2729` | **unsupported-command.** the kernel refuses the input: unknown command `MeanX` |
+| `commands/CommandsTest.java:2734` | **unsupported-command.** the kernel refuses the input: unknown command `MeanY` |
+| `commands/CommandsTest.java:2739`, `commands/CommandsTest.java:2740` | **unsupported-command.** the kernel refuses the input: unknown command `Median` |
+| `commands/CommandsTest.java:2745`, `commands/CommandsTest.java:2747` | **unsupported-command.** the kernel refuses the input: `Midpoint` does not take 4 argument(s) |
+| `commands/CommandsTest.java:2777`, `commands/CommandsTest.java:2792`, `commands/CommandsTest.java:2814` | **unsupported-command.** the kernel refuses the input: `Reflect` does not take 6 argument(s) |
+| `commands/CommandsTest.java:2793`, `commands/CommandsTest.java:2822` | **unsupported-command.** the kernel refuses the input: `Reflect` does not take 7 argument(s) |
+| `commands/CommandsTest.java:2795` | **unsupported-command.** the kernel refuses the input: `Reflect` does not take 14 argument(s) |
+| `commands/CommandsTest.java:2846` | **unsupported-command.** the kernel refuses the input: unknown command `Mode` |
+| `commands/CommandsTest.java:2858` | **unsupported-command.** the kernel refuses the input: unknown command `Name` |
+| `commands/CommandsTest.java:2881`, `commands/CommandsTest.java:2923` | **unsupported-command.** the kernel refuses the input: unknown command `Net` |
+| `commands/CommandsTest.java:2956` | **unsupported-command.** the kernel refuses the input: unknown command `G1` |
+| `commands/CommandsTest.java:3023` | **unsupported-command.** the kernel refuses the input: `Slope` does not take 4 argument(s) |
+| `commands/CommandsTest.java:3042` | **unsupported-command.** the kernel refuses the input: `Segment` does not take 4 argument(s) |
+| `commands/CommandsTest.java:3108` | **unsupported-command.** the kernel refuses the input: unknown command `OsculatingCircle` |
+| `commands/CommandsTest.java:3114` | **unsupported-command.** the kernel refuses the input: `PerpendicularLine` does not take 3 argument(s) |
+| `commands/CommandsTest.java:3115` | **unsupported-command.** the kernel refuses the input: `PerpendicularLine` does not take 6 argument(s) |
+| `commands/CommandsTest.java:3116`, `commands/CommandsTest.java:3118`, `commands/CommandsTest.java:3125` | **unsupported-command.** the kernel refuses the input: `PerpendicularLine` does not take 4 argument(s) |
+| `commands/CommandsTest.java:3119` | **unsupported-command.** the kernel refuses the input: `PerpendicularLine` does not take 7 argument(s) |
+| `commands/CommandsTest.java:3122`, `commands/CommandsTest.java:3126`, `commands/CommandsTest.java:3129` | **unsupported-command.** the kernel refuses the input: `PerpendicularLine` does not take 5 argument(s) |
+| `commands/CommandsTest.java:3137`, `commands/CommandsTest.java:3138` | **unsupported-command.** the kernel refuses the input: unknown command `OrthogonalPlane` |
+| `commands/CommandsTest.java:314` | **unsupported-command.** the kernel refuses the input: cannot evaluate command input `s` |
+| `commands/CommandsTest.java:3157` | **unsupported-command.** the kernel refuses the input: `Parabola` does not take 3 argument(s) |
+| `commands/CommandsTest.java:3162` | **unsupported-command.** the kernel refuses the input: unknown command `Parameter` |
+| `commands/CommandsTest.java:3172`, `commands/CommandsTest.java:3173`, `commands/CommandsTest.java:3174`, `commands/CommandsTest.java:3175`, `commands/CommandsTest.java:3176`, `commands/CommandsTest.java:3177`, `commands/CommandsTest.java:3180` | **unsupported-command.** the kernel refuses the input: unknown command `ParseToFunction` |
+| `commands/CommandsTest.java:3185`, `commands/CommandsTest.java:3186`, `commands/CommandsTest.java:3189`, `commands/CommandsTest.java:3190` | **unsupported-command.** the kernel refuses the input: unknown command `ParseToNumber` |
+| `commands/CommandsTest.java:3213`, `commands/CommandsTest.java:3214`, `commands/CommandsTest.java:3215`, `commands/CommandsTest.java:3216`, `commands/CommandsTest.java:3217`, `commands/CommandsTest.java:3218`, `commands/CommandsTest.java:3219` | **unsupported-command.** the kernel refuses the input: unknown command `Plane` |
+| `commands/CommandsTest.java:3224`, `commands/CommandsTest.java:3225` | **unsupported-command.** the kernel refuses the input: unknown command `PlaneBisector` |
+| `commands/CommandsTest.java:3248`, `commands/CommandsTest.java:3249`, `commands/CommandsTest.java:3250`, `commands/CommandsTest.java:3251` | **unsupported-command.** the kernel refuses the input: unknown command `Percentile` |
+| `commands/CommandsTest.java:3282`, `commands/CommandsTest.java:3283` | **unsupported-command.** the kernel refuses the input: unknown command `PerpendicularPlane` |
+| `commands/CommandsTest.java:3288`, `commands/CommandsTest.java:3289` | **unsupported-command.** the kernel refuses the input: unknown command `CorrelationCoefficient` |
+| `commands/CommandsTest.java:3306` | **unsupported-command.** the kernel refuses the input: `Point` takes a path, or a path and a number |
+| `commands/CommandsTest.java:3314` | **unsupported-command.** the kernel refuses the input: `PointIn` takes one region |
+| `commands/CommandsTest.java:3324` | **unsupported-command.** the kernel refuses the input: `Polar` does not take 3 argument(s) |
+| `commands/CommandsTest.java:3332` | **unsupported-command.** the kernel refuses the input: unknown command `Polygon` |
+| `commands/CommandsTest.java:3363` | **unsupported-command.** the kernel refuses the input: unknown command `Polynomial` |
+| `commands/CommandsTest.java:3439`, `commands/CommandsTest.java:3442` | **unsupported-command.** the kernel refuses the input: the command needs a list of numbers |
+| `commands/CommandsTest.java:3441` | **unsupported-command.** the kernel refuses the input: unknown command `Product` |
+| `commands/CommandsTest.java:3486`, `commands/CommandsTest.java:3487` | **unsupported-command.** the kernel refuses the input: unknown command `Q1` |
+| `commands/CommandsTest.java:3492`, `commands/CommandsTest.java:3493` | **unsupported-command.** the kernel refuses the input: unknown command `Q3` |
+| `commands/CommandsTest.java:3508`, `commands/CommandsTest.java:3510`, `commands/CommandsTest.java:3511`, `commands/CommandsTest.java:3512`, `commands/RedefineTest.java:205` | **unsupported-command.** the kernel refuses the input: unknown command `RandomBetween` |
+| `commands/CommandsTest.java:3517` | **unsupported-command.** the kernel refuses the input: unknown command `RandomBinomial` |
+| `commands/CommandsTest.java:3522`, `commands/RedefineTest.java:235` | **unsupported-command.** the kernel refuses the input: unknown command `RandomElement` |
+| `commands/CommandsTest.java:3532` | **unsupported-command.** the kernel refuses the input: unknown command `RandomPoisson` |
+| `commands/CommandsTest.java:3537`, `commands/CommandsTest.java:3538` | **unsupported-command.** the kernel refuses the input: unknown command `RandomUniform` |
+| `commands/CommandsTest.java:3545`, `commands/CommandsTest.java:3546`, `commands/CommandsTest.java:3547` | **unsupported-command.** the kernel refuses the input: unknown command `RandomPointIn` |
+| `commands/CommandsTest.java:3552`, `commands/CommandsTest.java:3553`, `commands/CommandsTest.java:3554` | **unsupported-command.** the kernel refuses the input: unknown command `RandomDiscrete` |
+| `commands/CommandsTest.java:3567`, `commands/CommandsTest.java:3568` | **unsupported-command.** the kernel refuses the input: `Ray` does not take 4 argument(s) |
+| `commands/CommandsTest.java:3574`, `commands/CommandsTest.java:3575`, `commands/CommandsTest.java:3576`, `commands/CommandsTest.java:3577`, `commands/CommandsTest.java:3578`, `commands/CommandsTest.java:3579`, `commands/CommandsTest.java:3580`, `commands/CommandsTest.java:3581`, `commands/CommandsTest.java:3582`, `commands/CommandsTest.java:3583`, `commands/CommandsTest.java:3586` | **unsupported-command.** the kernel refuses the input: unknown command `RandomPolynomial` |
+| `commands/CommandsTest.java:3591` | **unsupported-command.** the kernel refuses the input: unknown command `RectangleSum` |
+| `commands/CommandsTest.java:3728` | **unsupported-command.** the kernel refuses the input: unknown command `RootMeanSquare` |
+| `commands/CommandsTest.java:3746` | **unsupported-command.** the kernel refuses the input: `Rotate` does not take 6 argument(s) |
+| `commands/CommandsTest.java:3747` | **unsupported-command.** the kernel refuses the input: `Rotate` does not take 8 argument(s) |
+| `commands/CommandsTest.java:3781` | **unsupported-command.** the kernel refuses the input: unknown command `RSquare` |
+| `commands/CommandsTest.java:3786`, `commands/CommandsTest.java:3787` | **unsupported-command.** the kernel refuses the input: unknown command `Sample` |
+| `commands/CommandsTest.java:3792`, `commands/CommandsTest.java:3793` | **unsupported-command.** the kernel refuses the input: unknown command `SampleSD` |
+| `commands/CommandsTest.java:3810` | **unsupported-command.** the kernel refuses the input: unknown command `SampleSDX` |
+| `commands/CommandsTest.java:3815` | **unsupported-command.** the kernel refuses the input: unknown command `SampleSDY` |
+| `commands/CommandsTest.java:3820`, `commands/CommandsTest.java:3821` | **unsupported-command.** the kernel refuses the input: unknown command `SampleVariance` |
+| `commands/CommandsTest.java:3832`, `commands/CommandsTest.java:3833` | **unsupported-command.** the kernel refuses the input: unknown command `SD` |
+| `commands/CommandsTest.java:3838` | **unsupported-command.** the kernel refuses the input: unknown command `SDX` |
+| `commands/CommandsTest.java:3843` | **unsupported-command.** the kernel refuses the input: unknown command `SDY` |
+| `commands/CommandsTest.java:3853` | **unsupported-command.** the kernel refuses the input: unknown command `SemiMinorAxisLength` |
+| `commands/CommandsTest.java:3870` | **unsupported-command.** the kernel refuses the input: unknown command `SelectedElement` |
+| `commands/CommandsTest.java:3875` | **unsupported-command.** the kernel refuses the input: unknown command `SelectedIndex` |
+| `commands/CommandsTest.java:3886` | **unsupported-command.** the kernel refuses the input: `Semicircle` does not take 4 argument(s) |
+| `commands/CommandsTest.java:4123` | **unsupported-command.** the kernel refuses the input: `Shear` does not take 7 argument(s) |
+| `commands/CommandsTest.java:4184`, `commands/RedefineTest.java:213` | **unsupported-command.** the kernel refuses the input: unknown command `Shuffle` |
+| `commands/CommandsTest.java:4189`, `commands/CommandsTest.java:4190`, `commands/CommandsTest.java:4191` | **unsupported-command.** the kernel refuses the input: unknown command `SigmaXX` |
+| `commands/CommandsTest.java:4196`, `commands/CommandsTest.java:4197` | **unsupported-command.** the kernel refuses the input: unknown command `SigmaXY` |
+| `commands/CommandsTest.java:4202` | **unsupported-command.** the kernel refuses the input: unknown command `SigmaYY` |
+| `commands/CommandsTest.java:4207` | **unsupported-command.** the kernel refuses the input: `Slider` does not take 9 argument(s) |
+| `commands/CommandsTest.java:4257`, `commands/CommandsTest.java:4258` | **unsupported-command.** the kernel refuses the input: unknown command `Spearman` |
+| `commands/CommandsTest.java:4301`, `commands/CommandsTest.java:4306` | **unsupported-command.** the kernel refuses the input: unknown command `StemPlot` |
+| `commands/CommandsTest.java:4336`, `commands/CommandsTest.java:4337` | **unsupported-command.** the kernel refuses the input: `Stretch` does not take 7 argument(s) |
+| `commands/CommandsTest.java:4347`, `commands/CommandsTest.java:4348`, `commands/CommandsTest.java:4349`, `commands/CommandsTest.java:4350`, `commands/CommandsTest.java:4352`, `commands/CommandsTest.java:4355`, `commands/CommandsTest.java:4356` | **unsupported-command.** the kernel refuses the input: unknown command `Sum` |
+| `commands/CommandsTest.java:4359` | **unsupported-command.** the kernel refuses the input: `y` is a reserved name |
+| `commands/CommandsTest.java:4364` | **unsupported-command.** the kernel refuses the input: unknown command `SumSquaredErrors` |
+| `commands/CommandsTest.java:4369`, `commands/CommandsTest.java:4370`, `commands/CommandsTest.java:4371`, `commands/CommandsTest.java:4373`, `commands/CommandsTest.java:4378` | **unsupported-command.** the kernel refuses the input: unknown command `Surface` |
+| `commands/CommandsTest.java:4401`, `commands/CommandsTest.java:4402`, `commands/CommandsTest.java:4403` | **unsupported-command.** the kernel refuses the input: unknown command `Sxx` |
+| `commands/CommandsTest.java:4408`, `commands/CommandsTest.java:4409` | **unsupported-command.** the kernel refuses the input: unknown command `Sxy` |
+| `commands/CommandsTest.java:4414` | **unsupported-command.** the kernel refuses the input: unknown command `Syy` |
+| `commands/CommandsTest.java:4511`, `commands/CommandsTest.java:4513` | **unsupported-command.** the kernel refuses the input: unknown command `InputBox` |
+| `commands/CommandsTest.java:4543`, `commands/CommandsTest.java:4544` | **unsupported-command.** the kernel refuses the input: unknown command `TMeanEstimate` |
+| `commands/CommandsTest.java:4549`, `commands/CommandsTest.java:4550` | **unsupported-command.** the kernel refuses the input: unknown command `TMean2Estimate` |
+| `commands/CommandsTest.java:4555` | **unsupported-command.** the kernel refuses the input: unknown command `Top` |
+| `commands/CommandsTest.java:4584` | **unsupported-command.** the kernel refuses the input: unknown command `ToPolar` |
+| `commands/CommandsTest.java:4599` | **unsupported-command.** the kernel refuses the input: `Translate` does not take 7 argument(s) |
+| `commands/CommandsTest.java:4600`, `commands/CommandsTest.java:4601` | **unsupported-command.** the kernel refuses the input: `Translate` does not take 4 argument(s) |
+| `commands/CommandsTest.java:4611` | **unsupported-command.** the kernel refuses the input: unknown command `TrapezoidalSum` |
+| `commands/CommandsTest.java:4624`, `commands/CommandsTest.java:4625` | **unsupported-command.** the kernel refuses the input: `TriangleCenter` does not take 7 argument(s) |
+| `commands/CommandsTest.java:4637` | **unsupported-command.** the kernel refuses the input: `Trilinear` does not take 9 argument(s) |
+| `commands/CommandsTest.java:4642`, `commands/CommandsTest.java:4643` | **unsupported-command.** the kernel refuses the input: unknown command `TTest` |
+| `commands/CommandsTest.java:4648` | **unsupported-command.** the kernel refuses the input: unknown command `TTestPaired` |
+| `commands/CommandsTest.java:4653`, `commands/CommandsTest.java:4654` | **unsupported-command.** the kernel refuses the input: unknown command `TTest2` |
+| `commands/CommandsTest.java:4659`, `commands/CommandsTest.java:4660` | **unsupported-command.** the kernel refuses the input: unknown command `InflectionPoint` |
+| `commands/CommandsTest.java:4665`, `commands/CommandsTest.java:4666` | **unsupported-command.** the kernel refuses the input: unknown command `Type` |
+| `commands/CommandsTest.java:4752` | **unsupported-command.** the kernel refuses the input: `UnitVector` does not take 3 argument(s) |
+| `commands/CommandsTest.java:4811` | **unsupported-command.** the kernel refuses the input: unknown command `UpperSum` |
+| `commands/CommandsTest.java:4817`, `commands/CommandsTest.java:4818` | **unsupported-command.** the kernel refuses the input: unknown command `Variance` |
+| `commands/CommandsTest.java:4824`, `commands/TranslateTest.java:28` | **unsupported-command.** the kernel refuses the input: `Vector` does not take 4 argument(s) |
+| `commands/CommandsTest.java:4835`, `commands/CommandsTest.java:4839` | **unsupported-command.** the kernel refuses the input: unknown command `Vertex` |
+| `commands/CommandsTest.java:4872` | **unsupported-command.** the kernel refuses the input: unknown command `Zip` |
+| `commands/CommandsTest.java:4911` | **unsupported-command.** the kernel refuses the input: unknown command `ZProportionTest` |
+| `commands/CommandsTest.java:4916`, `commands/CommandsTest.java:4917` | **unsupported-command.** the kernel refuses the input: unknown command `ZMeanTest` |
+| `commands/CommandsTest.java:4922`, `commands/CommandsTest.java:4923` | **unsupported-command.** the kernel refuses the input: unknown command `ZMean2Test` |
+| `commands/CommandsTest.java:4928` | **unsupported-command.** the kernel refuses the input: unknown command `ZProportion2Test` |
+| `commands/CommandsTest.java:4933` | **unsupported-command.** the kernel refuses the input: unknown command `ZproportionEstimate` |
+| `commands/CommandsTest.java:4938` | **unsupported-command.** the kernel refuses the input: unknown command `Zproportion2Estimate` |
+| `commands/CommandsTest.java:4943`, `commands/CommandsTest.java:4944` | **unsupported-command.** the kernel refuses the input: unknown command `ZMeanEstimate` |
+| `commands/CommandsTest.java:4949`, `commands/CommandsTest.java:4950` | **unsupported-command.** the kernel refuses the input: unknown command `ZMean2Estimate` |
+| `commands/CommandsTest.java:4961`, `commands/CommandsTest.java:4962`, `commands/CommandsTest.java:4963`, `commands/CommandsTest.java:4964`, `commands/CommandsTest.java:4965`, `commands/CommandsTest.java:4966` | **unsupported-command.** the kernel refuses the input: unknown command `Dirac` |
+| `commands/CommandsTest.java:4971`, `commands/CommandsTest.java:4972`, `commands/CommandsTest.java:4973`, `commands/CommandsTest.java:4974`, `commands/CommandsTest.java:4975` | **unsupported-command.** the kernel refuses the input: unknown command `Heaviside` |
+| `commands/CommandsTest.java:4980` | **unsupported-command.** the kernel refuses the input: unknown command `Stadium` |
+| `commands/CommandsTest.java:638`, `commands/CommandsTest.java:639` | **unsupported-command.** the kernel refuses the input: `AffineRatio` does not take 6 argument(s) |
+| `commands/CommandsTest.java:662` | **unsupported-command.** the kernel refuses the input: `AngleBisector` does not take 6 argument(s) |
+| `commands/CommandsTest.java:669` | **unsupported-command.** the kernel refuses the input: unknown command `ANOVA` |
+| `commands/CommandsTest.java:684` | **unsupported-command.** the kernel refuses the input: unexpected `=` |
+| `commands/CommandsTest.java:698`, `commands/CommandsTest.java:699` | **unsupported-command.** the kernel refuses the input: `Area` does not take 6 argument(s) |
+| `commands/CommandsTest.java:704` | **unsupported-command.** the kernel refuses the input: `AreCollinear` does not take 6 argument(s) |
+| `commands/CommandsTest.java:714`, `commands/CommandsTest.java:715`, `commands/CommandsTest.java:716` | **unsupported-command.** the kernel refuses the input: `AreCongruent` does not take 8 argument(s) |
+| `commands/CommandsTest.java:717`, `commands/CommandsTest.java:721` | **unsupported-command.** the kernel refuses the input: `AreCongruent` does not take 20 argument(s) |
+| `commands/CommandsTest.java:729` | **unsupported-command.** the kernel refuses the input: `AreConcyclic` does not take 8 argument(s) |
+| `commands/CommandsTest.java:734` | **unsupported-command.** the kernel refuses the input: `AreEqual` does not take 4 argument(s) |
+| `commands/CommandsTest.java:757` | **unsupported-command.** the kernel refuses the input: unknown command `Axes` |
+| `commands/CommandsTest.java:793`, `commands/CommandsTest.java:794` | **unsupported-command.** the kernel refuses the input: unknown command `Bernoulli` |
+| `commands/CommandsTest.java:804`, `commands/CommandsTest.java:805` | **unsupported-command.** the kernel refuses the input: unknown command `BinomialCoefficient` |
+| `commands/CommandsTest.java:815` | **unsupported-command.** the kernel refuses the input: unknown command `Bottom` |
+| `commands/CommandsTest.java:828`, `commands/CommandsTest.java:829` | **unsupported-command.** the kernel refuses the input: unknown command `Button` |
+| `commands/CommandsTest.java:864`, `commands/CommandsTest.java:865`, `commands/CommandsTest.java:866`, `commands/CommandsTest.java:867` | **unsupported-command.** the kernel refuses the input: unknown command `Checkbox` |
+| `commands/CommandsTest.java:901` | **unsupported-command.** the kernel refuses the input: `Circle` does not take 6 argument(s) |
+| `commands/CommandsTest.java:920` | **unsupported-command.** the kernel refuses the input: `CircumcircularArc` does not take 6 argument(s) |
+| `commands/CommandsTest.java:925` | **unsupported-command.** the kernel refuses the input: `CircumcircularSector` does not take 6 argument(s) |
+| `commands/CommandsTest.java:979` | **unsupported-command.** the kernel refuses the input: unknown command `ConstructionStep` |
+| `commands/CommandsUsingMockedCasTest.java:136` | **unsupported-command.** the kernel refuses the input: unknown command `ImplicitDerivative` |
+| `commands/CommandsUsingMockedCasTest.java:178` | **unsupported-command.** the kernel refuses the input: unknown command `PlotSolve` |
+| `commands/CommandsUsingMockedCasTest.java:206` | **unsupported-command.** the kernel refuses the input: unknown command `CASLoaded` |
+| `commands/CommandsUsingMockedCasTest.java:222`, `commands/CommandsUsingMockedCasTest.java:223`, `commands/CommandsUsingMockedCasTest.java:224` | **unsupported-command.** the kernel refuses the input: unknown command `LocusEquation` |
+| `commands/CommandsUsingMockedCasTest.java:230` | **unsupported-command.** the kernel refuses the input: unknown command `Envelope` |
+| `commands/CommandsUsingMockedCasTest.java:81`, `commands/CommandsUsingMockedCasTest.java:83` | **unsupported-command.** the kernel refuses the input: unknown command `Derivative` |
+| `commands/CommandsUsingMockedCasTest.java:92`, `commands/CommandsUsingMockedCasTest.java:93` | **unsupported-command.** the kernel refuses the input: unknown command `Integral` |
+| `commands/RedefineTest.java:309` | **unsupported-command.** the kernel refuses the input: `Point` needs a line, segment, ray, circle, polygon, polyline, arc or sector, and `f` is a function |
+| `arithmetic/ArithmeticTest.java:205`, `arithmetic/ArithmeticTest.java:206`, `arithmetic/ArithmeticTest.java:207`, `arithmetic/ArithmeticTest.java:208`, `arithmetic/ArithmeticTest.java:209`, `arithmetic/ArithmeticTest.java:211`, `arithmetic/ArithmeticTest.java:212`, `arithmetic/ArithmeticTest.java:405`, `arithmetic/ArithmeticTest.java:506`, `arithmetic/ArithmeticTest.java:507`, `arithmetic/ArithmeticTest.java:508`, `arithmetic/ArithmeticTest.java:509` | **unsupported-form.** the kernel refuses the input: the function `f` needs an argument |
+| `arithmetic/ArithmeticTest.java:210` | **unsupported-form.** the kernel refuses the input: `g6(t)` is not a valid object name |
+| `arithmetic/ArithmeticTest.java:214`, `arithmetic/ArithmeticTest.java:215`, `arithmetic/ArithmeticTest.java:217`, `arithmetic/ArithmeticTest.java:518`, `arithmetic/ArithmeticTest.java:519`, `arithmetic/ArithmeticTest.java:520`, `arithmetic/ArithmeticTest.java:521`, `commands/CommandsTest.java:576` | **unsupported-form.** the kernel refuses the input: geometric objects cannot be used as arithmetic operands |
+| `arithmetic/ArithmeticTest.java:216` | **unsupported-form.** the kernel refuses the input: `y` needs arguments |
+| `arithmetic/ArithmeticTest.java:237` | **unsupported-form.** the kernel refuses the input: `m1(...)` takes one index |
+| `arithmetic/ArithmeticTest.java:280` | **unsupported-form.** the kernel refuses the input: `1..2` is not a number |
+| `arithmetic/ArithmeticTest.java:281` | **unsupported-form.** the kernel refuses the input: `1..3` is not a number |
+| `arithmetic/ArithmeticTest.java:309`, `arithmetic/ArithmeticTest.java:310` | **unsupported-form.** the kernel refuses the input: `x()` and `y()` need a point or a vector |
+| `arithmetic/ArithmeticTest.java:337`, `arithmetic/ArithmeticTest.java:338`, `commands/CommandsTest.java:4024`, `commands/CommandsTest.java:4042`, `commands/CommandsTest.java:4062` | **unsupported-form.** the kernel refuses the input: expected `)` |
+| `arithmetic/ArithmeticTest.java:373`, `arithmetic/ArithmeticTest.java:374` | **unsupported-form.** the kernel refuses the input: unknown command `f` |
+| `arithmetic/ArithmeticTest.java:376`, `arithmetic/ArithmeticTest.java:377`, `commands/CommandsTest.java:447` | **unsupported-form.** the kernel refuses the input: unknown command `g` |
+| `arithmetic/ArithmeticTest.java:382`, `arithmetic/ArithmeticTest.java:72` | **unsupported-form.** the kernel refuses the input: a function cannot give a list |
+| `arithmetic/ArithmeticTest.java:408` | **unsupported-form.** the kernel refuses the input: `gg(a,b)` is not a valid object name |
+| `arithmetic/ArithmeticTest.java:481` | **unsupported-form.** the kernel refuses the input: unexpected `,` |
+| `arithmetic/ArithmeticTest.java:486`, `arithmetic/ArithmeticTest.java:487`, `arithmetic/ArithmeticTest.java:488`, `arithmetic/ArithmeticTest.java:489`, `arithmetic/ArithmeticTest.java:498` | **unsupported-form.** the kernel refuses the input: unexpected `\` |
+| `arithmetic/ArithmeticTest.java:516`, `arithmetic/ArithmeticTest.java:517`, `commands/CommandsTest.java:171`, `commands/CommandsTest.java:172`, `commands/CommandsTest.java:418`, `commands/CommandsTest.java:4877`, `commands/CommandsTest.java:497`, `commands/RedefineTest.java:330`, `commands/RedefineTest.java:332`, `implicit/GeoImplicitCurveTest.java:57` | **unsupported-form.** the kernel refuses the input: unexpected `=` |
+| `arithmetic/ArithmeticTest.java:682` | **unsupported-form.** the kernel refuses the input: `s^3.2+3` is not a valid object name |
+| `arithmetic/ArithmeticTest.java:687`, `arithmetic/ArithmeticTest.java:688`, `arithmetic/ArithmeticTest.java:689`, `arithmetic/ArithmeticTest.java:690`, `arithmetic/ArithmeticTest.java:691` | **unsupported-form.** the kernel refuses the input: unexpected `⁤` |
+| `arithmetic/ArithmeticTest.java:696`, `arithmetic/ArithmeticTest.java:697`, `arithmetic/ArithmeticTest.java:698`, `arithmetic/ArithmeticTest.java:699`, `arithmetic/ArithmeticTest.java:700` | **unsupported-form.** the kernel refuses the input: unexpected `̅` |
+| `arithmetic/ArithmeticTest.java:739` | **unsupported-form.** the kernel refuses the input: `x^3+y^3+z^3` is not a valid object name |
+| `arithmetic/ArithmeticTest.java:779` | **unsupported-form.** the kernel refuses the input: `$vector` needs two coordinates |
+| `arithmetic/ArithmeticTest.java:82` | **unsupported-form.** the kernel refuses the input: unknown command `list1` |
+| `arithmetic/ArithmeticTest.java:83`, `arithmetic/ArithmeticTest.java:84`, `arithmetic/ArithmeticTest.java:85` | **unsupported-form.** the kernel refuses the input: unknown command `listF` |
+| `arithmetic/ArithmeticTest.java:89`, `arithmetic/ArithmeticTest.java:90`, `arithmetic/ArithmeticTest.java:91`, `arithmetic/ArithmeticTest.java:92`, `arithmetic/ArithmeticTest.java:93` | **unsupported-form.** the kernel refuses the input: unknown command `matrix1` |
+| `arithmetic/ArithmeticTest.java:94`, `arithmetic/ArithmeticTest.java:95` | **unsupported-form.** the kernel refuses the input: unknown command `matrix2` |
+| `arithmetic/FractionTest.java:47`, `arithmetic/FractionTest.java:48` | **unsupported-form.** the kernel refuses the input: unknown command `erf` |
+| `commands/CommandsTest.java:1184` | **unsupported-form.** the kernel refuses the input: `Fit({(0,0),(1,1),(2,4)},{x^2,sin(x),x})`: a command inside a command is not supported |
+| `commands/CommandsTest.java:1238`, `commands/CommandsTest.java:2723`, `commands/CommandsTest.java:2724`, `commands/CommandsTest.java:3798`, `commands/CommandsTest.java:3799`, `commands/CommandsTest.java:3804`, `commands/CommandsTest.java:3805` | **unsupported-form.** the kernel refuses the input: unexpected `[` |
+| `commands/CommandsTest.java:135` | **unsupported-form.** the kernel refuses the input: `s(1,2)*x` is not a valid object name |
+| `commands/CommandsTest.java:1784` | **unsupported-form.** the kernel refuses the input: `FitPoly( Function({0,4,0,1,4,9,16}),1 )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:2571` | **unsupported-form.** the kernel refuses the input: `LeftSum( If(x^(2)>9,1+0 x),-5,5,1 )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:2576` | **unsupported-form.** the kernel refuses the input: `Length( Curve(3t,4t,t,0,10),2,3 )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:2577` | **unsupported-form.** the kernel refuses the input: `Length( Curve(3t,4t,t,0,10),(3,5),(6,9) )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:2580` | **unsupported-form.** the kernel refuses the input: `Length( sqrt(x),1,4 )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:2582` | **unsupported-form.** the kernel refuses the input: `Length( Segment((1,0),(0,0)))`: a command inside a command is not supported |
+| `commands/CommandsTest.java:2583` | **unsupported-form.** the kernel refuses the input: `Length( Segment((3,4,12),(0,0)))`: a command inside a command is not supported |
+| `commands/CommandsTest.java:2584` | **unsupported-form.** the kernel refuses the input: `Length( CircleArc((0,0),(1/pi,0),(0,1)))`: a command inside a command is not supported |
+| `commands/CommandsTest.java:2673` | **unsupported-form.** the kernel refuses the input: `LowerSum( If(x^(2)>9,1+0 x),-5,5,1 )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:2685`, `commands/CommandsTest.java:2686`, `commands/CommandsTest.java:2687` | **unsupported-form.** the kernel refuses the input: unknown command `mad` |
+| `commands/CommandsTest.java:2810` | **unsupported-form.** the kernel refuses the input: `Reflect((1,0,1) + (cos(t),2*sin(t),0),(0,0,0) + (2*cos(t),2*sin(t),0))`: a command inside a command is not supported |
+| `commands/CommandsTest.java:2816` | **unsupported-form.** the kernel refuses the input: `Reflect((0,0,1),(0,0) + (2*cos(t),2*sin(t)))`: a command inside a command is not supported |
+| `commands/CommandsTest.java:2818` | **unsupported-form.** the kernel refuses the input: `Reflect(ImplicitCurve(x^2 + y^2 - 1),(0,0,1) + (2*cos(t),2*sin(t),0))`: a command inside a command is not supported |
+| `commands/CommandsTest.java:2952` | **unsupported-form.** the kernel refuses the input: unknown command `G` |
+| `commands/CommandsTest.java:2953` | **unsupported-form.** the kernel refuses the input: `NIntegral(If(x==0,0,sin(x^2)/x^2),0,0,10)`: a command inside a command is not supported |
+| `commands/CommandsTest.java:3144` | **unsupported-form.** the kernel refuses the input: `PerpendicularVector( Segment((0,0),(3,4)) )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:3592` | **unsupported-form.** the kernel refuses the input: `RectangleSum( If(x^(2)>9,1+0 x),-5,5,1,0.1 )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:3710` | **unsupported-form.** the kernel refuses the input: `Root(If(-.1<x<2,x^3-x))`: a command inside a command is not supported |
+| `commands/CommandsTest.java:4115` | **unsupported-form.** the kernel refuses the input: `Length(Unique(Sequence( random(),t,1,10)))`: a command inside a command is not supported |
+| `commands/CommandsTest.java:417` | **unsupported-form.** the kernel refuses the input: `x` is a reserved name |
+| `commands/CommandsTest.java:419` | **unsupported-form.** the kernel refuses the input: `x-1` is not a valid object name |
+| `commands/CommandsTest.java:420` | **unsupported-form.** the kernel refuses the input: `(x-1)/3` is not a valid object name |
+| `commands/CommandsTest.java:423` | **unsupported-form.** the kernel refuses the input: `1-x` is not a valid object name |
+| `commands/CommandsTest.java:424` | **unsupported-form.** the kernel refuses the input: `x+x-1` is not a valid object name |
+| `commands/CommandsTest.java:445` | **unsupported-form.** the kernel refuses the input: a function takes a number |
+| `commands/CommandsTest.java:4612` | **unsupported-form.** the kernel refuses the input: `TrapezoidalSum( If(x^(2)>9,1+0 x),-5,5,1 )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:4739` | **unsupported-form.** the kernel refuses the input: `UnitPerpendicularVector( Segment((0,0),(3,4)) )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:4748` | **unsupported-form.** the kernel refuses the input: `UnitVector( Segment((0,0),(3,4)) )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:4751` | **unsupported-form.** the kernel refuses the input: `UnitVector( Vector((2,2,1)) )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:4753` | **unsupported-form.** the kernel refuses the input: `UnitVector( Line((0,0,0),(2,2,1)) )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:4758`, `commands/CommandsTest.java:4769` | **unsupported-form.** the kernel refuses the input: a command inside a command is not supported, and the polygon form of `Union` needs Clipper (DIFFERENCES.md) |
+| `commands/CommandsTest.java:4812` | **unsupported-form.** the kernel refuses the input: `UpperSum( If(x^(2)>9,1+0 x),-5,5,1 )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:4836` | **unsupported-form.** the kernel refuses the input: `Vertex(...)` inside the list: a command inside a command is not supported |
+| `commands/CommandsTest.java:4878` | **unsupported-form.** the kernel refuses the input: `RemoveUndefined(Zip(Object(xx),xx,{"y","a","x"}))`: a command inside a command is not supported |
+| `commands/CommandsTest.java:577` | **unsupported-form.** the kernel refuses the input: unknown command `a` |
+| `commands/CommandsTest.java:614` | **unsupported-form.** the kernel refuses the input: `NIntegral(sin(x)+sin(t-x),x)`: a command inside a command is not supported |
+| `commands/CommandsTest.java:621` | **unsupported-form.** the kernel refuses the input: `Segment(Point({0,n}),Point({1,n+0}))`: a command inside a command is not supported |
+| `commands/CommandsTest.java:674` | **unsupported-form.** the kernel refuses the input: `Append( {1,2,3,4,5},Polygon((1,1),(2,1/2),4) )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:675` | **unsupported-form.** the kernel refuses the input: `Append( Polygon((1,1),(2,1/2),4),{1,2,3,4,5} )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:680` | **unsupported-form.** the kernel refuses the input: `ApplyMatrix( {{1,2},{3,4}},Polygon((1,1),(2,1/2),4) )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:681` | **unsupported-form.** the kernel refuses the input: `ApplyMatrix( {{2,0,0},{0,3,0},{0,0,4}},Sphere((0,0,1),1) )`: a command inside a command is not supported |
+| `commands/CommandsTest.java:799` | **unsupported-form.** the kernel refuses the input: unknown command `beta` |
+| `commands/RedefineTest.java:197` | **unsupported-form.** the kernel refuses the input: unknown command `random` |
+| `commands/TranslateTest.java:30` | **unsupported-form.** the kernel refuses the input: unknown command `f_1` |
+| `kernelND/GeoSurfaceCartesian3DTest.java:55` | **unsupported-form.** the kernel refuses the input: `Surface(f(u),v+s,u+v,u,0,1,v,0,1)`: a command inside a command is not supported |
+| `arithmetic/ArithmeticTest.java:213`, `arithmetic/ArithmeticTest.java:407`, `arithmetic/ArithmeticTest.java:681`, `commands/CommandsTest.java:134`, `commands/CommandsTest.java:4090`, `commands/CommandsTest.java:575` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `x + y` |
+| `commands/CmdCopyFreeObjectTest.java:37` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `(3 * 1) + x + y` |
+| `commands/CmdCopyFreeObjectTest.java:38` | **unsupported-type.** class `GeoList` has no schema object (unsupported-type); string `{(3 * 1) + x + y}` |
+| `commands/CommandsTest.java:1250` | **unsupported-type.** class `GeoCurveCartesian` has no schema object (unsupported-type); string `(t^(2), t^(2))` |
+| `commands/CommandsTest.java:1314` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `DelauneyTriangulation[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]` |
+| `commands/CommandsTest.java:1953`, `commands/CommandsTest.java:984` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `ConvexHull[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]` |
+| `commands/CommandsTest.java:2565` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `x^(2)` |
+| `commands/CommandsTest.java:2641` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `Locus[Q, P]` |
+| `commands/CommandsTest.java:2770` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `MinimumSpanningTree[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]` |
+| `commands/CommandsTest.java:3033` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `y2` |
+| `commands/CommandsTest.java:3034` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `(((-9.8)) / 2 * sin(y1))` |
+| `commands/CommandsTest.java:3035` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `NSolveODE[{y1', y2'}, 0, {a, b}, 20]` |
+| `commands/CommandsTest.java:3044`, `commands/CommandsTest.java:3045` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `NaN` |
+| `commands/CommandsTest.java:3046` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `NSolveODE[{yu1', yu2'}, 0, {a, b}, 20]` |
+| `commands/CommandsTest.java:3358` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `x^(2) + (2 * (x * y)) + (2 * y^(2))` |
+| `commands/CommandsTest.java:3359` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `x + y - 1` |
+| `commands/CommandsTest.java:3360`, `commands/CommandsTest.java:3361` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `x - y + 1` |
+| `commands/CommandsTest.java:3362` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `(-x) + y - 1` |
+| `commands/CommandsTest.java:3364` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `-1` |
+| `commands/CommandsTest.java:3365` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `?` |
+| `commands/CommandsTest.java:3366` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `(x^(2) * y^(2)) + x^(3) + (x^(2) * y) + y^(3) + (x * y) + 1` |
+| `commands/CommandsTest.java:3692` | **unsupported-type.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `y^(2)` |
+| `commands/CommandsTest.java:4217` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `SlopeField[x / y]` |
+| `commands/CommandsTest.java:4218` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `SlopeField[((-y)) / x, 5]` |
+| `commands/CommandsTest.java:4219` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `SlopeField[((-y)) / x, 5, 0.1]` |
+| `commands/CommandsTest.java:4220` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `SlopeField[((-y)) / x, 5, 0.1, 0, 0, 1, 1]` |
+| `commands/CommandsTest.java:4231` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `SolveODE[(sin(x) * x), (sin(x) * (x + 42)), (x^(2) * x), 42, 13, 50, 50, 0.05]` |
+| `commands/CommandsTest.java:4234` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `SolveODE[(sin(x) * x), (x^(2) * y), 42, 4, 13, 0.5]` |
+| `commands/CommandsTest.java:4237` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `SolveODE[(x * y), 42, 4, 50, 0.5]` |
+| `commands/CommandsTest.java:4617` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `TravelingSalesman[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]` |
+| `commands/CommandsTest.java:4672`, `commands/CommandsTest.java:4673`, `commands/CommandsTest.java:4675` | **unsupported-type.** class `GeoPieChart` has no schema object (unsupported-type); string `PieChart` |
+| `commands/CommandsTest.java:4852` | **unsupported-type.** class `GeoLocus` has no schema object (unsupported-type); string `Voronoi[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]` |
+| `commands/CommandsTest.java:4985` | **unsupported-type.** class `GeoCurveCartesian` has no schema object (unsupported-type); string `((0 * t^(3)) + (0 * ((1 - t) * t^(2))) + (3 * ((1 - t)^(2) * t)) + (1 * (1 - t)^(3)), (0 * t^(3)) + (3 * ((1 - t) * t^(2))) + (3 * ((1 - t)^(2) * t)) + (0 * (1 - t)^(3)))` |
+
+## Import gap families
+
+An object is identified by its case ID and label, joined by `@`. The five Distance objects retain the saved argument order because the reference itself recomputes from that order. The other entries pin saved conic classification and tangency differences.
+
+| Cases | Difference and reason |
+| --- | --- |
+| `conic-diameter-009@d` | Distance(f, g) of two lines with raw coefficients near 1e-6; the file lists the lines in the opposite order. Construction and saved value: 0.8944271909999159. Reloaded value: 1.7888543819998317. |
+| `lines-bisector-015@d` | Distance(f, g) of two lines with raw coefficients near 1e-6; the file lists the lines in the opposite order. Construction and saved value: 0.7905682291879723. Reloaded value: 2.236068350177786. |
+| `lines-bisector-015@e` | Distance(g, f) of two lines with raw coefficients near 1e-6; the file lists the lines in the opposite order. Construction and saved value: 2.236068350177786. Reloaded value: 0.7905682291879723. |
+| `saved-doubletangent-001@P_{2}`, `saved-doubletangent-002@P_{2}`, `saved-doubletangent-003@P_{2}`, `saved-doubletangent-004@P_{2}`, `saved-doubletangent-005@P_{2}`, `saved-doubletangent-006@P_{2}` | Line and circle reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate. |
+| `saved-doubletangent-007@P_{2}`, `saved-doubletangent-008@P_{2}`, `saved-doubletangent-009@P_{2}`, `saved-doubletangent-010@P_{2}`, `saved-doubletangent-011@P_{2}`, `saved-doubletangent-012@P_{2}` | Two circles reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate. |
+| `transform-dilate-048@n` | n = Dilate(m, 2) of the single point m (a circle of radius 8e-5 that GeoGebra classifies as a point) is a single point of radius 0 in GeoGebra and in the kernel; the saved matrix, classified afresh, is a circle of radius 1.6e-4 |
+| `transform-mirrorline-048@e` | Distance(m, n) of two lines with raw coefficients near 1e-6; the file lists the lines in the opposite order. Construction and saved value: 4.69574275274956. Reloaded value: 5.366563145999496. |
+| `transform-rotate-037@e` | Distance(l, n) of two lines with raw coefficients near 1e-6; the file lists the lines in the opposite order. Construction and saved value: 0.526691643295513. Reloaded value: 0.5884701140321686. |
