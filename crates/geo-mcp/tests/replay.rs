@@ -2352,7 +2352,12 @@ fn replay_spreadsheet_window(scenario: &str, case: &Value, sheet_width: Option<f
                 assert_eq!(row["id"], id);
                 let agrees = match row["value"].as_f64() {
                     Some(want) => close(got, want),
-                    None => row["non_finite"] == "NaN" && got.is_nan(),
+                    None => match row["non_finite"].as_str() {
+                        Some("NaN") => got.is_nan(),
+                        Some("Infinity") => got == f64::INFINITY,
+                        Some("-Infinity") => got == f64::NEG_INFINITY,
+                        _ => false,
+                    },
                 };
                 assert!(agrees, "{scenario}: {id}: got {got}, expected {row}");
             }

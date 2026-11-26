@@ -1530,9 +1530,44 @@ FillCells(B1:M62, 1)",
         .unwrap();
     assert_eq!(summary.values.len(), 256);
     let start = std::time::Instant::now();
-    assert_eq!(w.frames(60), counts);
+    for _ in 0..60 {
+        assert_eq!(w.step(Vec::new()), counts);
+    }
     let mean_ms = start.elapsed().as_secs_f64() * 1000.0 / 60.0;
     println!("Spreadsheet analysis idle frame: {mean_ms:.2} ms, {counts:?}");
+
+    let a1 = Address::parse("A1").unwrap();
+    let mut refresh_times = [0.0; 15];
+    for (i, time) in refresh_times.iter_mut().enumerate() {
+        let value = (i + 2) as f64;
+        w.app
+            .wb
+            .edit_spreadsheet_cell(a1, &value.to_string())
+            .unwrap();
+        let start = std::time::Instant::now();
+        let updated = w.step(Vec::new());
+        *time = start.elapsed().as_secs_f64() * 1000.0;
+        assert!(updated.texts <= 240 && updated.shapes < 800, "{updated:?}");
+        let summary = w
+            .app
+            .spreadsheet_analysis
+            .as_ref()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .summary()
+            .unwrap();
+        assert_eq!(summary.values[0], value);
+    }
+    refresh_times.sort_unstable_by(f64::total_cmp);
+    let refresh_ms = refresh_times[refresh_times.len() / 2];
+    println!("Spreadsheet analysis refresh frame: {refresh_ms:.2} ms median");
+    if !cfg!(debug_assertions) {
+        assert!(
+            refresh_ms <= 4.0,
+            "{refresh_ms:.2} ms exceeds the 4 ms budget"
+        );
+    }
     assert!(counts.texts <= 240 && counts.shapes < 800, "{counts:?}");
     assert_eq!(
         (counts.rows_formatted, counts.rows_built),

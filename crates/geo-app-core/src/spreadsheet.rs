@@ -20,6 +20,7 @@ pub struct Editor {
 
 impl App {
     pub fn select_spreadsheet_cell(&mut self, selected: Address) {
+        self.clear_spreadsheet_analysis_error();
         let input = self
             .wb
             .construction()
@@ -43,12 +44,18 @@ impl App {
         if self.commit_spreadsheet_input() {
             if let Some(editor) = &mut self.spreadsheet_editor {
                 editor.selection.end = end;
+                self.clear_spreadsheet_analysis_error();
             }
         }
     }
 
+    fn clear_spreadsheet_analysis_error(&mut self) {
+        if self.spreadsheet_analysis.is_err() {
+            self.spreadsheet_analysis = Ok(None);
+        }
+    }
+
     pub fn launch_spreadsheet_analysis(&mut self) {
-        self.spreadsheet_analysis = Ok(None);
         if !self.commit_spreadsheet_input() {
             return;
         }
@@ -92,16 +99,26 @@ impl App {
             editor.error = Some("Wpis jest za długi.".into());
             return false;
         }
-        let result = match editor.draft.strip_prefix('=') {
-            Some(command) if spreadsheet::is_fill_line(command.trim()) => {
-                self.wb.run_line(command.trim())
-            }
-            _ => self
-                .wb
-                .edit_spreadsheet_cell(editor.selected, &editor.draft),
+        let fill = editor
+            .draft
+            .strip_prefix('=')
+            .map(str::trim)
+            .filter(|line| spreadsheet::is_fill_line(line));
+        let result = if let Some(command) = fill {
+            self.wb.run_line(command)
+        } else {
+            self.wb
+                .edit_spreadsheet_cell(editor.selected, &editor.draft)
         };
         match result {
             Ok(()) => {
+                if fill.is_some() {
+                    editor.draft = self
+                        .wb
+                        .construction()
+                        .spreadsheet_input(editor.selected)
+                        .map_or_else(String::new, std::borrow::Cow::into_owned);
+                }
                 editor.original.clone_from(&editor.draft);
                 editor.error = None;
                 true
@@ -181,6 +198,24 @@ mod tests {
     use crate::workbench::Workbench;
 
     #[test]
+    fn fill_command_refreshes_the_editor_when_extending_selection() {
+        let mut app = App::new(Workbench::from_script("A1 = 1").unwrap(), None);
+        let a1 = Address::parse("A1").unwrap();
+        let a2 = Address::parse("A2").unwrap();
+        app.select_spreadsheet_cell(a1);
+        app.spreadsheet_editor.as_mut().unwrap().draft = "=FillCells(A1:A2, 4)".into();
+        app.extend_spreadsheet_selection(a2);
+        let editor = app.spreadsheet_editor.as_ref().unwrap();
+        let stored = app.wb.construction().spreadsheet_input(a1).unwrap();
+        assert_eq!(app.wb.spreadsheet_display(a1), "4");
+        assert_eq!(editor.draft, stored);
+        assert_eq!(editor.original, stored);
+        assert_eq!(editor.selected, a1);
+        assert_eq!(editor.selection.bounds(), (a1, a2));
+        assert!(editor.focus);
+    }
+
+    #[test]
     fn analysis_preserves_its_range_and_discards_stale_results() {
         let mut app = App::new(
             Workbench::from_script(
@@ -230,15 +265,24 @@ A2 = 3",
             Err(AnalysisError::Range)
         ));
         app.extend_spreadsheet_selection(Address::parse("A257").unwrap());
+        assert!(matches!(app.spreadsheet_analysis, Ok(None)));
         app.launch_spreadsheet_analysis();
         assert!(matches!(
             app.spreadsheet_analysis,
             Err(AnalysisError::Range)
         ));
         app.select_spreadsheet_cell(a1);
+        assert!(matches!(app.spreadsheet_analysis, Ok(None)));
         app.launch_spreadsheet_analysis();
         let relaunched = app.spreadsheet_analysis.as_ref().unwrap().as_ref().unwrap();
         assert_eq!(relaunched.endpoints(), (a1, a1));
+
+        app.spreadsheet_editor.as_mut().unwrap().draft =
+            "x".repeat(spreadsheet::MAX_INPUT_BYTES + 1);
+        app.launch_spreadsheet_analysis();
+        let retained = app.spreadsheet_analysis.as_ref().unwrap().as_ref().unwrap();
+        assert_eq!(retained.endpoints(), (a1, a1));
+        assert!(app.spreadsheet_editor.as_ref().unwrap().error.is_some());
 
         app.wb.load_script("A1 = 5").unwrap();
         app.sync_spreadsheet_document();
