@@ -488,7 +488,9 @@ Set the archive's HTTPS URL and SHA-256 as the repository variables
 workflow checks both archives before adding the GPL build matrix and
 includes them alongside the combined-work notice and application source
 in every GPL package. The library remains byte-identical to the verified
-publisher build.
+publisher build. The publisher's Intel macOS library is unsigned and
+signing it would change its pinned SHA-256. The macOS Giac packages are
+therefore unsigned and un-notarized.
 
 Signing defaults to off. To enable it, select `macos_sign` or
 `windows_sign` on a trusted dispatch, or set `RELEASE_MACOS_SIGN` or

@@ -244,7 +244,8 @@ def package_linux(config, variant, appdir, out, stem, work):
                         appdir / f"usr/share/doc/{name}/copyright")
         deb = out / f"{stem}.deb"
         run("dpkg-deb", "--root-owner-group", "--build", appdir, deb)
-        run("sudo", "dpkg", "-i", deb)
+        sudo = ("sudo",) if os.geteuid() else ()
+        run(*sudo, "dpkg", "-i", deb)
         smoke(config, variant, f"/usr/bin/{name}")
 
 
@@ -271,16 +272,8 @@ def package_macos(config, variant, app, out, stem, work, sign):
                 "-T", "/usr/bin/productsign")
             run("security", "set-key-partition-list", "-S", "apple-tool:,apple:", "-s",
                 "-k", password, keychain)
-            entitlements = []
-            if variant == "gpl":
-                # The Giac loader verifies the exact publisher bytes. Sign the
-                # outer bundle and allow its executable to load that library.
-                plist = work / "giac-entitlements.plist"
-                with plist.open("wb") as handle:
-                    plistlib.dump({"com.apple.security.cs.disable-library-validation": True}, handle)
-                entitlements = ["--entitlements", plist]
             run("codesign", "--force", "--options", "runtime", "--timestamp", "--keychain",
-                keychain, "--sign", os.environ["APPLE_APPLICATION_IDENTITY"], *entitlements, app)
+                keychain, "--sign", os.environ["APPLE_APPLICATION_IDENTITY"], app)
             run("codesign", "--verify", "--strict", app)
 
         def notarize(asset):
@@ -318,9 +311,22 @@ def package_macos(config, variant, app, out, stem, work, sign):
         finally:
             run("hdiutil", "detach", mount)
 
+        # The DMG already contains the Applications shortcut. The PKG
+        # payload contains only the app and always installs it in Applications.
+        (payload / "Applications").unlink()
+        components = work / "components.plist"
+        with components.open("wb") as handle:
+            plistlib.dump([{
+                "BundleHasStrictIdentifier": True,
+                "BundleIsRelocatable": False,
+                "BundleIsVersionChecked": True,
+                "BundleOverwriteAction": "upgrade",
+                "RootRelativeBundlePath": app.name,
+            }], handle)
         component = work / "component.pkg"
-        run("pkgbuild", "--component", app, "--identifier", bundle_id, "--version",
-            config.version, "--install-location", "/Applications", component)
+        run("pkgbuild", "--root", payload, "--component-plist", components,
+            "--identifier", bundle_id, "--version", config.version,
+            "--install-location", "/Applications", component)
         pkg = out / f"{stem}.pkg"
         if sign:
             unsigned = work / "distribution.pkg"
@@ -386,6 +392,8 @@ def package_windows(config, variant, stage, out, stem, work, sign):
 
 
 def package(args, config):
+    if args.sign and args.platform == "macos" and args.variant == "gpl":
+        raise ValueError("macOS GPL package signing is unavailable: the pinned Intel Giac library is unsigned")
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="geokernel-release-") as directory:

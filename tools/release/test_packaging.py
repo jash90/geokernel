@@ -1,5 +1,8 @@
 import hashlib
+import os
 import plistlib
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -65,6 +68,22 @@ class PackagingTests(unittest.TestCase):
         config = ReleaseConfig("1.0.0", "geokernel", "org.example.geokernel", "both")
         with self.assertRaises((ValueError, FileNotFoundError)):
             stage_payload(config, "linux", "x86_64", "gpl", self.binary, self.root / "app")
+
+    def test_signed_macos_gpl_package_is_refused_before_staging(self):
+        script = Path(__file__).with_name("packaging_release.py")
+        output = self.root / "dist"
+        result = subprocess.run(
+            [sys.executable, str(script), "package", "macos", "x86_64", "gpl",
+             str(self.binary), str(output), "--sign"],
+            env=os.environ | {
+                "RELEASE_VERSION": "1.0.0", "PRODUCT_NAME": "geokernel",
+                "APP_IDENTIFIER": "org.example.geokernel", "LINUX_FORMATS": "both",
+            },
+            capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("the pinned Intel Giac library is unsigned", result.stderr)
+        self.assertFalse(output.exists())
 
     def test_checksum_file_is_sorted_and_does_not_hash_itself(self):
         for name in ("z.pkg", "a.AppImage"):

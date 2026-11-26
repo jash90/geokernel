@@ -158,13 +158,13 @@ jobs:
           persist-credentials: false
       - name: Set up Rust 1.100.0
         run: rustup toolchain install 1.100.0 --profile minimal
-      - name: Install Linux build and packaging dependencies
+      - name: Build and smoke-test Linux packages on Ubuntu 24.04
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libxkbcommon-dev libxcb-render0-dev \
-            libxcb-shape0-dev libxcb-xfixes0-dev desktop-file-utils file
+          bash tools/release/build-linux.sh
+          echo "- linux x86_64 ($VARIANT) — smoke tests passed on Ubuntu 24.04, unsigned." > "dist/status-linux-x86_64-$VARIANT.md"
       - name: Build desktop application
+        if: runner.os != 'Linux'
         run: |
           export GEOKERNEL_RELEASE_VERSION="$RELEASE_VERSION"
           args=()
@@ -173,14 +173,15 @@ jobs:
           fi
           cargo +1.100.0 build --release --locked -p geo-app "${args[@]}"
       - name: Package and smoke-test
+        if: runner.os != 'Linux'
         env:
-          APPLE_CERTIFICATES_P12: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_CERTIFICATES_P12 || '' }}
-          APPLE_CERTIFICATES_PASSWORD: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_CERTIFICATES_PASSWORD || '' }}
-          APPLE_APPLICATION_IDENTITY: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_APPLICATION_IDENTITY || '' }}
-          APPLE_INSTALLER_IDENTITY: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_INSTALLER_IDENTITY || '' }}
-          APPLE_NOTARY_KEY: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_NOTARY_KEY || '' }}
-          APPLE_NOTARY_KEY_ID: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_NOTARY_KEY_ID || '' }}
-          APPLE_NOTARY_ISSUER: ${{ runner.os == 'macOS' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_NOTARY_ISSUER || '' }}
+          APPLE_CERTIFICATES_P12: ${{ runner.os == 'macOS' && matrix.variant == 'eupl' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_CERTIFICATES_P12 || '' }}
+          APPLE_CERTIFICATES_PASSWORD: ${{ runner.os == 'macOS' && matrix.variant == 'eupl' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_CERTIFICATES_PASSWORD || '' }}
+          APPLE_APPLICATION_IDENTITY: ${{ runner.os == 'macOS' && matrix.variant == 'eupl' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_APPLICATION_IDENTITY || '' }}
+          APPLE_INSTALLER_IDENTITY: ${{ runner.os == 'macOS' && matrix.variant == 'eupl' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_INSTALLER_IDENTITY || '' }}
+          APPLE_NOTARY_KEY: ${{ runner.os == 'macOS' && matrix.variant == 'eupl' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_NOTARY_KEY || '' }}
+          APPLE_NOTARY_KEY_ID: ${{ runner.os == 'macOS' && matrix.variant == 'eupl' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_NOTARY_KEY_ID || '' }}
+          APPLE_NOTARY_ISSUER: ${{ runner.os == 'macOS' && matrix.variant == 'eupl' && needs.plan.outputs.macos_sign == 'true' && secrets.APPLE_NOTARY_ISSUER || '' }}
           WINDOWS_SIGN_PFX: ${{ runner.os == 'Windows' && needs.plan.outputs.windows_sign == 'true' && secrets.WINDOWS_SIGN_PFX || '' }}
           WINDOWS_SIGN_PASSWORD: ${{ runner.os == 'Windows' && needs.plan.outputs.windows_sign == 'true' && secrets.WINDOWS_SIGN_PASSWORD || '' }}
         run: |
@@ -190,7 +191,9 @@ jobs:
           flags=()
           if [ "$PLATFORM" = macos ]; then
             status='unsigned and un-notarized'
-            if [ -n "$APPLE_CERTIFICATES_P12" ] &&
+            if [ "$VARIANT" = gpl ]; then
+              status='unsigned and un-notarized (the pinned Intel Giac library is unsigned)'
+            elif [ -n "$APPLE_CERTIFICATES_P12" ] &&
               [ -n "$APPLE_CERTIFICATES_PASSWORD" ] && [ -n "$APPLE_APPLICATION_IDENTITY" ] &&
               [ -n "$APPLE_INSTALLER_IDENTITY" ] && [ -n "$APPLE_NOTARY_KEY" ] &&
               [ -n "$APPLE_NOTARY_KEY_ID" ] && [ -n "$APPLE_NOTARY_ISSUER" ]; then
