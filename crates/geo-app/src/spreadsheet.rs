@@ -308,7 +308,13 @@ fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridA
             }
             let body = Rect::from_min_max(clip.min + vec2(HEADER_WIDTH, HEADER_HEIGHT), clip.max);
             let painter = painter.with_clip_rect(body);
-            painter.rect_filled(selected_rect, 0.0, theme::TOOLBAR_BG);
+            let (first, last) = selection.bounds();
+            let highlight = cell_rect(first.column, first.row)
+                .union(cell_rect(last.column, last.row))
+                .intersect(body);
+            if highlight.is_positive() {
+                painter.rect_filled(highlight, 0.0, theme::TOOLBAR_BG);
+            }
             let edge = Stroke::new(1.0, theme::SEPARATOR);
             if layout.show_lines {
                 for column in cols.clone() {
@@ -343,9 +349,6 @@ fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridA
                     let response =
                         ui.interact(hit, ui.make_persistent_id((column, row)), Sense::click());
                     let active = selection.contains(address);
-                    if active && address != selected {
-                        painter.rect_filled(hit, 0.0, theme::TOOLBAR_BG);
-                    }
                     let shown = app.wb.spreadsheet_display(address);
                     response.widget_info(|| {
                         let mut info =

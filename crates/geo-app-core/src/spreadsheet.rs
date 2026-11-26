@@ -185,7 +185,7 @@ pub struct Selection {
 }
 
 impl Selection {
-    fn bounds(self) -> (Address, Address) {
+    pub fn bounds(self) -> (Address, Address) {
         (
             Address {
                 column: self.anchor.column.min(self.end.column),
