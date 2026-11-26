@@ -31,39 +31,30 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
     let (launch, close) = if Analysis::available() {
         ui.horizontal_wrapped(|ui| {
             ui.heading(label(Label::SpreadsheetView));
-            let text = if analysis_open {
-                "Zamknij podsumowanie"
-            } else {
-                "Analiza jednej zmiennej"
-            };
-            // Both titles need the same slot so opening analysis never moves the grid.
-            let width = ["Analiza jednej zmiennej", "Zamknij podsumowanie"]
-                .into_iter()
-                .map(|title| {
-                    ui.painter()
-                        .layout_no_wrap(
-                            title.to_owned(),
-                            TextStyle::Button.resolve(ui.style()),
-                            ui.visuals().text_color(),
-                        )
-                        .size()
-                        .x
+            let (launch, close) = ui
+                .horizontal(|ui| {
+                    let launch = ui.button("Analiza jednej zmiennej").clicked();
+                    // Reserve the close slot so opening analysis cannot move the grid.
+                    let side = ui.spacing().interact_size.y;
+                    let close = ui.add_visible(
+                        analysis_open,
+                        eframe::egui::Button::new("×").min_size(vec2(side, side)),
+                    );
+                    if analysis_open {
+                        let title = "Zamknij podsumowanie";
+                        close.widget_info(|| WidgetInfo::labeled(Role::Button, true, title));
+                        (launch, close.on_hover_text(title).clicked())
+                    } else {
+                        (launch, false)
+                    }
                 })
-                .fold(0.0_f32, f32::max)
-                + 2.0 * ui.spacing().button_padding.x;
-            let action = ui
-                .add(
-                    eframe::egui::Button::new(text)
-                        .wrap_mode(eframe::egui::TextWrapMode::Extend)
-                        .min_size(vec2(width, 0.0)),
-                )
-                .clicked();
+                .inner;
             let editor = app
                 .spreadsheet_editor
                 .as_mut()
                 .expect("spreadsheet selection");
             ui.checkbox(&mut editor.range_extension_armed, "Zaznacz zakres");
-            (action && !analysis_open, action && analysis_open)
+            (launch, close)
         })
         .inner
     } else {
