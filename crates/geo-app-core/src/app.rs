@@ -127,6 +127,9 @@ pub struct App {
     pub show_cas: bool,
     pub show_spreadsheet: bool,
     pub spreadsheet_editor: Option<crate::spreadsheet::Editor>,
+    pub spreadsheet_analysis:
+        Result<Option<crate::spreadsheet::Analysis>, crate::spreadsheet::AnalysisError>,
+    pub(crate) spreadsheet_document_generation: u64,
     pub cas_editor: Option<crate::cas::Editor>,
     /// The owner's rules where the window differs from the reference app.
     pub rules: OwnerRules,
@@ -257,10 +260,12 @@ impl App {
             .and_then(|view| view.visible)
             .unwrap_or(false);
         App {
+            spreadsheet_document_generation: wb.document_generation,
             wb,
             show_cas,
             show_spreadsheet,
             spreadsheet_editor: None,
+            spreadsheet_analysis: Ok(None),
             cas_editor: None,
             rules: OwnerRules::OURS,
             camera: None,

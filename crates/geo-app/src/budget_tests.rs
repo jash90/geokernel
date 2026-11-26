@@ -1504,6 +1504,86 @@ fn a_thousand_spreadsheet_cells_fit_the_frame_budget() {
 }
 
 #[test]
+fn spreadsheet_analysis_fits_the_frame_budget() {
+    use geo_kernel::spreadsheet::Address;
+
+    let mut w = Window::with(
+        "FillCells(A1:A256, 1)
+FillCells(B1:M62, 1)",
+        String::new(),
+    );
+    w.app.show_spreadsheet = true;
+    assert_eq!(w.app.wb.construction().spreadsheet_cells().count(), 1_000);
+    w.app.select_spreadsheet_cell(Address::parse("A1").unwrap());
+    w.app
+        .extend_spreadsheet_selection(Address::parse("A256").unwrap());
+    w.app.launch_spreadsheet_analysis();
+    // The formula bar keeps focus; blinking would change the paint counts.
+    w.ctx
+        .global_style_mut(|style| style.visuals.text_cursor.blink = false);
+    let counts = w.settled(5);
+    let summary = w
+        .app
+        .spreadsheet_analysis
+        .as_ref()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .summary()
+        .unwrap();
+    assert_eq!(summary.values.len(), 256);
+    let start = std::time::Instant::now();
+    for _ in 0..60 {
+        assert_eq!(w.step(Vec::new()), counts);
+    }
+    let mean_ms = start.elapsed().as_secs_f64() * 1000.0 / 60.0;
+    println!("Spreadsheet analysis idle frame: {mean_ms:.2} ms, {counts:?}");
+
+    let a1 = Address::parse("A1").unwrap();
+    let mut refresh_times = [0.0; 15];
+    for (i, time) in refresh_times.iter_mut().enumerate() {
+        let value = (i + 2) as f64;
+        w.app
+            .wb
+            .edit_spreadsheet_cell(a1, &value.to_string())
+            .unwrap();
+        let start = std::time::Instant::now();
+        let updated = w.step(Vec::new());
+        *time = start.elapsed().as_secs_f64() * 1000.0;
+        assert!(updated.texts <= 240 && updated.shapes < 800, "{updated:?}");
+        let summary = w
+            .app
+            .spreadsheet_analysis
+            .as_ref()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .summary()
+            .unwrap();
+        assert_eq!(summary.values[0], value);
+    }
+    refresh_times.sort_unstable_by(f64::total_cmp);
+    let refresh_ms = refresh_times[refresh_times.len() / 2];
+    println!("Spreadsheet analysis refresh frame: {refresh_ms:.2} ms median");
+    if !cfg!(debug_assertions) {
+        assert!(
+            refresh_ms <= 4.0,
+            "{refresh_ms:.2} ms exceeds the 4 ms budget"
+        );
+    }
+    assert!(counts.texts <= 240 && counts.shapes < 800, "{counts:?}");
+    assert_eq!(
+        (counts.rows_formatted, counts.rows_built),
+        (0, 0),
+        "{counts:?}"
+    );
+    assert!(!counts.immediate, "{counts:?}");
+    if !cfg!(debug_assertions) {
+        assert!(mean_ms <= 4.0, "{mean_ms:.2} ms exceeds the 4 ms budget");
+    }
+}
+
+#[test]
 fn canvas_list_points_are_drawn_with_a_frame_limit() {
     let mut w = Window::with("l = Sequence((k / 100, 1), k, 1, 3000)", String::new());
     let drawn = w.settled(2);

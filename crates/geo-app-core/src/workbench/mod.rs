@@ -96,6 +96,8 @@ pub struct Workbench {
     file_cas_visible: Option<bool>,
     file_spreadsheet_view: Option<geo_import::SpreadsheetView>,
     version: u64,
+    /// Changes when a new document replaces the current one.
+    pub(crate) document_generation: u64,
     /// Counts the times the construction was rebuilt or replaced. Object ids
     /// are only valid within one such period.
     rebuilds: u64,
@@ -317,6 +319,7 @@ impl Workbench {
 
     /// Makes `c` and `log` the whole document.
     fn replace(&mut self, c: Construction, log: Log) {
+        self.document_generation += 1;
         self.boundary_outputs = log.boundary_outputs(&c);
         self.construction = c;
         self.cas = crate::cas::Table::default();

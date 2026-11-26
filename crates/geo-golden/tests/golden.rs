@@ -5,7 +5,7 @@ use geo_kernel::{script, Construction, Def, Error, Kind, Value};
 
 /// Number of cases recorded by `ggb-harness` so far. Raise it when adding cases,
 /// so that losing a file is noticed.
-const MIN_GOLDEN_CASES: usize = 7560;
+const MIN_GOLDEN_CASES: usize = 7563;
 
 #[test]
 fn statistics_followup_matches_geogebra() {

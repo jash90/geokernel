@@ -1,5 +1,6 @@
 package geokernel.harness;
 
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -27,6 +28,11 @@ import org.geogebra.common.cas.view.CASView;
 import org.geogebra.common.io.XMLStringBuilder;
 import org.geogebra.common.io.layout.DockPanelData;
 import org.geogebra.common.factories.AwtFactoryCommon;
+import org.geogebra.common.gui.view.data.DataAnalysisModel;
+import org.geogebra.common.gui.view.data.DataItem;
+import org.geogebra.common.gui.view.data.DataSource;
+import org.geogebra.common.gui.view.data.DataVariable.GroupType;
+import org.geogebra.common.gui.view.data.StatTableModel;
 import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
@@ -74,6 +80,8 @@ import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.statistics.GeoPieChart;
 import org.geogebra.common.kernel.geos.GeoNumeric;
+import org.geogebra.common.kernel.statistics.Regression;
+import org.geogebra.common.kernel.statistics.Statistic;
 import org.geogebra.common.kernel.geos.GeoPoint;
 import org.geogebra.common.kernel.geos.GeoPolyLine;
 import org.geogebra.common.kernel.geos.GeoPolygon;
@@ -350,6 +358,7 @@ final class Session {
         List<Object> steps = new ArrayList<>();
         Set<String> observed = new TreeSet<>();
         Set<String> observedVisibility = new TreeSet<>();
+        TabularRange analysisRange = null;
         try {
             for (Object entry : actions) {
                 Map<?, ?> action = (Map<?, ?>) entry;
@@ -387,17 +396,32 @@ final class Session {
                         geo.updateRepaint();
                         observedVisibility.add(label);
                     }
-                    case "reload" -> reloadGgb();
+                    case "reload" -> {
+                        reloadGgb();
+                        analysisRange = null;
+                    }
                     case "degree_mode" -> kernel.setAngleUnit(Kernel.ANGLE_DEGREE);
                     case "load" -> {
                         try {
                             app.getXMLio().processXMLString(source, true, false);
+                            analysisRange = null;
                         } catch (org.geogebra.common.io.XMLParseException error) {
                             throw new IllegalArgumentException(error);
                         }
                     }
                     case "undo" -> kernel.undo();
                     case "redo" -> kernel.redo();
+                    case "analyze_one_variable" -> {
+                        var from = GeoElementSpreadsheet.getSpreadsheetCoordsForLabel(
+                                (String) action.get("cell"));
+                        var to = GeoElementSpreadsheet.getSpreadsheetCoordsForLabel(
+                                (String) action.get("target"));
+                        analysisRange = new TabularRange(from.row, from.column, to.row, to.column);
+                        if (!analysisRange.isFinite() || !analysisRange.is1D()
+                                || Math.max(analysisRange.getWidth(), analysisRange.getHeight()) > 256) {
+                            throw new IllegalArgumentException("expected a finite row or column of at most 256 cells");
+                        }
+                    }
                     default -> throw new IllegalArgumentException("unknown spreadsheet action: " + action);
                 }
                 Map<String, Object> outputs = new LinkedHashMap<>();
@@ -409,6 +433,9 @@ final class Session {
                     outputs.put(label, describe(geo, schemaType(geo)));
                 }
                 Map<Object, Object> step = new LinkedHashMap<>(action);
+                if (analysisRange != null) {
+                    step.put("analysis", oneVariableSummary(analysisRange));
+                }
                 if ("load".equals(action.get("action"))) {
                     var view = app.getSettings().getSpreadsheet();
                     Map<String, Object> settings = new LinkedHashMap<>();
@@ -430,6 +457,120 @@ final class Session {
             return steps;
         } finally {
             kernel.detach(data);
+        }
+    }
+
+    // Capture the shared data-analysis model without opening the desktop dialog.
+    private Map<String, Object> oneVariableSummary(TabularRange range) {
+        if (!GraphicsEnvironment.isHeadless() || !"Linux".equals(System.getProperty("os.name"))
+                || !"amd64".equals(System.getProperty("os.arch"))) {
+            throw new IllegalStateException("expected a headless Linux x86_64 JVM");
+        }
+
+        var table = app.getSpreadsheetTableModel();
+        List<Double> tableValues = new ArrayList<>();
+        for (var cell : range.toCellList(true)) {
+            if (!(table.getValueAt(cell.row, cell.column) instanceof GeoNumeric number)
+                    || !Double.isFinite(number.getDouble())) {
+                throw new IllegalArgumentException("expected a finite numeric cell: " + cell);
+            }
+            tableValues.add(number.getDouble());
+        }
+
+        int mode = DataAnalysisModel.MODE_ONEVAR;
+        DataSource source = new DataSource(app, () -> List.of(range));
+        source.setDataListFromSelection(mode);
+        DataItem item = source.getSelectedDataVariable().getValues().get(0);
+        if (item.getType() != DataItem.SourceType.SPREADSHEET
+                || !item.getRangeList().equals(List.of(range))
+                || item.getGeoCount() != tableValues.size()) {
+            throw new IllegalStateException("unexpected spreadsheet data item");
+        }
+
+        Construction construction = kernel.getConstruction();
+        int stepsBefore = construction.steps();
+        var labelsBefore = List.copyOf(construction.getGeoSetLabelOrder());
+        var algorithmsBefore = List.copyOf(construction.getAlgoList());
+        GeoList values = source.toGeoList(mode, true, true).get(0);
+        try {
+            List<Double> rawValues = Arrays.stream(values.toDouble(0)).boxed().toList();
+            if (!rawValues.equals(tableValues)) {
+                throw new IllegalStateException("DataSource and table disagree");
+            }
+
+            List<Double> stats = new ArrayList<>();
+            StatTableModel model = new StatTableModel(app, new StatTableModel.StatTableListener() {
+                @Override public GeoList getDataSelected() {
+                    return values;
+                }
+
+                @Override public GeoElement getRegressionModel() {
+                    return null;
+                }
+
+                @Override public Regression getRegressionMode() {
+                    return Regression.NONE;
+                }
+
+                @Override public boolean isValidData() {
+                    return true;
+                }
+
+                // getStatList() at this revision returns an empty list for true.
+                @Override public boolean isViewValid() {
+                    return false;
+                }
+
+                @Override public int getMode() {
+                    return mode;
+                }
+
+                @Override public GroupType groupType() {
+                    return source.getGroupType();
+                }
+
+                @Override public boolean isNumericData() {
+                    return source.isNumericData();
+                }
+
+                @Override public void setValueAt(double value, int row, int column) {
+                    if (column != 0 || row != stats.size()) {
+                        throw new IllegalStateException("unexpected statistic at row " + row);
+                    }
+                    stats.add(value);
+                }
+            });
+            List<Statistic> ids = model.getStatList();
+            model.updatePanel();
+            if (ids.isEmpty() || ids.size() != stats.size()) {
+                throw new IllegalStateException("incomplete statistic table");
+            }
+
+            List<Object> rows = new ArrayList<>();
+            for (int i = 0; i < ids.size(); i++) {
+                Statistic stat = ids.get(i);
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("id", stat.name());
+                row.put("command", stat.getCommandName());
+                double value = stats.get(i);
+                row.put("value", Double.isFinite(value) ? value : null);
+                if (!Double.isFinite(value)) {
+                    row.put("non_finite", Double.toString(value));
+                }
+                rows.add(row);
+            }
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("group_type", source.getGroupType().name());
+            result.put("values", rawValues);
+            result.put("rows", rows);
+            return result;
+        } finally {
+            values.remove();
+            if (construction.steps() != stepsBefore
+                    || !List.copyOf(construction.getGeoSetLabelOrder()).equals(labelsBefore)
+                    || !construction.getAlgoList().equals(algorithmsBefore)) {
+                throw new IllegalStateException("statistics left construction entries behind");
+            }
         }
     }
 
