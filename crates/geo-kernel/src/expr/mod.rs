@@ -470,8 +470,16 @@ pub(crate) enum ListOp {
     // statistics (`commands/statistics.rs`)
     /// `Sum(list)` and `Sum(list, n)` of numbers (`AlgoStats1D`).
     Sum,
-    /// `Mean(list)` (`AlgoStats1D`).
+    /// Descriptive statistics of raw or weighted data.
     Mean,
+    Variance,
+    Sd,
+    SampleVariance,
+    SampleSd,
+    Mad,
+    Median,
+    Q1,
+    Q3,
 
     // algebra (`commands/algebra.rs`)
     /// `Min(list)` and `Max(list)` (`AlgoListMinMax`).
@@ -1240,9 +1248,14 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
 /// pointing at their children after they follow the first side's (see
 /// [`equation`]). [`NONE`] stays.
 pub(crate) fn shift_children(node: &mut Node, by: u32) {
+    map_children(node, |child| child + by);
+}
+
+/// Adjusts child indices, including the start of each contiguous child run.
+fn map_children(node: &mut Node, map: impl Fn(u32) -> u32) {
     let shift = |c: &mut u32| {
         if *c != NONE {
-            *c += by;
+            *c = map(*c);
         }
     };
     match node {

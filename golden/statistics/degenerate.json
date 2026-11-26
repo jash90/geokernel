@@ -1,0 +1,193 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-degenerate-001",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Mean({})",
+        "r_{2} = Variance({})",
+        "r_{3} = SD({})",
+        "r_{4} = SampleVariance({})",
+        "r_{5} = SampleSD({})",
+        "r_{6} = MAD({})",
+        "r_{7} = Median({})",
+        "r_{8} = Q1({})",
+        "r_{9} = Q3({})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": false },
+          "r_{2}": { "type": "number", "defined": false },
+          "r_{3}": { "type": "number", "defined": false },
+          "r_{4}": { "type": "number", "defined": false },
+          "r_{5}": { "type": "number", "defined": false },
+          "r_{6}": { "type": "number", "defined": false },
+          "r_{7}": { "type": "number", "defined": false },
+          "r_{8}": { "type": "number", "defined": false },
+          "r_{9}": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "statistics-degenerate-002",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Mean({7})",
+        "r_{2} = Variance({7})",
+        "r_{3} = SD({7})",
+        "r_{4} = SampleVariance({7})",
+        "r_{5} = SampleSD({7})",
+        "r_{6} = MAD({7})",
+        "r_{7} = Median({7})",
+        "r_{8} = Q1({7})",
+        "r_{9} = Q3({7})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 7.0 },
+          "r_{2}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{3}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{4}": { "type": "number", "defined": false },
+          "r_{5}": { "type": "number", "defined": false },
+          "r_{6}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{7}": { "type": "number", "defined": true, "value": 7.0 },
+          "r_{8}": { "type": "number", "defined": false },
+          "r_{9}": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "statistics-degenerate-003",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Mean({7, 7, 7})",
+        "r_{2} = Variance({7, 7, 7})",
+        "r_{3} = SD({7, 7, 7})",
+        "r_{4} = SampleVariance({7, 7, 7})",
+        "r_{5} = SampleSD({7, 7, 7})",
+        "r_{6} = MAD({7, 7, 7})",
+        "r_{7} = Median({7, 7, 7})",
+        "r_{8} = Q1({7, 7, 7})",
+        "r_{9} = Q3({7, 7, 7})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 7.0 },
+          "r_{2}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{3}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{4}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{5}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{6}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{7}": { "type": "number", "defined": true, "value": 7.0 },
+          "r_{8}": { "type": "number", "defined": true, "value": 7.0 },
+          "r_{9}": { "type": "number", "defined": true, "value": 7.0 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-degenerate-004",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Mean({7}, {2})",
+        "r_{2} = Variance({7}, {2})",
+        "r_{3} = SD({7}, {2})",
+        "r_{4} = SampleVariance({7}, {2})",
+        "r_{5} = SampleSD({7}, {2})",
+        "r_{6} = MAD({7}, {2})",
+        "r_{7} = Median({7}, {2})",
+        "r_{8} = Q1({7}, {2})",
+        "r_{9} = Q3({7}, {2})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 7.0 },
+          "r_{2}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{3}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{4}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{5}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{6}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{7}": { "type": "number", "defined": true, "value": 7.0 },
+          "r_{8}": { "type": "number", "defined": false },
+          "r_{9}": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "statistics-degenerate-005",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Mean({2, 7}, {0, 0})",
+        "r_{2} = Variance({2, 7}, {0, 0})",
+        "r_{3} = SD({2, 7}, {0, 0})",
+        "r_{4} = SampleVariance({2, 7}, {0, 0})",
+        "r_{5} = SampleSD({2, 7}, {0, 0})",
+        "r_{6} = MAD({2, 7}, {0, 0})",
+        "r_{7} = Median({2, 7}, {0, 0})",
+        "r_{8} = Q1({2, 7}, {0, 0})",
+        "r_{9} = Q3({2, 7}, {0, 0})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": false },
+          "r_{2}": { "type": "number", "defined": false },
+          "r_{3}": { "type": "number", "defined": false },
+          "r_{4}": { "type": "number", "defined": false },
+          "r_{5}": { "type": "number", "defined": false },
+          "r_{6}": { "type": "number", "defined": false },
+          "r_{7}": { "type": "number", "defined": false },
+          "r_{8}": { "type": "number", "defined": false },
+          "r_{9}": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "statistics-degenerate-006",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Mean({2, 7}, {1, 0})",
+        "r_{2} = Variance({2, 7}, {1, 0})",
+        "r_{3} = SD({2, 7}, {1, 0})",
+        "r_{4} = SampleVariance({2, 7}, {1, 0})",
+        "r_{5} = SampleSD({2, 7}, {1, 0})",
+        "r_{6} = MAD({2, 7}, {1, 0})",
+        "r_{7} = Median({2, 7}, {1, 0})",
+        "r_{8} = Q1({2, 7}, {1, 0})",
+        "r_{9} = Q3({2, 7}, {1, 0})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 2.0 },
+          "r_{2}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{3}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{4}": { "type": "number", "defined": false },
+          "r_{5}": { "type": "number", "defined": false },
+          "r_{6}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{7}": { "type": "number", "defined": true, "value": 2.0 },
+          "r_{8}": { "type": "number", "defined": false },
+          "r_{9}": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}
