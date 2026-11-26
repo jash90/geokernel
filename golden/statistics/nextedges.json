@@ -1,0 +1,114 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-nextedges-001",
+      "group": "statistics",
+      "script": [
+        "u = 0 / 0",
+        "e = If(false, {2, 2})",
+        "r_{1} = Mode({})",
+        "r_{2} = GeometricMean({})",
+        "r_{3} = HarmonicMean({})",
+        "r_{4} = RootMeanSquare({})",
+        "r_{5} = Mode(e)",
+        "r_{6} = GeometricMean(e)",
+        "r_{7} = HarmonicMean(e)",
+        "r_{8} = RootMeanSquare(e)",
+        "r_{9} = Mode({1, 1, u, u})",
+        "r_{10} = GeometricMean({1, 1, u, u})",
+        "r_{11} = HarmonicMean({1, 1, u, u})",
+        "r_{12} = RootMeanSquare({1, 1, u, u})",
+        "r_{13} = Mode({u, u})",
+        "r_{14} = GeometricMean({u, u})",
+        "r_{15} = HarmonicMean({u, u})",
+        "r_{16} = RootMeanSquare({u, u})",
+        "r_{17} = Mode({0, 4})",
+        "r_{18} = GeometricMean({0, 4})",
+        "r_{19} = HarmonicMean({0, 4})",
+        "r_{20} = RootMeanSquare({0, 4})",
+        "r_{21} = Mode({-1, 4})",
+        "r_{22} = GeometricMean({-1, 4})",
+        "r_{23} = HarmonicMean({-1, 4})",
+        "r_{24} = RootMeanSquare({-1, 4})",
+        "r_{25} = Mode({-3, 3})",
+        "r_{26} = GeometricMean({-3, 3})",
+        "r_{27} = HarmonicMean({-3, 3})",
+        "r_{28} = RootMeanSquare({-3, 3})",
+        "r_{29} = Mode({0, -1})",
+        "r_{30} = GeometricMean({0, -1})",
+        "r_{31} = HarmonicMean({0, -1})",
+        "r_{32} = RootMeanSquare({0, -1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "number", "defined": false },
+          "e": { "type": "list", "defined": false },
+          "r_{1}": { "type": "list", "defined": false },
+          "r_{2}": { "type": "number", "defined": false },
+          "r_{3}": { "type": "number", "defined": false },
+          "r_{4}": { "type": "number", "defined": false },
+          "r_{5}": { "type": "list", "defined": false },
+          "r_{6}": { "type": "number", "defined": false },
+          "r_{7}": { "type": "number", "defined": false },
+          "r_{8}": { "type": "number", "defined": false },
+          "r_{9}": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r_{10}": { "type": "number", "defined": false },
+          "r_{11}": { "type": "number", "defined": false },
+          "r_{12}": { "type": "number", "defined": false },
+          "r_{13}": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r_{14}": { "type": "number", "defined": false },
+          "r_{15}": { "type": "number", "defined": false },
+          "r_{16}": { "type": "number", "defined": false },
+          "r_{17}": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r_{18}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{19}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{20}": { "type": "number", "defined": true, "value": 2.8284271247461903 },
+          "r_{21}": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r_{22}": { "type": "number", "defined": false },
+          "r_{23}": { "type": "number", "defined": true, "value": -2.6666666666666665 },
+          "r_{24}": { "type": "number", "defined": true, "value": 2.9154759474226504 },
+          "r_{25}": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r_{26}": { "type": "number", "defined": false },
+          "r_{27}": { "type": "number", "defined": true, "infinity": 1 },
+          "r_{28}": { "type": "number", "defined": true, "value": 3.0 },
+          "r_{29}": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r_{30}": { "type": "number", "defined": false },
+          "r_{31}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{32}": { "type": "number", "defined": true, "value": 0.7071067811865476 }
+        }
+      ]
+    }
+  ]
+}

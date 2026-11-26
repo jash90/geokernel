@@ -573,4 +573,40 @@ mod tests {
             assert!(c.value(id).is_defined(), "{command}");
         }
     }
+
+    #[test]
+    fn statistics_followup_charges_scans_and_sorting() {
+        let mut c = script::load("l = Sequence(1024)").unwrap();
+        for (command, budget) in [
+            ("GeometricMean", 512),
+            ("HarmonicMean", 512),
+            ("RootMeanSquare", 512),
+            ("Mode", 4096),
+        ] {
+            let line = format!("a = {command}(l)");
+            let id = with_evaluation_budget(budget, || script::exec(&mut c, &line))
+                .unwrap()
+                .unwrap();
+            assert_eq!(c.value(id), Value::Undefined, "{command}");
+            let id = script::exec(&mut c, &line).unwrap().unwrap();
+            assert!(c.value(id).is_defined(), "{command}");
+        }
+    }
+
+    #[test]
+    fn variadic_statistics_followup_classifies_arguments_with_linear_work() {
+        use crate::expr::{parse, types::CHECKED_SLOTS};
+        use crate::Construction;
+
+        let c = Construction::new();
+        let count = 512;
+        for command in ["Mode", "GeometricMean", "HarmonicMean", "RootMeanSquare"] {
+            let args = vec!["HarmonicMean(1, 3)"; count].join(", ");
+            let before = CHECKED_SLOTS.get();
+            parse::parse(&c, &format!("{command}({args})")).unwrap();
+            let slots = CHECKED_SLOTS.get() - before;
+            let limit = 16 * count + 2;
+            assert!(slots <= limit, "{command}: {slots} type-check slots, limit {limit}");
+        }
+    }
 }

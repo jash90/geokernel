@@ -5,7 +5,25 @@ use geo_kernel::{script, Construction, Def, Error, Kind, Value};
 
 /// Number of cases recorded by `ggb-harness` so far. Raise it when adding cases,
 /// so that losing a file is noticed.
-const MIN_GOLDEN_CASES: usize = 7552;
+const MIN_GOLDEN_CASES: usize = 7559;
+
+#[test]
+fn statistics_followup_matches_geogebra() {
+    let ids = [
+        "statistics-nextlists-001",
+        "statistics-nextedges-001",
+        "statistics-nextvariadic-001",
+        "statistics-nextkinds-001",
+        "statistics-nextedit-001",
+        "statistics-nextpoints-001",
+        "statistics-nextreject-001",
+    ];
+    let mut cases = model::load_all(&repo_root()).unwrap();
+    cases.retain(|case| ids.contains(&case.id.as_str()));
+    assert_eq!(cases.len(), ids.len());
+    let report = report::evaluate(&cases, &gaps::Gaps::new());
+    assert!(report.failures.is_empty(), "{}", report.failures.join("\n"));
+}
 
 #[test]
 fn spreadsheet_closing_regressions_match_geogebra() {
