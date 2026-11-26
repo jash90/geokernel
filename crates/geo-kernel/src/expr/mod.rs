@@ -2686,6 +2686,21 @@ pub(crate) fn argument_number(c: &Construction, text: &str) -> Option<f64> {
 /// [`argument_number`] leaves undefined whatever the inputs. Otherwise the
 /// current value, `NaN` while an input is undefined.
 pub(crate) fn arithmetic_number(c: &Construction, text: &str) -> Option<f64> {
+    let parsed = arithmetic_argument(c, text)?;
+    if !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {
+        return None;
+    }
+    value_of_tree(c, &parsed)
+}
+
+/// Checks a saved point attachment without creating a construction object.
+pub fn arithmetic_point_inputs(c: &Construction, text: &str) -> Option<Vec<Id>> {
+    let parsed = arithmetic_argument(c, text)?;
+    (parsed.tys[parsed.root as usize] == Ty::Vec && !argument_is_vector(c, &parsed))
+        .then_some(parsed.inputs)
+}
+
+fn arithmetic_argument(c: &Construction, text: &str) -> Option<parse::Parsed> {
     let parsed = parse::parse_argument(c, text).ok()?;
     let arithmetic = parsed.nodes.iter().all(|node| {
         matches!(
@@ -2706,15 +2721,10 @@ pub(crate) fn arithmetic_number(c: &Construction, text: &str) -> Option<f64> {
                 | Node::Defined(..)
         )
     });
-    if !arithmetic
-        || reads_list(&parsed.nodes, &parsed.tys)
-        || parsed.uses_var
-        || parsed.uses_y
-        || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_))
-    {
+    if !arithmetic || reads_list(&parsed.nodes, &parsed.tys) || parsed.uses_var || parsed.uses_y {
         return None;
     }
-    value_of_tree(c, &parsed)
+    Some(parsed)
 }
 
 /// Defines `name = rhs` as an expression. `vector_label` tells whether a

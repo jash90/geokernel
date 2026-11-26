@@ -1,0 +1,10 @@
+{
+  "schema": 2,
+  "id": "saved-export-raster-budget-001",
+  "script": [
+    "bars = BarChart({2, 3, 4}, {2, 3, 4})"
+  ],
+  "objects": {
+    "bars": { "type": "number", "defined": true, "value": 9.0 }
+  }
+}

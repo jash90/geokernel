@@ -118,6 +118,9 @@ const SAVED_CASES: &[&str] = &[
     "saved-styles-012.xml",
     // Pen strokes with presentation properties.
     "saved-styles-013.xml",
+    "saved-export-limits-001.xml",
+    "saved-export-limits-002.xml",
+    "saved-export-limits-003.ggb",
 ];
 
 const STYLED_FILE: &[u8] = br#"<geogebra format="5.0">
@@ -694,6 +697,8 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
 
     let mut count = 0;
     let mut tag_proof = BTreeMap::new();
+    let mut limit_proof = BTreeMap::new();
+    let mut limit_failures = Vec::new();
     let mut gave_up = Vec::new();
     // Per fixture: the styles of the source and of the export without the
     // saved presentation, for the witnesses.
@@ -714,6 +719,13 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
                 let source = read(&sources, name);
                 compare_presentation(name, live, &source, &snap, bytes);
                 record_tag_witnesses(&mut tag_proof, name, &source, &snap);
+                record_export_limit_witnesses(
+                    &mut limit_proof,
+                    &mut limit_failures,
+                    name,
+                    &source,
+                    &snap,
+                );
                 assert_json(&source["settings"], &snap["settings"], name);
                 let stripped = read(&plain, name);
                 // A witness needs the same object in the stripped export.
@@ -811,6 +823,7 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
     }
     // The files of `HAND_GIVEN_UP`, and no other, stop the reference reader.
     assert_eq!(gave_up, HAND_GIVEN_UP);
+    assert!(limit_failures.is_empty(), "{}", limit_failures.join("\n"));
 
     // The proof: for every kind and property an object of a named fixture
     // whose source value differs from what the reader gives the same object
@@ -863,6 +876,9 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
         .entry("Spreadsheet")
         .or_default()
         .insert("cells", spreadsheet_export_witness());
+    for (kind, properties) in limit_proof {
+        proof.entry(kind).or_default().extend(properties);
+    }
     proof.insert("ElementTags", tag_proof);
     let serialized = serde_json::to_string_pretty(&proof).unwrap() + "\n";
     let path = proof_path();
@@ -1430,19 +1446,10 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
 const PROPERTY_LIMITS: &[(&str, &str)] = &[
     (
         "Point",
-        "vertical increments must be supported numeric expressions",
+        "vertical increments omit expressions outside supported numeric arithmetic and Length of a named list",
     ),
-    (
-        "Vector",
-        "a start point must be saved coordinates or a point label",
-    ),
-    (
-        "PieChart",
-        "slice image fills need assets the writer does not carry",
-    ),
-    ("Number", "per-bar image fills are omitted"),
-    ("Button", "icons require an archived PNG, JPEG or GIF"),
-    ("InputBox", "icons require an archived PNG, JPEG or GIF"),
+    ("Button", "SVG and built-in icons are omitted because the asset store accepts archived rasters"),
+    ("InputBox", "SVG and built-in icons are omitted because the asset store accepts archived rasters"),
 ];
 
 fn definition_limit(kind: &str) -> &'static str {
@@ -1545,8 +1552,15 @@ fn the_export_column_follows_the_journal_rule_and_the_recorded_proof() {
         if !own_data {
             reasons.push(definition_limit(kind).to_owned());
         }
-        let missing: Vec<_> = kind_properties(kind)
-            .into_iter()
+        let mut properties = kind_properties(kind);
+        properties.extend(
+            EXPORT_LIMIT_WITNESSES
+                .iter()
+                .filter_map(|&(_, _, owner, property)| (owner == kind).then_some(property)),
+        );
+        let missing: Vec<_> = properties
+            .iter()
+            .copied()
             .filter(|property| proven.is_none_or(|proven| !proven.contains_key(*property)))
             .collect();
         if !missing.is_empty() {
@@ -1565,8 +1579,8 @@ fn the_export_column_follows_the_journal_rule_and_the_recorded_proof() {
         };
         println!(
             "{kind}: {cell}, {} of {} properties proven. {note}",
-            kind_properties(kind).len() - missing.len(),
-            kind_properties(kind).len()
+            properties.len() - missing.len(),
+            properties.len()
         );
         if row["export"] != cell {
             errors.push(format!(
@@ -1871,6 +1885,114 @@ fn record_tag_witnesses(
     }
 }
 
+const EXPORT_LIMIT_WITNESSES: &[(&str, &str, &str, &str)] = &[
+    ("saved-export-limits-001", "P", "Point", "pointSize"),
+    ("saved-export-limits-001", "P", "Point", "incrementY"),
+    ("saved-export-limits-002", "v", "Vector", "startPoint"),
+    ("saved-export-limits-003", "bars", "Number", "barImage"),
+    ("saved-export-limits-003", "pie", "PieChart", "barImage"),
+];
+
+fn record_export_limit_witnesses(
+    proof: &mut BTreeMap<&str, BTreeMap<&str, Value>>,
+    failures: &mut Vec<String>,
+    fixture: &str,
+    source: &Value,
+    export: &Value,
+) {
+    for &(_, label, kind, property) in EXPORT_LIMIT_WITNESSES
+        .iter()
+        .filter(|&&(case, ..)| case == fixture)
+    {
+        let mut hash = Value::Null;
+        let chart_tag = |snapshot: &Value, stage: &str, key: &str| {
+            snapshot[stage][label]["tags/tag"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .find(|tag| tag["key"] == key && tag["barNumber"] == "2")
+                .cloned()
+                .unwrap_or(Value::Null)
+        };
+        let tag = |snapshot: &Value, stage: &str| {
+            let tags = &snapshot[stage][label];
+            if property == "barImage" {
+                chart_tag(snapshot, stage, property)
+            } else {
+                tags[property].clone()
+            }
+        };
+        let saved = tag(source, "elementTags");
+        let written = tag(export, "elementTags");
+        let reference = tag(source, "reloadedTags");
+        let reloaded = tag(export, "reloadedTags");
+        let evaluated = match property {
+            "incrementY" => Some("pointIncrements"),
+            "startPoint" => Some("vectorAnchors"),
+            _ => None,
+        };
+        let agrees = if property == "barImage" {
+            hash = source["chartRasterHashes"][label]["2"].clone();
+            let fill = chart_tag(source, "reloadedTags", "barFillType");
+            !fill.is_null()
+                && fill == chart_tag(export, "reloadedTags", "barFillType")
+                && hash.is_string()
+                && hash == export["chartRasterHashes"][label]["2"]
+                && reloaded["value"] == written["value"]
+        } else {
+            reference == reloaded
+                && evaluated.is_none_or(|key| {
+                    !source[key][label].is_null() && source[key][label] == export[key][label]
+                })
+        };
+        assert!(
+            !saved.is_null() && !reference.is_null(),
+            "{fixture}: missing reference {label}.{property}"
+        );
+        if !agrees || written.is_null() || reloaded.is_null() {
+            failures.push(format!(
+                "{fixture}: {label}.{property} changed: {reference} -> {reloaded}"
+            ));
+            continue;
+        }
+        let mut witness = json!({
+            "fixture": fixture, "label": label, "source": saved,
+            "export": written, "reload": reloaded,
+        });
+        if !hash.is_null() {
+            witness["sha256"] = hash;
+        }
+        if let Some(key) = evaluated {
+            witness["value"] = export[key][label].clone();
+        }
+        proof.entry(kind).or_default().insert(property, witness);
+    }
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_reloads_point_increments_vector_anchors_and_chart_images() {
+    let mut failures = Vec::new();
+    let mut proof = BTreeMap::new();
+    for file in SAVED_CASES
+        .iter()
+        .filter(|file| file.starts_with("saved-export-limits-"))
+    {
+        let input = saved_review_file(file);
+        let wb = review_workbench(&input);
+        let bytes = wb.export_ggb(wb.file_view()).unwrap();
+        let (source, export) = review_oracle(&input, &bytes);
+        record_export_limit_witnesses(
+            &mut proof,
+            &mut failures,
+            file.split_once('.').unwrap().0,
+            &source,
+            &export,
+        );
+    }
+    assert!(failures.is_empty(), "{}", failures.join("\n"));
+}
+
 fn saved_review_file(file: &str) -> Vec<u8> {
     fs::read(repo_root().join("golden/ggb/saved").join(file)).unwrap()
 }
@@ -1891,6 +2013,10 @@ fn review_workbench(input: &[u8]) -> Workbench {
 }
 
 fn review_oracle(source: &[u8], exported: &[u8]) -> (Value, Value) {
+    review_oracle_with(source, exported, &["--element-tags"])
+}
+
+fn review_oracle_with(source: &[u8], exported: &[u8], args: &[&str]) -> (Value, Value) {
     let scratch = Scratch::new("property-review");
     for (name, bytes) in [("source", source), ("export", exported)] {
         let bytes = if geo_import::archive::is_zip(bytes) {
@@ -1900,7 +2026,7 @@ fn review_oracle(source: &[u8], exported: &[u8]) -> (Value, Value) {
         };
         fs::write(scratch.0.join(format!("{name}.ggb")), bytes).unwrap();
     }
-    let result = tag_snapshots(&scratch.0);
+    let result = oracle_command(args, &scratch.0).output().unwrap();
     assert!(
         result.status.success(),
         "{}",
@@ -2354,6 +2480,162 @@ fn widget_icons_obey_the_raster_entry_limit() {
         }));
     }
     assert!(!exported_xml(&review_workbench(&oversized)).contains("<file "));
+}
+
+#[test]
+fn chart_images_obey_the_raster_entry_limit_and_report_missing_assets() {
+    use std::io::{Cursor, Write};
+
+    let source = saved_review_file("saved-export-limits-003.ggb");
+    let xml = geo_import::archive::extract_xml(&source).unwrap();
+    let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
+    zip.start_file("geogebra.xml", options).unwrap();
+    zip.write_all(xml.as_bytes()).unwrap();
+    zip.start_file("bar.png", options).unwrap();
+    let size = geo_kernel::kernel::image::MAX_ASSET_BYTES as usize;
+    zip.write_all(&vec![0; size + 1]).unwrap();
+    let damaged = zip.finish().unwrap().into_inner();
+
+    let imported = geo_import::import_for_replay(&damaged).unwrap();
+    for (label, reason) in [("bars", "too large"), ("pie", "missing from the archive")] {
+        assert!(imported.notes.iter().any(|note| {
+            note.contains(&format!("chart image of `{label}`")) && note.contains(reason)
+        }));
+    }
+    let wb = review_workbench(&damaged);
+    let export = wb.export_ggb(wb.file_view()).unwrap();
+    assert!(!geo_import::archive::extract_xml(&export)
+        .unwrap()
+        .contains(r#"key="barImage""#));
+    assert_eq!(zip::ZipArchive::new(Cursor::new(export)).unwrap().len(), 1);
+}
+
+const RASTER_BUDGET_FILE: &str = "saved-export-raster-budget-001.ggb";
+
+#[test]
+fn save_rejects_images_that_together_would_evict_a_chart_texture_on_reload() {
+    use geo_app_core::{app::App, editor::ImageRequest};
+    use std::io::{Cursor, Read};
+
+    let input = saved_review_file(RASTER_BUDGET_FILE);
+    let mut source = zip::ZipArchive::new(Cursor::new(&input)).unwrap();
+    let mut candidate = Vec::new();
+    source
+        .by_name("candidate.jpg")
+        .unwrap()
+        .read_to_end(&mut candidate)
+        .unwrap();
+
+    let mut app = App::new(review_workbench(&input), None);
+    let before = app.wb.export_ggb(None).unwrap();
+    let request = ImageRequest {
+        anchor: None,
+        at: (0.0, 0.0),
+        scale: 50.0,
+        xmax: 8.0,
+        ymax: 6.0,
+    };
+    app.image_request = Some(request.clone());
+    app.finish_image(candidate.clone()).unwrap();
+    let err = app.wb.export_ggb(None).err().unwrap_or_else(|| {
+        panic!("save accepted two 4096×4096 rasters that exceed the shared limit")
+    });
+    assert!(err.to_string().contains("memory limit"), "{err}");
+
+    assert!(app.wb.undo());
+    assert_eq!(app.wb.export_ggb(None).unwrap(), before);
+    let mut image_only = App::new(Workbench::default(), None);
+    image_only.image_request = Some(request);
+    image_only.finish_image(candidate).unwrap();
+    assert!(image_only.wb.export_ggb(None).is_ok());
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_reloads_the_large_chart_texture() {
+    let input = saved_review_file(RASTER_BUDGET_FILE);
+    let output = review_workbench(&input).export_ggb(None).unwrap();
+    let (source, exported) = review_oracle(&input, &output);
+    let texture = &source["chartRasterHashes"]["bars"]["2"];
+    assert!(texture.is_string());
+    assert_eq!(exported["chartRasterHashes"]["bars"]["2"], *texture);
+}
+
+fn duplicate_chart_image_input() -> Vec<u8> {
+    use std::io::{Cursor, Write};
+
+    let input = saved_review_file("saved-export-limits-003.ggb");
+    let xml = geo_import::archive::extract_xml(&input).unwrap();
+    let first = r#"<tag key="barImage" barNumber="2" value="bar.png"/>"#;
+    let last = r#"<tag key="barImage" barNumber="2" value="missing.png"/>"#;
+    assert_eq!(xml.matches(first).count(), 1);
+    let mut source = zip::ZipArchive::new(Cursor::new(&input)).unwrap();
+    let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    for index in 0..source.len() {
+        let entry = source.by_index(index).unwrap();
+        if entry.name().unwrap() == "geogebra.xml" {
+            zip.start_file("geogebra.xml", zip::write::SimpleFileOptions::default())
+                .unwrap();
+            zip.write_all(
+                xml.replacen(first, &format!("{first}\n{last}"), 1)
+                    .as_bytes(),
+            )
+            .unwrap();
+        } else {
+            zip.raw_copy_file(entry).unwrap();
+        }
+    }
+    zip.finish().unwrap().into_inner()
+}
+
+#[test]
+fn an_unavailable_last_chart_image_does_not_restore_an_earlier_texture() {
+    let input = duplicate_chart_image_input();
+    let imported = geo_import::import_for_replay(&input).unwrap();
+    assert!(imported
+        .notes
+        .iter()
+        .any(|note| { note.contains("chart image of `bars`") && note.contains("missing.png") }));
+    let xml = exported_xml(&review_workbench(&input));
+    assert_eq!(
+        xml.matches(r#"key="barImage""#).count(),
+        1,
+        "only the pie texture survives"
+    );
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_reloads_only_the_effective_chart_texture() {
+    let input = duplicate_chart_image_input();
+    let output = review_workbench(&input).export_ggb(None).unwrap();
+    let (source, exported) = review_oracle_with(&input, &output, &["--lenient", "--element-tags"]);
+    assert!(source["reported"].as_array().unwrap().iter().any(|note| {
+        note.as_str()
+            .is_some_and(|note| note.contains("missing raster missing.png"))
+    }));
+    assert!(source["reloadedTags"]["bars"]["tags/tag"]
+        .as_array()
+        .unwrap()
+        .contains(&json!({"key": "barImage", "barNumber": "2", "value": "missing.png"})));
+    assert!(source["chartRasterHashes"]["bars"]["2"].is_null());
+    assert!(source["chartRasterHashes"]["pie"]["2"].is_string());
+    assert_eq!(exported["chartRasterHashes"], source["chartRasterHashes"]);
+    assert_eq!(exported["reported"], json!([]));
+}
+
+#[test]
+fn deleting_an_input_detaches_a_dependent_vector_anchor() {
+    let input = saved_review_file("saved-export-limits-002.xml");
+    let mut wb = review_workbench(&input);
+    assert!(exported_xml(&wb).contains("<startPoint exp="));
+    let point = wb.construction().id("A").unwrap();
+    assert!(wb.delete(point));
+    assert!(!exported_xml(&wb).contains("<startPoint "));
+    wb.run_line("A = (30, 40)").unwrap();
+    assert!(!exported_xml(&wb).contains("<startPoint "));
 }
 
 fn explicit_plain_text_source() -> Vec<u8> {

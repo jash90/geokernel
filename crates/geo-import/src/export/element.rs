@@ -1,6 +1,6 @@
 use super::{
-    failure, flag, number, ExportError, ObjectStyle, Rounding, SliderAnimation, SliderLayout,
-    Writer,
+    failure, flag, number, ExportError, ObjectStyle, RasterEntry, RasterReadOrder, Rounding,
+    SliderAnimation, SliderLayout, Writer,
 };
 use geo_kernel::algo::path::PathDef;
 use geo_kernel::kernel::image::{ImageCorner, ImagePlacement, RasterAsset};
@@ -91,7 +91,12 @@ impl<'a> Writer<'a> {
             .and_then(|style| style.widget_icon.as_ref())
             .filter(|(owner_kind, _)| *owner_kind == object_kind)
         {
-            self.raster_file(icon, label)?;
+            let name = self.raster_name(
+                icon,
+                label,
+                RasterReadOrder::Style(label, self.xml.buffer.len()),
+            )?;
+            self.xml.tag("file", &[("name", &name)])?;
         }
         let shown = !self.presentation.hidden.contains(label);
         let label_shown = if style.label_edited {
@@ -470,7 +475,7 @@ impl<'a> Writer<'a> {
     fn properties(
         &mut self,
         id: Id,
-        properties: &crate::properties::Properties,
+        properties: &'a crate::properties::Properties,
         class: &str,
         before_matrix: bool,
     ) -> Result<(), ExportError> {
@@ -483,16 +488,30 @@ impl<'a> Writer<'a> {
         Ok(())
     }
 
-    fn property(&mut self, id: Id, tag: &crate::properties::Tag) -> Result<(), ExportError> {
+    fn property(&mut self, id: Id, tag: &'a crate::properties::Tag) -> Result<(), ExportError> {
         if !tag.can_write(self.c, id, &mut self.expressions) {
             return Ok(());
         }
         self.xml.charge_items(1)?;
-        let attributes = tag
+        let label = self.c.label(id);
+        let image_name = tag
+            .chart_image()
+            .map(|asset| {
+                self.raster_name(
+                    asset,
+                    label,
+                    RasterReadOrder::Style(label, self.xml.buffer.len()),
+                )
+            })
+            .transpose()?;
+        let mut attributes = tag
             .attributes
             .iter()
             .map(|(key, value)| (*key, value.as_str()))
             .collect::<Vec<_>>();
+        if let Some(name) = &image_name {
+            attributes.push(("value", name));
+        }
         if tag.children.is_empty() {
             self.xml.tag(tag.name, &attributes)?;
         } else {
@@ -509,7 +528,7 @@ impl<'a> Writer<'a> {
     }
 
     /// The interval of an angle and its right-angle marker.
-    fn angle(&mut self, id: Id, saved: Option<&ObjectStyle>) -> Result<(), ExportError> {
+    fn angle(&mut self, id: Id, saved: Option<&'a ObjectStyle>) -> Result<(), ExportError> {
         let object_kind = self.c.kind(id);
         // Legacy flags and angleStyle are applied in the order they appear.
         // Write any subsequent live edit after those saved tags.
@@ -820,7 +839,12 @@ impl<'a> Writer<'a> {
         }
     }
 
-    fn raster_file(&mut self, asset: &'a RasterAsset, label: &str) -> Result<(), ExportError> {
+    fn raster_name(
+        &mut self,
+        asset: &'a RasterAsset,
+        label: &str,
+        read_order: RasterReadOrder<'a>,
+    ) -> Result<String, ExportError> {
         let bytes = asset.bytes();
         let extension = if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
             "png"
@@ -832,17 +856,34 @@ impl<'a> Writer<'a> {
             return Err(failure(format!("unsupported raster data for `{label}`")));
         };
         let next = self.images.len() + 1;
-        let (name, _) = self
+        let entry = self
             .images
             .entry(asset.id())
-            .or_insert_with(|| (format!("images/image{next}.{extension}"), asset));
-        self.xml.tag("file", &[("name", name)])
+            .or_insert_with(|| RasterEntry {
+                name: format!("images/image{next}.{extension}"),
+                asset,
+                read_order,
+            });
+        entry.read_order = entry.read_order.min(read_order);
+        Ok(entry.name.clone())
     }
 
     fn image(&mut self, id: Id) -> Result<(), ExportError> {
         let c = self.c;
         let image = c.image(id).expect("image checked by caller");
-        self.raster_file(&image.asset, c.label(id))?;
+        let position = self.xml.buffer.len();
+        let read_order = match image.placement {
+            ImagePlacement::World { corners, .. }
+                if corners.into_iter().flatten().any(
+                    |corner| matches!(corner, ImageCorner::Point(point) if !self.seen.contains(&point)),
+                ) =>
+            {
+                RasterReadOrder::DeferredImage(position)
+            }
+            _ => RasterReadOrder::Image(position),
+        };
+        let name = self.raster_name(&image.asset, c.label(id), read_order)?;
+        self.xml.tag("file", &[("name", &name)])?;
         self.xml.val("inBackground", flag(image.style.background))?;
         if !image.style.interpolate {
             self.xml.val("interpolate", "false")?;

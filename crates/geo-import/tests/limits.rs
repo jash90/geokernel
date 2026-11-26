@@ -459,6 +459,44 @@ fn the_style_expressions_of_a_document_share_one_budget() {
 }
 
 #[test]
+fn point_presentation_shares_the_document_expression_budget() {
+    use geo_import::convert::StyleExpressions;
+    let construction = geo_kernel::script::load("A = (1, 2)\nL = {1, 2}").unwrap();
+    let anchor = "(x(A) + 1, y(A))";
+    let increment = "Length[L]";
+    let budget = (anchor.len() + increment.len()) as u64;
+    let mut expressions = StyleExpressions::with_budget(budget);
+    assert!(expressions.point(&construction, anchor).is_ok());
+    assert!(expressions
+        .point_increment(&construction, increment)
+        .is_ok());
+    assert!(expressions.point(&construction, anchor).is_err());
+    assert!(expressions
+        .point_increment(&construction, increment)
+        .is_err());
+    let mut expressions = StyleExpressions::default();
+    assert!(expressions.point(&construction, "(unknown, 1)").is_err());
+    assert!(expressions
+        .point_increment(&construction, "Length[L] + Sum[L]")
+        .is_err());
+}
+
+#[test]
+fn nested_chart_image_tags_count_toward_the_item_limit() {
+    let chart = |count| {
+        let tags = r#"<tag key="barImage" barNumber="1" value="tile.png"/>"#.repeat(count);
+        format!(
+            r#"<geogebra><construction><element type="piechart" label="pie"><tags>{tags}</tags></element></construction></geogebra>"#
+        )
+    };
+    assert!(geo_import::xml::parse(&chart(MAX_ITEMS - 2)).is_ok());
+    assert!(matches!(
+        geo_import::xml::parse(&chart(MAX_ITEMS - 1)),
+        Err(ImportError::TooManyItems)
+    ));
+}
+
+#[test]
 fn rejected_lines_are_not_rescanned() {
     // Every refused line costs the work of that line only: 12000 refusals
     // must create nothing and keep the construction as it was, which is what
