@@ -30,25 +30,21 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
     let analysis_open = matches!(app.spreadsheet_analysis, Ok(Some(_)));
     let (launch, close) = if Analysis::available() {
         ui.horizontal_wrapped(|ui| {
+            // Reserve the first slot so closing is reachable even when the header wraps.
+            let side = ui.spacing().interact_size.y;
+            let close = ui.add_visible(
+                analysis_open,
+                eframe::egui::Button::new("×").min_size(vec2(side, side)),
+            );
+            let close = if analysis_open {
+                let title = "Zamknij podsumowanie";
+                close.widget_info(|| WidgetInfo::labeled(Role::Button, true, title));
+                close.on_hover_text(title).clicked()
+            } else {
+                false
+            };
             ui.heading(label(Label::SpreadsheetView));
-            let (launch, close) = ui
-                .horizontal(|ui| {
-                    let launch = ui.button("Analiza jednej zmiennej").clicked();
-                    // Reserve the close slot so opening analysis cannot move the grid.
-                    let side = ui.spacing().interact_size.y;
-                    let close = ui.add_visible(
-                        analysis_open,
-                        eframe::egui::Button::new("×").min_size(vec2(side, side)),
-                    );
-                    if analysis_open {
-                        let title = "Zamknij podsumowanie";
-                        close.widget_info(|| WidgetInfo::labeled(Role::Button, true, title));
-                        (launch, close.on_hover_text(title).clicked())
-                    } else {
-                        (launch, false)
-                    }
-                })
-                .inner;
+            let launch = ui.button("Analiza jednej zmiennej").clicked();
             let editor = app
                 .spreadsheet_editor
                 .as_mut()
