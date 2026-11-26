@@ -467,10 +467,9 @@ The [Release packages](../.github/workflows/release.yml) workflow builds
 the EUPL-1.2 app ZIP, disk image and installer package on macOS, an Inno
 Setup installer on Windows, and an AppImage and Debian package on Linux.
 The default dispatch and pull-request runs upload CI artifacts, release
-notes and `SHA256SUMS`. A `v*` tag publishes the checked assets. To publish
-by dispatch, select the default branch or the release tag, use the version
-from the existing tag and turn off `dry_run`. The tag and the packaged
-commit must match.
+notes and `SHA256SUMS`. To publish, manually dispatch the workflow on the
+default branch or the existing release tag, select the matching version
+and set `publish` to true. The tag and the packaged commit must match.
 
 For GPL packages, the Giac URL and pinned SHA-256 can be supplied at
 dispatch or through the repository variables `GIAC_SOURCE_URL` and
@@ -493,9 +492,8 @@ signing it would change its pinned SHA-256. The macOS Giac packages are
 therefore unsigned and un-notarized.
 
 Signing defaults to off. To enable it, select `macos_sign` or
-`windows_sign` on a trusted dispatch, or set `RELEASE_MACOS_SIGN` or
-`RELEASE_WINDOWS_SIGN` to `true` for tag builds. Signing takes place only
-when every credential for that platform is present:
+`windows_sign` on a trusted dispatch. Signing takes place only when every
+credential for that platform is present:
 
 - macOS uses `APPLE_CERTIFICATES_P12` (base64 PKCS#12 containing both
   Developer ID identities), `APPLE_CERTIFICATES_PASSWORD`,

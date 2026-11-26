@@ -7,7 +7,7 @@ owner="$(id -u):$(id -g)"
 bootstrap="$(mktemp -d)"
 trap 'rm -rf -- "$bootstrap"' EXIT
 curl --fail --silent --show-error --retry 2 --proto '=https' \
-  https://archive.ubuntu.com/ubuntu/pool/main/c/ca-certificates/ca-certificates_20260816ubuntu0.24.04.2_all.deb \
+  https://snapshot.ubuntu.com/ubuntu/20261125T000000Z/pool/main/c/ca-certificates/ca-certificates_20260816ubuntu0.24.04.2_all.deb \
   -o "$bootstrap/ca-certificates.deb"
 printf '%s  %s\n' f9fbacd417b515450b831032cc39d18059e9874e67525679a43c16071dabf9a0 \
   "$bootstrap/ca-certificates.deb" | sha256sum --check --status
