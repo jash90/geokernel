@@ -140,6 +140,17 @@ fn opening_analysis_does_not_add_a_header_row_in_a_narrow_spreadsheet() {
 }
 
 #[test]
+fn an_open_analysis_can_be_replaced_without_closing_it_first() {
+    let mut window = sheet(Profile::Desktop, (1000.0, 218.0));
+    activate(&mut window, ANALYZE);
+    assert_eq!(analysis(&window).summary().unwrap().values, [1.0]);
+    activate(&mut window, "A2");
+    activate(&mut window, ANALYZE);
+    assert_eq!(analysis(&window).summary().unwrap().values, [3.0]);
+    widget(&window, CLOSE);
+}
+
+#[test]
 fn a_hidden_grid_keeps_the_selected_cell_reveal_until_resize() {
     let mut window = sheet(Profile::Desktop, (1000.0, 110.0));
     window
