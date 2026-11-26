@@ -1475,10 +1475,11 @@ impl Parser<'_> {
     }
 
     /// Variadic list commands classify each argument within its own arena
-    /// span to keep type probing independent of its siblings.
+    /// span to keep type probing independent of its siblings. The probe
+    /// returns the root, its type, and whether it is a vector.
     pub(super) fn typed_list_command(
         &mut self,
-        form: impl FnOnce(&mut Self, &[(u32, Option<Ty>)]) -> Result<Option<Node>, String>,
+        form: impl FnOnce(&mut Self, &[(u32, Option<Ty>, bool)]) -> Result<Option<Node>, String>,
     ) -> Result<Option<u32>, String> {
         let mut nodes = Vec::new();
         self.command_arguments(
@@ -1493,10 +1494,13 @@ impl Parser<'_> {
                         super::map_children(node, |child| child - start);
                     }
                     let local_root = root - start;
-                    let ty = check(p.c, &nodes, local_root)
-                        .ok()
-                        .map(|(tys, ..)| tys[local_root as usize]);
-                    (root, ty)
+                    let Ok((tys, ..)) = check(p.c, &nodes, local_root) else {
+                        return (root, None, false);
+                    };
+                    let ty = tys[local_root as usize];
+                    let vector = ty == Ty::Vec
+                        && super::types::vec_kind(p.c, &nodes, &tys, local_root) == Kind::Vector;
+                    (root, Some(ty), vector)
                 })
             },
             form,

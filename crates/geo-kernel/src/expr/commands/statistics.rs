@@ -76,10 +76,10 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         }
     }
     p.typed_list_command(|p, arguments| {
-        let args: Vec<_> = arguments.iter().map(|&(root, _)| root).collect();
+        let args: Vec<_> = arguments.iter().map(|&(root, _, _)| root).collect();
         let lists: Vec<_> = arguments
             .iter()
-            .map(|&(_, ty)| matches!(ty, Some(Ty::List(_))))
+            .map(|&(_, ty, _)| matches!(ty, Some(Ty::List(_))))
             .collect();
         if let (&[l, f], &[true, true]) = (&args[..], &lists[..]) {
             return Ok(Some(Node::ListOp(op, l, f)));
@@ -90,7 +90,7 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
             if args.len() >= 2
                 && arguments
                     .iter()
-                    .all(|&(_, ty)| matches!(ty, Some(Ty::Num(dimension)) if dimension != 1))
+                    .all(|&(_, ty, _)| matches!(ty, Some(Ty::Num(dimension)) if dimension != 1))
             {
                 let list = p.wrap_list(&args);
                 return Ok(Some(Node::ListOp(op, list, NONE)));
@@ -104,14 +104,12 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         // same. Of two arguments the fold never runs: `CmdSum` wants a
         // list first (`argErr`).
         if args.len() >= 3 && !lists[0] {
-            if arguments.iter().any(|&(_, ty)| ty == Some(Ty::Num(1))) {
+            if arguments.iter().any(|&(_, ty, _)| ty == Some(Ty::Num(1))) {
                 return Ok(None);
             }
             // The variadic coordinate form wraps only point arguments.
             // Vectors are accepted when supplied as elements of a list.
-            if arguments.iter().any(|&(a, ty)| {
-                ty == Some(Ty::Vec) && p.coordinate_kind(a) == Some(crate::Kind::Vector)
-            }) {
+            if arguments.iter().any(|&(_, _, vector)| vector) {
                 return Err("Sum needs vectors to be in a list".into());
             }
             let functions: Option<Vec<_>> = args.iter().map(|&a| p.applied_function(a)).collect();
