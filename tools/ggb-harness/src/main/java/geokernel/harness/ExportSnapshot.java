@@ -34,6 +34,7 @@ import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.jre.io.MyXMLioJre;
 import org.geogebra.common.kernel.Kernel;
 import org.geogebra.common.kernel.StringTemplate;
+import org.geogebra.common.kernel.geos.ChartStyleGeo;
 import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoButton;
@@ -197,9 +198,23 @@ public final class ExportSnapshot {
             snapshot.put("reloadedTags", elementTags(new InputSource(xml)));
             Map<String, String> rasterHashes = new LinkedHashMap<>();
             var digest = MessageDigest.getInstance("SHA-256");
-            var imageGeos = app.getKernel().getConstruction().getGeoSetConstructionOrder();
-            for (GeoElement geo : imageGeos) {
-                if (geo instanceof GeoImage && geo.isLabelSet()) {
+            Map<String, Object> chartRasterHashes = new LinkedHashMap<>();
+            Map<String, Object> pointIncrements = new LinkedHashMap<>();
+            Map<String, Object> vectorAnchors = new LinkedHashMap<>();
+            for (GeoElement geo : kernel.getConstruction().getGeoSetConstructionOrder()) {
+                if (!geo.isLabelSet()) {
+                    continue;
+                }
+                if (geo instanceof GeoPoint point && point.getVerticalIncrement() != null) {
+                    pointIncrements.put(geo.getLabelSimple(),
+                            finite(point.getVerticalIncrement().getDouble()));
+                }
+                if (geo instanceof GeoVector vector && vector.getStartPoint() != null) {
+                    var anchor = vector.getStartPoint();
+                    vectorAnchors.put(geo.getLabelSimple(), java.util.Arrays.asList(
+                            finite(anchor.getInhomX()), finite(anchor.getInhomY())));
+                }
+                if (geo instanceof GeoImage) {
                     var image = archive.getEntry(geo.getGraphicsAdapter().getImageFileName());
                     if (image != null) {
                         try (var data = archive.getInputStream(image)) {
@@ -208,8 +223,30 @@ public final class ExportSnapshot {
                         }
                     }
                 }
+                if (geo instanceof ChartStyleGeo chart) {
+                    Map<String, String> hashes = new LinkedHashMap<>();
+                    for (int bar = 1; bar <= chart.getIntervals(); bar++) {
+                        String name = chart.getStyle().getBarImage(bar);
+                        if (name == null) {
+                            continue;
+                        }
+                        var image = archive.getEntry(name);
+                        if (image != null) {
+                            try (var data = archive.getInputStream(image)) {
+                                hashes.put(Integer.toString(bar),
+                                        HexFormat.of().formatHex(digest.digest(data.readAllBytes())));
+                            }
+                        }
+                    }
+                    if (!hashes.isEmpty()) {
+                        chartRasterHashes.put(geo.getLabelSimple(), hashes);
+                    }
+                }
             }
             snapshot.put("rasterHashes", rasterHashes);
+            snapshot.put("chartRasterHashes", chartRasterHashes);
+            snapshot.put("pointIncrements", pointIncrements);
+            snapshot.put("vectorAnchors", vectorAnchors);
         }
         if (kernel.getConstruction().getCasCell(0) != null) {
             snapshot.put("casRows", Session.casRows(kernel.getConstruction()));

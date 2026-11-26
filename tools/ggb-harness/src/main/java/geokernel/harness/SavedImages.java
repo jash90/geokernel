@@ -82,6 +82,10 @@ final class SavedImages {
                 button.getKernel().getApplication().getExternalImageAdapter(name, WIDTH, HEIGHT));
     }
 
+    static void addAsset(String name, Map<String, byte[]> assets) throws IOException {
+        assets.put(name, raster(name.substring(name.lastIndexOf('.') + 1)));
+    }
+
     private static double number(Object value) {
         return ((Number) value).doubleValue();
     }
@@ -148,6 +152,13 @@ final class SavedImages {
         try (var source = new ZipInputStream(new ByteArrayInputStream(archive));
                 var target = new ZipOutputStream(bytes)) {
             for (ZipEntry entry; (entry = source.getNextEntry()) != null;) {
+                if (assets.containsKey(entry.getName())) {
+                    // The headless writer creates an empty entry for a chart texture.
+                    if (source.read() != -1) {
+                        throw new IOException("unexpected bitmap data for " + entry.getName());
+                    }
+                    continue;
+                }
                 target.putNextEntry(new ZipEntry(entry.getName()));
                 source.transferTo(target);
                 target.closeEntry();

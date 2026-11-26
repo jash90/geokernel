@@ -470,7 +470,7 @@ impl<'a> Writer<'a> {
     fn properties(
         &mut self,
         id: Id,
-        properties: &crate::properties::Properties,
+        properties: &'a crate::properties::Properties,
         class: &str,
         before_matrix: bool,
     ) -> Result<(), ExportError> {
@@ -483,16 +483,23 @@ impl<'a> Writer<'a> {
         Ok(())
     }
 
-    fn property(&mut self, id: Id, tag: &crate::properties::Tag) -> Result<(), ExportError> {
+    fn property(&mut self, id: Id, tag: &'a crate::properties::Tag) -> Result<(), ExportError> {
         if !tag.can_write(self.c, id, &mut self.expressions) {
             return Ok(());
         }
         self.xml.charge_items(1)?;
-        let attributes = tag
+        let image_name = tag
+            .chart_image()
+            .map(|asset| self.raster_name(asset, self.c.label(id)))
+            .transpose()?;
+        let mut attributes = tag
             .attributes
             .iter()
             .map(|(key, value)| (*key, value.as_str()))
             .collect::<Vec<_>>();
+        if let Some(name) = &image_name {
+            attributes.push(("value", name));
+        }
         if tag.children.is_empty() {
             self.xml.tag(tag.name, &attributes)?;
         } else {
@@ -509,7 +516,7 @@ impl<'a> Writer<'a> {
     }
 
     /// The interval of an angle and its right-angle marker.
-    fn angle(&mut self, id: Id, saved: Option<&ObjectStyle>) -> Result<(), ExportError> {
+    fn angle(&mut self, id: Id, saved: Option<&'a ObjectStyle>) -> Result<(), ExportError> {
         let object_kind = self.c.kind(id);
         // Legacy flags and angleStyle are applied in the order they appear.
         // Write any subsequent live edit after those saved tags.
@@ -821,6 +828,11 @@ impl<'a> Writer<'a> {
     }
 
     fn raster_file(&mut self, asset: &'a RasterAsset, label: &str) -> Result<(), ExportError> {
+        let name = self.raster_name(asset, label)?;
+        self.xml.tag("file", &[("name", &name)])
+    }
+
+    fn raster_name(&mut self, asset: &'a RasterAsset, label: &str) -> Result<String, ExportError> {
         let bytes = asset.bytes();
         let extension = if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
             "png"
@@ -836,7 +848,7 @@ impl<'a> Writer<'a> {
             .images
             .entry(asset.id())
             .or_insert_with(|| (format!("images/image{next}.{extension}"), asset));
-        self.xml.tag("file", &[("name", name)])
+        Ok(name.clone())
     }
 
     fn image(&mut self, id: Id) -> Result<(), ExportError> {

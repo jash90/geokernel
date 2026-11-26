@@ -882,6 +882,19 @@ case("export-ray-and-function",
      ["A = (1,2)", "B = (3,4)", "r = Ray(A,B)", "f(x,y)=x+y"], [],
      typed_snapshot=True)
 
+case("export-limits", ["L = {1, 2}", "P = (2, 3)"], [
+    st("P", point=[7, 2], vertical_increment="Length(L)"),
+])
+case("export-limits", ["A = (1, 2)", "B = (5, 4)", "v = (2, 1)"], [
+    st("v", vector_start="((x(A) + x(B)) / 2, (y(A) + y(B)) / 2)"),
+])
+case("export-limits", [
+    "bars = BarChart({2, 3, 4}, {2, 3, 4})", "pie = PieChart({1, 2, 3})",
+], [
+    {"action": "bar_image", "label": "bars", "file": "bar.png"},
+    {"action": "bar_image", "label": "pie", "file": "slice.jpg"},
+], archive=True)
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

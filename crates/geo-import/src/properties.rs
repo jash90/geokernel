@@ -4,8 +4,10 @@
 use crate::convert::StyleExpressions;
 use crate::{xml, ImportError};
 use geo_kernel::kernel::angle::AngleStyle;
+use geo_kernel::kernel::image::RasterAsset;
 use geo_kernel::{Construction, Def, Id, Kind};
 use quick_xml::events::BytesStart;
+use std::{fmt, sync::Arc};
 
 /// Additional presentation attached to a saved object. Storing its original
 /// class prevents old properties from being applied after a change of kind.
@@ -20,6 +22,26 @@ pub(crate) struct Tag {
     pub(crate) name: &'static str,
     pub(crate) attributes: Vec<(&'static str, String)>,
     pub(crate) children: Vec<Tag>,
+    extra: Option<Box<TagExtra>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum TagExtra {
+    PointInputs(Vec<(String, Kind)>),
+    ChartImage(ChartImage),
+}
+
+#[derive(Clone, PartialEq, Eq)]
+struct ChartImage(Arc<RasterAsset>);
+
+impl fmt::Debug for ChartImage {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("ChartImage")
+            .field("size", &self.0.size())
+            .field("bytes", &self.0.bytes().len())
+            .finish()
+    }
 }
 
 impl Properties {
@@ -154,17 +176,59 @@ impl Tag {
         id: Id,
         expressions: &mut StyleExpressions,
     ) -> bool {
-        if self.name != "incrementY" {
-            return self.can_write(c, id, expressions);
+        match self.name {
+            "incrementY" => {
+                let Some((_, val)) = self.attributes.iter_mut().find(|(key, _)| *key == "val")
+                else {
+                    return false;
+                };
+                let Ok(normalized) = expressions.point_increment(c, val) else {
+                    return false;
+                };
+                *val = normalized;
+                true
+            }
+            "startPoint" if self.start_point_label().is_some() && c.kind(id) == Kind::Vector => {
+                let source = self.start_point_label().expect("checked above");
+                if c.id(source)
+                    .is_some_and(|point| c.kind(point) == Kind::Point)
+                {
+                    return true;
+                }
+                let Ok((source, inputs)) = expressions.point(c, source) else {
+                    return false;
+                };
+                self.attributes
+                    .retain(|(key, _)| !matches!(*key, "exp" | "label"));
+                self.attributes.push(("exp", source));
+                let inputs = inputs
+                    .into_iter()
+                    .map(|id| (c.label(id).to_owned(), c.kind(id)))
+                    .collect();
+                self.extra = Some(Box::new(TagExtra::PointInputs(inputs)));
+                true
+            }
+            "tag" if self.chart_image_name().is_some() => is_chart(c, id) && self.valid_chart_bar(),
+            _ => self.can_write(c, id, expressions),
         }
-        let Some((_, val)) = self.attributes.iter_mut().find(|(key, _)| *key == "val") else {
-            return false;
-        };
-        let Ok(normalized) = expressions.number(c, val) else {
-            return false;
-        };
-        *val = normalized;
-        true
+    }
+
+    pub(crate) fn chart_image_name(&self) -> Option<&str> {
+        (self.name == "tag" && self.attr("key") == Some("barImage"))
+            .then(|| self.attr("value").filter(|value| !value.is_empty()))
+            .flatten()
+    }
+
+    pub(crate) fn set_chart_image(&mut self, asset: Arc<RasterAsset>) {
+        self.attributes.retain(|(key, _)| *key != "value");
+        self.extra = Some(Box::new(TagExtra::ChartImage(ChartImage(asset))));
+    }
+
+    pub(crate) fn chart_image(&self) -> Option<&RasterAsset> {
+        match self.extra.as_deref() {
+            Some(TagExtra::ChartImage(image)) => Some(&image.0),
+            _ => None,
+        }
     }
 
     fn start_point_label(&self) -> Option<&str> {
@@ -172,10 +236,16 @@ impl Tag {
     }
 
     fn missing_start_point(&self, c: &Construction) -> bool {
-        self.name == "startPoint"
-            && self
-                .start_point_label()
-                .is_some_and(|label| c.id(label).is_none_or(|id| c.kind(id) != Kind::Point))
+        if self.name != "startPoint" {
+            return false;
+        }
+        if let Some(TagExtra::PointInputs(inputs)) = self.extra.as_deref() {
+            return inputs
+                .iter()
+                .any(|(label, kind)| c.id(label).is_none_or(|input| c.kind(input) != *kind));
+        }
+        self.start_point_label()
+            .is_some_and(|label| c.id(label).is_none_or(|id| c.kind(id) != Kind::Point))
     }
 
     pub(crate) fn can_write(
@@ -187,12 +257,10 @@ impl Tag {
         match self.name {
             "incrementY" => self
                 .attr("val")
-                .is_some_and(|val| expressions.number(c, val).is_ok()),
+                .is_some_and(|val| expressions.point_increment(c, val).is_ok()),
             "startPoint" => {
-                if let Some(label) = self.start_point_label() {
-                    // The reference would evaluate any expression here. Only
-                    // an existing named point is safe for these retained tags.
-                    c.id(label).is_some_and(|id| c.kind(id) == Kind::Point)
+                if self.start_point_label().is_some() {
+                    !self.missing_start_point(c)
                 } else {
                     ["x", "y", "z"].into_iter().all(|key| {
                         self.attr(key)
@@ -215,27 +283,27 @@ impl Tag {
                     .and_then(xml::java_int)
                     .is_some_and(|n| (-1..=i32::from(limit)).contains(&n))
             }),
-            "tags" => matches!(c.def(id), Def::Chart(chart) if chart.has_bar_style()),
-            "tag" => {
-                matches!(c.def(id), Def::Chart(chart) if chart.has_bar_style())
-                    && self.valid_chart_tag()
-            }
+            "tags" => is_chart(c, id),
+            "tag" => is_chart(c, id) && self.valid_chart_tag(),
             "angleStyle" => self.attr("val").and_then(xml::java_int).is_some(),
             _ => true,
         }
     }
     fn valid_chart_tag(&self) -> bool {
+        if !self.valid_chart_bar() {
+            return false;
+        }
+        if self.attr("key") == Some("barImage") {
+            return self.chart_image().is_some();
+        }
         let Some(value) = self.attr("value").filter(|value| !value.is_empty()) else {
             return false;
         };
-        if self.attr("barNumber").and_then(xml::java_int).is_none() {
-            return false;
-        }
         match self.attr("key") {
             Some("barAlpha") => xml::finite_java_float(value),
             Some("barHatchDistance" | "barHatchAngle") => xml::java_int(value).is_some(),
             Some("barFillType") => xml::java_int(value)
-                .is_some_and(|n| (0..=i32::from(crate::export::Fill::MAX_PATTERN)).contains(&n)),
+                .is_some_and(|n| (0..=i32::from(crate::export::Fill::IMAGE_PATTERN)).contains(&n)),
             Some("barSymbol") => true,
             Some("barColor") => value
                 .strip_prefix("rgba(")
@@ -255,6 +323,14 @@ impl Tag {
             _ => false,
         }
     }
+
+    fn valid_chart_bar(&self) -> bool {
+        self.attr("barNumber").and_then(xml::java_int).is_some()
+    }
+}
+
+fn is_chart(c: &Construction, id: Id) -> bool {
+    matches!(c.def(id), Def::Chart(chart) if chart.has_bar_style())
 }
 
 /// Attributes are decoded and escaped by the same code as modeled fields.
@@ -343,5 +419,6 @@ pub(crate) fn read(
         name,
         attributes,
         children: Vec::new(),
+        extra: None,
     }))
 }

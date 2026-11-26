@@ -26,6 +26,7 @@ import org.geogebra.common.kernel.QuadraticEquationRepresentable;
 import org.geogebra.common.kernel.arithmetic.NumberValue;
 import org.geogebra.common.kernel.geos.AngleProperties;
 import org.geogebra.common.kernel.geos.ChartStyleGeo;
+import org.geogebra.common.kernel.kernelND.GeoPointND;
 import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoButton;
@@ -196,6 +197,11 @@ public final class SavedExporter {
             } else if ("widget_icon".equals(action) && geo instanceof GeoButton button) {
                 String name = (String) step.get("file");
                 SavedImages.setIcon(button, name, imageAssets);
+            } else if ("bar_image".equals(action) && geo instanceof ChartStyleGeo chart) {
+                String name = (String) step.get("file");
+                chart.getStyle().setBarFillType(FillType.IMAGE, 2);
+                chart.getStyle().setBarImage(name, 2);
+                SavedImages.addAsset(name, imageAssets);
             } else if ("move".equals(action) && geo instanceof GeoPoint p
                     && (p.isIndependent() || p.isPointOnPath())) {
                 p.setCoords(number(step.get("x")), number(step.get("y")), 1.0);
@@ -413,7 +419,11 @@ public final class SavedExporter {
                         ((GeoPoint) geo).setVerticalIncrement(algebra.evaluateToNumeric((String) value, null));
                 case "vector_start" -> {
                     try {
-                        ((GeoVector) geo).setStartPoint((GeoPoint) kernel.lookupLabel((String) value));
+                        var point = (GeoPointND) kernel.lookupLabel((String) value);
+                        if (point == null) {
+                            point = algebra.evaluateToPoint((String) value, null, true);
+                        }
+                        ((GeoVector) geo).setStartPoint(point);
                     } catch (CircularDefinitionException ex) {
                         throw new IllegalArgumentException("circular vector start", ex);
                     }
