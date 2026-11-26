@@ -278,9 +278,13 @@ def package_linux(config, variant, appdir, out, stem, work):
         deb = out / f"{stem}.deb"
         run("dpkg-deb", "--root-owner-group", "--build", appdir, deb)
         sudo = ("sudo",) if os.geteuid() else ()
-        run(*sudo, "dpkg", "-i", deb)
+        # Minimal Ubuntu images exclude documentation by default. Keep this
+        # package's source and notices when testing its installed payload.
+        installed_docs = payload_docs("linux", variant, Path("/"))
+        run(*sudo, "dpkg", f"--path-include={installed_docs}",
+            f"--path-include={installed_docs}/*", "-i", deb)
         smoke(config, variant, f"/usr/bin/{name}")
-        verify_notices(payload_docs("linux", variant, Path("/")), notice_digests(docs, variant))
+        verify_notices(installed_docs, notice_digests(docs, variant))
 
 
 def package_macos(config, variant, app, out, stem, work, sign):

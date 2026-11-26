@@ -7,10 +7,11 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from dependency_notices import copy_crate_notices
-from packaging_release import ReleaseConfig, notice_digests, stage_payload, verify_notices, write_checksums
+from packaging_release import ReleaseConfig, notice_digests, package_linux, stage_payload, verify_notices, write_checksums
 
 
 class PackagingTests(unittest.TestCase):
@@ -95,6 +96,19 @@ class PackagingTests(unittest.TestCase):
         (package / "licenses/fonts/Ubuntu-Font-Licence.txt").unlink()
         with self.assertRaisesRegex(ValueError, "Ubuntu-Font-Licence"):
             verify_notices(package, expected)
+
+    def test_debian_smoke_install_keeps_package_documentation(self):
+        config = ReleaseConfig("1.0.0", "geokernel", "org.example.geokernel", "deb")
+        appdir = self.root / "payload"
+        stage_payload(config, "linux", "x86_64", "eupl", self.binary, appdir)
+        with patch("packaging_release.run") as run, patch("packaging_release.smoke"), \
+                patch("packaging_release.verify_notices"), patch(
+                    "packaging_release.os.geteuid", return_value=0, create=True
+                ):
+            package_linux(config, "eupl", appdir, self.root, "geokernel", self.root)
+        run.assert_any_call("dpkg", "--path-include=/usr/share/doc/geokernel",
+                            "--path-include=/usr/share/doc/geokernel/*",
+                            "-i", self.root / "geokernel.deb")
 
     def test_only_explicit_dispatch_can_publish(self):
         workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/release.yml").read_text()
