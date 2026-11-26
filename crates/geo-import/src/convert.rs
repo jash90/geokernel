@@ -576,21 +576,46 @@ impl StyleExpressions {
         Ok(())
     }
 
-    /// A point increment can also measure an existing list. The reference
-    /// saves its unlabelled length as Length[L].
-    pub fn point_increment(&mut self, c: &Construction, source: &str) -> Result<String, String> {
+    /// The saved point increment and the lists it requires.
+    pub fn point_increment(
+        &mut self,
+        c: &Construction,
+        source: &str,
+    ) -> Result<(String, Vec<Id>), String> {
+        use geo_kernel::expr::{validate_point_increment, work_done, PointIncrement};
+
         self.charge_source(source)?;
-        let line = expression_line(source)?;
-        if let Some(arg) = line
-            .strip_prefix("Length(")
-            .and_then(|line| line.strip_suffix(')'))
-        {
-            let label = arg.trim();
-            if is_label(label) && c.id(label).is_some_and(|id| c.kind(id) == Kind::List) {
-                return Ok(format!("Length[{label}]"));
-            }
+        let line = normalized_expression_line(source, true)?;
+        let remaining = self.budget - self.used;
+        let before = work_done();
+        let increment = validate_point_increment(c, &line, remaining);
+        if remaining != 0 && !matches!(increment, Ok(Some(PointIncrement::ListLength(_)))) {
+            self.used += (work_done() - before).max(1);
         }
-        self.number(c, &line)
+        match increment? {
+            Some(PointIncrement::Scalar) => {
+                let saved = if line.contains('[') {
+                    expression_line(source)?
+                } else {
+                    line
+                };
+                Ok((saved, Vec::new()))
+            }
+            Some(PointIncrement::ListLength(id)) => {
+                let label = c.label(id);
+                let saved = if "Length[]".len() + label.len() <= crate::xml::MAX_ATTRIBUTE_BYTES {
+                    format!("Length[{label}]")
+                } else {
+                    source.trim().to_owned()
+                };
+                Ok((saved, vec![id]))
+            }
+            Some(PointIncrement::ListExpression(lists)) => Ok((source.trim().to_owned(), lists)),
+            None if remaining == 0 => {
+                Err("the style expressions of the file exceed the evaluation budget".into())
+            }
+            None => Err(format!("`{source}` is not a number of the construction")),
+        }
     }
 
     /// A dependent start point expressed as supported geometry over named
@@ -2221,6 +2246,13 @@ fn object_expression(label: &str, kind: Kind, exp: &str) -> Result<String, Strin
 /// Convert saved command brackets to parentheses. The kernel already reads
 /// the saved spellings of comparisons, logical operators, powers and degrees.
 pub fn expression_line(exp: &str) -> Result<String, String> {
+    normalized_expression_line(exp, false)
+}
+
+fn normalized_expression_line(
+    exp: &str,
+    preserve_point_increment_brackets: bool,
+) -> Result<String, String> {
     let mut out = String::with_capacity(exp.len());
     let mut closers = Vec::new();
     let mut quoted = false;
@@ -2251,26 +2283,31 @@ pub fn expression_line(exp: &str) -> Result<String, String> {
                 if !name.starts_with(|ch: char| ch.is_ascii_uppercase()) {
                     return Err("a square bracket must follow a command name".into());
                 }
+                // The saved point increment parser needs the explicit command brackets.
+                let keep = preserve_point_increment_brackets
+                    && matches!(name, "Length" | "Sum")
+                    && end == out.len();
                 out.truncate(end);
-                closers.push(']');
-                '('
+                closers.push((']', if keep { ']' } else { ')' }));
+                if keep {
+                    '['
+                } else {
+                    '('
+                }
             }
             '(' | '{' => {
-                closers.push(if ch == '(' { ')' } else { '}' });
+                let close = if ch == '(' { ')' } else { '}' };
+                closers.push((close, close));
                 ch
             }
             ')' | ']' | '}' => {
-                let expected = closers.pop();
-                if expected != Some(ch) {
-                    if ch == ']' || expected == Some(']') {
+                let close = closers.pop();
+                match close {
+                    Some((expected, normalized)) if expected == ch => normalized,
+                    _ if ch == ']' || close.is_some_and(|(expected, _)| expected == ']') => {
                         return Err("mismatched command square brackets in expression".into());
                     }
-                    return Err(format!("unexpected `{ch}` in expression"));
-                }
-                if ch == ']' {
-                    ')'
-                } else {
-                    ch
+                    _ => return Err(format!("unexpected `{ch}` in expression")),
                 }
             }
             '·' => '*',
@@ -2282,7 +2319,7 @@ pub fn expression_line(exp: &str) -> Result<String, String> {
     if quoted {
         return Err("unclosed text literal in expression".into());
     }
-    if let Some(closer) = closers.pop() {
+    if let Some((closer, _)) = closers.pop() {
         return Err(format!("missing `{closer}` in expression"));
     }
     Ok(out)

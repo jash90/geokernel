@@ -1,5 +1,5 @@
 kind,upstream,kernel_kind,kernel_golden,svg,app_draw,pointer_hit,tool,algebra_text,import,export,notes
-Point,POINT,Point,yes,yes,yes,yes,yes,yes,yes,partial,An intersection at infinity has raw coordinates but no Cartesian drawing or hit target. Export: vertical increments omit expressions outside supported numeric arithmetic and Length of a named list.
+Point,POINT,Point,yes,yes,yes,yes,yes,yes,yes,partial,An intersection at infinity has raw coordinates but no Cartesian drawing or hit target. Export: vertical increments support scalar arithmetic with named list lengths as operands and standalone sums of one named list that the kernel types as numeric or empty.
 Line,LINE,Line,yes,yes,yes,yes,yes,yes,yes,yes,Export: Writes native commands for supported named inputs and retained equations or inline operands for the other supported forms.
 Segment,SEGMENT,Segment,yes,yes,yes,yes,yes,yes,yes,yes,"Export: Writes endpoint commands for named points. A fixed length uses a point on an anonymous circle and a two-point segment, with an inline start when the definition supplies one."
 Ray,RAY,Ray,yes,yes,yes,yes,yes,yes,yes,yes,Export: Writes Ray with named inputs or supported inline operands. The command carries the start and the element carries the line coefficients.

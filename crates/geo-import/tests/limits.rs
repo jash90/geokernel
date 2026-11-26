@@ -461,15 +461,19 @@ fn the_style_expressions_of_a_document_share_one_budget() {
 #[test]
 fn point_presentation_shares_the_document_expression_budget() {
     use geo_import::convert::StyleExpressions;
-    let construction = geo_kernel::script::load("A = (1, 2)\nL = {1, 2}").unwrap();
+    let construction = geo_kernel::script::load("A = (1, 2)\nL = {1, 2}\nLength = 7").unwrap();
     let anchor = "(x(A) + 1, y(A))";
     let increment = "Length[L]";
     let budget = (anchor.len() + increment.len()) as u64;
     let mut expressions = StyleExpressions::with_budget(budget);
     assert!(expressions.point(&construction, anchor).is_ok());
-    assert!(expressions
-        .point_increment(&construction, increment)
-        .is_ok());
+    assert_eq!(
+        expressions
+            .point_increment(&construction, increment)
+            .unwrap(),
+        (increment.to_owned(), vec![construction.id("L").unwrap()])
+    );
+    assert_eq!(expressions.work(), budget);
     assert!(expressions.point(&construction, anchor).is_err());
     assert!(expressions
         .point_increment(&construction, increment)
@@ -479,6 +483,104 @@ fn point_presentation_shares_the_document_expression_budget() {
     assert!(expressions
         .point_increment(&construction, "Length[L] + Sum[L]")
         .is_err());
+}
+
+#[test]
+fn point_list_increments_charge_list_evaluation_to_the_style_budget() {
+    use geo_import::convert::StyleExpressions;
+    let c = geo_kernel::script::load("L = Sequence(1, 256)\nB = {true, false}\nn = 2").unwrap();
+    let length = "Length[L] + n";
+    let sum = "Sum[L]";
+    let mut measured = StyleExpressions::default();
+    assert!(measured.point_increment(&c, length).is_ok());
+    let before_sum = measured.work();
+    assert!(measured.point_increment(&c, sum).is_ok());
+    assert!(measured.work() >= before_sum + sum.len() as u64 + 256);
+
+    let mut limited = StyleExpressions::with_budget(before_sum + sum.len() as u64 + 128);
+    assert!(limited.point_increment(&c, length).is_ok());
+    let reason = limited.point_increment(&c, sum).unwrap_err();
+    assert!(reason.contains("evaluation budget"), "{reason}");
+
+    let mut exact = StyleExpressions::with_budget(measured.work());
+    assert!(exact.point_increment(&c, length).is_ok());
+    assert!(exact.point_increment(&c, sum).is_ok());
+    assert!(exact.number(&c, "n").is_err());
+
+    let mut expressions = StyleExpressions::default();
+    assert!(expressions.number(&c, length).is_err());
+    assert!(expressions.number(&c, sum).is_err());
+    for unsupported in [
+        "Sum[Sequence(1, 256)]",
+        "Sum[L, L]",
+        "Sum[B]",
+        "Length[{1, 2}] + 1",
+        "If(L == L, Length[L], n)",
+        "If(true, Length[L], SetValue(n, 7))",
+    ] {
+        assert!(
+            expressions.point_increment(&c, unsupported).is_err(),
+            "{unsupported}"
+        );
+    }
+    assert_eq!(c.arithmetic_value("n"), Some(2.0));
+}
+
+#[test]
+fn point_list_increment_sum_with_shadow_requires_a_named_numeric_or_empty_list() {
+    use geo_import::convert::StyleExpressions;
+
+    let c = geo_kernel::script::load("L = Sequence(1, 256)\nE = {}\nB = {true, false}\nSum = 7")
+        .unwrap();
+    let mut expressions = StyleExpressions::default();
+    let sum = "Sum[L]";
+    assert_eq!(
+        expressions.point_increment(&c, sum).unwrap(),
+        (sum.to_owned(), vec![c.id("L").unwrap()])
+    );
+    assert!(expressions.work() >= sum.len() as u64 + 256);
+    assert_eq!(
+        expressions.point_increment(&c, "Sum[E]").unwrap(),
+        ("Sum[E]".to_owned(), vec![c.id("E").unwrap()])
+    );
+    for unsupported in ["Sum(L)", "Sum [L]", "Sum[L] + 1", "Sum[L, 2]", "Sum[B]"] {
+        assert!(
+            expressions.point_increment(&c, unsupported).is_err(),
+            "{unsupported}"
+        );
+    }
+
+    let mut limited = StyleExpressions::with_budget(sum.len() as u64 + 128);
+    let reason = limited.point_increment(&c, sum).unwrap_err();
+    assert!(reason.contains("evaluation budget"), "{reason}");
+}
+
+#[test]
+fn shadowed_point_list_length_arithmetic_spends_the_style_budget() {
+    use geo_import::convert::StyleExpressions;
+
+    let c = geo_kernel::script::load("L = {1, 2}\nLength = 7").unwrap();
+    let length = "Length[L]";
+    let arithmetic = "-(Length[L] + 1)";
+    let mut measured = StyleExpressions::default();
+    let parsed = measured.point_increment(&c, arithmetic).unwrap();
+    assert_eq!(parsed, (arithmetic.to_owned(), vec![c.id("L").unwrap()]));
+    assert!(measured.work() > arithmetic.len() as u64);
+
+    let mut limited = StyleExpressions::with_budget((length.len() + arithmetic.len()) as u64);
+    assert!(limited.point_increment(&c, length).is_ok());
+    let reason = limited.point_increment(&c, arithmetic).unwrap_err();
+    assert!(reason.contains("evaluation budget"), "{reason}");
+
+    let mut exact = StyleExpressions::with_budget(length.len() as u64 + measured.work());
+    assert!(exact.point_increment(&c, length).is_ok());
+    assert_eq!(exact.point_increment(&c, arithmetic).unwrap(), parsed);
+    assert!(exact.point_increment(&c, length).is_err());
+
+    let mut expressions = StyleExpressions::default();
+    assert!(expressions.point_increment(&c, "Length(L) + 1").is_err());
+    assert!(expressions.number(&c, "Length[L] + 1").is_err());
+    assert!(c.arithmetic_value("Length(L) + 1").is_none());
 }
 
 #[test]

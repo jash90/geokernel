@@ -1446,7 +1446,7 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
 const PROPERTY_LIMITS: &[(&str, &str)] = &[
     (
         "Point",
-        "vertical increments omit expressions outside supported numeric arithmetic and Length of a named list",
+        "vertical increments support scalar arithmetic with named list lengths as operands and standalone sums of one named list that the kernel types as numeric or empty",
     ),
     ("Button", "SVG and built-in icons are omitted because the asset store accepts archived rasters"),
     ("InputBox", "SVG and built-in icons are omitted because the asset store accepts archived rasters"),
@@ -1991,6 +1991,286 @@ fn geogebra_reloads_point_increments_vector_anchors_and_chart_images() {
         );
     }
     assert!(failures.is_empty(), "{}", failures.join("\n"));
+}
+
+const LIST_POINT_INCREMENTS: &str = "saved-export-point-increments-001.xml";
+
+#[test]
+fn point_list_increments_keep_the_reference_spelling() {
+    let wb = review_workbench(&saved_review_file(LIST_POINT_INCREMENTS));
+    let xml = exported_xml(&wb);
+    assert_eq!(xml.matches("<incrementY ").count(), 3, "{xml}");
+    for value in ["Length[L]", "Length[L] + 1", "Sum[L]"] {
+        assert!(
+            xml.contains(&format!(r#"<incrementY val="{value}"/>"#)),
+            "{xml}"
+        );
+    }
+}
+
+#[test]
+fn point_list_increment_length_survives_an_object_named_length() {
+    let shadow = r#"<element type="numeric" label="Length"><value val="7"/></element>"#;
+    for label in ["L", "L_{1}"] {
+        let increment = format!(r#"<incrementY val="Length[{label}]"/>"#);
+        let document = |extra: &str| {
+            format!(
+                r#"<geogebra><construction>
+                  <expression label="{label}" exp="{{2, 4, 8}}"/>
+                  <element type="list" label="{label}"/>
+                  {extra}
+                  <element type="point" label="P"><coords x="0" y="1" z="1"/>{increment}</element>
+                </construction></geogebra>"#
+            )
+        };
+
+        let loaded_with_shadow = review_workbench(document(shadow).as_bytes());
+        assert!(loaded_with_shadow.construction().id("Length").is_some());
+        assert!(
+            exported_xml(&loaded_with_shadow).contains(&increment),
+            "{label}"
+        );
+
+        let mut edited = review_workbench(document("").as_bytes());
+        assert!(exported_xml(&edited).contains(&increment), "{label}");
+        edited.run_line("Length = 7").unwrap();
+        assert!(edited.construction().id("Length").is_some());
+        assert!(exported_xml(&edited).contains(&increment), "{label}");
+    }
+}
+
+#[test]
+fn point_list_increment_length_alias_uses_canonical_spelling_when_it_fits() {
+    let input = br#"<geogebra><construction>
+      <expression label="L_{1}" exp="{2, 4, 8}"/>
+      <element type="list" label="L_{1}"/>
+      <element type="point" label="P"><coords x="0" y="1" z="1"/><incrementY val="Length[L_1]"/></element>
+    </construction></geogebra>"#;
+    let wb = review_workbench(input);
+    assert!(exported_xml(&wb).contains(r#"<incrementY val="Length[L_{1}]"/>"#));
+}
+
+#[test]
+fn point_list_increment_length_alias_round_trips_at_the_attribute_limit() {
+    use geo_import::xml::MAX_ATTRIBUTE_BYTES;
+
+    let base = "l".repeat(MAX_ATTRIBUTE_BYTES - "Length[_1]".len());
+    let label = format!("{base}_{{1}}");
+    let value = format!("Length[{base}_1]");
+    assert_eq!(value.len(), MAX_ATTRIBUTE_BYTES);
+    assert!(label.len() < MAX_ATTRIBUTE_BYTES);
+    assert_eq!("Length[]".len() + label.len(), MAX_ATTRIBUTE_BYTES + 2);
+
+    // The list definition and element both fit the XML attribute cap.
+    // Its short alias is one identifier token and the increment fits too.
+    let input = format!(
+        r#"<geogebra><construction>
+          <expression label="{label}" exp="{{2, 4, 8}}"/>
+          <element type="list" label="{label}"/>
+          <element type="point" label="P"><coords x="0" y="1" z="1"/><incrementY val="{value}"/></element>
+        </construction></geogebra>"#
+    );
+    let wb = review_workbench(input.as_bytes());
+    let xml = exported_xml(&wb);
+    let increment = format!(r#"<incrementY val="{value}"/>"#);
+    assert!(xml.contains(&increment));
+
+    let reloaded = review_workbench(xml.as_bytes());
+    let c = reloaded.construction();
+    assert_eq!(c.kind(c.id(&label).unwrap()), Kind::List);
+    assert!(exported_xml(&reloaded).contains(&increment));
+}
+
+#[test]
+fn bracketed_segment_length_still_exports_in_point_arithmetic() {
+    let wb = review_workbench(
+        br#"<geogebra><construction>
+      <element type="point" label="A"><coords x="0" y="0" z="1"/></element>
+      <element type="point" label="B"><coords x="3" y="4" z="1"/></element>
+      <command name="Segment"><input a0="A" a1="B"/><output a0="s"/></command>
+      <element type="segment" label="s"/>
+      <element type="point" label="P"><coords x="0" y="1" z="1"/>
+        <incrementY val="Length[s] + 1"/>
+      </element>
+    </construction></geogebra>"#,
+    );
+    assert_eq!(
+        wb.construction().kind(wb.construction().id("s").unwrap()),
+        Kind::Segment
+    );
+    assert!(exported_xml(&wb).contains(r#"<incrementY val="Length(s) + 1"/>"#));
+}
+
+const SHADOWED_POINT_INCREMENTS: &str = "saved-export-point-increment-shadow-001.xml";
+const SHADOWED_LIST_LENGTHS: [(&str, &str, f64); 4] = [
+    ("P", "Length[L]", 3.0),
+    ("Q", "Length[L] + 1", 4.0),
+    ("R", "Length[L_{1}]", 3.0),
+    ("S", "Length[L] + Length[L_{1}]", 6.0),
+];
+
+#[test]
+fn point_list_length_arithmetic_survives_an_object_named_length() {
+    let wb = review_workbench(&saved_review_file(SHADOWED_POINT_INCREMENTS));
+    assert!(wb.construction().id("Length").is_some());
+    let xml = exported_xml(&wb);
+    for (label, value, _) in SHADOWED_LIST_LENGTHS {
+        assert!(
+            xml.contains(&format!(r#"<incrementY val="{value}"/>"#)),
+            "{label}: {value} was dropped"
+        );
+    }
+}
+
+#[test]
+fn point_list_length_arithmetic_survives_a_later_object_named_length() {
+    let input = review_xml(
+        SHADOWED_POINT_INCREMENTS,
+        &[(r#"label="Length""#, r#"label="initial""#)],
+    );
+    let mut wb = review_workbench(&input);
+    assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 4);
+    wb.run_line("Length = 7").unwrap();
+    assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 4);
+
+    assert!(wb.delete(wb.construction().id("L_{1}").unwrap()));
+    let xml = exported_xml(&wb);
+    assert_eq!(xml.matches("<incrementY ").count(), 2);
+    assert!(xml.contains(r#"<incrementY val="Length[L] + 1"/>"#));
+    wb.run_line("L_{1} = (3, 4)").unwrap();
+    assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 2);
+
+    assert!(wb.undo());
+    assert!(wb.undo());
+    assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 4);
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_reloads_shadowed_point_list_lengths() {
+    let input = saved_review_file(SHADOWED_POINT_INCREMENTS);
+    let wb = review_workbench(&input);
+    let (source, exported) = review_oracle(&input, &wb.export_ggb(None).unwrap());
+    for (label, value, expected) in SHADOWED_LIST_LENGTHS {
+        for snapshot in [&source, &exported] {
+            let actual = snapshot["pointIncrements"][label]
+                .as_f64()
+                .unwrap_or_else(|| panic!("{label}: missing reloaded increment"));
+            assert!(numbers_agree(expected, actual), "{label}: {actual}");
+            for tags in ["elementTags", "reloadedTags"] {
+                assert_eq!(
+                    snapshot[tags][label]["incrementY"][0]["val"], value,
+                    "{label}"
+                );
+            }
+        }
+    }
+}
+
+const POINT_SUM_INCREMENT: &str = r#"<incrementY val="Sum[L]"/>"#;
+
+#[test]
+fn point_list_increment_sum_survives_an_object_named_sum() {
+    let input = review_xml(
+        LIST_POINT_INCREMENTS,
+        &[(
+            r#"<expression label="L" exp="{2, 4, 8}"/>"#,
+            concat!(
+                r#"<element type="numeric" label="Sum"><value val="7"/></element>"#,
+                r#"<expression label="L" exp="{2, 4, 8}"/>"#,
+            ),
+        )],
+    );
+    let wb = review_workbench(&input);
+    let c = wb.construction();
+    assert_eq!(c.kind(c.id("Sum").unwrap()), Kind::Number);
+
+    let xml = exported_xml(&wb);
+    assert!(xml.contains(POINT_SUM_INCREMENT), "{xml}");
+    let reloaded = review_workbench(xml.as_bytes());
+    assert!(exported_xml(&reloaded).contains(POINT_SUM_INCREMENT));
+}
+
+#[test]
+fn point_list_increment_sum_survives_a_later_object_named_sum() {
+    let mut wb = review_workbench(&saved_review_file(LIST_POINT_INCREMENTS));
+    assert!(exported_xml(&wb).contains(POINT_SUM_INCREMENT));
+
+    wb.run_line("Sum = 7").unwrap();
+    assert!(exported_xml(&wb).contains(POINT_SUM_INCREMENT));
+    assert_eq!(wb.construction().arithmetic_value("Sum(2)"), Some(14.0));
+
+    assert!(wb.delete(wb.construction().id("L").unwrap()));
+    assert!(!exported_xml(&wb).contains(POINT_SUM_INCREMENT));
+    wb.run_line("L = 2").unwrap();
+    assert!(!exported_xml(&wb).contains(POINT_SUM_INCREMENT));
+
+    assert!(wb.undo());
+    assert!(wb.undo());
+    assert!(exported_xml(&wb).contains(POINT_SUM_INCREMENT));
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_reloads_shadowed_point_list_sum() {
+    let input = saved_review_file("saved-export-point-increment-sum-shadow-001.xml");
+    let wb = review_workbench(&input);
+    let (source, exported) = review_oracle(&input, &wb.export_ggb(None).unwrap());
+    for snapshot in [&source, &exported] {
+        assert_eq!(snapshot["pointIncrements"]["P"].as_f64(), Some(14.0));
+        for tags in ["elementTags", "reloadedTags"] {
+            assert_eq!(snapshot[tags]["P"]["incrementY"][0]["val"], "Sum[L]");
+        }
+    }
+}
+
+#[test]
+fn point_list_increments_require_the_list_at_export() {
+    let mut wb = review_workbench(&saved_review_file(LIST_POINT_INCREMENTS));
+    assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 3);
+
+    let list = wb.construction().id("L").unwrap();
+    assert!(wb.delete(list));
+    for label in ["P", "Q", "R"] {
+        assert!(wb.construction().id(label).is_some(), "{label}");
+    }
+    assert!(!exported_xml(&wb).contains("<incrementY "));
+
+    wb.run_line("L = (3, 4)").unwrap();
+    let replacement = wb.construction().id("L").unwrap();
+    assert_eq!(wb.construction().kind(replacement), Kind::Point);
+    let xml = exported_xml(&wb);
+    assert!(!xml.contains("<incrementY "), "{xml}");
+
+    assert!(wb.undo());
+    assert!(wb.undo());
+    assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 3);
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_reloads_point_list_increments() {
+    let input = saved_review_file(LIST_POINT_INCREMENTS);
+    let wb = review_workbench(&input);
+    let (source, exported) = review_oracle(&input, &wb.export_ggb(None).unwrap());
+    for (label, expected) in [("P", 3.0), ("Q", 4.0), ("R", 14.0)] {
+        for snapshot in [&source, &exported] {
+            let value = snapshot["pointIncrements"][label]
+                .as_f64()
+                .unwrap_or_else(|| panic!("{label}: missing reloaded increment"));
+            assert!(numbers_agree(expected, value), "{label}: {value}");
+        }
+        assert_eq!(
+            source["elementTags"][label]["incrementY"],
+            exported["elementTags"][label]["incrementY"],
+            "{label}: saved XML"
+        );
+        assert_eq!(
+            source["reloadedTags"][label]["incrementY"],
+            exported["reloadedTags"][label]["incrementY"],
+            "{label}"
+        );
+    }
 }
 
 fn saved_review_file(file: &str) -> Vec<u8> {
