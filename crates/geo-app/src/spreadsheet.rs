@@ -27,16 +27,16 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
             .unwrap_or(Address { column: 1, row: 1 });
         app.select_spreadsheet_cell(address);
     }
-    let editor = app
-        .spreadsheet_editor
-        .as_mut()
-        .expect("spreadsheet selection");
     let analysis_open = matches!(app.spreadsheet_analysis, Ok(Some(_)));
     let (launch, close) = if Analysis::available() {
         ui.horizontal_wrapped(|ui| {
             let close = analysis_open && ui.button("Zamknij podsumowanie").clicked();
             ui.heading(label(Label::SpreadsheetView));
             let launch = ui.button("Analiza jednej zmiennej").clicked();
+            let editor = app
+                .spreadsheet_editor
+                .as_mut()
+                .expect("spreadsheet selection");
             ui.checkbox(&mut editor.range_extension_armed, "Zaznacz zakres");
             (launch, close)
         })
@@ -47,6 +47,10 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
     };
     crate::app::file_notices(app, ui);
 
+    let editor = app
+        .spreadsheet_editor
+        .as_mut()
+        .expect("spreadsheet selection");
     let selected = editor.selected;
     let focus = std::mem::take(&mut editor.focus);
     let reveal = std::mem::take(&mut editor.reveal);
