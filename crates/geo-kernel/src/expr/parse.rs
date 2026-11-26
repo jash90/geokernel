@@ -1123,7 +1123,7 @@ impl Parser<'_> {
         Ok(Some(result))
     }
 
-    fn point_increment_length(&mut self) -> Option<u32> {
+    fn point_increment_list_call(&mut self, op: ListOp) -> Option<u32> {
         let [Token {
             tok: Tok::LParen,
             start,
@@ -1137,28 +1137,34 @@ impl Parser<'_> {
         else {
             return None;
         };
-        // An explicit Length[L] in a saved increment is a command even when
-        // an object is named Length. Keep the existing standalone Length(L)
-        // form for an exact list label as well.
-        if self.src.as_bytes()[*start] != b'[' && (self.pos != 1 || !rest.is_empty()) {
-            return None;
-        }
-        let id = self.c.id(text)?;
+        // Explicit saved calls take precedence over objects with the same
+        // name. Keep the existing standalone Length(L) for an exact label.
+        let bracketed = self.src.as_bytes()[*start] == b'[';
+        let id = match op {
+            ListOp::Length if bracketed || (self.pos == 1 && rest.is_empty()) => self.c.id(text)?,
+            ListOp::Sum if bracketed => self.lookup(text)?,
+            _ => return None,
+        };
         if self.c.kind(id) != Kind::List {
             return None;
         }
         self.pos += 3;
         self.read(id, true);
         let arg = self.push(Node::Obj(id));
-        Some(self.push(Node::ListOp(ListOp::Length, arg, NONE)))
+        Some(self.push(Node::ListOp(op, arg, NONE)))
     }
 
     /// A name: a constant, the variable `x`, an object, a built-in function
     /// or a command (`Parser.functionOrCommand`, `FunctionParser`).
     fn name(&mut self, text: &str, call: bool) -> Result<u32, String> {
-        if self.point_increment && call && text == "Length" {
-            if let Some(length) = self.point_increment_length() {
-                return Ok(length);
+        if self.point_increment && call {
+            let op = match text {
+                "Length" => Some(ListOp::Length),
+                "Sum" if self.c.id(text).is_some() => Some(ListOp::Sum),
+                _ => None,
+            };
+            if let Some(node) = op.and_then(|op| self.point_increment_list_call(op)) {
+                return Ok(node);
             }
         }
         if let Some(index) = self.cas_variables.iter().position(|name| name == text) {

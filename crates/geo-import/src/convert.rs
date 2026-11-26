@@ -2249,7 +2249,10 @@ pub fn expression_line(exp: &str) -> Result<String, String> {
     normalized_expression_line(exp, false)
 }
 
-fn normalized_expression_line(exp: &str, preserve_length_brackets: bool) -> Result<String, String> {
+fn normalized_expression_line(
+    exp: &str,
+    preserve_point_increment_brackets: bool,
+) -> Result<String, String> {
     let mut out = String::with_capacity(exp.len());
     let mut closers = Vec::new();
     let mut quoted = false;
@@ -2280,8 +2283,10 @@ fn normalized_expression_line(exp: &str, preserve_length_brackets: bool) -> Resu
                 if !name.starts_with(|ch: char| ch.is_ascii_uppercase()) {
                     return Err("a square bracket must follow a command name".into());
                 }
-                // The saved Length command uses an adjacent opening bracket.
-                let keep = preserve_length_brackets && name == "Length" && end == out.len();
+                // The saved point increment parser needs the explicit command brackets.
+                let keep = preserve_point_increment_brackets
+                    && matches!(name, "Length" | "Sum")
+                    && end == out.len();
                 out.truncate(end);
                 closers.push((']', if keep { ']' } else { ')' }));
                 if keep {

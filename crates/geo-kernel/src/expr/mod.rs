@@ -2714,9 +2714,9 @@ pub enum PointIncrement {
 }
 
 /// Validates a saved point increment without changing the construction.
-/// An explicit bracketed `Length` call can name an exact list label even
-/// when the construction has an object named `Length`. List evaluation
-/// spends the remaining style budget.
+/// Explicit bracketed `Length` and standalone `Sum` calls can read a named
+/// list when the construction has an object with the command name.
+/// List evaluation spends the remaining style budget.
 pub fn validate_point_increment(
     c: &Construction,
     text: &str,
