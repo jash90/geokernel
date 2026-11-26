@@ -136,15 +136,18 @@ impl Construction {
 
     /// Expands the saved caption's substitutions and falls back to the object name.
     pub fn expand_caption<'a>(&'a self, id: Id, caption: &'a str) -> Cow<'a, str> {
-        // Caption substitutions can repeat long object values. Cap expansion
-        // work and use the literal caption if the result exceeds the cap.
+        // Bound the text handed to the renderer. Caption substitutions can
+        // repeat long object values, so fall back to the literal on overflow.
         const MAX_EXPANSION: usize = 16_384;
 
         let name = self.label(id);
         if caption.is_empty() {
             return Cow::Borrowed(name);
         }
-        if caption.len() > MAX_EXPANSION || !caption.contains('%') {
+        if caption.len() > MAX_EXPANSION {
+            return Cow::Borrowed(&caption[..caption.floor_char_boundary(MAX_EXPANSION)]);
+        }
+        if !caption.contains('%') {
             return Cow::Borrowed(caption);
         }
         let mut out = String::with_capacity(caption.len());

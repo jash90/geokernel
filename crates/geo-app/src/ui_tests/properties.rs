@@ -1064,3 +1064,30 @@ fn properties_merge_clears_multi_selection_when_primary_selection_changes() {
     app.submit_input();
     assert_eq!(app.property_selection.len(), 2);
 }
+
+#[test]
+fn properties_merge_bounds_long_imported_captions_without_changing_the_saved_text() {
+    let caption = format!("a{}", "é".repeat(9_000));
+    let xml = format!(
+        r#"<geogebra format="5.0"><construction>
+        <element type="point" label="A"><coords x="2" y="1" z="1"/>
+        <show object="true" label="true"/><labelMode val="3"/><caption val="{caption}"/></element>
+        </construction></geogebra>"#
+    );
+    let mut h = harness("");
+    h.state_mut()
+        .wb
+        .load_bytes(xml.as_bytes(), "long caption")
+        .unwrap();
+    let [graphics, _] = rendered_views(&mut h);
+    let painted = graphics.iter().find_map(|shape| match &shape.shape {
+        egui::Shape::Text(text) if text.galley.text().starts_with("aé") => {
+            Some(text.galley.text())
+        }
+        _ => None,
+    });
+    assert_eq!(painted.map(str::len), Some(16_383));
+    assert!(painted == Some(&caption[..16_383]));
+    let presentation = h.state().wb.export_presentation(None);
+    assert_eq!(presentation.object_styles["A"].caption, caption);
+}
