@@ -1996,10 +1996,22 @@ fn geogebra_reloads_point_increments_vector_anchors_and_chart_images() {
 const LIST_POINT_INCREMENTS: &str = "saved-export-point-increments-001.xml";
 
 #[test]
-fn point_list_increments_are_exported_until_the_list_is_deleted() {
-    let mut wb = review_workbench(&saved_review_file(LIST_POINT_INCREMENTS));
+fn point_list_increments_keep_the_reference_spelling() {
+    let wb = review_workbench(&saved_review_file(LIST_POINT_INCREMENTS));
     let xml = exported_xml(&wb);
     assert_eq!(xml.matches("<incrementY ").count(), 3, "{xml}");
+    for value in ["Length[L]", "Length[L] + 1", "Sum[L]"] {
+        assert!(
+            xml.contains(&format!(r#"<incrementY val="{value}"/>"#)),
+            "{xml}"
+        );
+    }
+}
+
+#[test]
+fn point_list_increments_require_the_list_at_export() {
+    let mut wb = review_workbench(&saved_review_file(LIST_POINT_INCREMENTS));
+    assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 3);
 
     let list = wb.construction().id("L").unwrap();
     assert!(wb.delete(list));
@@ -2007,6 +2019,16 @@ fn point_list_increments_are_exported_until_the_list_is_deleted() {
         assert!(wb.construction().id(label).is_some(), "{label}");
     }
     assert!(!exported_xml(&wb).contains("<incrementY "));
+
+    wb.run_line("L = (3, 4)").unwrap();
+    let replacement = wb.construction().id("L").unwrap();
+    assert_eq!(wb.construction().kind(replacement), Kind::Point);
+    let xml = exported_xml(&wb);
+    assert!(!xml.contains("<incrementY "), "{xml}");
+
+    assert!(wb.undo());
+    assert!(wb.undo());
+    assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 3);
 }
 
 #[test]
@@ -2022,6 +2044,11 @@ fn geogebra_reloads_point_list_increments() {
                 .unwrap_or_else(|| panic!("{label}: missing reloaded increment"));
             assert!(numbers_agree(expected, value), "{label}: {value}");
         }
+        assert_eq!(
+            source["elementTags"][label]["incrementY"],
+            exported["elementTags"][label]["incrementY"],
+            "{label}: saved XML"
+        );
         assert_eq!(
             source["reloadedTags"][label]["incrementY"],
             exported["reloadedTags"][label]["incrementY"],
