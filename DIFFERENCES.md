@@ -977,8 +977,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:1789`, `commands/CommandsTest.java:1790` | **unsupported-command.** the kernel refuses the input: unknown command `FitImplicit` |
 | `commands/CommandsTest.java:1802` | **unsupported-command.** the kernel refuses the input: unknown command `Focus` |
 | `commands/CommandsTest.java:1834`, `commands/CommandsTest.java:1839`, `commands/CommandsTest.java:1844`, `commands/CommandsTest.java:1848`, `commands/CommandsTest.java:1853`, `commands/CommandsTest.java:1858`, `commands/CommandsTest.java:1862` | **unsupported-command.** the kernel refuses the input: unknown command `FrequencyTable` |
-| `commands/CommandsTest.java:1918` | **unsupported-command.** the kernel refuses the input: unknown command `GeometricMean` |
-| `commands/CommandsTest.java:1923` | **unsupported-command.** the kernel refuses the input: unknown command `HarmonicMean` |
 | `commands/CommandsTest.java:1928`, `commands/CommandsTest.java:1929` | **unsupported-command.** the kernel refuses the input: unknown command `Height` |
 | `commands/CommandsTest.java:1960` | **unsupported-command.** the kernel refuses the input: `Hyperbola` does not take 6 argument(s) |
 | `commands/CommandsTest.java:1964` | **unsupported-command.** the kernel refuses the input: `Hyperbola` does not take 5 argument(s) |
@@ -1016,7 +1014,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:2777`, `commands/CommandsTest.java:2792`, `commands/CommandsTest.java:2814` | **unsupported-command.** the kernel refuses the input: `Reflect` does not take 6 argument(s) |
 | `commands/CommandsTest.java:2793`, `commands/CommandsTest.java:2822` | **unsupported-command.** the kernel refuses the input: `Reflect` does not take 7 argument(s) |
 | `commands/CommandsTest.java:2795` | **unsupported-command.** the kernel refuses the input: `Reflect` does not take 14 argument(s) |
-| `commands/CommandsTest.java:2846` | **unsupported-command.** the kernel refuses the input: unknown command `Mode` |
 | `commands/CommandsTest.java:2858` | **unsupported-command.** the kernel refuses the input: unknown command `Name` |
 | `commands/CommandsTest.java:2881`, `commands/CommandsTest.java:2923` | **unsupported-command.** the kernel refuses the input: unknown command `Net` |
 | `commands/CommandsTest.java:3023` | **unsupported-command.** the kernel refuses the input: `Slope` does not take 4 argument(s) |
@@ -1055,7 +1052,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:3567`, `commands/CommandsTest.java:3568` | **unsupported-command.** the kernel refuses the input: `Ray` does not take 4 argument(s) |
 | `commands/CommandsTest.java:3574`, `commands/CommandsTest.java:3575`, `commands/CommandsTest.java:3576`, `commands/CommandsTest.java:3577`, `commands/CommandsTest.java:3578`, `commands/CommandsTest.java:3579`, `commands/CommandsTest.java:3580`, `commands/CommandsTest.java:3581`, `commands/CommandsTest.java:3582`, `commands/CommandsTest.java:3583`, `commands/CommandsTest.java:3586` | **unsupported-command.** the kernel refuses the input: unknown command `RandomPolynomial` |
 | `commands/CommandsTest.java:3591` | **unsupported-command.** the kernel refuses the input: unknown command `RectangleSum` |
-| `commands/CommandsTest.java:3728` | **unsupported-command.** the kernel refuses the input: unknown command `RootMeanSquare` |
 | `commands/CommandsTest.java:3746` | **unsupported-command.** the kernel refuses the input: `Rotate` does not take 6 argument(s) |
 | `commands/CommandsTest.java:3747` | **unsupported-command.** the kernel refuses the input: `Rotate` does not take 8 argument(s) |
 | `commands/CommandsTest.java:3781` | **unsupported-command.** the kernel refuses the input: unknown command `RSquare` |
