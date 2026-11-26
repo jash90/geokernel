@@ -15,6 +15,7 @@ mod chrome;
 mod gestures;
 mod pointer;
 mod properties;
+mod spreadsheet;
 mod tangents;
 mod tools;
 mod upstream_tools;
