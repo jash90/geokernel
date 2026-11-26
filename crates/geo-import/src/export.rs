@@ -8,6 +8,7 @@ mod element;
 mod live;
 
 use crate::{archive, Settings};
+use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::image::RasterAsset;
 use geo_kernel::{script, Construction, Def, Id, Kind};
 use std::collections::{BTreeMap, HashSet};
@@ -697,11 +698,15 @@ impl Writer<'_> {
                     "Curve" => "CurveCartesian",
                     other => other,
                 };
-                let inputs = inputs
+                let mut inputs = inputs
                     .iter()
                     .copied()
                     .filter(|arg| !arg.is_empty())
                     .collect::<Vec<_>>();
+                if name == "Distance" && matches!(def, Def::Measure(MeasureDef::DistanceLines(..)))
+                {
+                    inputs.reverse();
+                }
                 if name == "Polygon"
                     && inputs.len() == 3
                     && outputs.get(1).is_some_and(|&id| c.kind(id) == Kind::Point)

@@ -1156,7 +1156,8 @@ pub struct Construction {
     /// Original expressions whose structure is lost when bound to a value.
     construction_sources: HashMap<Id, String>,
     file_definitions: BTreeMap<Id, Box<str>>,
-    file_definition_bytes: usize,
+    definition_source_bytes: usize,
+    reserved_definition_source_bytes: usize,
     /// The stored lists of parents, one after the other (see [`IdList`]).
     lists: Vec<Id>,
     /// For each family of generated labels (see [`Construction::label_hint`]),
@@ -2297,9 +2298,16 @@ impl Construction {
         self.appearances.split_off(&Id(at.len));
         self.appearance_channels.split_off(&Id(at.len));
         self.equation_forms.retain(|id, _| id.0 < at.len);
-        self.construction_sources.retain(|id, _| id.0 < at.len);
+        self.construction_sources.retain(|id, source| {
+            if id.0 < at.len {
+                true
+            } else {
+                self.definition_source_bytes -= source.len();
+                false
+            }
+        });
         for source in self.file_definitions.split_off(&Id(at.len)).into_values() {
-            self.file_definition_bytes -= source.len();
+            self.definition_source_bytes -= source.len();
         }
         self.frozen_line_starts
             .retain(|_, &mut (_, _, order, _)| order < at.frozen_line_starts);
@@ -2761,7 +2769,7 @@ impl Construction {
         let hint = self.hints[new.0];
         let path = self.path_state(new);
         let closest_angle = self.closest_circle_parameters.remove(&new.0);
-        let mut source = self.construction_sources.remove(&new);
+        let mut source = self.remove_construction_source(new);
         if matches!(old, Def::Number(_))
             && matches!(def, Def::Expr(d) if d.kind() == Kind::Number && expr::undefined_literal(self, d))
         {
@@ -2834,7 +2842,7 @@ impl Construction {
         }
         expr::replace_free_decimal(self, id, decimal);
         self.remove_file_definition(id);
-        self.construction_sources.remove(&id);
+        self.remove_construction_source(id);
         if let Some(source) = source {
             self.remember_construction_source(id, &source);
         }
@@ -3771,7 +3779,7 @@ impl Construction {
         if same(old.0, x) && same(old.1, y) && !self.homogeneous_points.contains_key(&id.0) {
             return Ok(0);
         }
-        self.construction_sources.remove(&id);
+        self.remove_construction_source(id);
         self.cell_inputs.remove(&id);
         self.defs[id.0] = def;
         self.values[id.0] = self.store_point_coordinates(id.0, new);
@@ -3806,7 +3814,7 @@ impl Construction {
             {
                 continue;
             }
-            self.construction_sources.remove(&id);
+            self.remove_construction_source(id);
             self.cell_inputs.remove(&id);
             self.defs[id.0] = Def::FreePoint { x, y };
             self.values[id.0] = self.store_point_coordinates(id.0, Value::Point { x, y });
@@ -3915,7 +3923,7 @@ impl Construction {
         // A changed number loses its exact decimal (`GeoNumeric.setValue`),
         // which changes what reads it even when the value stays.
         let had_decimal = expr::forget_decimal(self, id);
-        let had_source = self.construction_sources.remove(&id).is_some();
+        let had_source = self.remove_construction_source(id).is_some();
         self.cell_inputs.remove(&id);
         // Bit equality: `0` to `-0` is a change (`1/a` flips its sign).
         let old = match def {
@@ -4088,7 +4096,7 @@ impl Construction {
             let changed = self.update_slider_bounds(child);
             if changed {
                 clamped_slider = true;
-                self.construction_sources.remove(&child);
+                self.remove_construction_source(child);
                 if let Some(transient) = transient
                     .as_deref_mut()
                     .filter(|_| !self.values[child.0].is_defined())
@@ -5526,25 +5534,51 @@ impl Construction {
     /// any undo history. An editor can still supply a definition at save time
     /// if an unusually large construction exhausts the retention budget.
     pub fn retain_file_definition(&mut self, id: Id, source: &str) {
-        const MAX_RETAINED_BYTES: usize = 16 * 1024 * 1024;
         self.remove_file_definition(id);
         if id.0 < self.defs.len()
             && !source.is_empty()
-            && source.len() <= MAX_RETAINED_BYTES - self.file_definition_bytes
+            && source.len() <= self.available_definition_source_bytes()
         {
-            self.file_definition_bytes += source.len();
+            self.definition_source_bytes += source.len();
             self.file_definitions.insert(id, source.into());
         }
     }
 
     fn remove_file_definition(&mut self, id: Id) {
         if let Some(source) = self.file_definitions.remove(&id) {
-            self.file_definition_bytes -= source.len();
+            self.definition_source_bytes -= source.len();
         }
     }
 
+    fn available_definition_source_bytes(&self) -> usize {
+        const MAX_RETAINED_BYTES: usize = 16 * 1024 * 1024;
+        MAX_RETAINED_BYTES - self.definition_source_bytes - self.reserved_definition_source_bytes
+    }
+
+    pub(crate) fn reserve_definition_sources(&mut self, bytes: usize) -> Result<(), String> {
+        if bytes > self.available_definition_source_bytes() {
+            return Err("construction definition source budget exhausted".into());
+        }
+        self.reserved_definition_source_bytes += bytes;
+        Ok(())
+    }
+
+    pub(crate) fn release_definition_sources(&mut self, bytes: usize) {
+        self.reserved_definition_source_bytes -= bytes;
+    }
+
+    fn remove_construction_source(&mut self, id: Id) -> Option<String> {
+        let source = self.construction_sources.remove(&id)?;
+        self.definition_source_bytes -= source.len();
+        Some(source)
+    }
+
     pub(crate) fn remember_construction_source(&mut self, id: Id, source: &str) {
-        self.construction_sources.insert(id, source.to_owned());
+        self.remove_construction_source(id);
+        if !source.is_empty() && source.len() <= self.available_definition_source_bytes() {
+            self.definition_source_bytes += source.len();
+            self.construction_sources.insert(id, source.to_owned());
+        }
     }
 
     /// The displayed value of a symbolic computation.

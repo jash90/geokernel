@@ -2,7 +2,6 @@
 //! result against `t-pairs-gaps.toml` (see `src/tpairs.rs`).
 
 use geo_golden::{repo_root, tpairs};
-use geo_kernel::Construction;
 use std::collections::BTreeMap;
 
 /// The verified pairs the runner must find: raising the bar notices a lost
@@ -56,15 +55,7 @@ fn kernel_agrees_with_the_verified_t_pairs() {
     let mut filtered_report = String::new();
 
     for method in &methods {
-        let mut c = Construction::new();
-        // The first step of this method that fails here: later steps that
-        // only miss an object it should have created are its cascade.
-        let mut root: Option<String> = None;
-        for pair in &method.steps {
-            let out = tpairs::run_pair(&mut c, pair, root.as_deref());
-            if root.is_none() && out.blocks_later_steps() {
-                root = Some(out.id.clone());
-            }
+        for (pair, out) in method.steps.iter().zip(tpairs::replay_method(method)) {
             let labels: BTreeMap<String, ()> = out
                 .disagreements
                 .iter()
@@ -247,6 +238,7 @@ fn kernel_agrees_with_the_verified_t_pairs() {
 const STALE_RUNNER_REASONS: &[&str] = &[
     "the input assigns nothing and creates no object",
     "unlabelled output",
+    "the object is missing only in its wake",
 ];
 
 /// The reason a regenerated gap list holds for `out`: the file's own reason
@@ -262,6 +254,7 @@ fn preserved_reason(gaps: &geo_golden::tpairs::Gaps, out: &tpairs::StepOutcome) 
     match gaps.get(&out.id) {
         Some((category, reason, ls))
             if *category == out.category.unwrap()
+                && *category != tpairs::Category::Cascade
                 && *ls == labels
                 && !STALE_RUNNER_REASONS.iter().any(|s| reason.contains(s))
                 && !(*category == tpairs::Category::Redefine

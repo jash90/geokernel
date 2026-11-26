@@ -194,6 +194,8 @@
     {"id": "saved-property-final-006", "script": [], "steps": [{"action": "load_xml", "xml": "<geogebra format=\"5.0\"><construction><element type=\"angle\" label=\"r\"><value val=\"7\"/><allowReflexAngle val=\"false\"/><angleStyle val=\"2\"/></element><element type=\"angle\" label=\"u\"><angleStyle val=\"3\"/><value val=\"7\"/></element><element type=\"angle\" label=\"w\"><angleStyle val=\"3\"/><value val=\"7\"/><forceReflexAngle val=\"true\"/><angleStyle val=\"3\"/></element></construction></geogebra>"}]},
     {"id": "saved-property-caption-value-001", "script": ["A = (2, 1)", "a = Slider(0, 10)"], "steps": [{"action": "style", "label": "A", "label_mode": 9, "caption": "Vertex"}, {"action": "style", "label": "a", "label_mode": 9, "caption": "Amount"}, {"action": "set_number", "label": "a", "value": 4}]},
     {"id": "saved-slope-arrows-001", "script": ["f(x) = 0", "field = SlopeField(f)"], "steps": [{"action": "style", "label": "field", "draw_arrows": true}]},
-    {"id": "saved-export-fixed-segment-001", "script": ["A = (1, 1)", "s = Segment(A, 4)"], "steps": []}
+    {"id": "saved-export-fixed-segment-001", "script": ["A = (1, 1)", "s = Segment(A, 4)"], "steps": []},
+    {"id": "saved-export-inline-fixed-segment-001", "script": ["s = Segment((1,1),4)"], "steps": []},
+    {"id": "saved-export-fill-row-001", "script": ["FillRow(1,{7})"], "steps": []}
   ]
 }

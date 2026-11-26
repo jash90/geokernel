@@ -220,8 +220,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:283"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `list1`; the method's step `arithmetic/ArithmeticTest.java:280` fails earlier here, so the object is missing only in its wake"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `t`"
 mismatches = ["step"]
 
 [[gap]]
@@ -335,13 +335,13 @@ mismatches = ["g"]
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:387"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `f`; the method's step `arithmetic/ArithmeticTest.java:382` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `f`; the method's step `arithmetic/ArithmeticTest.java:384` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:388"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `f`; the method's step `arithmetic/ArithmeticTest.java:382` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `f`; the method's step `arithmetic/ArithmeticTest.java:384` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -406,26 +406,26 @@ mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:445"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `i`; the method's step `arithmetic/ArithmeticTest.java:443` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `i`"
 mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:446"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `i`; the method's step `arithmetic/ArithmeticTest.java:443` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `i`"
 mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:447"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `i`; the method's step `arithmetic/ArithmeticTest.java:443` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `i`"
 mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:448"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `i`; the method's step `arithmetic/ArithmeticTest.java:443` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `i`"
 mismatches = ["step"]
 
 [[gap]]
@@ -851,7 +851,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CmdCopyFreeObjectTest.java:31"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `myCopy`; the method's step `commands/CmdCopyFreeObjectTest.java:27` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `myCopy`; the method's step `commands/CmdCopyFreeObjectTest.java:29` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -875,7 +875,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CmdCopyFreeObjectTest.java:41"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `myCopy2`; the method's step `commands/CmdCopyFreeObjectTest.java:37` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `myCopy2`; the method's step `commands/CmdCopyFreeObjectTest.java:39` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -1234,8 +1234,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1376"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `x+y+z=1`; the method's step `commands/CommandsTest.java:1374` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel has no 3D planes for Distance and treats `x+y+z=1` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -1294,20 +1294,20 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1430"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `(4`; the method's step `commands/CommandsTest.java:1429` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `(4` as an object label"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1431"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `y=-3x-6`; the method's step `commands/CommandsTest.java:1429` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `y=-3x-6` as an object label"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1433"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `r`; the method's step `commands/CommandsTest.java:1429` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `r`; the method's step `commands/CommandsTest.java:1431` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -1595,7 +1595,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:175"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `e1`; the method's step `commands/CommandsTest.java:171` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `e1`; the method's step `commands/CommandsTest.java:171` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -1643,7 +1643,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:178"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `g`; the method's step `commands/CommandsTest.java:171` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `g`; the method's step `commands/CommandsTest.java:175` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -1702,8 +1702,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:184"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `X`; the method's step `commands/CommandsTest.java:183` fails earlier here, so the object is missing only in its wake"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `X`"
 mismatches = ["step"]
 
 [[gap]]
@@ -1751,7 +1751,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:187"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `e1`; the method's step `commands/CommandsTest.java:183` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `e1`; the method's step `commands/CommandsTest.java:183` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -1786,8 +1786,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:190"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `g`; the method's step `commands/CommandsTest.java:183` fails earlier here, so the object is missing only in its wake"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `g`"
 mismatches = ["step"]
 
 [[gap]]
@@ -1888,8 +1888,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2147"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `x^2+y^2=25`; the method's step `commands/CommandsTest.java:2138` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `x^2+y^2=25` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -1912,8 +1912,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2224"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `x^2+y^2+z^2=4`; the method's step `commands/CommandsTest.java:2223` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `z`"
 mismatches = ["step"]
 
 [[gap]]
@@ -2242,14 +2242,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2578"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `3/4x`; the method's step `commands/CommandsTest.java:2576` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `3/4x` as an object label"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2579"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `x^2`; the method's step `commands/CommandsTest.java:2576` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `x^2` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -2356,14 +2356,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2634"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `x+y`"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `x+y` as an object label"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2635"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `SlopeField( x/y )`; the method's step `commands/CommandsTest.java:2634` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `SlopeField( x/y )` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -2500,8 +2500,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2748"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `(x-1)^2+(y-1)^2=pi`; the method's step `commands/CommandsTest.java:2745` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `(x-1)^2+(y-1)^2=pi` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -2596,8 +2596,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2834"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `x+y`; the method's step `commands/CommandsTest.java:2827` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `x+y` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -2608,8 +2608,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2836"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `x^3+y^3=0`; the method's step `commands/CommandsTest.java:2827` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `x^3+y^3=0` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -2620,8 +2620,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2838"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `picT`; the method's step `commands/CommandsTest.java:2827` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `picT`"
 mismatches = ["step"]
 
 [[gap]]
@@ -2746,14 +2746,14 @@ mismatches = ["nint_{1}", "nint_{2}"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3040"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `nint_1`; the method's step `commands/CommandsTest.java:3033` fails earlier here, so the object is missing only in its wake"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `nint_1`"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3041"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `nint_1`; the method's step `commands/CommandsTest.java:3033` fails earlier here, so the object is missing only in its wake"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `nint_1`"
 mismatches = ["step"]
 
 [[gap]]
@@ -2848,8 +2848,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3132"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `x=1`; the method's step `commands/CommandsTest.java:3114` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `x=1` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -2878,8 +2878,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3147"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `2x+2y+z=1`; the method's step `commands/CommandsTest.java:3143` fails earlier here, so the object is missing only in its wake"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `z`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3094,8 +3094,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3258"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unknown object `x^2+y^2=1`"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `x^2+y^2=1` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -3148,14 +3148,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3308"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `0x < 1`; the method's step `commands/CommandsTest.java:3305` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `0x < 1` as an object label"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3309"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `0x > 1`; the method's step `commands/CommandsTest.java:3305` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `0x > 1` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -3172,8 +3172,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3325"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `x+y=17`; the method's step `commands/CommandsTest.java:3324` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `x+y=17` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -3262,8 +3262,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:348"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `pi1`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `pi1`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3280,8 +3280,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:349"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `pi1a`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `pi1a`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3298,8 +3298,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:350"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `pie`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `pie`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3310,8 +3310,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:351"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `pii`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `pii`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3340,8 +3340,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:352"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `pix`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `pix`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3352,8 +3352,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:353"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `sinx`; the method's step `commands/CommandsTest.java:347` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `sinx`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3586,8 +3586,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3662"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `sin(x)+sin(y)`"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `sin(x)+sin(y)` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -4079,7 +4079,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:4046"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `B`; the method's step `commands/CommandsTest.java:4042` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `B`; the method's step `commands/CommandsTest.java:4042` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -4091,7 +4091,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:4048"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `B`; the method's step `commands/CommandsTest.java:4042` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `B`; the method's step `commands/CommandsTest.java:4042` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -4571,7 +4571,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:437"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `list1`; the method's step `commands/CommandsTest.java:431` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `list1`; the method's step `commands/CommandsTest.java:431` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -4601,7 +4601,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:438"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `list2`; the method's step `commands/CommandsTest.java:431` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `list2`; the method's step `commands/CommandsTest.java:433` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -4678,14 +4678,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4466"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `Point(Curve(sin(t),cos(t),t,0,3),0.05)`; the method's step `commands/CommandsTest.java:4463` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `Point(Curve(sin(t),cos(t),t,0,3),0.05)` as an object label"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4469"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `(1,1)`; the method's step `commands/CommandsTest.java:4463` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `(1,1)` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -4696,14 +4696,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4470"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `(1,1)`; the method's step `commands/CommandsTest.java:4463` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `(1,1)` as an object label"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4476"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `(0,1)`; the method's step `commands/CommandsTest.java:4463` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `(0,1)` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -4942,8 +4942,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4742"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `2x+2y+z=1`; the method's step `commands/CommandsTest.java:4738` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `2x+2y+z=1` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -5044,14 +5044,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4840"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `Polygon((0,0),(1,0),(0,1))`; the method's step `commands/CommandsTest.java:4835` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `Polygon((0,0),(1,0),(0,1))` as an object label"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4841"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `Segment((1,0),(0,1))`; the method's step `commands/CommandsTest.java:4835` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-form"
+reason = "the kernel treats the inline operand `Segment((1,0),(0,1))` as an object label"
 mismatches = ["step"]
 
 [[gap]]
@@ -5207,7 +5207,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:4956"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `f`; the method's step `commands/CommandsTest.java:4955` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `f`; the method's step `commands/CommandsTest.java:4955` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -5399,7 +5399,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:594"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `combined`; the method's step `commands/CommandsTest.java:590` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `combined`; the method's step `commands/CommandsTest.java:592` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -5447,7 +5447,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:629"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `f`; the method's step `commands/CommandsTest.java:628` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `f`; the method's step `commands/CommandsTest.java:628` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -6065,7 +6065,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/RedefineTest.java:179"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:172` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:172` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -6077,7 +6077,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/RedefineTest.java:191"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:187` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:187` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -6095,7 +6095,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/RedefineTest.java:199"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:197` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:197` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -6113,7 +6113,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/RedefineTest.java:207"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:205` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:205` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -6131,7 +6131,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/RedefineTest.java:215"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `L_1`; the method's step `commands/RedefineTest.java:213` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `L_1`; the method's step `commands/RedefineTest.java:213` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -6143,7 +6143,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/RedefineTest.java:229"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `L_1`; the method's step `commands/RedefineTest.java:222` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `L_1`; the method's step `commands/RedefineTest.java:222` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -6161,7 +6161,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/RedefineTest.java:237"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `P`; the method's step `commands/RedefineTest.java:235` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `P`; the method's step `commands/RedefineTest.java:235` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -6215,7 +6215,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/RedefineTest.java:311"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `A`; the method's step `commands/RedefineTest.java:305` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `A`; the method's step `commands/RedefineTest.java:309` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -6304,8 +6304,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/RedefineTest.java:772"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `f'`; the method's step `commands/RedefineTest.java:771` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `f'`"
 mismatches = ["step"]
 
 [[gap]]
@@ -6316,8 +6316,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/RedefineTest.java:779"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `f'`; the method's step `commands/RedefineTest.java:778` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: unknown object `f'`"
 mismatches = ["step"]
 
 [[gap]]
@@ -6341,7 +6341,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/TranslateTest.java:29"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `u`; the method's step `commands/TranslateTest.java:27` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `u`; the method's step `commands/TranslateTest.java:28` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -6395,7 +6395,7 @@ mismatches = ["step"]
 [[gap]]
 id = "geos/GeoInputBoxLinkedGeoTest.java:888"
 category = "cascade"
-reason = "the kernel refuses the input: unknown object `f`; the method's step `geos/GeoInputBoxLinkedGeoTest.java:881` fails earlier here, so the object is missing only in its wake"
+reason = "the kernel refuses the input: unknown object `f`; the method's step `geos/GeoInputBoxLinkedGeoTest.java:881` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]

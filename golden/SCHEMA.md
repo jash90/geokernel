@@ -460,12 +460,14 @@ What the importer reads, and where GeoGebra writes it (`MyXMLHandler`,
 - `AlgoDistanceLineLine.setInputOutput` writes `input[0] = h; input[1] = g`, the
   reverse of the order it computes in. `GeoLine.distance(GeoLine)` is 0 for lines
   that are not parallel and treats two lines as parallel when
-  `isZero(g.x * y - g.y * x)` on the raw coefficients, so the order matters only
-  for lines whose coefficients are about 1e-6 (a line through two points 1e-6
-  apart): a point of `g` is chosen and the distance is measured with the
-  normalisation of `this`. Reading the file back evaluates the saved order, so
-  GeoGebra computes another value than before saving for these lines (see
-  `crates/geo-import/known-import-gaps.toml`, which pins all five values).
+  `isZero(g.x * y - g.y * x)` on the raw coefficients. The order can matter for
+  small coefficients, for example when a line is defined by points about 1e-6
+  apart. The distance of a point of the second line is measured using the
+  normalization of the first. Reading the file back evaluates the saved order, so
+  GeoGebra computes another value than before saving for these lines.
+  `tools/ggb-harness/saved/make_distance_reload.py` records the Java reader's
+  five values in `golden/ggb/distance-reload.snapshot`. The import oracle uses
+  these values. The kernel golden tests still compare the values before saving.
 - `Intersect` of a line and a conic, or of two conics, is saved without an index
   and lists both points as outputs (`a0`, `a1`); the importer maps output `n` to
   `Intersect(a, b, n + 1)`. `Polygon` lists the polygon, its sides and (for

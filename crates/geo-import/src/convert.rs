@@ -13,6 +13,7 @@ use crate::xml::{Document, Element, Item};
 use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
+use geo_kernel::algo::measure::{distance_between_lines, MeasureDef};
 use geo_kernel::algo::polygon::PolygonDef;
 use geo_kernel::kernel::angle::AngleStyle;
 use geo_kernel::kernel::control::{
@@ -2613,7 +2614,11 @@ fn cross_check(
             } else {
                 s
             };
-            close(n, s)
+            // The reference computes in one order and writes the inputs
+            // in the other. Check the cache against the pre-save value as
+            // well as the recomputed value in file order.
+            close(n, s) || matches!(c.def(id), Def::Measure(MeasureDef::DistanceLines(first, second))
+                if distance_between_lines(c, second, first).is_some_and(|before_save| close(before_save, s)))
         }),
         Value::Bool(b) => el
             .value

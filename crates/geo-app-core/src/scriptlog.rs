@@ -536,7 +536,9 @@ fn exec_stored_definition(
         .unwrap_or_else(|| construct(c, line))?;
     let source = split_comment(line).0.trim();
     let owner = definition_outputs(c, before, first, line).next();
-    if let Some(owner) = owner {
+    // Fill semantics belong to the journal. Save the resulting cells and
+    // any labelled list result through their individual definitions.
+    if let Some(owner) = owner.filter(|_| !geo_kernel::spreadsheet::is_fill_line(source)) {
         c.retain_file_definition(owner, source);
     }
     Ok(first)

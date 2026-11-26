@@ -1156,10 +1156,22 @@ const APP_COMMANDS: &[&str] = &[
     "TurtleDown",
 ];
 
-/// Picks the category for a failed step from how it failed. `prior_failure`
-/// is the first earlier step of the same method that failed here, when one
-/// did: an input that names an object that step should have created fails
-/// only because of it.
+fn missing_operand(error: &str) -> Option<&str> {
+    error
+        .split_once("unknown object `")?
+        .1
+        .split_once('`')
+        .map(|(name, _)| name)
+}
+
+fn is_inline_operand(operand: &str) -> bool {
+    !operand
+        .chars()
+        .all(|ch| ch.is_alphanumeric() || matches!(ch, '_' | '\'' | '{' | '}' | '$'))
+}
+
+/// Picks the category from the failure and, for a missing object, its
+/// recorded producer in this method.
 fn classify(
     pair: &Pair,
     exec: &Exec,
@@ -1175,12 +1187,10 @@ fn classify(
         if e.contains("a command inside a command is not supported") {
             return Category::UnsupportedForm;
         }
-        // A name the input uses is missing. When an earlier step of the
-        // method already failed here, that step is the real gap and this
-        // one only follows it down.
-        if e.contains("unknown object") {
+        if let Some(operand) = missing_operand(e) {
             return match prior_failure {
                 Some(_) => Category::Cascade,
+                None if is_inline_operand(operand) => Category::UnsupportedForm,
                 None if !pair.context_complete => Category::IncompleteContext,
                 None => Category::ErrorBehaviour,
             };
@@ -1245,9 +1255,42 @@ fn classify(
     Category::KernelMismatch
 }
 
+/// Replays a method and attributes missing objects to the failed steps
+/// that were supposed to create their labels.
+pub fn replay_method(method: &Method) -> impl Iterator<Item = StepOutcome> + '_ {
+    let mut c = Construction::new();
+    let mut missing = BTreeMap::new();
+    method.steps.iter().map(move |pair| {
+        let out = run_pair(&mut c, pair, Some(&missing));
+        if out.blocks_later_steps() {
+            for label in pair.outputs.iter().filter_map(|out| out.label.as_deref()) {
+                if pair.input.trim() != label && c.id(label).is_none() {
+                    missing.insert(canonical_label(label), pair.id.as_str());
+                }
+            }
+        }
+        out
+    })
+}
+
+fn canonical_label(label: &str) -> String {
+    if let Some((base, suffix)) = label.rsplit_once('_') {
+        if !suffix.is_empty() && suffix.bytes().all(|b| b.is_ascii_digit()) {
+            return format!("{base}_{{{suffix}}}");
+        }
+    }
+    label.to_owned()
+}
+
 /// Runs one pair on the construction and compares everything recorded.
-pub fn run_pair(c: &mut Construction, pair: &Pair, prior_failure: Option<&str>) -> StepOutcome {
+fn run_pair(
+    c: &mut Construction,
+    pair: &Pair,
+    missing: Option<&BTreeMap<String, &str>>,
+) -> StepOutcome {
     let exec = exec_step(c, pair);
+    let operand = exec.error().and_then(missing_operand);
+    let prior_failure = operand.and_then(|label| missing?.get(&canonical_label(label)).copied());
     let command = command_of(&pair.input);
     // The polynomial CAS is checked through structured outputs. Its
     // presentation conventions are documented independently.
@@ -1289,18 +1332,35 @@ pub fn run_pair(c: &mut Construction, pair: &Pair, prior_failure: Option<&str>) 
                     // the kernel has no error classes, so the refusal itself is
                     // the agreement.
                     pass = Some(PassKind::ErrorClass);
-                } else if let Some(root) = prior_failure.filter(|_| e.contains("unknown object")) {
+                } else if let Some(root) = prior_failure {
                     bad.push(Disagreement {
                         label: "step".into(),
                         why: format!(
                             "the kernel refuses the input: {e}; the method's step `{root}` \
-                         fails earlier here, so the object is missing only in its wake"
+                         was expected to create the missing label"
                         ),
                     });
                 } else {
+                    let reason = match operand {
+                        Some(input)
+                            if command == "Distance"
+                                && input.contains('=')
+                                && input
+                                    .split(|ch: char| !ch.is_alphabetic())
+                                    .any(|name| name == "z") =>
+                        {
+                            format!("the kernel has no 3D planes for Distance and treats `{input}` as an object label")
+                        }
+                        Some(input) if is_inline_operand(input) => {
+                            format!(
+                                "the kernel treats the inline operand `{input}` as an object label"
+                            )
+                        }
+                        _ => format!("the kernel refuses the input: {e}"),
+                    };
                     bad.push(Disagreement {
                         label: "step".into(),
-                        why: format!("the kernel refuses the input: {e}"),
+                        why: reason,
                     });
                 }
             }
@@ -1642,9 +1702,28 @@ mod tests {
         let first = run_pair(&mut c, &methods[0].steps[0], None);
         assert!(first.category.is_some(), "the root step fails");
         let root = first.id.clone();
-        let second = run_pair(&mut c, &methods[0].steps[1], Some(&root));
+        let second = replay_method(&methods[0]).nth(1).unwrap();
         assert_eq!(second.category, Some(Category::Cascade));
         assert!(second.disagreements[0].why.contains(&root));
+    }
+
+    #[test]
+    fn distance_between_inline_planes_is_an_unsupported_form() {
+        let methods = load(include_str!("../../../golden/t-pairs/verified.jsonl")).unwrap();
+        let method = methods
+            .iter()
+            .find(|m| {
+                m.steps
+                    .iter()
+                    .any(|p| p.id == "commands/CommandsTest.java:1376")
+            })
+            .unwrap();
+        let steps: Vec<_> = replay_method(method).collect();
+        assert!(steps[0].blocks_later_steps());
+        assert!(steps[1].pass.is_some());
+        let planes = &steps[2];
+        assert_eq!(planes.category, Some(Category::UnsupportedForm));
+        assert!(planes.disagreements[0].why.contains("3D planes"));
     }
 
     /// ±Infinity is recorded as an undefined number with the sign in the

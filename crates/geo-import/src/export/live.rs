@@ -12,7 +12,7 @@ use geo_kernel::algo::{
     transform::TransformDef,
     vector::VectorDef,
 };
-use geo_kernel::{Def, Id, LocusDef};
+use geo_kernel::{script, Def, Id, LocusDef};
 
 impl Writer<'_> {
     pub(super) fn live_definition(
@@ -89,6 +89,10 @@ impl Writer<'_> {
             Measure(MeasureDef::Radius(id)) => command("Radius", &[id]),
             Measure(MeasureDef::CircleArea(id)) => command("Area", &[id]),
             Measure(MeasureDef::Slope(id)) => command("Slope", &[id]),
+            // AlgoDistanceLineLine writes its inputs in reverse order.
+            Measure(MeasureDef::DistanceLines(first, second)) => {
+                command("Distance", &[second, first])
+            }
             Measure(MeasureDef::DistancePointPath { point, path }) => {
                 command("Distance", &[point, path])
             }
@@ -155,15 +159,38 @@ impl Writer<'_> {
         if c.def(segment) != Def::Segment(start, endpoint) {
             return Ok(false);
         }
+        let inline = if c.label(start).starts_with('\0')
+            || matches!(length, Count::Object(id) if c.label(id).starts_with('\0'))
+        {
+            let rhs = c.construction_source(segment).or_else(|| {
+                script::split_comment(source)
+                    .0
+                    .split_once('=')
+                    .map(|(_, rhs)| rhs.trim())
+            });
+            match rhs.and_then(script::split_call) {
+                Some(("Segment", args)) if args.len() == 2 => Some([args[0], args[1]]),
+                _ => return Err(failure("missing inline fixed-segment definition")),
+            }
+        } else {
+            None
+        };
         let literal;
         let length = match length {
             Count::Literal(length) => {
                 literal = number(length);
                 &literal
             }
+            Count::Object(id) if c.label(id).starts_with('\0') => {
+                super::syntax(inline.expect("an inline argument")[1])?
+            }
             Count::Object(id) => super::syntax(c.label(id))?,
         };
-        let start = super::syntax(c.label(start))?;
+        let start = super::syntax(if c.label(start).starts_with('\0') {
+            inline.expect("an inline argument")[0]
+        } else {
+            c.label(start)
+        })?;
         if start
             .len()
             .saturating_add(length.len())

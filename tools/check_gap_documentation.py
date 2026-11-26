@@ -31,7 +31,7 @@ def main():
     for title, (path, keys) in TABLES.items():
         with (ROOT / "crates" / path).open("rb") as source:
             ledger = tomllib.load(source)
-        entries = [entry for key in keys for entry in ledger[key]]
+        entries = [entry for key in keys for entry in ledger.get(key, [])]
         expected = Counter(
             entry["id"] + ("@" + entry["label"] if "label" in entry else "")
             for entry in entries

@@ -286,6 +286,15 @@ fn carried_segment_distance(
     my_length(p.0 - closest.0, p.1 - closest.1)
 }
 
+/// Measures the ordered distance between two line carriers. Near the
+/// parallelism tolerance, swapping the inputs can change the result.
+pub fn distance_between_lines(c: &Construction, first: Id, second: Id) -> Option<f64> {
+    Some(line_line_distance(
+        c.raw_carrier(first)?,
+        c.raw_carrier(second)?,
+    ))
+}
+
 /// `GeoLine.distance(GeoLine)` for `this` = `g` and the argument `h`:
 /// zero unless the lines are parallel.
 fn line_line_distance(g: (f64, f64, f64), h: (f64, f64, f64)) -> f64 {
@@ -656,9 +665,7 @@ impl Group for MeasureDef {
                     }
                 }
             }
-            MeasureDef::DistanceLines(g, h) => {
-                number(line_line_distance(c.raw_carrier(g)?, c.raw_carrier(h)?))
-            }
+            MeasureDef::DistanceLines(g, h) => number(distance_between_lines(c, g, h)?),
             MeasureDef::AffineRatio(a, b, d) => {
                 let (pa, pb, pd) = (c.point(a)?, c.point(b)?, c.point(d)?);
                 if !collinear(pa, pb, pd) {

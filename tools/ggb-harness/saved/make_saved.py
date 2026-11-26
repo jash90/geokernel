@@ -872,6 +872,9 @@ case("slope-arrows", ["f(x) = 0", "field = SlopeField(f)"], [
 
 case("export-fixed-segment", ["A = (1, 1)", "s = Segment(A, 4)"], [])
 
+case("export-inline-fixed-segment", ["s = Segment((1,1),4)"], [])
+case("export-fill-row", ["FillRow(1,{7})"], [])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

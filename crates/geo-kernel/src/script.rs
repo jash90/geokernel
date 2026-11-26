@@ -233,8 +233,10 @@ pub(crate) fn define_prepared_cell(
     name: &str,
     rhs: &str,
 ) -> Result<Option<Id>, String> {
-    let result =
-        c.write_spreadsheet_cell(name, false, |c| define_assignment(c, name, rhs, false))?;
+    c.reserve_definition_sources(rhs.len())?;
+    let result = c.write_spreadsheet_cell(name, false, |c| define_assignment(c, name, rhs, false));
+    c.release_definition_sources(rhs.len());
+    let result = result?;
     if let Some(id) = result {
         c.remember_construction_source(id, rhs);
     }
@@ -2799,10 +2801,28 @@ mod tests {
         assert_eq!(c.file_definition(b), Some(source.as_str()));
         c.retain_file_definition(a, "a = 1");
         assert_eq!(c.file_definition(a), None);
+        let inline = exec(&mut c, "f = Line((1,1),x+y=17)").unwrap().unwrap();
+        assert!(c.value(inline).is_defined());
+        assert_eq!(c.construction_source(inline), None);
+        assert!(exec(&mut c, "FillRow(1,{7})")
+            .unwrap_err()
+            .contains("source budget"));
+        assert!(c.id("A1").is_none());
         c.rollback(before).unwrap();
         c.retain_file_definition(a, "a = 1");
         assert_eq!(c.file_definition(a), Some("a = 1"));
         assert_eq!(c.file_definition(b), None);
+        let before = c.checkpoint();
+        let b = exec(&mut c, "b = 2").unwrap().unwrap();
+        let remaining = &source[..source.len() - "a = 1".len()];
+        c.remember_construction_source(b, remaining);
+        assert_eq!(c.construction_source(b), Some(remaining));
+        c.retain_file_definition(b, "b = 2");
+        assert_eq!(c.file_definition(b), None);
+        c.rollback(before).unwrap();
+        let b = exec(&mut c, "b = 2").unwrap().unwrap();
+        c.retain_file_definition(b, "b = 2");
+        assert_eq!(c.file_definition(b), Some("b = 2"));
     }
 
     #[test]
