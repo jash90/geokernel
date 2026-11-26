@@ -1,0 +1,55 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-variadic-001",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Mean(7, 3, 9, 5)",
+        "r_{2} = Variance(7, 3, 9, 5)",
+        "r_{3} = SD(7, 3, 9, 5)",
+        "r_{4} = SampleVariance(7, 3, 9, 5)",
+        "r_{5} = SampleSD(7, 3, 9, 5)",
+        "r_{6} = MAD(7, 3, 9, 5)",
+        "r_{7} = Median(7, 3, 9, 5)",
+        "r_{8} = Q1(7, 3, 9, 5)",
+        "r_{9} = Q3(7, 3, 9, 5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 6.0 },
+          "r_{2}": { "type": "number", "defined": true, "value": 5.0 },
+          "r_{3}": { "type": "number", "defined": true, "value": 2.23606797749979 },
+          "r_{4}": { "type": "number", "defined": true, "value": 6.666666666666667 },
+          "r_{5}": { "type": "number", "defined": true, "value": 2.581988897471611 },
+          "r_{6}": { "type": "number", "defined": true, "value": 2.0 },
+          "r_{7}": { "type": "number", "defined": true, "value": 6.0 },
+          "r_{8}": { "type": "number", "defined": true, "value": 4.0 },
+          "r_{9}": { "type": "number", "defined": true, "value": 8.0 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-variadic-002",
+      "group": "statistics",
+      "script": [
+        "r_{1} = MAD(1, 3)",
+        "r_{2} = mad(1, 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 1.0 },
+          "r_{2}": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    }
+  ]
+}

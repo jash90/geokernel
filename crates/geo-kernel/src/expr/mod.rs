@@ -470,8 +470,16 @@ pub(crate) enum ListOp {
     // statistics (`commands/statistics.rs`)
     /// `Sum(list)` and `Sum(list, n)` of numbers (`AlgoStats1D`).
     Sum,
-    /// `Mean(list)` (`AlgoStats1D`).
+    /// Descriptive statistics of raw or weighted data.
     Mean,
+    Variance,
+    Sd,
+    SampleVariance,
+    SampleSd,
+    Mad,
+    Median,
+    Q1,
+    Q3,
 
     // algebra (`commands/algebra.rs`)
     /// `Min(list)` and `Max(list)` (`AlgoListMinMax`).

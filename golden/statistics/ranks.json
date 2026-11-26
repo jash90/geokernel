@@ -1,0 +1,64 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-ranks-001",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Median({7, 3})",
+        "r_{2} = Q1({7, 3})",
+        "r_{3} = Q3({7, 3})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 5.0 },
+          "r_{2}": { "type": "number", "defined": true, "value": 3.0 },
+          "r_{3}": { "type": "number", "defined": true, "value": 7.0 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-ranks-002",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Median({7, 9, 3})",
+        "r_{2} = Q1({7, 9, 3})",
+        "r_{3} = Q3({7, 9, 3})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 7.0 },
+          "r_{2}": { "type": "number", "defined": true, "value": 3.0 },
+          "r_{3}": { "type": "number", "defined": true, "value": 9.0 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-ranks-003",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Median({7, 9, 3, 5})",
+        "r_{2} = Q1({7, 9, 3, 5})",
+        "r_{3} = Q3({7, 9, 3, 5})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 6.0 },
+          "r_{2}": { "type": "number", "defined": true, "value": 4.0 },
+          "r_{3}": { "type": "number", "defined": true, "value": 8.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -133,6 +133,10 @@ Each of these is a switch of `OwnerRules` (`crates/geo-app-core/src/app.rs`); th
 
 | Area | GeoGebra | geokernel | Reason |
 | --- | --- | --- | --- |
+| Descriptive statistics of separate points or a freehand function | `CmdOneListFunction` wraps the points or the sampled freehand function into a point list. The statistics algorithms cannot use the point coordinates as numbers. | The commands accept numeric arguments and lists. They refuse separate points and freehand functions. | These signatures do not produce numeric statistics in the reference. |
+| Descriptive statistics of angles and other geometric magnitudes | `AlgoStats1D` creates an unbounded angle if the list starts with an angle. GeoGebra also reads some geometric objects as numeric values in a list, such as segments by length. | The statistics produce scalars and use the kernel's numeric list elements. `Mean` continues to refuse a single list typed as nonnumeric. | The numeric list forms use the existing expression type system. |
+| Quartiles with unequal value and frequency list lengths and grouped medians with no qualifying class | The quartile computation skips unequal lengths. Grouped median leaves the result alone if no class reaches its target count. Both start at zero and can retain a prior result after an edit. | The result is zero when the reference skips assignment, as in a fresh construction. The quartile and median input checks still produce undefined results when they fail. | Recomputing from the current inputs keeps the result independent of edit history. |
+| Very large frequency counts in median and quartiles | Each count converts to a signed 32-bit integer. The sum of counts, and intermediate quartile index arithmetic, can overflow. | Counts convert the same way. Cumulative counts and rank indices use 64-bit integers. Sorting and scanning are charged by input rows, including repeated rows. | Frequency counts cannot force materialization of the expanded samples or wrap the rank arithmetic. |
 | `Sort` of texts | `GeoText.getComparator`: accent-insensitively (`StringUtil.removeAccents`, US lowercase, NFD, combining marks stripped), then the plain string, then the construction index; `Sort({"é", "e", "È", "Z", "a"})` is `{a, e, È, é, Z}`. | The same two comparisons, in Java's UTF-16 unit order; equal strings keep the order of the list. | Ported. The construction indexes of the elements of one list tie, so the comparator answers `+1` for two of them and the `TreeSet` puts the later one to the right: a stable sort matches it (`Sort({30, 10, 20}, {2, 1, 2})` is `{10, 30, 20}`). |
 | Keys of one list within `1e-8` of each other | `GeoNumeric.getComparator` and `GeoPoint.getComparatorX` compare `a - b` and call a difference inside `DoubleUtil.isZero`'s `1e-8` a tie, so two unequal keys that near order by the tie answer, not by value: `Sort({2.800000000000001, 2.8})` keeps the order of the list. | The keys compare exactly, so the port orders such keys by value: `Sort({2.800000000000001, 2.8})` is `{2.8, 2.800000000000001}`. | The subtraction tolerance is not a transitive equality, and which side the tie answer sends an element to depends on the shape of GeoGebra's tree at that moment; a comparison sort cannot reproduce it. Equal keys, the case a script can name, keep the order of the list on both sides. |
 | `Unique` and `Frequency` of texts | `new Frequency()`: exact strings, the counts in natural string order. | The same, one ordered bucket per string (Java's UTF-16 unit order). | Ported like for numbers. |
@@ -1005,11 +1009,8 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:2613`, `commands/CommandsTest.java:2614` | **unsupported-command.** the kernel refuses the input: `PerpendicularBisector` does not take 4 argument(s) |
 | `commands/CommandsTest.java:2645` | **unsupported-command.** the kernel refuses the input: `Locus(Q, slider)` needs a point that depends on the slider `slider` |
 | `commands/CommandsTest.java:2672` | **unsupported-command.** the kernel refuses the input: unknown command `LowerSum` |
-| `commands/CommandsTest.java:2678`, `commands/CommandsTest.java:2679`, `commands/CommandsTest.java:2680` | **unsupported-command.** the kernel refuses the input: unknown command `MAD` |
-| `commands/CommandsTest.java:2718` | **unsupported-command.** the kernel refuses the input: `Mean` of a list does not take 2 arguments |
 | `commands/CommandsTest.java:2729` | **unsupported-command.** the kernel refuses the input: unknown command `MeanX` |
 | `commands/CommandsTest.java:2734` | **unsupported-command.** the kernel refuses the input: unknown command `MeanY` |
-| `commands/CommandsTest.java:2739`, `commands/CommandsTest.java:2740` | **unsupported-command.** the kernel refuses the input: unknown command `Median` |
 | `commands/CommandsTest.java:2745`, `commands/CommandsTest.java:2747` | **unsupported-command.** the kernel refuses the input: `Midpoint` does not take 4 argument(s) |
 | `commands/CommandsTest.java:2777`, `commands/CommandsTest.java:2792`, `commands/CommandsTest.java:2814` | **unsupported-command.** the kernel refuses the input: `Reflect` does not take 6 argument(s) |
 | `commands/CommandsTest.java:2793`, `commands/CommandsTest.java:2822` | **unsupported-command.** the kernel refuses the input: `Reflect` does not take 7 argument(s) |
@@ -1043,8 +1044,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:3363` | **unsupported-command.** the kernel refuses the input: unknown command `Polynomial` |
 | `commands/CommandsTest.java:3439`, `commands/CommandsTest.java:3442` | **unsupported-command.** the kernel refuses the input: the command needs a list of numbers |
 | `commands/CommandsTest.java:3441` | **unsupported-command.** the kernel refuses the input: unknown command `Product` |
-| `commands/CommandsTest.java:3486`, `commands/CommandsTest.java:3487` | **unsupported-command.** the kernel refuses the input: unknown command `Q1` |
-| `commands/CommandsTest.java:3492`, `commands/CommandsTest.java:3493` | **unsupported-command.** the kernel refuses the input: unknown command `Q3` |
 | `commands/CommandsTest.java:3508`, `commands/CommandsTest.java:3510`, `commands/CommandsTest.java:3511`, `commands/CommandsTest.java:3512`, `commands/RedefineTest.java:205` | **unsupported-command.** the kernel refuses the input: unknown command `RandomBetween` |
 | `commands/CommandsTest.java:3517` | **unsupported-command.** the kernel refuses the input: unknown command `RandomBinomial` |
 | `commands/CommandsTest.java:3522`, `commands/RedefineTest.java:235` | **unsupported-command.** the kernel refuses the input: unknown command `RandomElement` |
@@ -1060,11 +1059,8 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:3747` | **unsupported-command.** the kernel refuses the input: `Rotate` does not take 8 argument(s) |
 | `commands/CommandsTest.java:3781` | **unsupported-command.** the kernel refuses the input: unknown command `RSquare` |
 | `commands/CommandsTest.java:3786`, `commands/CommandsTest.java:3787` | **unsupported-command.** the kernel refuses the input: unknown command `Sample` |
-| `commands/CommandsTest.java:3792`, `commands/CommandsTest.java:3793` | **unsupported-command.** the kernel refuses the input: unknown command `SampleSD` |
 | `commands/CommandsTest.java:3810` | **unsupported-command.** the kernel refuses the input: unknown command `SampleSDX` |
 | `commands/CommandsTest.java:3815` | **unsupported-command.** the kernel refuses the input: unknown command `SampleSDY` |
-| `commands/CommandsTest.java:3820`, `commands/CommandsTest.java:3821` | **unsupported-command.** the kernel refuses the input: unknown command `SampleVariance` |
-| `commands/CommandsTest.java:3832`, `commands/CommandsTest.java:3833` | **unsupported-command.** the kernel refuses the input: unknown command `SD` |
 | `commands/CommandsTest.java:3838` | **unsupported-command.** the kernel refuses the input: unknown command `SDX` |
 | `commands/CommandsTest.java:3843` | **unsupported-command.** the kernel refuses the input: unknown command `SDY` |
 | `commands/CommandsTest.java:3853` | **unsupported-command.** the kernel refuses the input: unknown command `SemiMinorAxisLength` |
@@ -1104,7 +1100,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:4665`, `commands/CommandsTest.java:4666` | **unsupported-command.** the kernel refuses the input: unknown command `Type` |
 | `commands/CommandsTest.java:4752` | **unsupported-command.** the kernel refuses the input: `UnitVector` does not take 3 argument(s) |
 | `commands/CommandsTest.java:4811` | **unsupported-command.** the kernel refuses the input: unknown command `UpperSum` |
-| `commands/CommandsTest.java:4817`, `commands/CommandsTest.java:4818` | **unsupported-command.** the kernel refuses the input: unknown command `Variance` |
 | `commands/CommandsTest.java:4824`, `commands/TranslateTest.java:28` | **unsupported-command.** The kernel rejects the two inline point operands to `Vector` with a four-argument arity error. GeoGebra returns the displacement vectors `(2, -0.1333333333333333)` and `(4, 0)`, respectively. |
 | `commands/CommandsTest.java:4835`, `commands/CommandsTest.java:4839` | **unsupported-command.** the kernel refuses the input: unknown command `Vertex` |
 | `commands/CommandsTest.java:4872` | **unsupported-command.** the kernel refuses the input: unknown command `Zip` |
@@ -1236,9 +1231,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:2634` | **unsupported-form.** With `Locus[ x+y, Point[x^2+y^2=1] ]`, GeoGebra returns `Locus[x + y, Point[x^(2) + y^(2) = 1]]`. The kernel's locus command expects a dependent point and a named mover. It tries to resolve `x+y` as a label. GeoGebra accepts a two-variable expression and an inline point on the circle. |
 | `commands/CommandsTest.java:2635` | **unsupported-form.** With `Locus[ SlopeField[ x/y ], Point[x^2+y^2=1] ]`, GeoGebra returns `Locus[SlopeField[x / y], Point[x^(2) + y^(2) = 1]]`. The kernel treats the inline operand `SlopeField( x/y )` as an object label. |
 | `commands/CommandsTest.java:2673` | **unsupported-form.** With `IsDefined[ LowerSum[ If(x^(2)>9, 1+0 x), -5, 5, 1 ] ]`, GeoGebra returns `false`. The kernel refuses the input: `LowerSum( If(x^(2)>9,1+0 x),-5,5,1 )`: a command inside a command is not supported. |
-| `commands/CommandsTest.java:2685` | **unsupported-form.** With `mad( {1,2,3,4,5} )`, GeoGebra returns `1.2`. The kernel refuses the input: unknown command `mad`. |
-| `commands/CommandsTest.java:2686` | **unsupported-form.** With `mad( 1, 3 )`, GeoGebra returns `1`. The kernel refuses the input: unknown command `mad`. |
-| `commands/CommandsTest.java:2687` | **unsupported-form.** With `mad({20, 40, 41, 42, 40, 54}, {20, 6, 4, 5, 2})`, GeoGebra returns `5.78524`. The kernel refuses the input: unknown command `mad`. |
 | `commands/CommandsTest.java:2723` | **unsupported-form.** With `mean[ {3,4,5} ]`, GeoGebra returns `4`. The kernel refuses the input: unexpected `[`. |
 | `commands/CommandsTest.java:2724` | **unsupported-form.** With `mean[ {15,36,39}, {5,12,13} ]`, GeoGebra returns `33.8`. The kernel refuses the input: unexpected `[`. |
 | `commands/CommandsTest.java:2748` | **unsupported-form.** With `Midpoint[(x-1)^2+(y-1)^2=pi]`, GeoGebra returns `(1, 1)`. The kernel treats the inline operand `(x-1)^2+(y-1)^2=pi` as an object label. |

@@ -2391,42 +2391,6 @@ reason = "the kernel refuses the input: `LowerSum( If(x^(2)>9,1+0 x),-5,5,1 )`: 
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2678"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `MAD`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2679"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `MAD`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2680"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `MAD`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2685"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `mad`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2686"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `mad`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2687"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `mad`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2698"
 category = "text-formatting"
 reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `2 < x < 3`"
@@ -2443,12 +2407,6 @@ id = "commands/CommandsTest.java:2704"
 category = "kernel-mismatch"
 reason = "Number(3.0) does not match `NaN` (expected undefined, kernel has a value)"
 mismatches = ["intervalMax"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2718"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Mean` of a list does not take 2 arguments"
-mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2723"
@@ -2472,18 +2430,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:2734"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `MeanY`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2739"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Median`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2740"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Median`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3267,33 +3213,9 @@ reason = "the kernel refuses the input: unknown object `pi1`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3486"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Q1`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3487"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Q1`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:349"
 category = "incomplete-context"
 reason = "the kernel refuses the input: unknown object `pi1a`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3492"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Q3`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3493"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Q3`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3681,18 +3603,6 @@ reason = "the kernel refuses the input: unknown command `Sample`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3792"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SampleSD`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3793"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SampleSD`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3798"
 category = "unsupported-form"
 reason = "the kernel refuses the input: unexpected `[`"
@@ -3726,30 +3636,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:3815"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `SampleSDY`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3820"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SampleVariance`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3821"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SampleVariance`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3832"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SD`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3833"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SD`"
 mismatches = ["step"]
 
 [[gap]]
@@ -5004,18 +4890,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:4812"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `UpperSum( If(x^(2)>9,1+0 x),-5,5,1 )`: a command inside a command is not supported"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4817"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Variance`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4818"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Variance`"
 mismatches = ["step"]
 
 [[gap]]
