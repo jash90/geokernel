@@ -1,0 +1,13 @@
+The AppImage uses the upstream x86_64 type-2 runtime release 20251108
+without modifications. The runtime source credits Simon Peter
+(Copyright 2004–2024) and Alexander Larsson (portions, Copyright 2007).
+The source archive here includes the upstream
+build instructions (BUILD.md), build scripts and patch for libfuse.
+The matching libfuse 3.15.0 source archive is included beside it.
+
+Upstream build and release:
+https://github.com/AppImage/type2-runtime/releases/tag/20251108
+
+To replace the runtime, extract the AppImage with --appimage-extract,
+build the runtime using the included instructions and pass that runtime
+to appimagetool with --runtime-file and the extracted AppDir.

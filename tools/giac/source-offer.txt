@@ -16,3 +16,8 @@ at https://github.com/jash90/geokernel/issues/new. The project offers
 a copy at no charge to anyone with this archive for at least three
 years from distribution and for as long as the project supports this
 build. Include the contents of REVISION with the request.
+
+The verified publisher archive is included as giac-70507-source.archive.
+For native installers, giac-dependency-source.tar.gz includes the reviewed
+GMP and MPFR source trees and build instructions for the bundled desktop
+libraries. NOTICE records the SHA-256 of the supplied archives.

@@ -7,6 +7,22 @@ use geo_app::{cli, Metrics, Window, Workbench};
 
 const SCRIPT: &str = include_str!("../../../examples/triangle.geo");
 
+fn print_version() {
+    let version = option_env!("GEOKERNEL_RELEASE_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"));
+    let variant = if geo_giac::enabled() {
+        "GPL-3.0-or-later with Giac"
+    } else {
+        "EUPL-1.2"
+    };
+    let library = match geo_giac::backend() {
+        geo_giac::Backend::Giac => "loaded",
+        geo_giac::Backend::Failed => "failed to load",
+        geo_giac::Backend::KernelOnly if geo_giac::enabled() => "missing",
+        geo_giac::Backend::KernelOnly => "disabled",
+    };
+    println!("geokernel {version} | {variant} | Giac {library}");
+}
+
 fn main() -> eframe::Result {
     let command = match cli::parse_args(std::env::args_os().skip(1)) {
         Ok(c) => c,
@@ -15,9 +31,16 @@ fn main() -> eframe::Result {
             std::process::exit(2);
         }
     };
-    let cli::Command::Run { script, touch } = command else {
-        println!("{}", cli::USAGE);
-        return Ok(());
+    let (script, touch) = match command {
+        cli::Command::Run { script, touch } => (script, touch),
+        cli::Command::Help => {
+            println!("{}", cli::USAGE);
+            return Ok(());
+        }
+        cli::Command::Version => {
+            print_version();
+            return Ok(());
+        }
     };
     let (wb, load_error, source_path) = match script {
         Some(path) => {

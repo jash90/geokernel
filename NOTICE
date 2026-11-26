@@ -1,5 +1,10 @@
 geokernel is licensed under the European Union Public Licence 1.2 (LICENSE).
 
+Parts are translated from GeoGebra, Copyright (c) GeoGebra GmbH,
+Altenbergerstr. 69, 4040 Linz, Austria, under the EUPL 1.2.
+The original file references and notices are retained in the sources.
+Upstream: https://github.com/geogebra/geogebra
+
 Optional Giac backend
 ---------------------
 
@@ -22,7 +27,29 @@ The geokernel archive is distributed under the EUPL 1.2. The
 geokernel-giac archive is a combined work distributed under the GNU General
 Public License, version 3 or later. See GPL-3.0.txt, REVISION and
 SOURCE-OFFER.txt in that archive for the licence text, the bundled Giac
-build and how to request its complete corresponding source. The
-application's source and build scripts are in geokernel-source.tar.gz.
+build and how to request its complete corresponding source.
+
+Each desktop package includes geokernel-source.tar.gz with the application's
+source and build scripts from the commit named in REVISION. The project
+repository is https://github.com/jash90/geokernel.
 The packaged Giac source is in giac-70507-source.archive. The associated
 SHA-256 is recorded below in the Giac archive's copy of this notice.
+
+Bundled fonts
+-------------
+
+These notices come from the epaint_default_fonts crate pinned in Cargo.lock.
+- Ubuntu Light, Copyright 2011 Canonical Ltd., designed by Dalton Maag Ltd.
+  Ubuntu Font Licence 1.0: licenses/fonts/Ubuntu-Font-Licence.txt.
+- Hack, including Bitstream Vera and DejaVu notices: licenses/fonts/Hack-Regular.txt.
+- Noto Emoji, Copyright 2013 Google Inc., SIL Open Font License 1.1:
+  licenses/fonts/OFL.txt.
+- emoji-icon-font and the egui-icons subset, Copyright (c) 2014 John
+  Slegers, MIT: licenses/fonts/emoji-icon-font-mit-license.txt and
+  licenses/fonts/egui-icons.txt.
+
+The desktop packages also include Rust and dependency notices in licenses/.
+The AppImage additionally includes the type-2 runtime and its library
+notices in licenses/appimage/. To rebuild or replace the runtime, see
+SOURCE.txt in that directory. The Windows installer uses Inno Setup,
+whose licence is in licenses/windows/.

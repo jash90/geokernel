@@ -24,6 +24,7 @@ headless = []
 
 [dependencies]
 geo-kernel = { path = "../geo-kernel" }
+geo-giac = { path = "../geo-giac" }
 geo-latex = { path = "../geo-latex" }
 geo-app-core = { path = "../geo-app-core" }
 # Default features are off to avoid pulling in glow and the web
