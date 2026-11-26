@@ -30,15 +30,40 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
     let analysis_open = matches!(app.spreadsheet_analysis, Ok(Some(_)));
     let (launch, close) = if Analysis::available() {
         ui.horizontal_wrapped(|ui| {
-            let close = analysis_open && ui.button("Zamknij podsumowanie").clicked();
             ui.heading(label(Label::SpreadsheetView));
-            let launch = ui.button("Analiza jednej zmiennej").clicked();
+            let text = if analysis_open {
+                "Zamknij podsumowanie"
+            } else {
+                "Analiza jednej zmiennej"
+            };
+            // Both titles need the same slot so opening analysis never moves the grid.
+            let width = ["Analiza jednej zmiennej", "Zamknij podsumowanie"]
+                .into_iter()
+                .map(|title| {
+                    ui.painter()
+                        .layout_no_wrap(
+                            title.to_owned(),
+                            TextStyle::Button.resolve(ui.style()),
+                            ui.visuals().text_color(),
+                        )
+                        .size()
+                        .x
+                })
+                .fold(0.0_f32, f32::max)
+                + 2.0 * ui.spacing().button_padding.x;
+            let action = ui
+                .add(
+                    eframe::egui::Button::new(text)
+                        .extend()
+                        .min_size(vec2(width, 0.0)),
+                )
+                .clicked();
             let editor = app
                 .spreadsheet_editor
                 .as_mut()
                 .expect("spreadsheet selection");
             ui.checkbox(&mut editor.range_extension_armed, "Zaznacz zakres");
-            (launch, close)
+            (action && !analysis_open, action && analysis_open)
         })
         .inner
     } else {
@@ -53,7 +78,6 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
         .expect("spreadsheet selection");
     let selected = editor.selected;
     let focus = std::mem::take(&mut editor.focus);
-    let reveal = std::mem::take(&mut editor.reveal);
     let error = editor.error.as_deref();
     let input_id = ui.make_persistent_id("spreadsheet_input");
     if focus {
@@ -105,7 +129,8 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
     } else {
         None
     };
-    let clicked = if sheet.is_positive() {
+    let clicked = if sheet.width() > HEADER_WIDTH && sheet.height() > HEADER_HEIGHT {
+        let reveal = std::mem::take(&mut app.spreadsheet_editor.as_mut().unwrap().reveal);
         let mut grid_ui = ui.new_child(UiBuilder::new().id_salt("sheet").max_rect(sheet));
         grid_ui.set_clip_rect(sheet);
         grid(app, &mut grid_ui, selected, reveal)
