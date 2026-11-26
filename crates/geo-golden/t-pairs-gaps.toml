@@ -286,14 +286,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:373"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `f`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown command `f`; the method's step `arithmetic/ArithmeticTest.java:372` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:374"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `f`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown command `f`; the method's step `arithmetic/ArithmeticTest.java:372` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -304,14 +304,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:376"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `g`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown command `g`; the method's step `arithmetic/ArithmeticTest.java:375` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:377"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `g`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown command `g`; the method's step `arithmetic/ArithmeticTest.java:375` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -1906,14 +1906,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2223"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unknown object `x+y+z=1`"
+category = "unsupported-form"
+reason = "the kernel has no inline 3D equation operands for IntersectPath: unknown object `z`"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2224"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unknown object `z`"
+category = "unsupported-form"
+reason = "the kernel has no inline 3D equation operands for IntersectPath: unknown object `z`"
 mismatches = ["step"]
 
 [[gap]]
@@ -2674,8 +2674,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2952"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `G`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown command `G`; the method's step `commands/CommandsTest.java:2951` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -2686,8 +2686,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2956"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `G1`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown command `G1`; the method's step `commands/CommandsTest.java:2953` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -5374,8 +5374,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:577"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `a`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown command `a`; the method's step `commands/CommandsTest.java:576` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -6244,8 +6244,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/RedefineTest.java:350"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `f'`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown command `f'`; the method's step `commands/RedefineTest.java:346` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]
@@ -6346,8 +6346,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/TranslateTest.java:30"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unknown command `f_1`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown command `f_1`; the method's step `commands/TranslateTest.java:29` was expected to create the missing label"
 mismatches = ["step"]
 
 [[gap]]

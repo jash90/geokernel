@@ -39,7 +39,7 @@ def topic(name):
 
 
 def case(name, script, steps, unit=None, hidden=None, archive=False,
-         images=None, after_images=None):
+         images=None, after_images=None, typed_snapshot=False):
     counters[name] = counters.get(name, 0) + 1
     entry = {"id": f"saved-{name}-{counters[name]:03d}"}
     if unit:
@@ -53,6 +53,8 @@ def case(name, script, steps, unit=None, hidden=None, archive=False,
         entry["images"] = images
     if after_images:
         entry["after_images"] = after_images
+    if typed_snapshot:
+        entry["typed_snapshot"] = True
     entry["steps"] = steps
     cases.append(entry)
 
@@ -874,6 +876,11 @@ case("export-fixed-segment", ["A = (1, 1)", "s = Segment(A, 4)"], [])
 
 case("export-inline-fixed-segment", ["s = Segment((1,1),4)"], [])
 case("export-fill-row", ["FillRow(1,{7})"], [])
+case("export-edited-fill", ["FillRow(1,{7})", "SetValue(A1,9)"], [])
+case("export-moved-fill", ["FillRow(1,{(7,8)})", "SetCoords(A1,9,10)"], [])
+case("export-ray-and-function",
+     ["A = (1,2)", "B = (3,4)", "r = Ray(A,B)", "f(x,y)=x+y"], [],
+     typed_snapshot=True)
 
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)

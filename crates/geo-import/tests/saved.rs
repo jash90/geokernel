@@ -801,7 +801,7 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                 Vec::new()
             };
             let agrees = match kind {
-                Kind::ImplicitCurve | Kind::Arc | Kind::Sector => {
+                Kind::ImplicitCurve | Kind::Arc | Kind::Sector | Kind::FunctionNVar => {
                     compare_construction_object(expected, &c, id)
                 }
                 Kind::List => compare_list(&c, expected, kind, c.elements(id)),

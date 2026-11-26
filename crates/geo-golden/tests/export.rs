@@ -1935,6 +1935,103 @@ fn a_spreadsheet_fill_can_be_saved_and_reopened() {
     compare_saved_regression("saved-export-fill-row-001.xml", "FillRow(1,{7})", &["A1"]);
 }
 
+const EDITED_FILL_FILE: &str = "saved-export-edited-fill-001.xml";
+const EDITED_FILL_SCRIPT: &str = "FillRow(1,{7})\nSetValue(A1,9)";
+const MOVED_FILL_FILE: &str = "saved-export-moved-fill-001.xml";
+const MOVED_FILL_SCRIPT: &str = "FillRow(1,{(7,8)})\nSetCoords(A1,9,10)";
+const RAY_AND_FUNCTION_FILE: &str = "saved-export-ray-and-function-001.xml";
+const RAY_AND_FUNCTION_SCRIPT: &str = "A = (1,2)\nB = (3,4)\nr = Ray(A,B)\nf(x,y)=x+y";
+
+#[test]
+fn an_edited_spreadsheet_fill_can_be_saved_and_reopened() {
+    compare_saved_regression(EDITED_FILL_FILE, EDITED_FILL_SCRIPT, &["A1"]);
+}
+
+#[test]
+fn a_moved_spreadsheet_fill_can_be_saved_and_reopened() {
+    compare_saved_regression(MOVED_FILL_FILE, MOVED_FILL_SCRIPT, &["A1"]);
+}
+
+#[test]
+fn ray_and_multivariable_function_export_notes_follow_the_xml() {
+    use geo_import::xml::{parse, Item};
+
+    let live = Workbench::from_script(RAY_AND_FUNCTION_SCRIPT).unwrap();
+    let output = live.export_ggb(None).unwrap();
+    let source = saved_review_file(RAY_AND_FUNCTION_FILE);
+    for bytes in [&source, &output] {
+        let xml = geo_import::archive::extract_xml(bytes).unwrap();
+        let document = parse(&xml).unwrap();
+        assert!(document.items.iter().any(|item| matches!(
+            item,
+            Item::Command { name, inputs, outputs }
+                if name == "Ray" && inputs == &["A", "B"] && outputs == &["r"]
+        )));
+        assert!(document.items.iter().any(|item| matches!(
+            item,
+            Item::Element(el)
+                if el.label == "r" && el.kind == "ray" && el.coords.is_some() && !el.start_point
+        )));
+        assert!(document.items.iter().any(|item| matches!(
+            item,
+            Item::Element(el) if el.label == "f" && el.kind == "functionnvar"
+        )));
+        assert!(xml
+            .lines()
+            .any(|line| line.starts_with("<expression label=\"f\" ")
+                && line.contains("type=\"function\"")));
+    }
+    let table = fs::read_to_string(repo_root().join("docs/kinds.csv")).unwrap();
+    let matrix = geo_golden::table::Table::parse(&table, "docs/kinds.csv").unwrap();
+    let mut missing = Vec::new();
+    for (kind, clauses) in [
+        (
+            "Ray",
+            [
+                "command carries the start",
+                "element carries the line coefficients",
+            ],
+        ),
+        (
+            "FunctionNVar",
+            [
+                "expression type is `function`",
+                "element type is `functionnvar`",
+            ],
+        ),
+    ] {
+        let row = matrix
+            .records()
+            .into_iter()
+            .find(|row| row["kind"] == kind)
+            .unwrap();
+        for clause in clauses {
+            if !row["notes"].contains(clause) {
+                missing.push(format!("{kind}: missing {clause}"));
+            }
+        }
+    }
+    assert!(missing.is_empty(), "{}", missing.join("\n"));
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn edited_fill_ray_and_multivariable_function_match_the_reference_reader() {
+    for (file, script) in [
+        (EDITED_FILL_FILE, EDITED_FILL_SCRIPT),
+        (MOVED_FILL_FILE, MOVED_FILL_SCRIPT),
+        (RAY_AND_FUNCTION_FILE, RAY_AND_FUNCTION_SCRIPT),
+    ] {
+        let live = Workbench::from_script(script).unwrap();
+        let output = live.export_ggb(None).unwrap();
+        let (source, exported) = review_oracle(&saved_review_file(file), &output);
+        if file == EDITED_FILL_FILE {
+            assert_eq!(source["objects"]["A1"]["value"], 9.0);
+        }
+        assert_json(&source["objects"], &exported["objects"], file);
+    }
+}
+
 #[test]
 fn an_inline_fixed_segment_can_be_saved_and_reopened() {
     compare_saved_regression(

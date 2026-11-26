@@ -41,10 +41,15 @@ struct Reclassified {
     reason: String,
 }
 
+// Numeric import gaps are closed. Reject a reintroduced [[gap]] row,
+// including one that also has a matching documentation entry.
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct ImportGapFile {
     #[serde(default)]
     reclassified: Vec<Reclassified>,
+    #[serde(rename = "saved_tangency")]
+    _saved_tangency: Option<serde::de::IgnoredAny>,
 }
 
 /// Whether two kernel values are the same within the tolerance of the golden files.
@@ -220,14 +225,40 @@ fn compare_case(
         });
         *totals.skipped_by_reason.entry(key).or_default() += 1;
     }
+    // The importer accepts either order's value in the cache. The oracle
+    // separately pins the original value GeoGebra wrote before reloading.
+    let saved = reload.map(|_| {
+        let text = geo_import::archive::extract_xml(bytes).unwrap();
+        geo_import::xml::parse(&text).unwrap()
+    });
     let gap = gaps.get(&case.id);
     for (label, expected) in &case.snapshots[0] {
         let reload_expected = reload.and_then(|values| values.get(label)).map(|&value| {
             assert_eq!(expected.kind, Kind::Number);
+            let Some(ExpectedData::Number(original)) = expected.data else {
+                panic!("{}: {label} must have a pre-save number", case.id);
+            };
             assert!(
-                matches!(expected.data, Some(ExpectedData::Number(original)) if !numbers_agree(original, value)),
+                !numbers_agree(original, value),
                 "{}: {label} no longer changes on reference reload", case.id
             );
+            let cache = saved
+                .as_ref()
+                .unwrap()
+                .items
+                .iter()
+                .find_map(|item| match item {
+                    geo_import::xml::Item::Element(el) if el.label == *label => {
+                        el.value.as_deref()?.parse::<f64>().ok()
+                    }
+                    _ => None,
+                });
+            if !cache.is_some_and(|cached| numbers_agree(original, cached)) {
+                failures.push(format!(
+                    "{}: {label} saved cache {cache:?} disagrees with the pre-save value {original}",
+                    case.id
+                ));
+            }
             let mut reloaded = expected.clone();
             reloaded.data = Some(ExpectedData::Number(value));
             reloaded
@@ -349,6 +380,48 @@ fn a_line_distance_cache_that_matches_neither_order_is_reported() {
     assert_eq!(imported.mismatched.len(), 1);
     assert_eq!(imported.mismatched[0].label, "d");
     assert_eq!(imported.mismatched[0].saved, "value 99");
+}
+
+#[test]
+fn the_import_oracle_rejects_a_cache_changed_to_the_reload_value() {
+    let root = repo_root();
+    let id = "transform-rotate-037";
+    let case = model::load_all(&root)
+        .unwrap()
+        .into_iter()
+        .find(|case| case.id == id)
+        .unwrap();
+    let xml = fs::read_to_string(root.join(format!("golden/ggb/transform/{id}.xml"))).unwrap();
+    let (original, modified) = ("0.526691643295513", "0.5884701140321686");
+    assert_eq!(xml.matches(original).count(), 1);
+    let xml = xml.replacen(original, modified, 1);
+    let reloads: BTreeMap<String, BTreeMap<String, f64>> =
+        serde_json::from_str(include_str!("../../../golden/ggb/distance-reload.snapshot")).unwrap();
+    let mut failures = Vec::new();
+    compare_case(
+        &case,
+        xml.as_bytes(),
+        &gaps::load().unwrap(),
+        reloads.get(id),
+        &mut Totals::default(),
+        &mut failures,
+    );
+    assert!(
+        failures
+            .iter()
+            .any(|failure| failure.contains("saved cache")),
+        "{failures:?}"
+    );
+}
+
+#[test]
+fn the_import_oracle_rejects_a_stale_import_gap() {
+    let ledger = concat!(
+        include_str!("../known-import-gaps.toml"),
+        "\n[[gap]]\nid = \"conic-diameter-009\"\nlabel = \"d\"\n",
+        "golden = 0.8944271909999159\nimported = 1.7888543819998317\nreason = \"Distance inputs were reversed\"\n",
+    );
+    assert!(toml::from_str::<ImportGapFile>(ledger).is_err());
 }
 
 #[test]

@@ -1156,9 +1156,9 @@ const APP_COMMANDS: &[&str] = &[
     "TurtleDown",
 ];
 
-fn missing_operand(error: &str) -> Option<&str> {
+fn missing_name<'a>(error: &'a str, diagnostic: &str) -> Option<&'a str> {
     error
-        .split_once("unknown object `")?
+        .split_once(diagnostic)?
         .1
         .split_once('`')
         .map(|(name, _)| name)
@@ -1177,6 +1177,7 @@ fn classify(
     exec: &Exec,
     bad: &[Disagreement],
     prior_failure: Option<&str>,
+    inline_3d_intersection: bool,
 ) -> Category {
     if let Exec::Refused(_) = exec {
         return Category::RunnerLimit;
@@ -1187,12 +1188,19 @@ fn classify(
         if e.contains("a command inside a command is not supported") {
             return Category::UnsupportedForm;
         }
-        if let Some(operand) = missing_operand(e) {
-            return match prior_failure {
-                Some(_) => Category::Cascade,
-                None if is_inline_operand(operand) => Category::UnsupportedForm,
-                None if !pair.context_complete => Category::IncompleteContext,
-                None => Category::ErrorBehaviour,
+        if inline_3d_intersection {
+            return Category::UnsupportedForm;
+        }
+        if prior_failure.is_some() {
+            return Category::Cascade;
+        }
+        if let Some(operand) = missing_name(e, "unknown object `") {
+            return if is_inline_operand(operand) {
+                Category::UnsupportedForm
+            } else if !pair.context_complete {
+                Category::IncompleteContext
+            } else {
+                Category::ErrorBehaviour
             };
         }
     }
@@ -1263,9 +1271,14 @@ pub fn replay_method(method: &Method) -> impl Iterator<Item = StepOutcome> + '_ 
     method.steps.iter().map(move |pair| {
         let out = run_pair(&mut c, pair, Some(&missing));
         if out.blocks_later_steps() {
-            for label in pair.outputs.iter().filter_map(|out| out.label.as_deref()) {
-                if pair.input.trim() != label && c.id(label).is_none() {
-                    missing.insert(canonical_label(label), pair.id.as_str());
+            for recorded in &pair.outputs {
+                if let Some(label) = recorded.label.as_deref() {
+                    if pair.input.trim() != label && c.id(label).is_none() {
+                        missing.insert(
+                            canonical_label(label),
+                            (pair.id.as_str(), recorded.class.as_str()),
+                        );
+                    }
                 }
             }
         }
@@ -1286,12 +1299,27 @@ fn canonical_label(label: &str) -> String {
 fn run_pair(
     c: &mut Construction,
     pair: &Pair,
-    missing: Option<&BTreeMap<String, &str>>,
+    missing: Option<&BTreeMap<String, (&str, &str)>>,
 ) -> StepOutcome {
     let exec = exec_step(c, pair);
-    let operand = exec.error().and_then(missing_operand);
-    let prior_failure = operand.and_then(|label| missing?.get(&canonical_label(label)).copied());
+    let error = exec.error();
+    let operand = error.and_then(|error| missing_name(error, "unknown object `"));
+    let prior_failure = (|| {
+        let missing = missing?;
+        if let Some(label) = operand {
+            return missing.get(&canonical_label(label)).map(|&(id, _)| id);
+        }
+        // Without its definition, the parser treats a named function call
+        // as a command. Require a recorded function producer for that name.
+        let name = missing_name(error?, "unknown command `")?;
+        let &(id, class) = missing.get(&canonical_label(name))?;
+        matches!(class, "GeoFunction" | "GeoFunctionNVar").then_some(id)
+    })();
     let command = command_of(&pair.input);
+    let inline_3d_intersection = command == "IntersectPath"
+        && operand.is_some_and(|name| name == "z" || name.contains('='))
+        && pair.input.contains('=')
+        && pair.outputs.iter().any(|out| out.class.ends_with("3D"));
     // The polynomial CAS is checked through structured outputs. Its
     // presentation conventions are documented independently.
     let values_only = matches!(
@@ -1332,6 +1360,13 @@ fn run_pair(
                     // the kernel has no error classes, so the refusal itself is
                     // the agreement.
                     pass = Some(PassKind::ErrorClass);
+                } else if inline_3d_intersection {
+                    bad.push(Disagreement {
+                        label: "step".into(),
+                        why: format!(
+                            "the kernel has no inline 3D equation operands for IntersectPath: {e}"
+                        ),
+                    });
                 } else if let Some(root) = prior_failure {
                     bad.push(Disagreement {
                         label: "step".into(),
@@ -1415,7 +1450,13 @@ fn run_pair(
     let category = if bad.is_empty() {
         None
     } else {
-        Some(classify(pair, &exec, &bad, prior_failure))
+        Some(classify(
+            pair,
+            &exec,
+            &bad,
+            prior_failure,
+            inline_3d_intersection,
+        ))
     };
     StepOutcome {
         id: pair.id.clone(),
@@ -1705,6 +1746,53 @@ mod tests {
         let second = replay_method(&methods[0]).nth(1).unwrap();
         assert_eq!(second.category, Some(Category::Cascade));
         assert!(second.disagreements[0].why.contains(&root));
+    }
+
+    #[test]
+    fn applications_of_functions_with_failed_producers_are_cascades() {
+        let methods = load(include_str!("../../../golden/t-pairs/verified.jsonl")).unwrap();
+        let mut mismatches = Vec::new();
+        for (file, producer, consumer) in [("TranslateTest", 29, 30), ("CommandsTest", 2951, 2952)]
+        {
+            let producer = format!("commands/{file}.java:{producer}");
+            let consumer = format!("commands/{file}.java:{consumer}");
+            let method = methods
+                .iter()
+                .find(|m| m.steps.iter().any(|p| p.id == consumer))
+                .unwrap();
+            let steps: Vec<_> = replay_method(method).collect();
+            let root = steps.iter().find(|out| out.id == producer).unwrap();
+            assert!(root.blocks_later_steps(), "{root:?}");
+            let out = steps.into_iter().find(|out| out.id == consumer).unwrap();
+            if out.category != Some(Category::Cascade)
+                || !out.disagreements[0].why.contains(&producer)
+            {
+                mismatches.push((producer, out));
+            }
+        }
+        assert!(mismatches.is_empty(), "{mismatches:?}");
+    }
+
+    #[test]
+    fn inline_3d_equation_intersections_are_unsupported_forms() {
+        let methods = load(include_str!("../../../golden/t-pairs/verified.jsonl")).unwrap();
+        let mut mismatches = Vec::new();
+        for id in [
+            "commands/CommandsTest.java:2223",
+            "commands/CommandsTest.java:2224",
+        ] {
+            let method = methods
+                .iter()
+                .find(|m| m.steps.iter().any(|p| p.id == id))
+                .unwrap();
+            let out = replay_method(method).find(|out| out.id == id).unwrap();
+            if out.category != Some(Category::UnsupportedForm)
+                || !out.disagreements[0].why.contains("3D")
+            {
+                mismatches.push(out);
+            }
+        }
+        assert!(mismatches.is_empty(), "{mismatches:?}");
     }
 
     #[test]

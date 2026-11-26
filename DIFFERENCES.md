@@ -664,13 +664,18 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:4788`, `commands/CommandsTest.java:4789` | **app-command.** the kernel refuses the input: unknown command `UpdateConstruction` |
 | `commands/CommandsTest.java:4905`, `commands/CommandsTest.java:4906`, `commands/CommandsTest.java:763`, `commands/CommandsTest.java:770` | **app-command.** the kernel refuses the input: unknown command `ZoomOut` |
 | `commands/CommandsTest.java:1643` | **cas.** the kernel refuses the input: unknown command `Factor` |
-| `commands/CommandsTest.java:2949`, `commands/CommandsTest.java:2951` | **cas.** the kernel refuses the input: unknown command `NIntegral` |
+| `commands/CommandsTest.java:2949` | **cas.** The kernel reports unknown command `NIntegral` for `NIntegral[x^2,-1,1]`. GeoGebra returns the number 0.6666666666666666. |
+| `commands/CommandsTest.java:2951` | **cas.** The kernel reports unknown command `NIntegral` and creates no `G`. GeoGebra creates `G(x)=NIntegral(x/x^2, 1, 0, 10)` and records `G(4) = 1.386294361119891`. |
 | `commands/CommandsUsingMockedCasTest.java:105` | **cas.** the kernel refuses the input: unknown command `LimitBelow` |
 | `commands/CommandsUsingMockedCasTest.java:117` | **cas.** the kernel refuses the input: unknown command `PartialFractions` |
 | `commands/CommandsUsingMockedCasTest.java:142` | **cas.** the kernel refuses the input: unknown command `CSolutions` |
 | `commands/CommandsUsingMockedCasTest.java:148` | **cas.** the kernel refuses the input: unknown command `CSolve` |
 | `commands/CommandsUsingMockedCasTest.java:194` | **cas.** the kernel refuses the input: unknown command `TrigSimplify` |
 | `commands/CommandsUsingMockedCasTest.java:99` | **cas.** the kernel refuses the input: unknown command `Limit` |
+| `arithmetic/ArithmeticTest.java:373` | **cascade.** GeoGebra evaluates `f(1, 1)` to an undefined number (displayed as `NaN`). The kernel reports unknown command `f` because step `arithmetic/ArithmeticTest.java:372` fails to create that function. |
+| `arithmetic/ArithmeticTest.java:374` | **cascade.** GeoGebra evaluates `f((1, 1))` to an undefined number (displayed as `NaN`). The kernel reports unknown command `f` because step `arithmetic/ArithmeticTest.java:372` fails to create that function. |
+| `arithmetic/ArithmeticTest.java:376` | **cascade.** GeoGebra evaluates `g(1)` to an undefined number (displayed as `NaN`). The kernel reports unknown command `g` because step `arithmetic/ArithmeticTest.java:375` fails to create that function. |
+| `arithmetic/ArithmeticTest.java:377` | **cascade.** GeoGebra evaluates `g((1, 1))` to an undefined number (displayed as `NaN`). The kernel reports unknown command `g` because step `arithmetic/ArithmeticTest.java:375` fails to create that function. |
 | `arithmetic/ArithmeticTest.java:387` | **cascade.** With `f + g`, GeoGebra returns `?`. The kernel cannot resolve `f`. Step `arithmetic/ArithmeticTest.java:384` supplies that label in the reference and fails in kernel replay. |
 | `arithmetic/ArithmeticTest.java:388` | **cascade.** With `g + f`, GeoGebra returns `?`. The kernel cannot resolve `f`. Step `arithmetic/ArithmeticTest.java:384` supplies that label in the reference and fails in kernel replay. |
 | `commands/CmdCopyFreeObjectTest.java:31` | **cascade.** With `myCopy`, GeoGebra returns `{(3 * 1)}`. The kernel cannot resolve `myCopy`. Step `commands/CmdCopyFreeObjectTest.java:29` supplies that label in the reference and fails in kernel replay. |
@@ -679,11 +684,14 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:175` | **cascade.** With `g:Intersect(e1,e2)`, GeoGebra returns `X = (NaN, NaN, NaN) + λ (NaN, NaN, NaN)`. The kernel cannot resolve `e1`. Step `commands/CommandsTest.java:171` supplies that label in the reference and fails in kernel replay. |
 | `commands/CommandsTest.java:178` | **cascade.** With `g`, GeoGebra returns `X = (0, 0, 0) + λ (1, 1, 1)`. The kernel cannot resolve `g`. Step `commands/CommandsTest.java:175` supplies that label in the reference and fails in kernel replay. |
 | `commands/CommandsTest.java:187` | **cascade.** With `g:AngleBisector(e1,e2)`, GeoGebra returns `X = (?, ?, ?)`, `X = (?, ?, ?)`. The kernel cannot resolve `e1`. Step `commands/CommandsTest.java:183` supplies that label in the reference and fails in kernel replay. |
+| `commands/CommandsTest.java:2952` | **cascade.** GeoGebra evaluates `G(4)-ln(4)` to `4.440892098500626e-16`, displayed as `0`. The kernel reports unknown command `G` because step `commands/CommandsTest.java:2951` fails to create that function. |
+| `commands/CommandsTest.java:2956` | **cascade.** GeoGebra evaluates `G1(4)` to a number displayed as `1.2609`. The kernel reports unknown command `G1` because step `commands/CommandsTest.java:2953` fails to create that function. |
 | `commands/CommandsTest.java:4046` | **cascade.** With `B`, GeoGebra returns `(4, 5, 6)`. The kernel cannot resolve `B`. Step `commands/CommandsTest.java:4042` supplies that label in the reference and fails in kernel replay. |
 | `commands/CommandsTest.java:4048` | **cascade.** With `B`, GeoGebra returns `(7, 8, 0)`. The kernel cannot resolve `B`. Step `commands/CommandsTest.java:4042` supplies that label in the reference and fails in kernel replay. |
 | `commands/CommandsTest.java:437` | **cascade.** With `list1`, GeoGebra returns `{1, 2}`. The kernel cannot resolve `list1`. Step `commands/CommandsTest.java:431` supplies that label in the reference and fails in kernel replay. |
 | `commands/CommandsTest.java:438` | **cascade.** With `Object["list2"]`, GeoGebra returns `{3, 4}`. The kernel cannot resolve `list2`. Step `commands/CommandsTest.java:433` supplies that label in the reference and fails in kernel replay. |
 | `commands/CommandsTest.java:4956` | **cascade.** With `Degree(f)`, GeoGebra returns `1`. The kernel cannot resolve `f`. Step `commands/CommandsTest.java:4955` supplies that label in the reference and fails in kernel replay. |
+| `commands/CommandsTest.java:577` | **cascade.** GeoGebra evaluates `a(1,3)` to `1.25`. The kernel reports unknown command `a` because step `commands/CommandsTest.java:576` fails to create that function. |
 | `commands/CommandsTest.java:594` | **cascade.** With `combined`, GeoGebra returns `(2 * ((2 * x) + (0 * y))) + (3 * ((0 * x) + (3 * y))) = 36`. The kernel cannot resolve `combined`. Step `commands/CommandsTest.java:592` supplies that label in the reference and fails in kernel replay. |
 | `commands/CommandsTest.java:629` | **cascade.** With `x(f)`, GeoGebra returns `x(f(t))`. The kernel cannot resolve `f`. Step `commands/CommandsTest.java:628` supplies that label in the reference and fails in kernel replay. |
 | `commands/RedefineTest.java:179` | **cascade.** With `a`, GeoGebra returns `0.7275636800328681`. The kernel cannot resolve `a`. Step `commands/RedefineTest.java:172` supplies that label in the reference and fails in kernel replay. |
@@ -694,7 +702,9 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/RedefineTest.java:229` | **cascade.** With `L_1`, GeoGebra returns `{8, 7, 3, 2, 6, 10, 4, 1, 5, 9}`. The kernel cannot resolve `L_1`. Step `commands/RedefineTest.java:222` supplies that label in the reference and fails in kernel replay. |
 | `commands/RedefineTest.java:237` | **cascade.** With `P`, GeoGebra returns `(7, 7)`. The kernel cannot resolve `P`. Step `commands/RedefineTest.java:235` supplies that label in the reference and fails in kernel replay. |
 | `commands/RedefineTest.java:311` | **cascade.** With `A`, GeoGebra returns `(NaN, NaN)`. The kernel cannot resolve `A`. Step `commands/RedefineTest.java:309` supplies that label in the reference and fails in kernel replay. |
+| `commands/RedefineTest.java:350` | **cascade.** GeoGebra evaluates `f'(x)` to the function `2 * x`. The kernel reports unknown command `f'` because step `commands/RedefineTest.java:346` fails to create that function. |
 | `commands/TranslateTest.java:29` | **cascade.** With `f_1(x) = Translate(f, u)`, GeoGebra returns `If[0 < x - 4 < k, 2 + x - 4, 1 < x - 4 < 2, -1]`. The kernel cannot resolve `u`. Step `commands/TranslateTest.java:28` supplies that label in the reference and fails in kernel replay. |
+| `commands/TranslateTest.java:30` | **cascade.** GeoGebra evaluates `f_1(4.5)` to `2.5`. The kernel reports unknown command `f_1` because step `commands/TranslateTest.java:29` fails to create that function. |
 | `geos/GeoInputBoxLinkedGeoTest.java:888` | **cascade.** With `f`, GeoGebra returns `w + ί`. The kernel cannot resolve `f`. Step `geos/GeoInputBoxLinkedGeoTest.java:881` supplies that label in the reference and fails in kernel replay. |
 | `commands/CommandsUsingMockedCasTest.java:154`, `commands/CommandsUsingMockedCasTest.java:160`, `commands/CommandsUsingMockedCasTest.java:166`, `commands/CommandsUsingMockedCasTest.java:172` | **dummy-cas-expectation.** List { len: 3 } does not match `?` (expected undefined, kernel has a value) |
 | `commands/CommandsUsingMockedCasTest.java:211` | **dummy-cas-expectation.** Bool(true) does not match `false` (values differ) |
@@ -723,7 +733,7 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `arithmetic/ArithmeticTest.java:267`, `arithmetic/ArithmeticTest.java:268` | **incomplete-context.** the kernel refuses the input: `1..2` is not a valid object name |
 | `arithmetic/ArithmeticTest.java:316` | **incomplete-context.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x` |
 | `arithmetic/ArithmeticTest.java:317`, `commands/RedefineTest.java:346`, `commands/RedefineTest.java:772`, `commands/RedefineTest.java:779` | **incomplete-context.** the kernel refuses the input: unknown object `f'` |
-| `arithmetic/ArithmeticTest.java:318`, `commands/RedefineTest.java:350` | **incomplete-context.** the kernel refuses the input: unknown command `f'` |
+| `arithmetic/ArithmeticTest.java:318` | **incomplete-context.** the kernel refuses the input: unknown command `f'` |
 | `arithmetic/ArithmeticTest.java:443`, `arithmetic/ArithmeticTest.java:445`, `arithmetic/ArithmeticTest.java:446`, `arithmetic/ArithmeticTest.java:447`, `arithmetic/ArithmeticTest.java:448`, `arithmetic/ArithmeticTest.java:453` | **incomplete-context.** the kernel refuses the input: unknown object `i` |
 | `arithmetic/ArithmeticTest.java:733` | **incomplete-context.** string `-0.000000000000002220446049250313`, GeoGebra prints `0` |
 | `cas/AlgoDerivativeTest.java:35`, `cas/AlgoDerivativeTest.java:37` | **incomplete-context.** class `GeoFunctionNVar` has no schema object (unsupported-type); string `x * y * z` |
@@ -742,8 +752,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:1775` | **incomplete-context.** the kernel refuses the input: unknown command `FitPoly` |
 | `commands/CommandsTest.java:1777`, `commands/CommandsTest.java:1778`, `commands/CommandsTest.java:1779`, `commands/CommandsTest.java:1782` | **incomplete-context.** the kernel refuses the input: unknown command `Coefficients` |
 | `commands/CommandsTest.java:2138`, `commands/CommandsTest.java:2287`, `commands/CommandsTest.java:485` | **incomplete-context.** the kernel refuses the input: unknown command `ZoomIn` |
-| `commands/CommandsTest.java:2223` | **incomplete-context.** the kernel refuses the input: unknown object `x+y+z=1` |
-| `commands/CommandsTest.java:2224` | **incomplete-context.** the kernel refuses the input: unknown object `z` |
 | `commands/CommandsTest.java:2228`, `commands/CommandsTest.java:2242`, `commands/CommandsTest.java:2253`, `commands/CommandsTest.java:2263`, `commands/CommandsTest.java:2267` | **incomplete-context.** the kernel refuses the input: unknown command `IntersectPath` |
 | `commands/CommandsTest.java:2392`, `commands/CommandsTest.java:2401` | **incomplete-context.** values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `asin(x)` |
 | `commands/CommandsTest.java:2393` | **incomplete-context.** values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `If[cbrt(x - 1) > 1, cbrt(x - 1)]` |
@@ -993,7 +1001,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:2846` | **unsupported-command.** the kernel refuses the input: unknown command `Mode` |
 | `commands/CommandsTest.java:2858` | **unsupported-command.** the kernel refuses the input: unknown command `Name` |
 | `commands/CommandsTest.java:2881`, `commands/CommandsTest.java:2923` | **unsupported-command.** the kernel refuses the input: unknown command `Net` |
-| `commands/CommandsTest.java:2956` | **unsupported-command.** the kernel refuses the input: unknown command `G1` |
 | `commands/CommandsTest.java:3023` | **unsupported-command.** the kernel refuses the input: `Slope` does not take 4 argument(s) |
 | `commands/CommandsTest.java:3042` | **unsupported-command.** the kernel refuses the input: `Segment` does not take 4 argument(s) |
 | `commands/CommandsTest.java:3108` | **unsupported-command.** the kernel refuses the input: unknown command `OsculatingCircle` |
@@ -1082,7 +1089,7 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:4752` | **unsupported-command.** the kernel refuses the input: `UnitVector` does not take 3 argument(s) |
 | `commands/CommandsTest.java:4811` | **unsupported-command.** the kernel refuses the input: unknown command `UpperSum` |
 | `commands/CommandsTest.java:4817`, `commands/CommandsTest.java:4818` | **unsupported-command.** the kernel refuses the input: unknown command `Variance` |
-| `commands/CommandsTest.java:4824`, `commands/TranslateTest.java:28` | **unsupported-command.** the kernel refuses the input: `Vector` does not take 4 argument(s) |
+| `commands/CommandsTest.java:4824`, `commands/TranslateTest.java:28` | **unsupported-command.** The kernel rejects the two inline point operands to `Vector` with a four-argument arity error. GeoGebra returns the displacement vectors `(2, -0.1333333333333333)` and `(4, 0)`, respectively. |
 | `commands/CommandsTest.java:4835`, `commands/CommandsTest.java:4839` | **unsupported-command.** the kernel refuses the input: unknown command `Vertex` |
 | `commands/CommandsTest.java:4872` | **unsupported-command.** the kernel refuses the input: unknown command `Zip` |
 | `commands/CommandsTest.java:4911` | **unsupported-command.** the kernel refuses the input: unknown command `ZProportionTest` |
@@ -1143,10 +1150,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `arithmetic/ArithmeticTest.java:310` | **unsupported-form.** With `x(x+1)^2`, GeoGebra returns `(x * (x + 1)^(2))`. The kernel refuses the input: `x()` and `y()` need a point or a vector. |
 | `arithmetic/ArithmeticTest.java:337` | **unsupported-form.** With `G = (1, 2, 3)`, GeoGebra returns `(1, 2, 3)`. The kernel refuses the input: expected `)`. |
 | `arithmetic/ArithmeticTest.java:338` | **unsupported-form.** With `H = (2, 3, 4)`, GeoGebra returns `(2, 3, 4)`. The kernel refuses the input: expected `)`. |
-| `arithmetic/ArithmeticTest.java:373` | **unsupported-form.** With `f(1, 1)`, GeoGebra returns `NaN`. The kernel refuses the input: unknown command `f`. |
-| `arithmetic/ArithmeticTest.java:374` | **unsupported-form.** With `f((1, 1))`, GeoGebra returns `NaN`. The kernel refuses the input: unknown command `f`. |
-| `arithmetic/ArithmeticTest.java:376` | **unsupported-form.** With `g(1)`, GeoGebra returns `NaN`. The kernel refuses the input: unknown command `g`. |
-| `arithmetic/ArithmeticTest.java:377` | **unsupported-form.** With `g((1, 1))`, GeoGebra returns `NaN`. The kernel refuses the input: unknown command `g`. |
 | `arithmetic/ArithmeticTest.java:382` | **unsupported-form.** With `l={x}`, GeoGebra returns `{x}`. The kernel refuses the input: a function cannot give a list. |
 | `arithmetic/ArithmeticTest.java:405` | **unsupported-form.** With `g(x)=f`, GeoGebra returns `x`. The kernel refuses the input: the function `f` needs an argument. |
 | `arithmetic/ArithmeticTest.java:408` | **unsupported-form.** With `gg(a,b)=ff`, GeoGebra returns `a + b`. The kernel refuses the input: `gg(a,b)` is not a valid object name. |
@@ -1203,6 +1206,8 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:172` | **unsupported-form.** With `e2:y=z`, GeoGebra returns `y = z`. The kernel refuses the input: unexpected `=`. |
 | `commands/CommandsTest.java:1784` | **unsupported-form.** With `Coefficients(FitPoly[ Function({0,4,0,1,4,9,16}), 1 ])`, GeoGebra returns `{4, -2}`. The kernel refuses the input: `FitPoly( Function({0,4,0,1,4,9,16}),1 )`: a command inside a command is not supported. |
 | `commands/CommandsTest.java:2147` | **unsupported-form.** With `{Intersect(x^2+y^2=25, x y=12)}`, GeoGebra returns `{(-4, -3), (-3, -4), (3, 4), (4, 3)}`. The kernel treats the inline operand `x^2+y^2=25` as an object label. |
+| `commands/CommandsTest.java:2223` | **unsupported-form.** The 2D kernel interprets the coordinate `z` as an unknown object in `IntersectPath[x+y+z=1,x+y-z=1]`. GeoGebra intersects the two inline planes and returns the 3D line `X = (1, 0, 0) + λ (-2, 2, 0)`. |
+| `commands/CommandsTest.java:2224` | **unsupported-form.** The 2D kernel interprets the coordinate `z` as an unknown object in `IntersectPath[x^2+y^2+z^2=4,x+y-z=1]`. GeoGebra intersects the inline sphere and plane and returns a 3D circle centered at `(1/3, 1/3, -1/3)`. |
 | `commands/CommandsTest.java:2571` | **unsupported-form.** With `IsDefined[ LeftSum[ If(x^(2)>9, 1+0 x), -5, 5, 1 ] ]`, GeoGebra returns `false`. The kernel refuses the input: `LeftSum( If(x^(2)>9,1+0 x),-5,5,1 )`: a command inside a command is not supported. |
 | `commands/CommandsTest.java:2576` | **unsupported-form.** With `Length[ Curve(3t,4t,t,0,10), 2, 3 ]`, GeoGebra returns `5`. The kernel refuses the input: `Length( Curve(3t,4t,t,0,10),2,3 )`: a command inside a command is not supported. |
 | `commands/CommandsTest.java:2577` | **unsupported-form.** With `Length[ Curve(3t,4t,t,0,10), (3,5),(6,9) ]`, GeoGebra returns `5`. The kernel refuses the input: `Length( Curve(3t,4t,t,0,10),(3,5),(6,9) )`: a command inside a command is not supported. |
@@ -1226,7 +1231,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:2818` | **unsupported-form.** With `IsDefined[Reflect[ImplicitCurve[x^2 + y^2 - 1], (0,0,1) + (2*cos(t), 2*sin(t), 0)]]`, GeoGebra returns `false`. The kernel refuses the input: `Reflect(ImplicitCurve(x^2 + y^2 - 1),(0,0,1) + (2*cos(t),2*sin(t),0))`: a command inside a command is not supported. |
 | `commands/CommandsTest.java:2834` | **unsupported-form.** With `Reflect[x+y,e]`, GeoGebra returns `(0u + 1 (u + v), v, 1u + 0 (u + v))`. The kernel treats the inline operand `x+y` as an object label. |
 | `commands/CommandsTest.java:2836` | **unsupported-form.** With `Reflect[x^3+y^3=0,e]`, GeoGebra returns `?`. The kernel treats the inline operand `x^3+y^3=0` as an object label. |
-| `commands/CommandsTest.java:2952` | **unsupported-form.** With `G(4)-ln(4)`, GeoGebra returns `0`. The kernel refuses the input: unknown command `G`. |
 | `commands/CommandsTest.java:2953` | **unsupported-form.** With `G1(x)=NIntegral(If(x==0,0,sin(x^2)/x^2), 0, 0, 10)`, GeoGebra returns `NIntegral[If[x ≟ 0, 0, sin(x^(2)) / x^(2)], 0, 0, 10]`. The kernel refuses the input: `NIntegral(If(x==0,0,sin(x^2)/x^2),0,0,10)`: a command inside a command is not supported. |
 | `commands/CommandsTest.java:3132` | **unsupported-form.** With `PerpendicularLine[x=1,y=1]`, GeoGebra returns `X = (1, 1, 0) + λ (0, 0, 1)`. The kernel treats the inline operand `x=1` as an object label. |
 | `commands/CommandsTest.java:3144` | **unsupported-form.** With `PerpendicularVector[ Segment((0,0),(3,4)) ]`, GeoGebra returns `(-4, 3)`. The kernel refuses the input: `PerpendicularVector( Segment((0,0),(3,4)) )`: a command inside a command is not supported. |
@@ -1273,7 +1277,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:4878` | **unsupported-form.** With `RemoveUndefined(Zip(Object(xx), xx, {"y","a","x"}))`, GeoGebra returns `{x - y = 0}`. The kernel refuses the input: `RemoveUndefined(Zip(Object(xx),xx,{"y","a","x"}))`: a command inside a command is not supported. |
 | `commands/CommandsTest.java:497` | **unsupported-form.** With `f:y=sin(x)`, GeoGebra returns `sin(x)`. The kernel refuses the input: unexpected `=`. |
 | `commands/CommandsTest.java:576` | **unsupported-form.** With `a:x + 1 / f`, GeoGebra returns `x + 1 / (x + y)`. The kernel refuses the input: geometric objects cannot be used as arithmetic operands. |
-| `commands/CommandsTest.java:577` | **unsupported-form.** With `a(1,3)`, GeoGebra returns `1.25`. The kernel refuses the input: unknown command `a`. |
 | `commands/CommandsTest.java:614` | **unsupported-form.** With `F(t,x)=NIntegral(sin(x)+sin(t-x), x)`, GeoGebra returns `NIntegral[sin(x) + sin(t - x), x]`. The kernel refuses the input: `NIntegral(sin(x)+sin(t-x),x)`: a command inside a command is not supported. |
 | `commands/CommandsTest.java:621` | **unsupported-form.** With `Sequence(Segment(Point({0, n}), Point({1, n+0})), n, 0, 9, 1)`, GeoGebra returns `{1, 1, 1, 1, 1, 1, 1, 1, 1, 1}`. The kernel refuses the input: `Segment(Point({0,n}),Point({1,n+0}))`: a command inside a command is not supported. |
 | `commands/CommandsTest.java:674` | **unsupported-form.** With `Append[ {1,2,3,4,5}, Polygon[(1,1),(2,1/2),4] ]`, GeoGebra returns `{1, 2, 3, 4, 5, 1.25}`. The kernel refuses the input: `Append( {1,2,3,4,5},Polygon((1,1),(2,1/2),4) )`: a command inside a command is not supported. |
@@ -1284,7 +1287,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/RedefineTest.java:197` | **unsupported-form.** With `a=random()`, GeoGebra returns `0.7275636800328681`. The kernel refuses the input: unknown command `random`. |
 | `commands/RedefineTest.java:330` | **unsupported-form.** With `c:y^2 = (x^2-a^2)/x^2`, GeoGebra returns `y^(2) = (x^(2) - 2^(2)) / x^(2)`. The kernel refuses the input: unexpected `=`. |
 | `commands/RedefineTest.java:332` | **unsupported-form.** With `c1:y^2 = (x^2-2^2)/x^2`, GeoGebra returns `y^(2) = (x^(2) - 2^(2)) / x^(2)`. The kernel refuses the input: unexpected `=`. |
-| `commands/TranslateTest.java:30` | **unsupported-form.** With `f_1(4.5)`, GeoGebra returns `2.5`. The kernel refuses the input: unknown command `f_1`. |
 | `implicit/GeoImplicitCurveTest.java:57` | **unsupported-form.** With `c:(x^rho+y^rho)^(1/rho)=U`, GeoGebra returns `(x^(1) + y^(1))^(1 / 1) = 1`. The kernel refuses the input: unexpected `=`. |
 | `kernelND/GeoSurfaceCartesian3DTest.java:55` | **unsupported-form.** With `Sequence(Surface(f(u),v+s,u+v,u,0,1,v,0,1),s,1,3)`, GeoGebra returns `{?, ?, ?}`. The kernel refuses the input: `Surface(f(u),v+s,u+v,u,0,1,v,0,1)`: a command inside a command is not supported. |
 | `arithmetic/ArithmeticTest.java:213` | **unsupported-type.** With `a(x,y)=x + y`, GeoGebra returns `x + y`. The input evaluates in the kernel. The recording has only the reference display string for `GeoFunctionNVar`, so replay lacks the typed object required to compare it. |
