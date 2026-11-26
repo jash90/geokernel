@@ -1504,6 +1504,48 @@ fn a_thousand_spreadsheet_cells_fit_the_frame_budget() {
 }
 
 #[test]
+fn spreadsheet_analysis_fits_the_frame_budget() {
+    use geo_kernel::spreadsheet::Address;
+
+    let mut w = Window::with(
+        "FillCells(A1:A256, 1)
+FillCells(B1:M62, 1)",
+        String::new(),
+    );
+    w.app.show_spreadsheet = true;
+    assert_eq!(w.app.wb.construction().spreadsheet_cells().count(), 1_000);
+    w.app.select_spreadsheet_cell(Address::parse("A1").unwrap());
+    w.app
+        .extend_spreadsheet_selection(Address::parse("A256").unwrap());
+    w.app.launch_spreadsheet_analysis();
+    let counts = w.settled(5);
+    let summary = w
+        .app
+        .spreadsheet_analysis
+        .as_ref()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .summary()
+        .unwrap();
+    assert_eq!(summary.values.len(), 256);
+    let start = std::time::Instant::now();
+    assert_eq!(w.frames(60), counts);
+    let mean_ms = start.elapsed().as_secs_f64() * 1000.0 / 60.0;
+    println!("Spreadsheet analysis idle frame: {mean_ms:.2} ms, {counts:?}");
+    assert!(counts.texts <= 240 && counts.shapes < 800, "{counts:?}");
+    assert_eq!(
+        (counts.rows_formatted, counts.rows_built),
+        (0, 0),
+        "{counts:?}"
+    );
+    assert!(!counts.immediate, "{counts:?}");
+    if !cfg!(debug_assertions) {
+        assert!(mean_ms <= 4.0, "{mean_ms:.2} ms exceeds the 4 ms budget");
+    }
+}
+
+#[test]
 fn canvas_list_points_are_drawn_with_a_frame_limit() {
     let mut w = Window::with("l = Sequence((k / 100, 1), k, 1, 3000)", String::new());
     let drawn = w.settled(2);

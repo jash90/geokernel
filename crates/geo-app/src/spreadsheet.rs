@@ -3,8 +3,9 @@
 use crate::{theme, App};
 use eframe::egui::{
     pos2, vec2, Align2, FontId, Key, Rect, Role, ScrollArea, Sense, Stroke, TextEdit, Ui,
-    WidgetInfo,
+    UiBuilder, WidgetInfo,
 };
+use geo_app_core::spreadsheet::{Analysis, AnalysisError};
 use geo_app_core::text::{label, Label};
 use geo_kernel::spreadsheet::{Address, MAX_COLUMNS, MAX_INPUT_BYTES, MAX_ROWS};
 
@@ -12,12 +13,21 @@ const HEADER_HEIGHT: f32 = 24.0;
 const HEADER_WIDTH: f32 = 32.0;
 
 enum GridAction {
-    Select(Address),
+    Select(Address, bool),
     Fill(Address),
 }
 
 pub(crate) fn show(app: &mut App, ui: &mut Ui) {
-    ui.heading(label(Label::SpreadsheetView));
+    let launch = if Analysis::available() {
+        ui.horizontal_wrapped(|ui| {
+            ui.heading(label(Label::SpreadsheetView));
+            ui.button("Analiza jednej zmiennej").clicked()
+        })
+        .inner
+    } else {
+        ui.heading(label(Label::SpreadsheetView));
+        false
+    };
     crate::app::file_notices(app, ui);
 
     if app.spreadsheet_editor.is_none() {
@@ -71,13 +81,41 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
             format!("{} {error}", label(Label::SpreadsheetError)),
         );
     }
-    let clicked = grid(app, ui, selected, reveal);
+    let clicked = if matches!(app.spreadsheet_analysis, Ok(Some(_))) {
+        // Keep the full sheet width for editing. Give both panes their own
+        // scroll area so the summary can also fit in a short window.
+        let mut sheet = ui.available_rect_before_wrap().intersect(ui.clip_rect());
+        let mut summary = sheet;
+        let height = (sheet.height() * 0.5).clamp(0.0, 260.0);
+        sheet.max.y -= height;
+        summary.min.y = sheet.max.y;
+        let mut grid_ui = ui.new_child(UiBuilder::new().id_salt("sheet").max_rect(sheet));
+        grid_ui.set_clip_rect(sheet);
+        let clicked = grid(app, &mut grid_ui, selected, reveal);
+        let mut summary_ui = ui.new_child(UiBuilder::new().id_salt("summary").max_rect(summary));
+        summary_ui.set_clip_rect(summary);
+        if show_analysis(app, &mut summary_ui) {
+            app.spreadsheet_analysis = Ok(None);
+            ui.ctx().request_repaint();
+        }
+        clicked
+    } else {
+        if let Err(error) = app.spreadsheet_analysis {
+            ui.colored_label(theme::ERROR, analysis_error(error));
+        }
+        let mut grid_ui = ui.new_child(UiBuilder::new().id_salt("sheet"));
+        grid(app, &mut grid_ui, selected, reveal)
+    };
     if enter {
         app.submit_spreadsheet_input();
         ui.ctx().request_repaint();
+    } else if launch {
+        app.launch_spreadsheet_analysis();
+        ui.ctx().request_repaint();
     } else if let Some(action) = clicked {
         match action {
-            GridAction::Select(address) => {
+            GridAction::Select(address, true) => app.extend_spreadsheet_selection(address),
+            GridAction::Select(address, false) => {
                 if app.commit_spreadsheet_input() {
                     app.select_spreadsheet_cell(address);
                 }
@@ -88,9 +126,68 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
     }
 }
 
+fn analysis_error(error: AnalysisError) -> &'static str {
+    match error {
+        AnalysisError::Range => "Zaznacz jeden wiersz lub jedną kolumnę (do 256 komórek).",
+        AnalysisError::Cells => "Wszystkie komórki zakresu muszą zawierać skończone liczby.",
+        AnalysisError::Evaluation => "Nie udało się obliczyć statystyk.",
+    }
+}
+
+/// Draws the summary and returns whether the user closed it.
+fn show_analysis(app: &mut App, ui: &mut Ui) -> bool {
+    let Ok(Some(analysis)) = &mut app.spreadsheet_analysis else {
+        return false;
+    };
+    let c = app.wb.construction();
+    let (first, last) = analysis.endpoints();
+    let range = if first == last {
+        first.label()
+    } else {
+        format!("{}:{}", first.label(), last.label())
+    };
+    ui.separator();
+    let close = ui
+        .horizontal(|ui| {
+            ui.heading(range);
+            ui.button("Zamknij podsumowanie").clicked()
+        })
+        .inner;
+    ScrollArea::vertical().show(ui, |ui| match analysis.refresh(c) {
+        Ok(summary) => {
+            let names = [
+                "Liczba danych",
+                "Średnia",
+                "Odchylenie standardowe",
+                "Odchylenie standardowe próby",
+                "Suma",
+                "Suma kwadratów",
+                "Minimum",
+                "Pierwszy kwartyl",
+                "Mediana",
+                "Trzeci kwartyl",
+                "Maksimum",
+            ];
+            eframe::egui::Grid::new("one_variable_summary").show(ui, |ui| {
+                for (name, &value) in names.into_iter().zip(&summary.rows) {
+                    ui.label(name);
+                    ui.label(c.format_display_number(value));
+                    ui.end_row();
+                }
+            });
+        }
+        Err(error) => {
+            ui.colored_label(theme::ERROR, analysis_error(error));
+        }
+    });
+    close
+}
+
 fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridAction> {
     let mut clicked = None;
     let c = app.wb.construction();
+    let selection = app.spreadsheet_editor.as_ref().unwrap().selection;
+    let extend = Analysis::available() && ui.input(|input| input.modifiers.shift);
     let font = FontId::proportional(13.0);
     let layout = app.wb.spreadsheet_grid();
     ScrollArea::both()
@@ -189,7 +286,10 @@ fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridA
                     }
                     let response =
                         ui.interact(hit, ui.make_persistent_id((column, row)), Sense::click());
-                    let active = selected == address;
+                    let active = selection.contains(address);
+                    if active && address != selected {
+                        painter.rect_filled(hit, 0.0, theme::TOOLBAR_BG);
+                    }
                     let shown = app.wb.spreadsheet_display(address);
                     response.widget_info(|| {
                         let mut info =
@@ -198,7 +298,7 @@ fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridA
                         info
                     });
                     if response.clicked() {
-                        clicked = Some(GridAction::Select(address));
+                        clicked = Some(GridAction::Select(address, extend));
                     }
                     if !shown.is_empty()
                         && rect.right() <= body.right() + 2.0

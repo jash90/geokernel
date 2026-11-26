@@ -31,7 +31,7 @@ fn open(app: &mut App, ctx: &egui::Context, path: &Path) {
                 .unwrap_or(false);
             app.save_error = None;
             app.cancel_cas_edit();
-            app.spreadsheet_editor = None;
+            app.sync_spreadsheet_document();
             app.input_box_edit = None;
             app.inspector = None;
             app.input_box_rects.clear();
@@ -176,6 +176,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if let Some(path) = ctx.input(|i| i.raw.dropped_files.first().map(|f| f.path().to_owned())) {
         open(app, &ctx, &path);
     }
+    app.sync_spreadsheet_document();
     if app.properties.is_none() {
         shortcuts(app, &ctx);
     }
