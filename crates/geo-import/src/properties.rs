@@ -287,8 +287,8 @@ impl Tag {
                     return false;
                 };
                 if let Some(TagExtra::IncrementLists(labels)) = self.extra.as_deref() {
-                    // The parser must still resolve the saved list operands
-                    // as lists. Length can also parse as point magnitude.
+                    // The saved list operands must still resolve as lists.
+                    // Length can also parse as point magnitude.
                     lists
                         .into_iter()
                         .map(|id| c.label(id))

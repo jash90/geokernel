@@ -586,6 +586,20 @@ impl StyleExpressions {
 
         self.charge_source(source)?;
         let line = expression_line(source)?;
+        // The saved form Length[L] still names a list when an object named
+        // Length would take precedence in the expression parser.
+        if let Some(arg) = line
+            .strip_prefix("Length(")
+            .and_then(|line| line.strip_suffix(')'))
+        {
+            let label = arg.trim();
+            if let Some(id) = c
+                .id(label)
+                .filter(|&id| c.kind(id) == Kind::List && is_label(label))
+            {
+                return Ok((format!("Length[{label}]"), vec![id]));
+            }
+        }
         let remaining = self.budget - self.used;
         let before = work_done();
         let increment = validate_point_increment(c, &line, remaining);
@@ -595,7 +609,8 @@ impl StyleExpressions {
         match increment? {
             Some(PointIncrement::Scalar) => Ok((line, Vec::new())),
             Some(PointIncrement::ListLength(id)) => {
-                Ok((format!("Length[{}]", c.label(id)), vec![id]))
+                // An indexed alias can be shorter than the stored label.
+                Ok((source.trim().to_owned(), vec![id]))
             }
             Some(PointIncrement::ListExpression(lists)) => Ok((source.trim().to_owned(), lists)),
             None if remaining == 0 => {
