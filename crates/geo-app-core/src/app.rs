@@ -115,6 +115,13 @@ pub struct InputBoxEdit {
     pub changed: bool,
 }
 
+struct PointDefinitionDraft {
+    input: String,
+    point: Id,
+    definition: geo_kernel::Def,
+    rebuilds: u64,
+}
+
 pub struct App {
     pub wb: Workbench,
     pub show_cas: bool,
@@ -139,7 +146,7 @@ pub struct App {
     /// The tool each toolbar group shows (the last one chosen in it).
     pub group_tools: Vec<Tool>,
     pub input: String,
-    point_definition_input: Option<String>,
+    point_definition_draft: Option<PointDefinitionDraft>,
     pub input_error: Option<String>,
     pub tool_error: Option<String>,
     pub relation_report: Option<Vec<geo_kernel::algo::predicate::RelationReport>>,
@@ -266,7 +273,7 @@ impl App {
             tool: ToolState::new(Tool::Move),
             group_tools: GROUPS.iter().map(|g| g[0]).collect(),
             input: String::new(),
-            point_definition_input: None,
+            point_definition_draft: None,
             input_error: None,
             tool_error: None,
             relation_report: None,
@@ -410,7 +417,12 @@ impl App {
         if input.len() > crate::tools::MAX_PLACED_TEXT_CHARS {
             return;
         }
-        self.point_definition_input = Some(input.clone());
+        self.point_definition_draft = Some(PointDefinitionDraft {
+            input: input.clone(),
+            point: id,
+            definition: c.def(id),
+            rebuilds: self.wb.rebuilds(),
+        });
         self.input = input;
         self.input_error = None;
         self.cursor_request = Some(self.input.chars().count());
@@ -585,13 +597,21 @@ impl App {
     /// Replaces the draft with a new input, such as a recalled history entry.
     pub fn set_input_draft(&mut self, input: String) {
         self.input = input;
-        self.point_definition_input = None;
+        self.point_definition_draft = None;
     }
 
     /// Runs the input row's text.
     pub fn submit_input(&mut self) {
-        // An unchanged redefine is accepted without running the definition.
-        let result = if self.point_definition_input.as_deref() == Some(self.input.as_str()) {
+        // A move can change a free point's definition while the draft is open.
+        // A rebuild can also replace its ID. In either case submit the draft.
+        let unchanged = self.point_definition_draft.as_ref().is_some_and(|draft| {
+            let c = self.wb.construction();
+            draft.input == self.input
+                && draft.rebuilds == self.wb.rebuilds()
+                && draft.point.index() < c.len()
+                && draft.definition == c.def(draft.point)
+        });
+        let result = if unchanged {
             Ok(())
         } else {
             self.wb.run_line(&self.input)
@@ -731,6 +751,24 @@ mod tests {
         app.edit_point_definition(id);
         assert!(app.input.is_empty());
         assert!(!app.focus_point_definition);
+    }
+
+    #[test]
+    fn point_definition_draft_can_be_submitted_after_the_point_moves_again() {
+        let mut wb = crate::workbench::Workbench::default();
+        wb.load_script("A = (3, 2)").unwrap();
+        let id = wb.construction().id("A").unwrap();
+        let mut app = super::App::new(wb, None);
+        app.edit_point_definition(id);
+        assert_eq!(app.input, "A = (3, 2)");
+        assert!(app.wb.move_point(id, 5.0, 5.0));
+        app.submit_input();
+        let c = app.wb.construction();
+        assert_eq!(
+            c.value(c.id("A").unwrap()),
+            geo_kernel::Value::Point { x: 3.0, y: 2.0 }
+        );
+        assert_eq!(app.wb.undo_depth(), (2, 0));
     }
 
     #[test]
