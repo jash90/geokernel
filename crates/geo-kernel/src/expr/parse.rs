@@ -1767,8 +1767,18 @@ impl Parser<'_> {
                 "`{text}`: a command inside a command is not supported"
             ));
         }
+        let open = self.toks[self.pos].start;
+        let close = self.toks[end].start;
         self.pos = end + 1;
-        let def = crate::script::parse_def(self.c, text)?;
+        // The list path already handled explicit saved Length calls; the
+        // scalar command parser still expects parentheses (e.g. Length[s]).
+        let def = if self.point_increment && self.src.as_bytes()[open] == b'[' {
+            let name = &self.src[start..open];
+            let args = &self.src[open + 1..close];
+            crate::script::parse_def(self.c, &format!("{name}({args})"))?
+        } else {
+            crate::script::parse_def(self.c, text)?
+        };
         let kind = def.kind();
         if !matches!(
             kind,
