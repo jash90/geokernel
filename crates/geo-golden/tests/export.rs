@@ -2081,6 +2081,72 @@ fn point_list_increment_length_alias_round_trips_at_the_attribute_limit() {
     assert!(exported_xml(&reloaded).contains(&increment));
 }
 
+const SHADOWED_POINT_INCREMENTS: &str = "saved-export-point-increment-shadow-001.xml";
+const SHADOWED_LIST_LENGTHS: [(&str, &str, f64); 4] = [
+    ("P", "Length[L]", 3.0),
+    ("Q", "Length[L] + 1", 4.0),
+    ("R", "Length[L_{1}]", 3.0),
+    ("S", "Length[L] + Length[L_{1}]", 6.0),
+];
+
+#[test]
+fn point_list_length_arithmetic_survives_an_object_named_length() {
+    let wb = review_workbench(&saved_review_file(SHADOWED_POINT_INCREMENTS));
+    assert!(wb.construction().id("Length").is_some());
+    let xml = exported_xml(&wb);
+    for (label, value, _) in SHADOWED_LIST_LENGTHS {
+        assert!(
+            xml.contains(&format!(r#"<incrementY val="{value}"/>"#)),
+            "{label}: {value} was dropped"
+        );
+    }
+}
+
+#[test]
+fn point_list_length_arithmetic_survives_a_later_object_named_length() {
+    let input = review_xml(
+        SHADOWED_POINT_INCREMENTS,
+        &[(r#"label="Length""#, r#"label="initial""#)],
+    );
+    let mut wb = review_workbench(&input);
+    assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 4);
+    wb.run_line("Length = 7").unwrap();
+    assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 4);
+
+    assert!(wb.delete(wb.construction().id("L_{1}").unwrap()));
+    let xml = exported_xml(&wb);
+    assert_eq!(xml.matches("<incrementY ").count(), 2);
+    assert!(xml.contains(r#"<incrementY val="Length[L] + 1"/>"#));
+    wb.run_line("L_{1} = (3, 4)").unwrap();
+    assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 2);
+
+    assert!(wb.undo());
+    assert!(wb.undo());
+    assert_eq!(exported_xml(&wb).matches("<incrementY ").count(), 4);
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn geogebra_reloads_shadowed_point_list_lengths() {
+    let input = saved_review_file(SHADOWED_POINT_INCREMENTS);
+    let wb = review_workbench(&input);
+    let (source, exported) = review_oracle(&input, &wb.export_ggb(None).unwrap());
+    for (label, value, expected) in SHADOWED_LIST_LENGTHS {
+        for snapshot in [&source, &exported] {
+            let actual = snapshot["pointIncrements"][label]
+                .as_f64()
+                .unwrap_or_else(|| panic!("{label}: missing reloaded increment"));
+            assert!(numbers_agree(expected, actual), "{label}: {actual}");
+            for tags in ["elementTags", "reloadedTags"] {
+                assert_eq!(
+                    snapshot[tags][label]["incrementY"][0]["val"], value,
+                    "{label}"
+                );
+            }
+        }
+    }
+}
+
 #[test]
 fn point_list_increments_require_the_list_at_export() {
     let mut wb = review_workbench(&saved_review_file(LIST_POINT_INCREMENTS));

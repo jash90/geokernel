@@ -908,6 +908,26 @@ case("export-point-increments",
          st("R", vertical_increment="Sum(L)"),
      ])
 
+# Load a braced subscript using the exact spelling in the saved construction.
+case("export-point-increment-shadow", [], [{
+    "action": "load_xml",
+    "xml": (
+        '<geogebra format="5.0"><construction>'
+        '<expression label="L_{1}" exp="{2, 4, 8}"/><element type="list" label="L_{1}"/>'
+        '<expression label="L" exp="{1, 2, 3}"/><element type="list" label="L"/>'
+        '<element type="numeric" label="Length"><value val="7"/></element>'
+        '<element type="point" label="P"><coords x="0" y="1" z="1"/>'
+        '<incrementY val="Length[L]"/></element>'
+        '<element type="point" label="Q"><coords x="0" y="2" z="1"/>'
+        '<incrementY val="Length[L] + 1"/></element>'
+        '<element type="point" label="R"><coords x="0" y="3" z="1"/>'
+        '<incrementY val="Length[L_{1}]"/></element>'
+        '<element type="point" label="S"><coords x="0" y="4" z="1"/>'
+        '<incrementY val="Length[L] + Length[L_{1}]"/></element>'
+        '</construction></geogebra>'
+    ),
+}])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

@@ -527,6 +527,34 @@ fn point_list_increments_charge_list_evaluation_to_the_style_budget() {
 }
 
 #[test]
+fn shadowed_point_list_length_arithmetic_spends_the_style_budget() {
+    use geo_import::convert::StyleExpressions;
+
+    let c = geo_kernel::script::load("L = {1, 2}\nLength = 7").unwrap();
+    let length = "Length[L]";
+    let arithmetic = "-(Length[L] + 1)";
+    let mut measured = StyleExpressions::default();
+    let parsed = measured.point_increment(&c, arithmetic).unwrap();
+    assert_eq!(parsed, (arithmetic.to_owned(), vec![c.id("L").unwrap()]));
+    assert!(measured.work() > arithmetic.len() as u64);
+
+    let mut limited = StyleExpressions::with_budget((length.len() + arithmetic.len()) as u64);
+    assert!(limited.point_increment(&c, length).is_ok());
+    let reason = limited.point_increment(&c, arithmetic).unwrap_err();
+    assert!(reason.contains("evaluation budget"), "{reason}");
+
+    let mut exact = StyleExpressions::with_budget(length.len() as u64 + measured.work());
+    assert!(exact.point_increment(&c, length).is_ok());
+    assert_eq!(exact.point_increment(&c, arithmetic).unwrap(), parsed);
+    assert!(exact.point_increment(&c, length).is_err());
+
+    let mut expressions = StyleExpressions::default();
+    assert!(expressions.point_increment(&c, "Length(L) + 1").is_err());
+    assert!(expressions.number(&c, "Length[L] + 1").is_err());
+    assert!(c.arithmetic_value("Length(L) + 1").is_none());
+}
+
+#[test]
 fn nested_chart_image_tags_count_toward_the_item_limit() {
     let chart = |count| {
         let tags = r#"<tag key="barImage" barNumber="1" value="tile.png"/>"#.repeat(count);
