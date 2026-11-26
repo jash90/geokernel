@@ -13,6 +13,7 @@ import sys
 import tarfile
 import tempfile
 
+from dependency_notices import LICENSES, copy_crate_notices, copy_rust_notices
 from release_icon import write_icon
 
 REPO = Path(__file__).resolve().parents[2]
@@ -81,8 +82,15 @@ def display_name(config, variant):
     return config.product + (" with Giac" if variant == "gpl" else "")
 
 
+def payload_docs(platform, variant, dest):
+    if platform == "macos":
+        return dest / "Contents/Resources"
+    if platform == "linux":
+        return dest / "usr/share/doc" / package_id(variant)
+    return dest
+
+
 def stage_payload(config, platform, arch, variant, binary, dest, sources=None, library=None):
-    name = package_id(variant)
     if variant == "gpl":
         if arch != "x86_64" or sources is None or library is None or library.name != LIBRARIES[platform]:
             raise ValueError("GPL payload requires the supported pinned Giac library and complete source")
@@ -90,13 +98,12 @@ def stage_payload(config, platform, arch, variant, binary, dest, sources=None, l
             if not (sources / filename).is_file():
                 raise FileNotFoundError(sources / filename)
     libdir = dest
-    docs = dest
+    docs = payload_docs(platform, variant, dest)
+    docs.mkdir(parents=True)
     if platform == "macos":
         contents = dest / "Contents"
         bindir = contents / "MacOS"
         libdir = contents / "Frameworks"
-        docs = contents / "Resources"
-        docs.mkdir(parents=True)
         write_icon(docs / "geokernel.icns")
         mac_version = config.version if config.version.count(".") == 2 else f"{config.version}.0"
         with (contents / "Info.plist").open("wb") as plist:
@@ -113,12 +120,9 @@ def stage_payload(config, platform, arch, variant, binary, dest, sources=None, l
             }, plist)
     elif platform == "windows":
         bindir = dest
-        docs.mkdir(parents=True)
         write_icon(docs / "geokernel.ico")
     else:
-        bindir = libdir = dest / "usr/lib" / name
-        docs = dest / "usr/share/doc" / name
-        docs.mkdir(parents=True)
+        bindir = libdir = dest / "usr/lib" / package_id(variant)
 
     bindir.mkdir(parents=True, exist_ok=True)
     app = bindir / binary.name
@@ -128,6 +132,9 @@ def stage_payload(config, platform, arch, variant, binary, dest, sources=None, l
         shutil.copyfile(REPO / filename, docs / filename)
     head = run("git", "rev-parse", "HEAD", cwd=REPO, capture_output=True, text=True).stdout.strip()
     (docs / "REVISION").write_text(f"geokernel {head}\nPlatform {platform}-{arch}\n", encoding="ascii")
+    shutil.copytree(LICENSES / "fonts", docs / "licenses/fonts")
+    run("git", "archive", "--format=tar.gz", "--prefix=geokernel-source/",
+        "-o", docs / "geokernel-source.tar.gz", head, cwd=REPO)
     if variant == "gpl":
         libdir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(library, libdir / library.name)
@@ -140,8 +147,6 @@ def stage_payload(config, platform, arch, variant, binary, dest, sources=None, l
         with (docs / "REVISION").open("a", encoding="ascii") as revision:
             revision.write(f"Giac javagiac 70507 ({library.name})\n")
         shutil.copyfile(GIAC / "source-offer.txt", docs / "SOURCE-OFFER.txt")
-        run("git", "archive", "--format=tar.gz", "--prefix=geokernel-source/",
-            "-o", docs / "geokernel-source.tar.gz", head, cwd=REPO)
     return app
 
 
@@ -154,6 +159,21 @@ def smoke(config, variant, *command):
     if result.stdout.strip() != expected:
         raise RuntimeError(f"Unexpected version output: {result.stdout!r} {result.stderr!r}")
     print(f"{command[0]}: {expected}", flush=True)
+
+
+def notice_digests(docs, variant):
+    files = [docs / name for name in ("LICENSE", "NOTICE", "REVISION", "geokernel-source.tar.gz")]
+    if variant == "gpl":
+        files.extend(docs / name for name in (*SOURCE_FILES, "SOURCE-OFFER.txt"))
+    files.extend(path for path in (docs / "licenses").rglob("*") if path.is_file())
+    return {path.relative_to(docs): sha256(path) for path in files}
+
+
+def verify_notices(docs, expected):
+    for name, digest in expected.items():
+        path = docs / name
+        if not path.is_file() or sha256(path) != digest:
+            raise ValueError(f"missing or changed packaged notice or source: {name}")
 
 
 def source_gate(directory):
@@ -189,6 +209,7 @@ def fetch_gpl(directory):
 
 def package_linux(config, variant, appdir, out, stem, work):
     name = package_id(variant)
+    docs = payload_docs("linux", variant, appdir)
     desktop = (
         "[Desktop Entry]\nType=Application\n"
         f"Name={display_name(config, variant)}\nExec={name}\n"
@@ -214,6 +235,14 @@ def package_linux(config, variant, appdir, out, stem, work):
             "2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d",
             work / "runtime-x86_64",
         )
+        runtime_docs = docs / "licenses/appimage"
+        shutil.copytree(LICENSES / "appimage", runtime_docs)
+        download("https://codeload.github.com/AppImage/type2-runtime/tar.gz/refs/tags/20251108",
+                 "4c4f6df4647c9f01f871d7edd3716d8aeeffda9d22ffbebe3fccd95a6ab52c95",
+                 runtime_docs / "type2-runtime-20251108-source.tar.gz")
+        download("https://github.com/libfuse/libfuse/releases/download/fuse-3.15.0/fuse-3.15.0.tar.xz",
+                 "70589cfd5e1cff7ccd6ac91c86c01be340b227285c5e200baa284e401eea2ca0",
+                 runtime_docs / "libfuse-3.15.0-source.tar.xz")
         tool.chmod(0o755)
         shutil.copyfile(desktop_file, appdir / desktop_file.name)
         shutil.copyfile(icon, appdir / icon.name)
@@ -225,6 +254,10 @@ def package_linux(config, variant, appdir, out, stem, work):
         run(tool, "--appimage-extract-and-run", "--runtime-file", runtime, appdir, image,
             env=os.environ | {"ARCH": "x86_64"}, cwd=work)
         smoke(config, variant, image, "--appimage-extract-and-run")
+        run(image, "--appimage-extract", cwd=work, stdout=subprocess.DEVNULL)
+        verify_notices(payload_docs("linux", variant, work / "squashfs-root"),
+                       notice_digests(docs, variant))
+        shutil.rmtree(runtime_docs)
         for path in (appdir / desktop_file.name, appdir / icon.name, appdir / ".DirIcon", launcher):
             path.unlink()
 
@@ -247,12 +280,14 @@ def package_linux(config, variant, appdir, out, stem, work):
         sudo = ("sudo",) if os.geteuid() else ()
         run(*sudo, "dpkg", "-i", deb)
         smoke(config, variant, f"/usr/bin/{name}")
+        verify_notices(payload_docs("linux", variant, Path("/")), notice_digests(docs, variant))
 
 
 def package_macos(config, variant, app, out, stem, work, sign):
     import base64
     import secrets
 
+    expected = notice_digests(payload_docs("macos", variant, app), variant)
     bundle_id = config.identifier + (".giac" if variant == "gpl" else "")
     keychain = work / "release.keychain-db"
     has_keychain = False
@@ -290,6 +325,7 @@ def package_macos(config, variant, app, out, stem, work, sign):
         run("ditto", "-c", "-k", "--keepParent", app, archive)
         extracted = work / "extracted"
         run("ditto", "-x", "-k", archive, extracted)
+        verify_notices(payload_docs("macos", variant, extracted / app.name), expected)
         smoke(config, variant, extracted / app.name / "Contents/MacOS/geokernel-app")
 
         payload = work / "dmg-payload"
@@ -307,6 +343,7 @@ def package_macos(config, variant, app, out, stem, work, sign):
         mount = work / "mounted"
         run("hdiutil", "attach", "-quiet", "-nobrowse", "-readonly", "-mountpoint", mount, dmg)
         try:
+            verify_notices(payload_docs("macos", variant, mount / app.name), expected)
             smoke(config, variant, mount / app.name / "Contents/MacOS/geokernel-app")
         finally:
             run("hdiutil", "detach", mount)
@@ -342,6 +379,7 @@ def package_macos(config, variant, app, out, stem, work, sign):
             raise ValueError(f"refusing to smoke test over an existing application: {installed}")
         try:
             run("sudo", "installer", "-pkg", pkg, "-target", "/")
+            verify_notices(payload_docs("macos", variant, installed), expected)
             smoke(config, variant, installed / "Contents/MacOS/geokernel-app")
         finally:
             if installed.exists():
@@ -375,6 +413,8 @@ def package_windows(config, variant, stage, out, stem, work, sign):
 
     if sign:
         sign_file(stage / "geokernel-app.exe")
+    shutil.copytree(LICENSES / "windows", stage / "licenses/windows")
+    expected = notice_digests(stage, variant)
     license_file = "GPL-3.0.txt" if variant == "gpl" else "LICENSE"
     run(inno / "ISCC.exe", f"/DAppName={display_name(config, variant)}",
         f"/DAppVersion={config.version}", f"/DAppId={config.identifier}.{variant}",
@@ -386,6 +426,7 @@ def package_windows(config, variant, stage, out, stem, work, sign):
     installed = work / "installed"
     run(installer, *silent, "/SP-", f"/DIR={installed}", timeout=180)
     try:
+        verify_notices(installed, expected)
         smoke(config, variant, installed / "geokernel-app.exe")
     finally:
         run(installed / "unins000.exe", *silent, timeout=180)
@@ -394,6 +435,8 @@ def package_windows(config, variant, stage, out, stem, work, sign):
 def package(args, config):
     if args.sign and args.platform == "macos" and args.variant == "gpl":
         raise ValueError("macOS GPL package signing is unavailable: the pinned Intel Giac library is unsigned")
+    if args.build_messages is None:
+        raise ValueError("packaging requires --build-messages from the locked release build")
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="geokernel-release-") as directory:
@@ -405,6 +448,9 @@ def package(args, config):
             library = fetch_gpl(sources)
         dest = work / (f"{display_name(config, args.variant)}.app" if args.platform == "macos" else "payload")
         stage_payload(config, args.platform, args.arch, args.variant, args.binary, dest, sources, library)
+        licenses = payload_docs(args.platform, args.variant, dest) / "licenses"
+        copy_crate_notices(args.build_messages, licenses / "crates")
+        copy_rust_notices(licenses / "rust")
         stem = f"{package_id(args.variant)}-{config.version}-{args.platform}-{args.arch}"
         if args.platform == "macos":
             package_macos(config, args.variant, dest, out, stem, work, args.sign)
@@ -427,6 +473,7 @@ def main():
     build.add_argument("binary", type=Path)
     build.add_argument("out", type=Path)
     build.add_argument("--sign", action="store_true")
+    build.add_argument("--build-messages", type=Path)
     args = parser.parse_args()
     try:
         if args.command == "checksums":
