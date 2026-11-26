@@ -5289,3 +5289,138 @@ cases = ["spreadsheet-locus-001"]
 command = "Cell"
 form = "number,number"
 cases = ["spreadsheet-lookup-001", "spreadsheet-textlookup-001", "spreadsheet-latecell-001", "spreadsheet-lookuptargetkind-001"]
+
+[[form]]
+command = "mean"
+form = "list"
+cases = ["statistics-list-001"]
+
+[[form]]
+command = "mean"
+form = "list,list"
+cases = ["statistics-frequency-001"]
+
+[[form]]
+command = "mean"
+form = "number,number,..."
+cases = ["statistics-variadic-001"]
+
+[[form]]
+command = "Variance"
+form = "list"
+cases = ["statistics-list-001"]
+
+[[form]]
+command = "Variance"
+form = "list,list"
+cases = ["statistics-frequency-001"]
+
+[[form]]
+command = "Variance"
+form = "number,number,..."
+cases = ["statistics-variadic-001"]
+
+[[form]]
+command = "stdevp"
+form = "list"
+cases = ["statistics-list-001"]
+
+[[form]]
+command = "stdevp"
+form = "list,list"
+cases = ["statistics-frequency-001"]
+
+[[form]]
+command = "stdevp"
+form = "number,number,..."
+cases = ["statistics-variadic-001"]
+
+[[form]]
+command = "SampleVariance"
+form = "list"
+cases = ["statistics-list-001"]
+
+[[form]]
+command = "SampleVariance"
+form = "list,list"
+cases = ["statistics-frequency-001"]
+
+[[form]]
+command = "SampleVariance"
+form = "number,number,..."
+cases = ["statistics-variadic-001"]
+
+[[form]]
+command = "stdev"
+form = "list"
+cases = ["statistics-list-001"]
+
+[[form]]
+command = "stdev"
+form = "list,list"
+cases = ["statistics-frequency-001"]
+
+[[form]]
+command = "stdev"
+form = "number,number,..."
+cases = ["statistics-variadic-001"]
+
+[[form]]
+command = "mad"
+form = "list"
+cases = ["statistics-list-001"]
+
+[[form]]
+command = "mad"
+form = "list,list"
+cases = ["statistics-frequency-001"]
+
+[[form]]
+command = "mad"
+form = "number,number,..."
+cases = ["statistics-variadic-001"]
+
+[[form]]
+command = "Median"
+form = "list"
+cases = ["statistics-list-001"]
+
+[[form]]
+command = "Median"
+form = "list,list"
+cases = ["statistics-frequency-001"]
+
+[[form]]
+command = "Median"
+form = "number,number,..."
+cases = ["statistics-variadic-001"]
+
+[[form]]
+command = "Q1"
+form = "list"
+cases = ["statistics-list-001"]
+
+[[form]]
+command = "Q1"
+form = "list,list"
+cases = ["statistics-frequency-001"]
+
+[[form]]
+command = "Q1"
+form = "number,number,..."
+cases = ["statistics-variadic-001"]
+
+[[form]]
+command = "Q3"
+form = "list"
+cases = ["statistics-list-001"]
+
+[[form]]
+command = "Q3"
+form = "list,list"
+cases = ["statistics-frequency-001"]
+
+[[form]]
+command = "Q3"
+form = "number,number,..."
+cases = ["statistics-variadic-001"]

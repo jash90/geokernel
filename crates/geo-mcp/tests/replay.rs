@@ -2302,7 +2302,8 @@ fn replay_spreadsheet_window(scenario: &str, case: &Value, sheet_width: Option<f
                 click(&mut window, "Analiza jednej zmiennej");
                 assert_eq!(window.app.wb.undo_depth(), depth);
                 assert_eq!(window.app.wb.snapshot_text(), document);
-                locate(&window, "Liczba danych");
+                // The summary's static labels expose their text as an AccessKit value.
+                locate(&window, "Zamknij podsumowanie");
             }
             "undo" => click(&mut window, "Cofnij"),
             "redo" => click(&mut window, "Ponów"),

@@ -1518,6 +1518,9 @@ FillCells(B1:M62, 1)",
     w.app
         .extend_spreadsheet_selection(Address::parse("A256").unwrap());
     w.app.launch_spreadsheet_analysis();
+    // The formula bar keeps focus; blinking would change the paint counts.
+    w.ctx
+        .global_style_mut(|style| style.visuals.text_cursor.blink = false);
     let counts = w.settled(5);
     let summary = w
         .app

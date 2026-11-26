@@ -1,0 +1,68 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-classes-001",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Mean({20, 40, 41, 42, 40, 54}, {20, 6, 4, 5, 2})",
+        "r_{2} = Variance({20, 40, 41, 42, 40, 54}, {20, 6, 4, 5, 2})",
+        "r_{3} = SD({20, 40, 41, 42, 40, 54}, {20, 6, 4, 5, 2})",
+        "r_{4} = SampleVariance({20, 40, 41, 42, 40, 54}, {20, 6, 4, 5, 2})",
+        "r_{5} = SampleSD({20, 40, 41, 42, 40, 54}, {20, 6, 4, 5, 2})",
+        "r_{6} = MAD({20, 40, 41, 42, 40, 54}, {20, 6, 4, 5, 2})",
+        "r_{7} = Median({20, 40, 41, 42, 40, 54}, {20, 6, 4, 5, 2})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 35.351351351351354 },
+          "r_{2}": { "type": "number", "defined": true, "value": 35.51168736303862 },
+          "r_{3}": { "type": "number", "defined": true, "value": 5.959168344915137 },
+          "r_{4}": { "type": "number", "defined": true, "value": 36.49812312312315 },
+          "r_{5}": { "type": "number", "defined": true, "value": 6.041367653364853 },
+          "r_{6}": { "type": "number", "defined": true, "value": 5.785244704163623 },
+          "r_{7}": { "type": "number", "defined": true, "value": 38.5 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-classes-002",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Median({0, 10, 30}, {2.5, 5.5})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 18.0 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-classes-003",
+      "group": "statistics",
+      "script": [
+        "r_{1} = Median({0, 10, 30}, {2, 4})",
+        "r_{2} = Q1({0, 10, 30}, {2, 4})",
+        "r_{3} = Q3({0, 10, 30}, {2, 4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r_{1}": { "type": "number", "defined": true, "value": 15.0 },
+          "r_{2}": { "type": "number", "defined": true, "value": 0.0 },
+          "r_{3}": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    }
+  ]
+}

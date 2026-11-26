@@ -1,0 +1,54 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-rejected-001",
+      "group": "statistics",
+      "script": [],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "r = Mean(1)" },
+        { "action": "reject", "line": "r = Mean({1, 2}, 1)" },
+        { "action": "reject", "line": "r = Variance(1)" },
+        { "action": "reject", "line": "r = Variance({1, 2}, 1)" },
+        { "action": "reject", "line": "r = SD(1)" },
+        { "action": "reject", "line": "r = SD({1, 2}, 1)" },
+        { "action": "reject", "line": "r = SampleVariance(1)" },
+        { "action": "reject", "line": "r = SampleVariance({1, 2}, 1)" },
+        { "action": "reject", "line": "r = SampleSD(1)" },
+        { "action": "reject", "line": "r = SampleSD({1, 2}, 1)" },
+        { "action": "reject", "line": "r = MAD(1)" },
+        { "action": "reject", "line": "r = MAD({1, 2}, 1)" },
+        { "action": "reject", "line": "r = Median(1)" },
+        { "action": "reject", "line": "r = Median({1, 2}, 1)" },
+        { "action": "reject", "line": "r = Q1(1)" },
+        { "action": "reject", "line": "r = Q1({1, 2}, 1)" },
+        { "action": "reject", "line": "r = Q3(1)" },
+        { "action": "reject", "line": "r = Q3({1, 2}, 1)" }
+      ],
+      "snapshots": [
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {}
+      ]
+    }
+  ]
+}

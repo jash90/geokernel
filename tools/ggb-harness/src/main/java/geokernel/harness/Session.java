@@ -140,7 +140,8 @@ final class Session {
     private static final Pattern NUMBER = Pattern.compile("^-?\\d+(\\.\\d+)?$");
     private static final Pattern POINT =
             Pattern.compile("^\\(-?\\d+(\\.\\d+)?, -?\\d+(\\.\\d+)?\\)$");
-    private static final Pattern CALL = Pattern.compile("(?<![A-Za-z0-9_])([A-Z][A-Za-z0-9]*)\\s*\\(");
+    private static final Pattern CALL = Pattern.compile(
+            "(?<![A-Za-z0-9_])([A-Z][A-Za-z0-9]*|mean|mad|stdevp?)\\s*\\(");
     private static final Pattern COMMAND = Pattern.compile("^([A-Za-z]+)\\[?\\(.*\\)$");
     /** The variable `x` of a function: not part of a longer name, not a call. */
     private static final Pattern VARIABLE_X = Pattern.compile("(?<![A-Za-z0-9_])x(?![A-Za-z0-9_(])");
@@ -1479,8 +1480,8 @@ final class Session {
 
     /** Whether a definition names a scripted object (then GeoGebra makes it dependent). */
     /**
-     * Whether the definition calls a command such as {@code Mod(7, 3)}: an
-     * upper-case name before a bracket that is not an object. The command
+     * Whether the definition calls a command such as {@code Mod(7, 3)}: a
+     * command name before a bracket that is not an object. The command
      * makes a helper object, so the result is dependent even on constants.
      */
     private boolean callsCommand(String definition) {

@@ -216,21 +216,21 @@ LineGraph,,charts,P2,done,1,1,
 PieChart,,charts,P2,done,3,3,
 ContingencyTable,,charts,,out_of_scope,,,"Produces a LaTeX contingency table, optionally with a test report."
 Sum,,statistics,P2,partial,8,7,"List and indexed forms, plus variadic numbers, points, functions and text. Direct vector arguments are rejected."
-Mean,mean,statistics,,out_of_scope,,,
-mean,,statistics,,out_of_scope,,,
-Variance,,statistics,,out_of_scope,,,
-SD,stdevp,statistics,,out_of_scope,,,
-stdev,,statistics,,out_of_scope,,,
-MAD,mad,statistics,,out_of_scope,,,
-mad,,statistics,,out_of_scope,,,
-SampleVariance,,statistics,,out_of_scope,,,
-SampleSD,stdev,statistics,,out_of_scope,,,
-stdevp,,statistics,,out_of_scope,,,
-Median,,statistics,,out_of_scope,,,
-Q1,,statistics,,out_of_scope,,,
-Quartile1,Q1,statistics,,out_of_scope,,,
-Q3,,statistics,,out_of_scope,,,
-Quartile3,Q3,statistics,,out_of_scope,,,
+Mean,mean,statistics,P2,partial,,,
+mean,,statistics,P2,partial,5,3,"Numeric list, weighted values or class midpoints, and separate numbers."
+Variance,,statistics,P2,partial,5,3,"Numeric list, weighted values or class midpoints, and separate numbers."
+SD,stdevp,statistics,P2,partial,,,
+stdev,,statistics,P2,partial,5,3,"Sample standard deviation of a numeric list, weighted values or class midpoints, and separate numbers."
+MAD,mad,statistics,P2,partial,,,
+mad,,statistics,P2,partial,5,3,"Mean absolute deviation of a numeric list, weighted values or class midpoints, and separate numbers."
+SampleVariance,,statistics,P2,partial,5,3,"Numeric list, weighted values or class midpoints, and separate numbers."
+SampleSD,stdev,statistics,P2,partial,,,
+stdevp,,statistics,P2,partial,5,3,"Population standard deviation of a numeric list, weighted values or class midpoints, and separate numbers."
+Median,,statistics,P2,partial,5,3,"Numeric list, weighted values or grouped interpolation, and separate numbers."
+Q1,,statistics,P2,partial,5,3,"Lower quartile of a numeric list, values with frequencies, and separate numbers."
+Quartile1,Q1,statistics,P2,partial,,,
+Q3,,statistics,P2,partial,5,3,"Upper quartile of a numeric list, values with frequencies, and separate numbers."
+Quartile3,Q3,statistics,P2,partial,,,
 Mode,,statistics,,out_of_scope,,,
 SigmaXX,,statistics,,out_of_scope,,,
 SigmaXY,,statistics,,out_of_scope,,,
