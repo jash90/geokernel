@@ -129,3 +129,29 @@ fn short_spreadsheet_keeps_cells_editable_with_analysis_open() {
     activate(&mut window, CLOSE);
     assert!(window.app.spreadsheet_analysis.as_ref().unwrap().is_none());
 }
+
+#[test]
+fn opening_analysis_does_not_add_a_header_row_in_a_narrow_spreadsheet() {
+    let mut window = sheet(Profile::Desktop, (300.0, 225.0));
+    let before = widget(&window, "A1").rect;
+    activate(&mut window, ANALYZE);
+    assert_eq!(widget(&window, "A1").rect, before);
+    widget(&window, CLOSE);
+}
+
+#[test]
+fn a_hidden_grid_keeps_the_selected_cell_reveal_until_resize() {
+    let mut window = sheet(Profile::Desktop, (1000.0, 110.0));
+    window
+        .app
+        .select_spreadsheet_cell(Address::parse("A100").unwrap());
+    window.frame(DT, Vec::new());
+    assert!(window.app.spreadsheet_editor.as_ref().unwrap().reveal);
+
+    window.set_size((1000.0, 500.0));
+    for _ in 0..3 {
+        window.frame(DT, Vec::new());
+    }
+    widget(&window, "A100");
+    assert!(!window.app.spreadsheet_editor.as_ref().unwrap().reveal);
+}
