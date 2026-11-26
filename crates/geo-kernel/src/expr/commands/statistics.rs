@@ -5,6 +5,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoQ1.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoQ3.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdOneListFunction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoBoolean.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoMode.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoGeometricMean.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoHarmonicMean.java
@@ -14,8 +15,8 @@
 
 //! Sums and descriptive statistics.
 
+use crate::algo::measure::segment_length;
 use crate::expr::eval::{number_of, slot_val, Ctx, Lists, Val};
-use crate::expr::math;
 use crate::expr::parse::{list_arity, list_form, Parser};
 use crate::expr::types::of_numbers;
 use crate::expr::{Bin, Elem, ListOp, Node, Slot, Ty, NONE};
@@ -199,14 +200,13 @@ pub(super) fn list_value<const M: bool>(
     })
 }
 
-/// These list algorithms also accept the length of a segment as a number.
+/// Mode and the three means read segments and Booleans through `NumberValue`.
 fn sample_number(slot: Slot) -> Option<f64> {
     match (slot.kind, slot.value) {
-        (Kind::Segment, Value::Segment { x1, y1, x2, y2 }) => {
-            let length = (x2 - x1).hypot(y2 - y1);
-            Some(if math::is_zero(length) { 0.0 } else { length })
-        }
+        (Kind::Segment, Value::Segment { x1, y1, x2, y2 }) => Some(segment_length(x1, y1, x2, y2)),
         (Kind::Segment, _) => Some(f64::NAN),
+        // GeoBoolean::getDouble reads the stored false even when undefined.
+        (Kind::Boolean, Value::Undefined) => Some(0.0),
         _ => number_of(slot),
     }
 }
