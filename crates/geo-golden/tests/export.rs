@@ -2040,6 +2040,17 @@ fn point_list_increment_length_survives_an_object_named_length() {
 }
 
 #[test]
+fn point_list_increment_length_alias_uses_canonical_spelling_when_it_fits() {
+    let input = br#"<geogebra><construction>
+      <expression label="L_{1}" exp="{2, 4, 8}"/>
+      <element type="list" label="L_{1}"/>
+      <element type="point" label="P"><coords x="0" y="1" z="1"/><incrementY val="Length[L_1]"/></element>
+    </construction></geogebra>"#;
+    let wb = review_workbench(input);
+    assert!(exported_xml(&wb).contains(r#"<incrementY val="Length[L_{1}]"/>"#));
+}
+
+#[test]
 fn point_list_increment_length_alias_round_trips_at_the_attribute_limit() {
     use geo_import::xml::MAX_ATTRIBUTE_BYTES;
 
