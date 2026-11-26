@@ -1446,7 +1446,7 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
 const PROPERTY_LIMITS: &[(&str, &str)] = &[
     (
         "Point",
-        "vertical increments support scalar arithmetic with named list lengths as operands and standalone sums of one named numeric list",
+        "vertical increments support scalar arithmetic with named list lengths as operands and standalone sums of one named list that the kernel types as numeric or empty",
     ),
     ("Button", "SVG and built-in icons are omitted because the asset store accepts archived rasters"),
     ("InputBox", "SVG and built-in icons are omitted because the asset store accepts archived rasters"),

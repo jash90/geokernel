@@ -28,6 +28,7 @@ pub(crate) struct Tag {
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum TagExtra {
     PointInputs(Vec<(String, Kind)>),
+    IncrementLists(Vec<String>),
     ChartImage(ChartImage),
 }
 
@@ -195,10 +196,14 @@ impl Tag {
                 else {
                     return false;
                 };
-                let Ok(normalized) = expressions.point_increment(c, val) else {
+                let Ok((saved, lists)) = expressions.point_increment(c, val) else {
                     return false;
                 };
-                *val = normalized;
+                *val = saved;
+                if !lists.is_empty() {
+                    let labels = lists.into_iter().map(|id| c.label(id).to_owned()).collect();
+                    self.extra = Some(Box::new(TagExtra::IncrementLists(labels)));
+                }
                 true
             }
             "startPoint" if self.start_point_label().is_some() && c.kind(id) == Kind::Vector => {
@@ -274,9 +279,24 @@ impl Tag {
         expressions: &mut StyleExpressions,
     ) -> bool {
         match self.name {
-            "incrementY" => self
-                .attr("val")
-                .is_some_and(|val| expressions.point_increment(c, val).is_ok()),
+            "incrementY" => {
+                let Some(val) = self.attr("val") else {
+                    return false;
+                };
+                let Ok((_, lists)) = expressions.point_increment(c, val) else {
+                    return false;
+                };
+                if let Some(TagExtra::IncrementLists(labels)) = self.extra.as_deref() {
+                    // The parser must still resolve the saved list operands
+                    // as lists. Length can also parse as point magnitude.
+                    lists
+                        .into_iter()
+                        .map(|id| c.label(id))
+                        .eq(labels.iter().map(String::as_str))
+                } else {
+                    true
+                }
+            }
             "startPoint" => {
                 if self.start_point_label().is_some() {
                     !self.missing_start_point(c)

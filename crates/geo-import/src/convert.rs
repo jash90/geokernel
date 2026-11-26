@@ -576,28 +576,33 @@ impl StyleExpressions {
         Ok(())
     }
 
-    /// A point increment can also use the length or sum of an existing list.
-    pub fn point_increment(&mut self, c: &Construction, source: &str) -> Result<String, String> {
+    /// The saved point increment and the lists it requires.
+    pub fn point_increment(
+        &mut self,
+        c: &Construction,
+        source: &str,
+    ) -> Result<(String, Vec<Id>), String> {
+        use geo_kernel::expr::{validate_point_increment, work_done, PointIncrement};
+
         self.charge_source(source)?;
         let line = expression_line(source)?;
-        if let Some(arg) = line
-            .strip_prefix("Length(")
-            .and_then(|line| line.strip_suffix(')'))
-        {
-            let label = arg.trim();
-            if is_label(label) && c.id(label).is_some_and(|id| c.kind(id) == Kind::List) {
-                return Ok(format!("Length[{label}]"));
+        let remaining = self.budget - self.used;
+        let before = work_done();
+        let increment = validate_point_increment(c, &line, remaining);
+        if remaining != 0 && !matches!(increment, Ok(Some(PointIncrement::ListLength(_)))) {
+            self.used += (work_done() - before).max(1);
+        }
+        match increment? {
+            Some(PointIncrement::Scalar) => Ok((line, Vec::new())),
+            Some(PointIncrement::ListLength(id)) => {
+                Ok((format!("Length[{}]", c.label(id)), vec![id]))
             }
+            Some(PointIncrement::ListExpression(lists)) => Ok((source.trim().to_owned(), lists)),
+            None if remaining == 0 => {
+                Err("the style expressions of the file exceed the evaluation budget".into())
+            }
+            None => Err(format!("`{source}` is not a number of the construction")),
         }
-        if self.used >= self.budget {
-            return Err("the style expressions of the file exceed the evaluation budget".into());
-        }
-        let before = geo_kernel::expr::work_done();
-        let value = geo_kernel::expr::point_increment_number(c, &line, self.budget - self.used);
-        self.used += (geo_kernel::expr::work_done() - before).max(1);
-        value?
-            .map(|_| line)
-            .ok_or_else(|| format!("`{source}` is not a number of the construction"))
     }
 
     /// A dependent start point expressed as supported geometry over named

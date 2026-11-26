@@ -2693,30 +2693,42 @@ pub(crate) fn arithmetic_number(c: &Construction, text: &str) -> Option<f64> {
     value_of_tree(c, &parsed)
 }
 
-/// A saved point increment can also use the length of named lists as scalar
-/// operands or take the sum of one named numeric list. List evaluation
-/// spends the remaining style budget and leaves the construction unchanged.
-pub fn point_increment_number(
+/// The form of a validated point increment and the lists it requires.
+pub enum PointIncrement {
+    Scalar,
+    ListLength(Id),
+    ListExpression(Vec<Id>),
+}
+
+/// Validates a saved point increment without changing the construction.
+/// List evaluation spends the remaining style budget.
+pub fn validate_point_increment(
     c: &Construction,
     text: &str,
     remaining: u64,
-) -> Result<Option<f64>, &'static str> {
+) -> Result<Option<PointIncrement>, &'static str> {
     let Ok(parsed) = parse::parse_argument(c, text) else {
         return Ok(None);
     };
     if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {
         return Ok(None);
     }
-    if !reads_list(&parsed.nodes, &parsed.tys) {
-        return Ok(parsed
-            .nodes
-            .iter()
-            .all(arithmetic_node)
-            .then(|| value_of_tree(c, &parsed))
-            .flatten());
-    }
-    if !point_list_increment(&parsed) {
+    let increment = if reads_list(&parsed.nodes, &parsed.tys) {
+        let Some(increment) = point_list_increment(c, &parsed) else {
+            return Ok(None);
+        };
+        increment
+    } else if parsed.nodes.iter().all(arithmetic_node) {
+        PointIncrement::Scalar
+    } else {
         return Ok(None);
+    };
+    match increment {
+        // A standalone length needs only the type of its named operand.
+        PointIncrement::ListLength(_) => return Ok(Some(increment)),
+        _ if remaining == 0 => return Ok(None),
+        PointIncrement::Scalar => return Ok(value_of_tree(c, &parsed).map(|_| increment)),
+        PointIncrement::ListExpression(_) => {}
     }
     with_evaluation_budget(remaining, || {
         let entry = Entry::new(c, parsed, false);
@@ -2725,35 +2737,47 @@ pub fn point_increment_number(
         if lists.over() {
             return Err("the point increment exceeds the style evaluation budget");
         }
-        Ok(match value {
-            Raw::Num(value) => Some(value),
-            _ => None,
-        })
+        Ok(matches!(value, Raw::Num(_)).then_some(increment))
     })
 }
 
-fn point_list_increment(parsed: &parse::Parsed) -> bool {
+fn point_list_increment(c: &Construction, parsed: &parse::Parsed) -> Option<PointIncrement> {
     let numeric = |arg: u32| matches!(parsed.tys[arg as usize], Ty::Num(_));
-    parsed
-        .nodes
-        .iter()
-        .enumerate()
-        .all(|(i, node)| match *node {
+    let mut length = None;
+    for (i, node) in parsed.nodes.iter().enumerate() {
+        match *node {
             Node::ListOp(op, arg, NONE)
                 if op == ListOp::Length || op == ListOp::Sum && i == parsed.root as usize =>
             {
-                matches!(parsed.nodes[arg as usize], Node::Obj(_))
-                    && matches!(
-                        (op, parsed.tys[arg as usize]),
-                        (ListOp::Length, Ty::List(_))
-                            | (ListOp::Sum, Ty::List(Elem::Num | Elem::Empty))
-                    )
+                let Node::Obj(id) = parsed.nodes[arg as usize] else {
+                    return None;
+                };
+                match (op, parsed.tys[arg as usize]) {
+                    (ListOp::Length, Ty::List(_)) => {
+                        if i == parsed.root as usize {
+                            length = Some(id);
+                        }
+                    }
+                    (ListOp::Sum, Ty::List(Elem::Num | Elem::Empty)) => {}
+                    _ => return None,
+                }
             }
-            Node::Num(_) | Node::MinusOne | Node::Degree | Node::Obj(_) => true,
-            Node::Un(_, arg) => numeric(arg),
-            Node::Bin(_, left, right) => numeric(left) && numeric(right),
-            _ => false,
-        })
+            Node::Num(_) | Node::MinusOne | Node::Degree | Node::Obj(_) => {}
+            Node::Un(_, arg) if numeric(arg) => {}
+            Node::Bin(_, left, right) if numeric(left) && numeric(right) => {}
+            _ => return None,
+        }
+    }
+    if let Some(id) = length {
+        return Some(PointIncrement::ListLength(id));
+    }
+    let inputs = parsed
+        .inputs
+        .iter()
+        .copied()
+        .filter(|&id| c.kind(id) == Kind::List)
+        .collect();
+    Some(PointIncrement::ListExpression(inputs))
 }
 
 /// Checks a saved point attachment without creating a construction object.
