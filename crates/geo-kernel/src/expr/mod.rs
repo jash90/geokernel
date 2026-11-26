@@ -2706,6 +2706,95 @@ pub(crate) fn arithmetic_number(c: &Construction, text: &str) -> Option<f64> {
     value_of_tree(c, &parsed)
 }
 
+/// The form of a validated point increment and the lists it requires.
+pub enum PointIncrement {
+    Scalar,
+    ListLength(Id),
+    ListExpression(Vec<Id>),
+}
+
+/// Validates a saved point increment without changing the construction.
+/// Explicit bracketed `Length` and standalone `Sum` calls can read a named
+/// list when the construction has an object with the command name.
+/// List evaluation spends the remaining style budget.
+pub fn validate_point_increment(
+    c: &Construction,
+    text: &str,
+    remaining: u64,
+) -> Result<Option<PointIncrement>, &'static str> {
+    let Ok(parsed) = parse::parse_point_increment(c, text) else {
+        return Ok(None);
+    };
+    if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {
+        return Ok(None);
+    }
+    let increment = if reads_list(&parsed.nodes, &parsed.tys) {
+        let Some(increment) = point_list_increment(c, &parsed) else {
+            return Ok(None);
+        };
+        increment
+    } else if parsed.nodes.iter().all(arithmetic_node) {
+        PointIncrement::Scalar
+    } else {
+        return Ok(None);
+    };
+    match increment {
+        // A standalone length needs only the type of its named operand.
+        PointIncrement::ListLength(_) => return Ok(Some(increment)),
+        _ if remaining == 0 => return Ok(None),
+        PointIncrement::Scalar => return Ok(value_of_tree(c, &parsed).map(|_| increment)),
+        PointIncrement::ListExpression(_) => {}
+    }
+    with_evaluation_budget(remaining, || {
+        let entry = Entry::new(c, parsed, false);
+        let lists = eval::Lists::new(Vec::new());
+        let (value, _) = eval::root(c, &entry, Some(&lists));
+        if lists.over() {
+            return Err("the point increment exceeds the style evaluation budget");
+        }
+        Ok(matches!(value, Raw::Num(_)).then_some(increment))
+    })
+}
+
+fn point_list_increment(c: &Construction, parsed: &parse::Parsed) -> Option<PointIncrement> {
+    let numeric = |arg: u32| matches!(parsed.tys[arg as usize], Ty::Num(_));
+    let mut length = None;
+    for (i, node) in parsed.nodes.iter().enumerate() {
+        match *node {
+            Node::ListOp(op, arg, NONE)
+                if op == ListOp::Length || op == ListOp::Sum && i == parsed.root as usize =>
+            {
+                let Node::Obj(id) = parsed.nodes[arg as usize] else {
+                    return None;
+                };
+                match (op, parsed.tys[arg as usize]) {
+                    (ListOp::Length, Ty::List(_)) => {
+                        if i == parsed.root as usize {
+                            length = Some(id);
+                        }
+                    }
+                    (ListOp::Sum, Ty::List(Elem::Num | Elem::Empty)) => {}
+                    _ => return None,
+                }
+            }
+            Node::Num(_) | Node::MinusOne | Node::Degree | Node::Obj(_) => {}
+            Node::Un(_, arg) if numeric(arg) => {}
+            Node::Bin(_, left, right) if numeric(left) && numeric(right) => {}
+            _ => return None,
+        }
+    }
+    if let Some(id) = length {
+        return Some(PointIncrement::ListLength(id));
+    }
+    let inputs = parsed
+        .inputs
+        .iter()
+        .copied()
+        .filter(|&id| c.kind(id) == Kind::List)
+        .collect();
+    Some(PointIncrement::ListExpression(inputs))
+}
+
 /// Checks a saved point attachment without creating a construction object.
 pub fn arithmetic_point_inputs(c: &Construction, text: &str) -> Option<Vec<Id>> {
     let parsed = arithmetic_argument(c, text)?;
@@ -2715,29 +2804,34 @@ pub fn arithmetic_point_inputs(c: &Construction, text: &str) -> Option<Vec<Id>> 
 
 fn arithmetic_argument(c: &Construction, text: &str) -> Option<parse::Parsed> {
     let parsed = parse::parse_argument(c, text).ok()?;
-    let arithmetic = parsed.nodes.iter().all(|node| {
-        matches!(
-            node,
-            Node::Num(_)
-                | Node::MinusOne
-                | Node::Degree
-                | Node::Obj(_)
-                | Node::Bool(_)
-                | Node::Un(..)
-                | Node::Bin(..)
-                | Node::If(..)
-                | Node::Cmd(..)
-                | Node::Apply(..)
-                | Node::Tuple(..)
-                | Node::Polar(..)
-                | Node::ObjectDefined(_)
-                | Node::Defined(..)
-        )
-    });
-    if !arithmetic || reads_list(&parsed.nodes, &parsed.tys) || parsed.uses_var || parsed.uses_y {
+    if parsed.uses_var
+        || parsed.uses_y
+        || !parsed.nodes.iter().all(arithmetic_node)
+        || reads_list(&parsed.nodes, &parsed.tys)
+    {
         return None;
     }
     Some(parsed)
+}
+
+fn arithmetic_node(node: &Node) -> bool {
+    matches!(
+        node,
+        Node::Num(_)
+            | Node::MinusOne
+            | Node::Degree
+            | Node::Obj(_)
+            | Node::Bool(_)
+            | Node::Un(..)
+            | Node::Bin(..)
+            | Node::If(..)
+            | Node::Cmd(..)
+            | Node::Apply(..)
+            | Node::Tuple(..)
+            | Node::Polar(..)
+            | Node::ObjectDefined(_)
+            | Node::Defined(..)
+    )
 }
 
 /// Defines `name = rhs` as an expression. `vector_label` tells whether a

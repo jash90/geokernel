@@ -1,0 +1,24 @@
+{
+  "schema": 2,
+  "id": "saved-export-point-increments-001",
+  "script": [
+    "L = {2, 4, 8}",
+    "P = (0, 1)",
+    "Q = (0, 2)",
+    "R = (0, 3)"
+  ],
+  "objects": {
+    "L": {
+      "type": "list",
+      "defined": true,
+      "elements": [
+        { "type": "number", "defined": true, "value": 2.0 },
+        { "type": "number", "defined": true, "value": 4.0 },
+        { "type": "number", "defined": true, "value": 8.0 }
+      ]
+    },
+    "P": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+    "Q": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+    "R": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 }
+  }
+}

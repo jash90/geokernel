@@ -24,7 +24,7 @@ mod cas_input;
 use super::commands;
 use super::decimal::Dec;
 use super::eval;
-use super::lex::{split_bars, tokens, Tok, Token};
+use super::lex::{split_bars, tokens_with_square_calls, Tok, Token};
 use super::math::{self, PI_180};
 use super::names::{binary_builtin, builtin_name, unary_builtin};
 use super::types::check;
@@ -122,6 +122,10 @@ pub(super) fn parse_argument(c: &Construction, src: &str) -> Result<Parsed, Stri
     parse_in(c, src, Mode::Argument)
 }
 
+pub(super) fn parse_point_increment(c: &Construction, src: &str) -> Result<Parsed, String> {
+    parse_in(c, src, Mode::PointIncrement)
+}
+
 pub(super) fn parse_parameter(c: &Construction, src: &str, name: &str) -> Result<Parsed, String> {
     parse_in(c, src, Mode::Parameter(name))
 }
@@ -160,6 +164,7 @@ pub(super) fn parse_scoped_equation(
 enum Mode<'a> {
     Expression,
     Argument,
+    PointIncrement,
     Equation,
     EquationLeft,
     Parameter(&'a str),
@@ -197,7 +202,8 @@ fn parse_in_with_work(
     );
     let preprocessed = split_bars(src);
     let src: &str = &preprocessed;
-    let toks = tokens(src)?;
+    let point_increment = mode == Mode::PointIncrement;
+    let toks = tokens_with_square_calls(src, point_increment)?;
     // a name that is no object and no command reads as a product of
     // single-letter variables (`VariableReplacerAlgorithm`), never when the
     // name alone is the whole left side
@@ -224,7 +230,8 @@ fn parse_in_with_work(
         uses_var: false,
         uses_y: false,
         equation,
-        inline_argument: mode == Mode::Argument,
+        inline_argument: mode == Mode::Argument || point_increment,
+        point_increment,
         split_names: equation && !whole_name,
         parameter: if let Mode::Parameter(name) = mode {
             Some(name)
@@ -308,6 +315,7 @@ pub(super) struct Parser<'a> {
     /// coordinate function (see [`parse_equation`]).
     pub(super) equation: bool,
     inline_argument: bool,
+    point_increment: bool,
     parameter: Option<&'a str>,
     /// Whether a name that resolves as nothing may read as a product of
     /// single-letter variables (see [`parse_in`]).
@@ -1115,9 +1123,50 @@ impl Parser<'_> {
         Ok(Some(result))
     }
 
+    fn point_increment_list_call(&mut self, op: ListOp) -> Option<u32> {
+        let [Token {
+            tok: Tok::LParen,
+            start,
+            ..
+        }, Token {
+            tok: Tok::Name { text, call: false },
+            ..
+        }, Token {
+            tok: Tok::RParen, ..
+        }, rest @ ..] = &self.toks[self.pos..]
+        else {
+            return None;
+        };
+        // Explicit saved calls take precedence over objects with the same
+        // name. Keep the existing standalone Length(L) for an exact label.
+        let bracketed = self.src.as_bytes()[*start] == b'[';
+        let id = match op {
+            ListOp::Length if bracketed || (self.pos == 1 && rest.is_empty()) => self.c.id(text)?,
+            ListOp::Sum if bracketed => self.lookup(text)?,
+            _ => return None,
+        };
+        if self.c.kind(id) != Kind::List {
+            return None;
+        }
+        self.pos += 3;
+        self.read(id, true);
+        let arg = self.push(Node::Obj(id));
+        Some(self.push(Node::ListOp(op, arg, NONE)))
+    }
+
     /// A name: a constant, the variable `x`, an object, a built-in function
     /// or a command (`Parser.functionOrCommand`, `FunctionParser`).
     fn name(&mut self, text: &str, call: bool) -> Result<u32, String> {
+        if self.point_increment && call {
+            let op = match text {
+                "Length" => Some(ListOp::Length),
+                "Sum" if self.c.id(text).is_some() => Some(ListOp::Sum),
+                _ => None,
+            };
+            if let Some(node) = op.and_then(|op| self.point_increment_list_call(op)) {
+                return Ok(node);
+            }
+        }
         if let Some(index) = self.cas_variables.iter().position(|name| name == text) {
             let variable = self.push(Node::CasVariable(index as u8));
             if call {
@@ -1724,8 +1773,18 @@ impl Parser<'_> {
                 "`{text}`: a command inside a command is not supported"
             ));
         }
+        let open = self.toks[self.pos].start;
+        let close = self.toks[end].start;
         self.pos = end + 1;
-        let def = crate::script::parse_def(self.c, text)?;
+        // The list path already handled explicit saved Length calls; the
+        // scalar command parser still expects parentheses (e.g. Length[s]).
+        let def = if self.point_increment && self.src.as_bytes()[open] == b'[' {
+            let name = &self.src[start..open];
+            let args = &self.src[open + 1..close];
+            crate::script::parse_def(self.c, &format!("{name}({args})"))?
+        } else {
+            crate::script::parse_def(self.c, text)?
+        };
         let kind = def.kind();
         if !matches!(
             kind,
