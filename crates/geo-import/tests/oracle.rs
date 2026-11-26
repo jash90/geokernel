@@ -1,7 +1,8 @@
 //! The oracle test: every construction file that GeoGebra wrote for a golden
 //! case (`golden/ggb/<group>/<case id>.xml`, plus a few zipped `.ggb`) is
 //! imported, the script it gives runs on the kernel, and every imported object
-//! is compared with `snapshots[0]` of the same golden case under the rules of
+//! is compared with the reference reload or `snapshots[0]` of the same golden
+//! case when loading keeps the original value, under the rules of
 //! `golden/SCHEMA.md`, with the comparison of `geo-golden`.
 
 use geo_golden::compare::{
@@ -27,17 +28,6 @@ const MIN_COMPARED: usize = 13091;
 /// Every labelled output in this corpus is importable.
 const MAX_SKIPPED: usize = 0;
 
-/// An entry of `known-import-gaps.toml`.
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ImportGap {
-    id: String,
-    label: String,
-    golden: f64,
-    imported: f64,
-    reason: String,
-}
-
 /// An object whose imported value is the golden one, but whose saved conic
 /// matrix, classified on a fresh record, is a different object: the live
 /// object kept the type of the conic it was made from (a dilated degenerate
@@ -51,11 +41,15 @@ struct Reclassified {
     reason: String,
 }
 
+// Numeric import gaps are closed. Reject a reintroduced [[gap]] row,
+// including one that also has a matching documentation entry.
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct ImportGapFile {
-    gap: Vec<ImportGap>,
     #[serde(default)]
     reclassified: Vec<Reclassified>,
+    #[serde(rename = "saved_tangency")]
+    _saved_tangency: Option<serde::de::IgnoredAny>,
 }
 
 /// Whether two kernel values are the same within the tolerance of the golden files.
@@ -148,8 +142,7 @@ fn compare_case(
     case: &Case,
     bytes: &[u8],
     gaps: &gaps::Gaps,
-    import_gaps: &[ImportGap],
-    used_import_gaps: &mut BTreeSet<String>,
+    reload: Option<&BTreeMap<String, f64>>,
     totals: &mut Totals,
     failures: &mut Vec<String>,
 ) -> Vec<String> {
@@ -232,13 +225,45 @@ fn compare_case(
         });
         *totals.skipped_by_reason.entry(key).or_default() += 1;
     }
-    let imported_mismatched: Vec<(String, String)> = imported
-        .mismatched
-        .iter()
-        .map(|m| (m.label.clone(), m.saved.clone()))
-        .collect();
+    // The importer accepts either order's value in the cache. The oracle
+    // separately pins the original value GeoGebra wrote before reloading.
+    let saved = reload.map(|_| {
+        let text = geo_import::archive::extract_xml(bytes).unwrap();
+        geo_import::xml::parse(&text).unwrap()
+    });
     let gap = gaps.get(&case.id);
     for (label, expected) in &case.snapshots[0] {
+        let reload_expected = reload.and_then(|values| values.get(label)).map(|&value| {
+            assert_eq!(expected.kind, Kind::Number);
+            let Some(ExpectedData::Number(original)) = expected.data else {
+                panic!("{}: {label} must have a pre-save number", case.id);
+            };
+            assert!(
+                !numbers_agree(original, value),
+                "{}: {label} no longer changes on reference reload", case.id
+            );
+            let cache = saved
+                .as_ref()
+                .unwrap()
+                .items
+                .iter()
+                .find_map(|item| match item {
+                    geo_import::xml::Item::Element(el) if el.label == *label => {
+                        el.value.as_deref()?.parse::<f64>().ok()
+                    }
+                    _ => None,
+                });
+            if !cache.is_some_and(|cached| numbers_agree(original, cached)) {
+                failures.push(format!(
+                    "{}: {label} saved cache {cache:?} disagrees with the pre-save value {original}",
+                    case.id
+                ));
+            }
+            let mut reloaded = expected.clone();
+            reloaded.data = Some(ExpectedData::Number(value));
+            reloaded
+        });
+        let expected = reload_expected.as_ref().unwrap_or(expected);
         if skipped.contains_key(label.as_str()) {
             totals.objects_skipped += 1;
             *totals
@@ -287,33 +312,7 @@ fn compare_case(
             Ok(_) => totals.objects_compared += 1,
             Err(why) => {
                 let key = format!("0:{label}");
-                let pin = import_gaps
-                    .iter()
-                    .find(|g| g.id == case.id && g.label == *label);
-                if let Some(pin) = pin {
-                    // Pinned on both sides: the golden value, the imported
-                    // value, and that the golden value is what the file saved.
-                    let golden = matches!(
-                        expected.data,
-                        Some(ExpectedData::Number(value)) if numbers_agree(value, pin.golden)
-                    );
-                    let imported = matches!(
-                        c.value(id),
-                        Value::Number(v) if numbers_agree(v, pin.imported)
-                    );
-                    let saved = imported_saved_number(&imported_mismatched, label)
-                        .is_some_and(|s| numbers_agree(s, pin.golden));
-                    if golden && imported && saved && !pin.reason.is_empty() {
-                        used_import_gaps.insert(format!("{}:{label}", case.id));
-                    } else {
-                        failures.push(format!(
-                            "{}: `{label}` no longer matches its pin in \
-                             known-import-gaps.toml: {why}; expected {expected:?}, got {:?}",
-                            case.id,
-                            c.value(id)
-                        ));
-                    }
-                } else if gap.is_some_and(|g| g.mismatches.contains(&key)) {
+                if gap.is_some_and(|g| g.mismatches.contains(&key)) {
                     // A kernel gap: the importer must add nothing to it, so
                     // the imported value is what the kernel gives for the
                     // golden script itself.
@@ -370,10 +369,59 @@ fn compare_case(
     imported.script
 }
 
-/// The number in the `saved` text (`value N`) of the mismatch of `label`.
-fn imported_saved_number(mismatches: &[(String, String)], label: &str) -> Option<f64> {
-    let (_, saved) = mismatches.iter().find(|(l, _)| l == label)?;
-    saved.strip_prefix("value ")?.parse().ok()
+#[test]
+fn a_line_distance_cache_that_matches_neither_order_is_reported() {
+    let source = include_str!("../../../golden/ggb/conic/conic-diameter-009.xml");
+    let original = r#"<value val="0.8944271909999159"/>"#;
+    assert!(source.contains(original));
+    let corrupt = source.replace(original, r#"<value val="99"/>"#);
+    let imported = import(corrupt.as_bytes()).unwrap();
+    assert!(imported.skipped.is_empty());
+    assert_eq!(imported.mismatched.len(), 1);
+    assert_eq!(imported.mismatched[0].label, "d");
+    assert_eq!(imported.mismatched[0].saved, "value 99");
+}
+
+#[test]
+fn the_import_oracle_rejects_a_cache_changed_to_the_reload_value() {
+    let root = repo_root();
+    let id = "transform-rotate-037";
+    let case = model::load_all(&root)
+        .unwrap()
+        .into_iter()
+        .find(|case| case.id == id)
+        .unwrap();
+    let xml = fs::read_to_string(root.join(format!("golden/ggb/transform/{id}.xml"))).unwrap();
+    let (original, modified) = ("0.526691643295513", "0.5884701140321686");
+    assert_eq!(xml.matches(original).count(), 1);
+    let xml = xml.replacen(original, modified, 1);
+    let reloads: BTreeMap<String, BTreeMap<String, f64>> =
+        serde_json::from_str(include_str!("../../../golden/ggb/distance-reload.snapshot")).unwrap();
+    let mut failures = Vec::new();
+    compare_case(
+        &case,
+        xml.as_bytes(),
+        &gaps::load().unwrap(),
+        reloads.get(id),
+        &mut Totals::default(),
+        &mut failures,
+    );
+    assert!(
+        failures
+            .iter()
+            .any(|failure| failure.contains("saved cache")),
+        "{failures:?}"
+    );
+}
+
+#[test]
+fn the_import_oracle_rejects_a_stale_import_gap() {
+    let ledger = concat!(
+        include_str!("../known-import-gaps.toml"),
+        "\n[[gap]]\nid = \"conic-diameter-009\"\nlabel = \"d\"\n",
+        "golden = 0.8944271909999159\nimported = 1.7888543819998317\nreason = \"Distance inputs were reversed\"\n",
+    );
+    assert!(toml::from_str::<ImportGapFile>(ledger).is_err());
 }
 
 #[test]
@@ -387,7 +435,10 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
     let gaps = gaps::load().unwrap();
     let gap_file: ImportGapFile =
         toml::from_str(include_str!("../known-import-gaps.toml")).unwrap();
-    let import_gaps = gap_file.gap;
+    let mut reloads: BTreeMap<String, BTreeMap<String, f64>> =
+        serde_json::from_str(include_str!("../../../golden/ggb/distance-reload.snapshot")).unwrap();
+    let reload_count: usize = reloads.values().map(BTreeMap::len).sum();
+    assert_eq!(reload_count, 5);
     let reclassified: BTreeMap<String, &Reclassified> = gap_file
         .reclassified
         .iter()
@@ -398,7 +449,6 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
         gap_file.reclassified.len(),
         "a reclassified object is listed twice"
     );
-    let mut used_import_gaps = BTreeSet::new();
     let mut xml = Vec::new();
     files(&root.join("golden/ggb"), "xml", &mut xml);
     // `saved/` holds files saved after moves, with their own snapshots
@@ -416,12 +466,17 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
         let case = cases
             .get(id)
             .unwrap_or_else(|| panic!("no golden case for {}", path.display()));
+        let reload = reloads.remove(id);
+        if let Some(reload) = &reload {
+            assert!(reload
+                .keys()
+                .all(|label| case.snapshots[0].contains_key(label)));
+        }
         let script = compare_case(
             case,
             &fs::read(path).unwrap(),
             &gaps,
-            &import_gaps,
-            &mut used_import_gaps,
+            reload.as_ref(),
             &mut totals,
             &mut failures,
         );
@@ -434,16 +489,17 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
             assert_eq!(zipped.script, script, "{}: zip and xml differ", case.id);
         }
     }
+    assert!(reloads.is_empty(), "unmatched reference reload recordings");
     println!(
         "files imported: {} (of which with a zipped twin: {})\nobjects compared: {}\n\
          objects in known gaps (disagree as listed): {}\n\
-         objects in known import gaps (disagree as listed): {}\nobjects skipped: {}\n\
+         objects compared against reference reload: {}\nobjects skipped: {}\n\
          hidden objects reported: {}\nskipped by group: {:?}",
         totals.files,
         totals.zips,
         totals.objects_compared,
         totals.gap_objects,
-        used_import_gaps.len(),
+        reload_count,
         totals.objects_skipped,
         totals.hidden,
         totals.skipped_by_group
@@ -467,22 +523,13 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
         totals.unlabelled
     );
     assert_eq!(totals.unlabelled, totals.unlabelled_objects);
-    let listed: BTreeSet<String> = import_gaps
-        .iter()
-        .map(|g| format!("{}:{}", g.id, g.label))
-        .collect();
-    assert_eq!(listed.len(), import_gaps.len(), "an entry is listed twice");
-    assert_eq!(
-        used_import_gaps, listed,
-        "known-import-gaps.toml is stale or incomplete"
-    );
     assert!(
         totals.skipped_labels.is_empty(),
         "{:?}",
         totals.skipped_labels
     );
-    // Every disagreement with the saved value is documented: a pinned import
-    // gap, a kernel gap at step 0 (whose golden value is the saved one), or a
+    // Every disagreement with the saved value is documented: a kernel gap at
+    // step 0 (whose golden value is the saved one), or a
     // pinned saved matrix that classifies afresh as another object (the imported
     // value agreed with the golden one above, or the test already failed).
     let mut undocumented = Vec::new();
@@ -494,7 +541,7 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
         let reclassified_as_pinned = reclassified
             .get(key)
             .is_some_and(|r| r.saved == totals.mismatched[key].0 && !r.reason.is_empty());
-        if !(listed.contains(key) || in_kernel_gap || reclassified_as_pinned) {
+        if !(in_kernel_gap || reclassified_as_pinned) {
             undocumented.push(format!("{key}: {:?}", totals.mismatched[key]));
         }
     }
@@ -504,7 +551,7 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
         undocumented.len(),
         undocumented.join("\n")
     );
-    for key in listed.iter().chain(reclassified.keys()) {
+    for key in reclassified.keys() {
         assert!(
             totals.mismatched.contains_key(key),
             "{key} no longer mismatches"

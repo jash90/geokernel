@@ -48,6 +48,11 @@ jobs:
       - name: Test
         # Match the desktop matrix's test concurrency for the wall-clock budgets.
         run: cargo test --workspace -- --test-threads=2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check gap documentation
+        run: python3 -I tools/check_gap_documentation.py
       - name: Check reference corpus input layout
         run: python3 -I tools/ggb-harness/cases/test_corpus_layout.py
       - uses: actions/setup-java@v4

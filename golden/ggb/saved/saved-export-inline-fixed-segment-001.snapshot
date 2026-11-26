@@ -1,0 +1,11 @@
+{
+  "schema": 2,
+  "id": "saved-export-inline-fixed-segment-001",
+  "script": [
+    "s = Segment((1,1),4)"
+  ],
+  "objects": {
+    "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
+    "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+  }
+}

@@ -13,6 +13,7 @@ use crate::xml::{Document, Element, Item};
 use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
+use geo_kernel::algo::measure::{distance_between_lines, MeasureDef};
 use geo_kernel::algo::polygon::PolygonDef;
 use geo_kernel::kernel::angle::AngleStyle;
 use geo_kernel::kernel::control::{
@@ -988,8 +989,19 @@ impl Converter {
             _ => name,
         };
         if let ("Point", [path], [label]) = (name, args.as_slice(), outputs) {
-            if let Some((el, path_id)) = elements.get(label.as_str()).zip(self.kernel.id(path)) {
-                let kind = self.kernel.kind(path_id);
+            let kind = self
+                .kernel
+                .id(path)
+                .map(|id| self.kernel.kind(id))
+                .or_else(|| {
+                    // Segment(point, length) is saved with an anonymous circle
+                    // as the point's path. Its saved coordinates choose the
+                    // position on that circle just as for a labelled path.
+                    let inline = path.strip_prefix("$arg(")?.strip_suffix(')')?;
+                    let (command, _) = geo_kernel::script::split_call(inline)?;
+                    (command == "Circle").then_some(Kind::Circle)
+                });
+            if let Some((el, kind)) = elements.get(label.as_str()).zip(kind) {
                 if kind == Kind::Curve {
                     if let Some(t) = el.curve_parameter {
                         return Ok(vec![Step {
@@ -2602,7 +2614,11 @@ fn cross_check(
             } else {
                 s
             };
-            close(n, s)
+            // The reference computes in one order and writes the inputs
+            // in the other. Check the cache against the pre-save value as
+            // well as the recomputed value in file order.
+            close(n, s) || matches!(c.def(id), Def::Measure(MeasureDef::DistanceLines(first, second))
+                if distance_between_lines(c, second, first).is_some_and(|before_save| close(before_save, s)))
         }),
         Value::Bool(b) => el
             .value

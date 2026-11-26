@@ -436,10 +436,17 @@ pub(crate) fn fill(
         for (destination, _) in &plan {
             inputs.remove(destination);
         }
-        reserve_cells(c, inputs, None)?;
-        Ok::<_, String>((order, result))
+        // Reserve the formulas before changing any destination. Retained
+        // display definitions made during the commit cannot take this space.
+        let bytes = plan.iter().map(|(_, formula)| formula.len()).sum();
+        c.reserve_definition_sources(bytes)?;
+        if let Err(error) = reserve_cells(c, inputs, None) {
+            c.release_definition_sources(bytes);
+            return Err(error);
+        }
+        Ok::<_, String>((order, result, bytes))
     })();
-    let (order, result) = match result {
+    let (order, result, mut reserved) = match result {
         Ok(staged) => staged,
         Err(error) => {
             c.discard_since(checkpoint);
@@ -449,7 +456,13 @@ pub(crate) fn fill(
     for index in order {
         let (address, formula) = &plan[index];
         let label = address.label();
-        if let Some(id) = script::define_prepared_cell(c, &label, formula)? {
+        reserved -= formula.len();
+        c.release_definition_sources(formula.len());
+        let written = script::define_prepared_cell(c, &label, formula);
+        if written.is_err() {
+            c.release_definition_sources(reserved);
+        }
+        if let Some(id) = written? {
             c.request_hidden(id);
         }
     }

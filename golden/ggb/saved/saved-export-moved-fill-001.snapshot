@@ -1,0 +1,9 @@
+{
+  "schema": 2,
+  "id": "saved-export-moved-fill-001",
+  "script": [
+    "FillRow(1,{(7,8)})",
+    "SetCoords(A1,9,10)"
+  ],
+  "objects": {}
+}
