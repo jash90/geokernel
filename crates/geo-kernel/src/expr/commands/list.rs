@@ -626,6 +626,7 @@ pub(super) fn list_type(
         }
         ListOp::Product => of_numbers(numbers)?,
         ListOp::Element(Some(Kind::Point | Kind::Vector)) => Ty::Vec,
+        ListOp::Element(Some(Kind::Number)) => Ty::Num(0),
         ListOp::ElementRow => Ty::List(Elem::Any),
         // Keep the numeric fallback for an unclassified heterogeneous list.
         ListOp::Element(None) if elem == Elem::Any => Ty::Num(0),
@@ -1463,6 +1464,9 @@ impl<const M: bool> Ctx<'_, M> {
         match op {
             ListOp::Element(Some(Kind::Point)) if selected.kind == Kind::Number => {
                 return Some(Slot::coords(Kind::Point, selected.numeric_cell()?, 0.0));
+            }
+            ListOp::Element(Some(Kind::Number)) => {
+                return number_of(selected).map(Slot::number);
             }
             ListOp::Element(kind) => {
                 return kind.is_none_or(|k| selected.kind == k).then_some(selected);

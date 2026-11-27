@@ -1,0 +1,26 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedroworigin-001",
+      "group": "statistics",
+      "script": [
+        "P = (1,2)", "k = 2", "a = 3", "j = 2",
+        "A = {{a+1,P}}", "R = Append({1},P)", "B = {R}",
+        "C = ({{1,P}})", "D = {{a+1,P},{1,P}}",
+        "E = {1,P}", "F = {E}", "G = {{1+2,P}}",
+        "r = Covariance({Element(A,1,k),(0,0)})",
+        "s = Covariance({Element(B,1,k),(0,0)})",
+        "t = Covariance(Element(C,1,k),(0,0))",
+        "u = Covariance(Element(D,j,k),(0,0))",
+        "h = Covariance(Element(F,1,k),(0,0))",
+        "g = Covariance(Element(G,1,k),(0,0))"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "k", "value": 1},
+        {"action": "set_number", "label": "k", "value": 2},
+        {"action": "set_number", "label": "j", "value": 1}
+      ]
+    }
+  ]
+}

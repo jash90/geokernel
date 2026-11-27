@@ -1685,7 +1685,7 @@ impl Parser<'_> {
         kind.map_err(|()| "List dispatch exceeds the evaluation budget".into())
     }
 
-    /// Preserve the initial point/vector class without building an object.
+    /// Preserve the initial template class of supported list selections.
     pub(super) fn element_command(
         &mut self,
         start: usize,

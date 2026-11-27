@@ -955,63 +955,91 @@ pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Ki
         meter: Some(&lists),
         ..Ctx::new(c, e, &Env::None)
     };
-    fn template_slot(ctx: &Ctx<'_, true>, (start, len): (u32, u32), index: i64) -> Option<Slot> {
-        let lists = ctx.lists?;
-        let offset = if index < i64::from(len) {
-            index as u32
-        } else {
-            0
-        };
-        (len != 0 && lists.charge(1)).then(|| lists.read(ctx.c, start + offset))
+    type Literal<'a> = (Ctx<'a, true>, u32);
+    type TemplateRow<'a> = ((u32, u32), Option<Literal<'a>>);
+
+    fn literal(mut ctx: Ctx<'_, true>, mut node: u32) -> Option<Literal<'_>> {
+        while ctx.lists?.charge(1) {
+            match ctx.node(node) {
+                Node::List(..) => return Some((ctx, node)),
+                Node::Item(child) => node = child,
+                Node::Obj(id) | Node::ItemObject(id) => {
+                    let Def::Expr(def) = ctx.c.def(id) else {
+                        return None;
+                    };
+                    ctx.e = super::entry(ctx.c, def);
+                    node = ctx.e.root;
+                }
+                _ => return None,
+            }
+        }
+        None
     }
 
-    fn template_row(ctx: &Ctx<'_, true>, list: u32) -> Option<(u32, u32)> {
+    fn template_row<'a>(
+        ctx: Ctx<'a, true>,
+        list: u32,
+        track_origin: bool,
+    ) -> Option<TemplateRow<'a>> {
         let Node::ListOp(ListOp::ElementRow, source, index) = ctx.node(list) else {
-            return ctx.list(list);
+            return Some((
+                ctx.list(list)?,
+                track_origin.then(|| literal(ctx, list)).flatten(),
+            ));
         };
         let lists = ctx.lists?;
         let mark = lists.len();
-        let index = math::element_index(ctx.full_number(index)).max(0);
+        let index = math::element_index(ctx.full_number(index)).max(0) as u32;
         lists.truncate(mark);
-        template_slot(ctx, template_row(ctx, source)?, index)?.run()
+        let ((start, len), origin) = template_row(ctx, source, true)?;
+        if len == 0 || !lists.charge(1) {
+            return None;
+        }
+        let offset = if index < len { index } else { 0 };
+        let row = lists.read(ctx.c, start + offset).run()?;
+        let origin = origin.and_then(|(ctx, node)| match ctx.node(node) {
+            Node::List(first, len) if offset < len => literal(ctx, first + offset),
+            _ => None,
+        });
+        Some((row, origin))
     }
 
     let refusals = shared_work_refusals();
-    // A nested Element starts with the first item in the row as its template.
-    let mut source = list;
-    while let Node::ListOp(ListOp::ElementRow, parent, _) = ctx.node(source) {
-        source = parent;
-    }
-    let nested = source != list;
-    let literal_rows = match ctx.node(source) {
-        Node::List(..) => true,
-        Node::Obj(id) => super::literal_list_source(c, id).is_some(),
-        _ => false,
-    };
+    let nested = matches!(ctx.node(list), Node::ListOp(ListOp::ElementRow, ..));
+    // A nested Element starts with the first item in the selected row.
     let index = if nested {
         0
     } else {
-        math::element_index(ctx.full_number(index)).max(0)
+        math::element_index(ctx.full_number(index)).max(0) as u32
     };
     lists.truncate(0);
-    let kind = template_row(&ctx, list).and_then(|row| {
-        let slot = template_slot(&ctx, row, index)?;
-        // An anonymous numeric template in a literal row can promote to a point.
-        if nested && literal_rows && slot.kind == Kind::Number && slot.object_id().is_none() {
-            let (start, len) = row;
-            if !lists.charge(u64::from(len)) {
-                return None;
-            }
-            if (start..start + len).any(|i| lists.read(c, i).kind == Kind::Point) {
-                return Some(Kind::Point);
-            }
+    let kind = template_row(ctx, list, nested).and_then(|((start, len), origin)| {
+        if len == 0 || !lists.charge(1) {
+            return None;
+        }
+        let offset = if index < len { index } else { 0 };
+        let slot = lists.read(c, start + offset);
+        // Only an independent numeric template in a literal row may promote.
+        if slot.kind == Kind::Number
+            && origin.is_some_and(|(ctx, node)| {
+                matches!(ctx.node(node), Node::List(first, _) if
+                    lists.charge(1) && matches!(ctx.node(first), Node::Item(item)
+                        if !ctx.dependent_list_item(item)))
+            })
+            && lists.charge(u64::from(len))
+            && (start..start + len).any(|i| lists.read(c, i).kind == Kind::Point)
+        {
+            return Some(Kind::Point);
         }
         Some(slot.kind)
     });
     if work_done() > lists.end.get() || shared_work_refusals() != refusals {
         return Err(());
     }
-    Ok(kind.filter(|kind| matches!(kind, Kind::Point | Kind::Vector) && !lists.over()))
+    Ok(kind.filter(|kind| {
+        !lists.over()
+            && (matches!(kind, Kind::Point | Kind::Vector) || nested && *kind == Kind::Number)
+    }))
 }
 
 /// Evaluates an entry whose result is a list: its elements go to `out`,
