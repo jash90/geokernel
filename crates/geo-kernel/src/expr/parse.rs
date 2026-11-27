@@ -1644,6 +1644,10 @@ impl Parser<'_> {
             eval::reserve_work(count as u64)
         });
         if !reserved {
+            if self.share_cell_work {
+                self.cell_work.visits = None;
+                return Err(crate::spreadsheet::LIMIT.into());
+            }
             return Err("List dispatch exceeds the evaluation budget".into());
         }
         let mut nodes = self.nodes[start..end].to_vec();

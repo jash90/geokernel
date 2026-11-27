@@ -870,6 +870,16 @@ mod tests {
     }
 
     #[test]
+    fn x_moment_probe_reports_initial_spreadsheet_work_exhaustion() {
+        let c = script::load("").unwrap();
+        let mut budget = 16_384;
+        let result = with_evaluation_budget(0, || {
+            crate::expr::spreadsheet_coordinate(&c, "SigmaXX({1})", &mut budget)
+        });
+        assert_eq!(result.unwrap_err(), crate::spreadsheet::LIMIT);
+    }
+
+    #[test]
     fn x_moments_respect_list_forms_and_the_scan_budget() {
         let mut c = script::load(
             "L = Sequence(1024)\nF = {0.5, 1.25}\nG = {50000000, 125000000}\nX = {1, 3, 9}",
