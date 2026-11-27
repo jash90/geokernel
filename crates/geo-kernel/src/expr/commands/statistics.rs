@@ -823,6 +823,27 @@ mod tests {
     }
 
     #[test]
+    fn x_moments_recover_when_an_oversized_inline_list_shrinks() {
+        let mut c = script::load("n = 2000000\na = SigmaXX(Sequence(n))").unwrap();
+        let a = c.id("a").unwrap();
+        assert_eq!(c.value(a), Value::Undefined);
+        c.set_number(c.id("n").unwrap(), 3.0).unwrap();
+        assert_eq!(c.number(a), Some(14.0));
+    }
+
+    #[test]
+    fn x_moments_probe_charges_inactive_helpers_to_the_spreadsheet() {
+        let c = script::load("n = 1").unwrap();
+        let formula = "SigmaXX(If(n > 0, {1}, Take(Sequence(k,k,1,1000000),1,1)))";
+        let mut budget = 16_384;
+        let before = work_done();
+        let result = crate::expr::spreadsheet_coordinate(&c, formula, &mut budget);
+        assert_eq!(result.unwrap_err(), crate::spreadsheet::LIMIT);
+        let spent = work_done() - before;
+        assert!(spent <= 16_384 + crate::expr::MAX_OVERRUN, "spent {spent}");
+    }
+
+    #[test]
     fn x_moments_respect_list_forms_and_the_scan_budget() {
         let mut c = script::load(
             "L = Sequence(1024)\nF = {0.5, 1.25}\nG = {50000000, 125000000}\nX = {1, 3, 9}",

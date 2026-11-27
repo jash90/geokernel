@@ -920,13 +920,18 @@ pub(super) fn root_list_first_kind(c: &Construction, e: &Entry) -> Result<Option
         meter: Some(&lists),
         ..Ctx::new(c, e, &Env::None)
     };
-    let kind = ctx
-        .list(e.root)
-        .and_then(|(start, len)| (len != 0 && lists.charge(1)).then(|| lists.read(c, start).kind));
-    if lists.over() {
+    let refusals = shared_work_refusals();
+    // A classification probe spends one allowance, including inactive If helpers.
+    let kind = with_command_budget(Some(&lists), || {
+        ctx.list(e.root).and_then(|(start, len)| {
+            (len != 0 && lists.charge(1)).then(|| lists.read(c, start).kind)
+        })
+    });
+    if work_done() > lists.end.get() || shared_work_refusals() != refusals {
         return Err(());
     }
-    Ok(kind)
+    // The element cap makes this input undefined, just like a named list.
+    Ok(kind.filter(|_| !lists.over()))
 }
 
 /// Evaluates an entry whose result is a list: its elements go to `out`,
