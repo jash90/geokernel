@@ -131,21 +131,22 @@ impl Walker<'_> {
                 // `f'` applied to the argument, times the argument's own
                 // derivative (`Operation.FUNCTION` of the derivative).
                 let arg_value = self.value(arg);
-                let (Def::Expr(def), Value::Function) = (self.ctx.c.def(f), self.ctx.c.value(f))
-                else {
+                let df = if let Some(e) = self.ctx.application_entry(f) {
+                    let env = Env::Value(arg_value);
+                    Walker {
+                        ctx: Ctx {
+                            meter: Some(self.budget),
+                            ..Ctx::new(self.ctx.c, e, &env)
+                        },
+                        x: arg_value,
+                        budget: self.budget,
+                    }
+                    .gradient(e.root, depth)?
+                } else if let Some((a, b, _)) = self.ctx.c.raw_line(f) {
+                    -a / b
+                } else {
                     return Some(f64::NAN);
                 };
-                let e = entry(self.ctx.c, def);
-                let env = Env::Value(arg_value);
-                let df = Walker {
-                    ctx: Ctx {
-                        meter: Some(self.budget),
-                        ..Ctx::new(self.ctx.c, e, &env)
-                    },
-                    x: arg_value,
-                    budget: self.budget,
-                }
-                .gradient(e.root, depth)?;
                 df * self.gradient(arg, depth)?
             }
             Node::If(mode, cond, then, rest) => {

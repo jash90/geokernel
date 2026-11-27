@@ -112,9 +112,10 @@ power-of-two rescaling. The overflow cases read both finite components of
 `Direction(g)` while the intercept exceeds the range of a double. The direction cases move a point through a degenerate
 fit and change the scale until the intercept is NaN, then restore the original input.
 
-Pass `golden linecallreference linecalllimits fitlineintercept fitlinethreshold`
+Pass `golden linecallreference linecalllimits linecallexpansion fitlineintercept fitlinethreshold`
 to record scalar calls on lines, including calls inside a function, nearly
-vertical lines, infinite fit intercepts and edits across fit definedness.
+vertical lines, preserved equation evaluation, signed zero, tangents,
+infinite fit intercepts and edits across fit definedness.
 
 ### Selecting CAS topics
 

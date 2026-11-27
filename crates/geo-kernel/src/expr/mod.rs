@@ -1715,7 +1715,8 @@ fn reparse(
 /// Depth, cost and variable count of a function object's tree.
 pub(crate) fn function_metrics(c: &Construction, f: Id) -> (u32, u64, u64) {
     if c.kind(f) == Kind::Line {
-        return (1, 1, 1);
+        return equation::line_function_entry(c, f)
+            .map_or((1, 1, 1), |e| (e.depth, e.cost, e.vars));
     }
     match c.def(f) {
         Def::Expr(d) => {

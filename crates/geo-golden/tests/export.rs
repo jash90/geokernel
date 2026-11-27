@@ -3748,6 +3748,17 @@ fn reloaded_line_calls_follow_point_edits() {
 }
 
 #[test]
+fn reloaded_line_expansion_keeps_the_typed_equation() {
+    let wb = Workbench::from_script("g: y = (x + 1)/3\nf(x) = g(x)\na = 1/(f(5)-2)").unwrap();
+    let (_, reloaded) = round_trip("a line with a typed right-hand side", &wb, None);
+    let construction = reloaded.construction();
+    assert_eq!(
+        construction.value(construction.id("a").unwrap()),
+        geo_kernel::Value::Number(f64::INFINITY)
+    );
+}
+
+#[test]
 fn fit_line_archive_checks_definedness_before_the_coefficient_tolerance() {
     for (x, defined, replacement) in [
         ("0.00007", false, "-1.02e-8"),

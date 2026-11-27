@@ -677,6 +677,7 @@ impl EquationDef {
 pub struct EquationRecord {
     pub(crate) coeffs: Vec<u32>,
     pub(crate) sides: [u32; 2],
+    pub(crate) has_explicit_body: bool,
 }
 
 /// The presentation of a line or conic, independent of its coefficients.

@@ -1159,6 +1159,8 @@ fn add(
         c.exprs.entries.push(entry);
         indices.push(index);
     }
+    let [lhs, rhs] = &sides;
+    let has_explicit_body = !conic && lhs.nodes[lhs.root as usize] == Node::VarY && !rhs.uses_y;
     let sides = sides.map(|parsed| {
         let index = c.exprs.entries.len() as u32;
         let entry = Entry::new(c, parsed, true);
@@ -1171,6 +1173,7 @@ fn add(
         EquationRecord {
             coeffs: indices,
             sides,
+            has_explicit_body,
         },
     ));
     match c.add(name, Def::Equation(EquationDef { conic, index })) {
@@ -1244,6 +1247,18 @@ pub(super) fn side_entry(c: &Construction, equation: Id, left: bool) -> Option<&
 
 pub(super) fn side_parents(c: &Construction, equation: Id, left: bool) -> &[Id] {
     side_entry(c, equation, left).map_or(&[], |entry| &entry.parents)
+}
+
+/// GeoLine.definitionAsFunction uses the typed right-hand side of y = f(x).
+pub(super) fn line_function_entry(c: &Construction, line: Id) -> Option<&Entry> {
+    let Def::Equation(def) = c.def(line) else {
+        return None;
+    };
+    let record = &c.equations.get(def.index as usize)?.1;
+    if !record.has_explicit_body {
+        return None;
+    }
+    c.exprs.entries.get(record.sides[1] as usize)
 }
 
 /// Evaluate a side object at a pair of coordinates.
