@@ -5,7 +5,24 @@ use geo_kernel::{script, Construction, Def, Error, Kind, Value};
 
 /// Number of cases recorded by `ggb-harness` so far. Raise it when adding cases,
 /// so that losing a file is noticed.
-const MIN_GOLDEN_CASES: usize = 7565;
+const MIN_GOLDEN_CASES: usize = 7571;
+
+#[test]
+fn percentile_matches_geogebra() {
+    let ids = [
+        "statistics-percentileraw-001",
+        "statistics-percentileweighted-001",
+        "statistics-percentileundefined-001",
+        "statistics-percentilesamples-001",
+        "statistics-percentileround-001",
+        "statistics-percentilegeometry-001",
+    ];
+    let mut cases = model::load_all(&repo_root()).unwrap();
+    cases.retain(|case| ids.contains(&case.id.as_str()));
+    assert_eq!(cases.len(), ids.len());
+    let report = report::evaluate(&cases, &gaps::Gaps::new());
+    assert!(report.failures.is_empty(), "{}", report.failures.join("\n"));
+}
 
 #[test]
 fn statistics_followup_matches_geogebra() {

@@ -1,0 +1,38 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-percentilesamples-001",
+      "group": "statistics",
+      "script": [
+        "A = (0,0)",
+        "B = (3,4)",
+        "s = Segment(A,B)",
+        "a = Percentile({s,1,9},0.5)",
+        "b = Percentile({s,1,9},{1,1,1},0.5)",
+        "c = Percentile({0/0,1,9},0.5)",
+        "d = Percentile({0/0,1,9},{1,1,1},0.5)",
+        "e = Percentile({true,0,9},0.5)",
+        "f = Percentile({true,0,9},{1,1,1},0.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 4.0 },
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false },
+          "e": { "type": "number", "defined": true, "value": 1.0 },
+          "f": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    }
+  ]
+}

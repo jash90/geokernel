@@ -7,6 +7,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdOneListFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoBoolean.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoMode.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoPercentile.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/CmdPercentile.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoGeometricMean.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoHarmonicMean.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoRootMeanSquare.java
@@ -19,7 +21,7 @@ use crate::algo::measure::segment_length;
 use crate::expr::eval::{number_of, slot_val, Ctx, Lists, Val};
 use crate::expr::parse::{list_arity, list_form, Parser};
 use crate::expr::types::of_numbers;
-use crate::expr::{Bin, Elem, ListOp, Node, Slot, Ty, NONE};
+use crate::expr::{Bin, CallOp, Elem, ListOp, Node, Slot, Ty, NONE};
 use crate::{Kind, Value};
 
 /// The commands of this group (see `commands::is_command`).
@@ -40,6 +42,7 @@ pub(super) const NAMES: &[&str] = &[
     "Quartile1",
     "Q3",
     "Quartile3",
+    "Percentile",
     "Mode",
     "GeometricMean",
     "HarmonicMean",
@@ -65,6 +68,7 @@ pub(super) fn takes_frequencies(op: ListOp) -> bool {
 /// List statistics, plus the fold and truncation forms of `Sum`.
 pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
     let op = match text {
+        "Percentile" => return parse_percentile(p),
         "Sum" => ListOp::Sum,
         "Mean" | "mean" => ListOp::Mean,
         "Variance" => ListOp::Variance,
@@ -154,6 +158,25 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
     })
 }
 
+fn parse_percentile(p: &mut Parser) -> Result<Option<u32>, String> {
+    let args = p.arguments()?;
+    if !matches!(args.len(), 2 | 3) {
+        return Err(list_arity("Percentile", args.len()));
+    }
+    let probability = args[args.len() - 1];
+    // A named locus has a legacy numeric expression type, but it is not a GeoNumeric.
+    if matches!(p.node(probability), Node::Obj(id) if !matches!(p.kind(id), Kind::Number | Kind::Angle))
+    {
+        return Err("`Percentile` needs a numeric probability".into());
+    }
+    let first = p.call_run(&args);
+    Ok(Some(p.push(Node::Call(
+        CallOp::Percentile,
+        first,
+        args.len() as u32,
+    ))))
+}
+
 /// The type of a list command of this group (see `commands::list_type`).
 pub(super) fn list_type(
     op: ListOp,
@@ -200,7 +223,7 @@ pub(super) fn list_value<const M: bool>(
     })
 }
 
-/// Mode and the three means read segments and Booleans through `NumberValue`.
+/// Read samples such as segments and Booleans through `NumberValue`.
 fn sample_number(slot: Slot) -> Option<f64> {
     match (slot.kind, slot.value) {
         (Kind::Segment, Value::Segment { x1, y1, x2, y2 }) => Some(segment_length(x1, y1, x2, y2)),
@@ -211,7 +234,103 @@ fn sample_number(slot: Slot) -> Option<f64> {
     }
 }
 
+fn percentile_sample(slot: Slot) -> Option<f64> {
+    match (slot.kind, slot.value) {
+        (Kind::Polygon, Value::Polygon { area }) => Some(area.abs()),
+        (Kind::PolyLine, Value::PolyLine { length }) | (Kind::Arc, Value::Arc { length }) => {
+            Some(length)
+        }
+        (Kind::Sector, Value::Sector { area }) => Some(area),
+        (Kind::Polygon | Kind::PolyLine | Kind::Arc | Kind::Sector, Value::Undefined) => {
+            Some(f64::NAN)
+        }
+        _ => sample_number(slot),
+    }
+}
+
 impl<const M: bool> Ctx<'_, M> {
+    pub(super) fn percentile(&self, first: u32, arity: u32) -> Option<f64> {
+        let percent = self.full_number(first + arity - 1) * 100.0;
+        if !(percent > 0.0 && percent <= 100.0) {
+            return None;
+        }
+        let lists = self.lists?;
+        let (start, len) = self.list(first)?;
+        if len == 0 {
+            return None;
+        }
+        let frequencies = if arity == 3 {
+            let (start, frequency_len) = self.list(first + 1)?;
+            if frequency_len != len {
+                return None;
+            }
+            Some(start)
+        } else {
+            None
+        };
+        let work_per_row = 3 + len.ilog2() + u32::from(frequencies.is_some());
+        if !lists.charge(u64::from(len) * u64::from(work_per_row)) {
+            return None;
+        }
+
+        // One row per supplied value, regardless of the size of its count.
+        let mut rows = Vec::with_capacity(len as usize);
+        let mut total = 0i32;
+        for k in 0..len {
+            let value = percentile_sample(lists.read(self.c, start + k))?;
+            let count = if let Some(fstart) = frequencies {
+                let frequency = percentile_sample(lists.read(self.c, fstart + k))?;
+                if !frequency.is_finite()
+                    || frequency < 0.0
+                    || frequency.trunc() > f64::from(i32::MAX)
+                {
+                    return None;
+                }
+                frequency as i32
+            } else {
+                1
+            };
+            total = total.checked_add(count)?;
+            if count != 0 {
+                // Undefined samples still occupy ranks and sort after all other values.
+                rows.push((if value.is_nan() { f64::NAN } else { value }, count));
+            }
+        }
+        if total == 0 {
+            return None;
+        }
+
+        // Keep the percent round-trip: rounding can cross an interpolation boundary.
+        let rank = (percent / 100.0) * (f64::from(total) + 1.0);
+        let (lower, upper, fraction) = if rank < 1.0 {
+            (0, 0, 0.0)
+        } else if rank >= f64::from(total) {
+            (total - 1, total - 1, 0.0)
+        } else {
+            let floor = rank.floor();
+            (floor as i32 - 1, floor as i32, rank - floor)
+        };
+        rows.sort_unstable_by(|a, b| a.0.total_cmp(&b.0));
+        let mut seen = 0;
+        let mut first = None;
+        for (value, count) in rows {
+            seen += count;
+            if seen > lower {
+                let first = *first.get_or_insert(value);
+                if seen > upper {
+                    // At an interior integer rank the next sample still participates,
+                    // so an undefined upper sample propagates through interpolation.
+                    return Some(if lower == upper {
+                        value
+                    } else {
+                        first + fraction * (value - first)
+                    });
+                }
+            }
+        }
+        None
+    }
+
     pub(super) fn mode(&self, l: u32) -> Option<(u32, u32)> {
         let lists = self.lists?;
         let (start, len) = self.list(l)?;
@@ -570,6 +689,47 @@ impl<const M: bool> Ctx<'_, M> {
 mod tests {
     use crate::expr::{with_evaluation_budget, work_done};
     use crate::{script, Value};
+
+    #[test]
+    fn percentile_checks_probability_and_frequency_limits() {
+        let c = with_evaluation_budget(128, || {
+            script::load("a = Percentile({1, 10}, {1, 2147483646}, 0.5)")
+        })
+        .unwrap();
+        assert_eq!(c.value(c.id("a").unwrap()), Value::Number(10.0));
+
+        for args in [
+            "{4}, 0 / 0",
+            "{1, 10}, 0 / 0",
+            "{1, 10}, {1, 1}, 0 / 0",
+            "{1, 10}, {1, 2147483647}, 0.5",
+            "{1, 10}, {2147483647, 1}, 0.5",
+            "{1, 10}, {2147483648, 0}, 0.5",
+            "{1, 1, 10}, {2147483647, 1, 0}, 0.5",
+            "{1, 10}, {2147483647, 2147483647}, 0.5",
+            "{1, 10}, {-0.5, 1}, 0.5",
+            "{1, 10}, {1 / 0, 1}, 0.5",
+            "{1, 10}, {\"x\", 1}, 0.5",
+            "{\"x\", 10}, {0, 1}, 0.5",
+        ] {
+            let c = script::load(&format!("a = Percentile({args})")).unwrap();
+            let id = c.id("a").unwrap();
+            assert_eq!(c.kind(id), crate::Kind::Number, "{args}");
+            assert_eq!(c.value(id), Value::Undefined, "{args}");
+        }
+    }
+
+    #[test]
+    fn percentile_charges_sorting_work() {
+        let mut c = script::load("l = Sequence(1024)").unwrap();
+        let line = "a = Percentile(l, 0.5)";
+        let id = with_evaluation_budget(4096, || script::exec(&mut c, line))
+            .unwrap()
+            .unwrap();
+        assert_eq!(c.value(id), Value::Undefined);
+        let id = script::exec(&mut c, line).unwrap().unwrap();
+        assert_eq!(c.value(id), Value::Number(512.5));
+    }
 
     #[test]
     fn variadic_statistics_require_numbers_and_keep_list_and_numeric_expression_forms() {
