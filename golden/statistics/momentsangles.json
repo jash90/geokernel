@@ -1,0 +1,54 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-momentsangles-001",
+      "group": "statistics",
+      "script": [
+        "aa = 90°",
+        "bb = 180°",
+        "L = {aa,bb}",
+        "F = {2,1}",
+        "a = SigmaXX(L)",
+        "b = SigmaXX(L,F)",
+        "c = Sxx(L)",
+        "d = Sxx(L,F)",
+        "e = SigmaXX({aa,bb,270°},F)",
+        "f = SigmaXX({1,aa})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "aa": { "type": "angle", "defined": true, "value": 1.5707963267948966 },
+          "bb": { "type": "angle", "defined": true, "value": 3.141592653589793 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "angle", "defined": true, "value": 1.5707963267948966 },
+              { "type": "angle", "defined": true, "value": 3.141592653589793 }
+            ]
+          },
+          "F": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "a": { "type": "angle", "defined": true, "value": 12.337005501361698 },
+          "b": { "type": "angle", "defined": true, "value": 14.804406601634037 },
+          "c": { "type": "angle", "defined": true, "value": 1.2337005501361702 },
+          "d": { "type": "number", "defined": true, "value": 1.2337005501361702 },
+          "e": { "type": "angle", "defined": true, "value": 26.52456182792765 },
+          "f": { "type": "number", "defined": true, "value": 3.4674011002723395 }
+        }
+      ]
+    }
+  ]
+}

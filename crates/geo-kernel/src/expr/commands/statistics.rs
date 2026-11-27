@@ -53,7 +53,7 @@ pub(super) const NAMES: &[&str] = &[
 ];
 
 pub(super) fn second_list(op: ListOp) -> bool {
-    op == ListOp::Sxx || takes_frequencies(op)
+    matches!(op, ListOp::Sxx { .. }) || takes_frequencies(op)
 }
 
 /// These statistics also accept a second list of frequencies.
@@ -69,7 +69,7 @@ fn takes_frequencies(op: ListOp) -> bool {
             | ListOp::Median
             | ListOp::Q1
             | ListOp::Q3
-            | ListOp::SigmaXX
+            | ListOp::SigmaXX { .. }
     )
 }
 
@@ -90,8 +90,7 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         "GeometricMean" => ListOp::GeometricMean,
         "HarmonicMean" => ListOp::HarmonicMean,
         "RootMeanSquare" => ListOp::RootMeanSquare,
-        "SXX" | "Sxx" => ListOp::Sxx,
-        "SigmaXX" => ListOp::SigmaXX,
+        "SXX" | "Sxx" | "SigmaXX" => return parse_x_moment(p, text),
         _ => return Ok(None),
     };
     // `Sum(expression, variable, from, to)`: the four-argument fold of
@@ -104,15 +103,6 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         }
     }
     p.typed_list_command(|p, arguments| {
-        if matches!(op, ListOp::Sxx | ListOp::SigmaXX) {
-            return match *arguments {
-                [(l, Some(Ty::List(_)), _)] => Ok(Some(Node::ListOp(op, l, NONE))),
-                [(l, Some(Ty::List(_)), _), (r, Some(Ty::List(_)), _)] => {
-                    Ok(Some(Node::ListOp(op, l, r)))
-                }
-                _ => Err(list_arity(text, arguments.len())),
-            };
-        }
         let weighted = takes_frequencies(op);
         let args: Vec<_> = arguments.iter().map(|&(root, _, _)| root).collect();
         let lists: Vec<_> = arguments
@@ -176,6 +166,31 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
     })
 }
 
+fn parse_x_moment(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
+    p.typed_list_command(|p, args| {
+        let (left, right) = match *args {
+            [(l, Some(Ty::List(_)), _)] => (l, NONE),
+            [(l, Some(Ty::List(_)), _), (r, Some(Ty::List(_)), _)] => (l, r),
+            _ => return Err(list_arity(text, args.len())),
+        };
+        let sigma = text == "SigmaXX";
+        // Paired Sxx is always scalar; the other forms keep their initial dispatch.
+        let first = if sigma || right == NONE {
+            p.first_list_kind(left)?
+        } else {
+            None
+        };
+        let points = right == NONE && first == Some(Kind::Point);
+        let angle = first == Some(Kind::Angle);
+        let op = if sigma {
+            ListOp::SigmaXX { points, angle }
+        } else {
+            ListOp::Sxx { points, angle }
+        };
+        Ok(Some(Node::ListOp(op, left, right)))
+    })
+}
+
 /// The type of a list command of this group (see `commands::list_type`).
 pub(super) fn list_type(
     op: ListOp,
@@ -192,9 +207,8 @@ pub(super) fn list_type(
         ListOp::Sum => of_numbers(numbers)?,
         ListOp::Mean if n == NONE => of_numbers(numbers)?,
         ListOp::Mode => Ty::List(Elem::Num),
-        ListOp::GeometricMean | ListOp::HarmonicMean | ListOp::RootMeanSquare | ListOp::Sxx => {
-            Ty::Num(0)
-        }
+        ListOp::GeometricMean | ListOp::HarmonicMean | ListOp::RootMeanSquare => Ty::Num(0),
+        ListOp::Sxx { angle, .. } | ListOp::SigmaXX { angle, .. } => Ty::Num(i8::from(angle)),
         op if takes_frequencies(op) => Ty::Num(0),
         _ => return Ok(None),
     }))
@@ -219,8 +233,10 @@ pub(super) fn list_value<const M: bool>(
         ListOp::GeometricMean | ListOp::HarmonicMean | ListOp::RootMeanSquare => {
             Val::N(ctx.simple_mean(op, l).unwrap_or(f64::NAN))
         }
-        ListOp::Sxx => Val::N(ctx.x_moment(op, l, n).unwrap_or(f64::NAN)),
-        ListOp::SigmaXX if n == NONE => Val::N(ctx.x_moment(op, l, NONE).unwrap_or(f64::NAN)),
+        ListOp::Sxx { points, .. } => Val::N(ctx.x_moment(true, points, l, n).unwrap_or(f64::NAN)),
+        ListOp::SigmaXX { points, .. } if n == NONE => {
+            Val::N(ctx.x_moment(false, points, l, NONE).unwrap_or(f64::NAN))
+        }
         op if takes_frequencies(op) => Val::N(ctx.moments(op, l, n).unwrap_or(f64::NAN)),
         _ => return None,
     })
@@ -237,10 +253,24 @@ fn sample_number(slot: Slot) -> Option<f64> {
     }
 }
 
+fn moment_sample(slot: Slot) -> Option<f64> {
+    match (slot.kind, slot.value) {
+        (Kind::Polygon, Value::Polygon { area }) => Some(area.abs()),
+        (Kind::PolyLine, Value::PolyLine { length }) | (Kind::Arc, Value::Arc { length }) => {
+            Some(length)
+        }
+        (Kind::Sector, Value::Sector { area }) => Some(area),
+        (Kind::Polygon | Kind::PolyLine | Kind::Arc | Kind::Sector, Value::Undefined) => {
+            Some(f64::NAN)
+        }
+        _ => sample_number(slot),
+    }
+}
+
 impl<const M: bool> Ctx<'_, M> {
     /// Raw x samples. The paired form of `Sxx` checks Y's size and element
     /// types. Its centered sum depends only on X.
-    fn x_moment(&self, op: ListOp, x: u32, y: u32) -> Option<f64> {
+    fn x_moment(&self, centered: bool, points: bool, x: u32, y: u32) -> Option<f64> {
         let lists = self.lists?;
         let (start, len) = self.list(x)?;
         let y_start = if y == NONE {
@@ -252,22 +282,14 @@ impl<const M: bool> Ctx<'_, M> {
             }
             Some(start)
         };
-        let may_read_points = y_start.is_none() && len > 0;
         let reads = u64::from(len) * (1 + u64::from(y_start.is_some()));
-        if !lists.charge(reads + u64::from(may_read_points)) {
+        if !lists.charge(reads) {
             return None;
         }
-        let points = may_read_points && lists.read(self.c, start).kind == Kind::Point;
         let (mut sum, mut squares) = (0.0, 0.0);
         for k in 0..len {
             if let Some(y_start) = y_start {
-                let kind = lists.read(self.c, y_start + k).kind;
-                if !matches!(
-                    kind,
-                    Kind::Number | Kind::Angle | Kind::Boolean | Kind::Segment
-                ) {
-                    return None;
-                }
+                moment_sample(lists.read(self.c, y_start + k))?;
             }
             let slot = lists.read(self.c, start + k);
             let x = if points {
@@ -277,12 +299,12 @@ impl<const M: bool> Ctx<'_, M> {
                     _ => return None,
                 }
             } else {
-                sample_number(slot)?
+                moment_sample(slot)?
             };
             sum += x;
             squares += x * x;
         }
-        Some(if op == ListOp::Sxx {
+        Some(if centered {
             squares - sum * sum / f64::from(len)
         } else {
             squares
@@ -366,14 +388,11 @@ impl<const M: bool> Ctx<'_, M> {
         };
         let reads = 1 + u64::from(frequencies.is_some()) + u64::from(grouped);
         let passes = if op == ListOp::Mad { 2 } else { 1 };
-        if (size == 0 && op != ListOp::SigmaXX) || !lists.charge(u64::from(size) * reads * passes) {
+        let sigma = matches!(op, ListOp::SigmaXX { .. });
+        if (size == 0 && !sigma) || !lists.charge(u64::from(size) * reads * passes) {
             return None;
         }
-        let read_number = if op == ListOp::SigmaXX {
-            sample_number
-        } else {
-            number_of
-        };
+        let read_number = if sigma { moment_sample } else { number_of };
         let samples = (0..size).map(|k| {
             let first = read_number(lists.read(self.c, start + k))?;
             let value = if grouped {
@@ -401,7 +420,7 @@ impl<const M: bool> Ctx<'_, M> {
         }
         let mean = sum / total;
         Some(match op {
-            ListOp::SigmaXX => squares,
+            ListOp::SigmaXX { .. } => squares,
             ListOp::Mean => mean,
             ListOp::Mad => {
                 let mut deviation = 0.0;

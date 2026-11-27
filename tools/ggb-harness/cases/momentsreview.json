@@ -1,0 +1,42 @@
+{
+  "cases": [
+    {
+      "id": "statistics-momentsgeometry-001",
+      "group": "statistics",
+      "script": [
+        "n = 3", "O = (0,0)", "A = (n,0)", "B = (0,4)", "C = (0,n)",
+        "pg = Polygon(O,A,B)", "pl = PolyLine(A,O,B)", "ar = CircularArc(O,A,C)", "sc = CircularSector(O,A,C)",
+        "q1 = SigmaXX({pg,2})", "q2 = Sxx({1,2},{pg,0})", "q3 = SigmaXX({1,2},{pg,0})",
+        "q4 = SigmaXX({pl,ar,sc})", "q5 = Sxx({pl,ar,sc})"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "n", "value": 2},
+        {"action": "set_number", "label": "n", "value": 3}
+      ]
+    },
+    {
+      "id": "statistics-momentsdispatch-001",
+      "group": "statistics",
+      "script": [
+        "n = 1", "L = If(n > 0, {(1,5),(3,7)}, {4,5})", "M = If(n > 0, {4,5}, {(1,5),(3,7)})",
+        "a = Sxx(L)", "b = SigmaXX(L)", "c = Sxx(M)", "d = SigmaXX(M)"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "n", "value": 0},
+        {"action": "set_number", "label": "n", "value": 1}
+      ]
+    },
+    {
+      "id": "statistics-momentsangles-001",
+      "group": "statistics",
+      "script": [
+        "aa = 90°", "bb = 180°", "L = {aa,bb}", "F = {2,1}",
+        "a = SigmaXX(L)", "b = SigmaXX(L,F)", "c = Sxx(L)", "d = Sxx(L,F)",
+        "e = SigmaXX({aa,bb,270°},F)", "f = SigmaXX({1,aa})"
+      ],
+      "steps": [{"action": "initial"}]
+    }
+  ]
+}

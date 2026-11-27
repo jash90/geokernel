@@ -1623,6 +1623,28 @@ impl Parser<'_> {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::Num(_)))
     }
 
+    /// Some list algorithms dispatch on the first element at creation.
+    pub(super) fn first_list_kind(&mut self, i: u32) -> Result<Option<Kind>, String> {
+        if let Node::Obj(id) = self.node(i) {
+            return Ok(super::list_slots(self.c, id)
+                .and_then(|slots| slots.first())
+                .map(|slot| slot.kind));
+        }
+        self.cell_work.charge_visits(self.nodes.len())?;
+        let Some(parsed) = super::reparse(self.c, Kind::List, &self.nodes, &self.lits, i) else {
+            return Ok(None);
+        };
+        let entry = super::Entry::new(self.c, parsed, false);
+        let before = eval::work_done();
+        let limit = self.cell_work.visits.unwrap_or_default() as u64;
+        let kind = eval::with_work_deadline(before.saturating_add(limit), || {
+            eval::root_list_first_kind(self.c, &entry)
+        });
+        self.cell_work
+            .charge_visits((eval::work_done() - before) as usize)?;
+        Ok(kind)
+    }
+
     /// AlgoDimension chooses its output kind from the list at creation.
     pub(super) fn is_matrix(&self, i: u32) -> bool {
         if let Node::Obj(id) = self.node(i) {
