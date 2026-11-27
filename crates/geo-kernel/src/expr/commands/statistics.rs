@@ -832,6 +832,15 @@ mod tests {
     }
 
     #[test]
+    fn x_moments_probe_keeps_inactive_helper_element_caps_separate() {
+        let c = script::load(
+            "n = 1\na = SigmaXX(If(n > 0, {(2,3)}, Take(Sequence((k,k),k,1,2000000),1,1)))",
+        )
+        .unwrap();
+        assert_eq!(c.number(c.id("a").unwrap()), Some(4.0));
+    }
+
+    #[test]
     fn x_moments_probe_charges_inactive_helpers_to_the_spreadsheet() {
         let c = script::load("n = 1").unwrap();
         let formula = "SigmaXX(If(n > 0, {1}, Take(Sequence(k,k,1,1000000),1,1)))";
