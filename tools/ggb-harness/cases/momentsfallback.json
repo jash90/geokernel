@@ -1,0 +1,17 @@
+{
+  "cases": [
+    {
+      "id": "statistics-momentsfallback-001",
+      "group": "statistics",
+      "script": [
+        "n = 1", "L = If(n > 0, {\"a\",\"b\"}, {(1,5),(3,7)})",
+        "a = Sxx(L)", "b = SigmaXX(L)"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "n", "value": 0},
+        {"action": "set_number", "label": "n", "value": 1}
+      ]
+    }
+  ]
+}

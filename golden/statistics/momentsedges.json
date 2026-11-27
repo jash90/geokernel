@@ -1,0 +1,38 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-momentsedges-001",
+      "group": "statistics",
+      "script": [
+        "s = Segment((0,0),(3,0))",
+        "q1 = SigmaXX({1,2},{1,2,3})",
+        "q2 = SigmaXX({1,2,3},{1})",
+        "q3 = Sxx({1,2},{0,0/0})",
+        "q4 = Sxx({1,2},{0,\"x\"})",
+        "q5 = SigmaXX({s,true,2})",
+        "q6 = Sxx({s,true,2})",
+        "q7 = SigmaXX({1,3},{0.5,1.25})",
+        "q8 = SigmaXX({1,3,9},{0.5,1.25})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "q1": { "type": "number", "defined": false },
+          "q2": { "type": "number", "defined": false },
+          "q3": { "type": "number", "defined": true, "value": 0.5 },
+          "q4": { "type": "number", "defined": false },
+          "q5": { "type": "number", "defined": true, "value": 14.0 },
+          "q6": { "type": "number", "defined": true, "value": 2.0 },
+          "q7": { "type": "number", "defined": true, "value": 11.75 },
+          "q8": { "type": "number", "defined": true, "value": 47.0 }
+        }
+      ]
+    }
+  ]
+}

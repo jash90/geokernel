@@ -232,12 +232,12 @@ Quartile1,Q1,statistics,P2,partial,,,
 Q3,,statistics,P2,partial,5,3,"Upper quartile of a numeric list, values with frequencies, and separate numbers."
 Quartile3,Q3,statistics,P2,partial,,,
 Mode,,statistics,P2,partial,4,2,Ascending modes of a numeric-compatible list or at least two separate numbers.
-SigmaXX,,statistics,,out_of_scope,,,
+SigmaXX,,statistics,P2,partial,5,2,"Sum of squares of a numeric-compatible list or x coordinates of 2D points, with fractional frequencies for values or class midpoints."
 SigmaXY,,statistics,P2,done,3,3,"Cross-product sum of a 2D point list, paired numeric-compatible lists, or at least two separate 2D points."
 SigmaYY,,statistics,P2,done,2,2,Y sum of squares of a 2D point list or at least two separate 2D points.
 Covariance,,statistics,P2,done,3,3,"Population covariance of a 2D point list, paired numeric-compatible lists, or at least two separate 2D points."
 SXY,,statistics,P2,done,3,3,"Centered cross-product sum of a 2D point list, paired numeric-compatible lists, or at least two separate 2D points."
-SXX,,statistics,,out_of_scope,,,
+SXX,,statistics,P2,partial,3,2,"Centered sum of squares of a numeric-compatible list, x coordinates of 2D points, or X in two equal-length numeric-compatible lists."
 SYY,,statistics,P2,done,2,2,Centered y sum of squares of a 2D point list or at least two separate 2D points.
 MeanX,,statistics,,out_of_scope,,,
 MeanY,,statistics,,out_of_scope,,,
@@ -459,7 +459,7 @@ CircumcircularArc,CircumcircleArc,geometry,P1,todo,,,
 CircularSector,CircleSector,geometry,P1,done,,,
 CircularArc,CircleArc,geometry,P1,done,,,
 Polyline,PolyLine,geometry,P1,partial,,,
-Sxx,SXX,statistics,,out_of_scope,,,
+Sxx,SXX,statistics,P2,partial,,,
 Syy,SYY,statistics,P2,done,,,
 Sxy,SXY,statistics,P2,done,,,
 Side,QuadricSide,3d,,out_of_scope,,,

@@ -29,7 +29,7 @@ pub(in crate::expr) use list::{call_type, call_value};
 pub(in crate::expr) use text::call_node as text_call;
 
 pub(in crate::expr) fn second_list(op: ListOp) -> bool {
-    list::second_list(op) || statistics::takes_frequencies(op) || op.takes_paired_lists()
+    list::second_list(op) || statistics::second_list(op) || op.takes_paired_lists()
 }
 
 /// Whether `name` is a command that expressions compute themselves (the

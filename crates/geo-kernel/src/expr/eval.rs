@@ -263,6 +263,7 @@ pub(super) struct Lists {
     helper_remaining: Cell<u64>,
     helper_built: Cell<u64>,
     updating_helpers: Cell<bool>,
+    helpers_share_deadline: bool,
 }
 
 impl Lists {
@@ -279,6 +280,7 @@ impl Lists {
             helper_remaining: Cell::new(limit()),
             helper_built: Cell::new(0),
             updating_helpers: Cell::new(false),
+            helpers_share_deadline: false,
         }
     }
 
@@ -315,7 +317,9 @@ impl Lists {
     pub(super) fn update_helpers(&self, update: impl FnOnce()) {
         // A command that lends its allowance to an inner evaluation
         // also pays for that evaluation's inactive list helpers.
-        if self.updating_helpers.get() || COMMAND_END.with(Cell::get) != u64::MAX {
+        if self.updating_helpers.get()
+            || (!self.helpers_share_deadline && COMMAND_END.with(Cell::get) != u64::MAX)
+        {
             update();
             return;
         }
@@ -324,16 +328,22 @@ impl Lists {
         }
         self.updating_helpers.set(true);
         let start = work_done();
-        let end = self
-            .end
-            .replace(start.saturating_add(self.helper_remaining.get()));
+        let mut helper_end = start.saturating_add(self.helper_remaining.get());
+        if self.helpers_share_deadline {
+            helper_end = helper_end.min(self.end.get());
+        }
+        let end = self.end.replace(helper_end);
         let built = self.built.replace(self.helper_built.get());
         update();
         let spent = work_done().saturating_sub(start);
         self.helper_remaining
             .set(self.helper_remaining.get().saturating_sub(spent));
         self.helper_built.set(self.built.replace(built));
-        self.end.set(end.saturating_add(spent));
+        self.end.set(if self.helpers_share_deadline {
+            end
+        } else {
+            end.saturating_add(spent)
+        });
         self.updating_helpers.set(false);
     }
 
@@ -911,6 +921,28 @@ fn outermost_local(node: &Node, free_locals: &[u32]) -> u32 {
         })
         .min()
         .unwrap_or(NONE)
+}
+
+pub(super) fn root_list_first_kind(c: &Construction, e: &Entry) -> Result<Option<Kind>, ()> {
+    // Inactive helpers spend probe work without consuming the active list's element cap.
+    let lists = Lists {
+        helpers_share_deadline: true,
+        ..Lists::new(Vec::new())
+    };
+    let ctx = Ctx::<true> {
+        lists: Some(&lists),
+        meter: Some(&lists),
+        ..Ctx::new(c, e, &Env::None)
+    };
+    let refusals = shared_work_refusals();
+    let kind = ctx
+        .list(e.root)
+        .and_then(|(start, len)| (len != 0 && lists.charge(1)).then(|| lists.read(c, start).kind));
+    if work_done() > lists.end.get() || shared_work_refusals() != refusals {
+        return Err(());
+    }
+    // The element cap makes this input undefined, just like a named list.
+    Ok(kind.filter(|_| !lists.over()))
 }
 
 pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Kind>, ()> {

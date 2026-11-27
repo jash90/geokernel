@@ -5,7 +5,7 @@ use geo_kernel::{script, Construction, Def, Error, Kind, Value};
 
 /// Number of cases recorded by `ggb-harness` so far. Raise it when adding cases,
 /// so that losing a file is noticed.
-const MIN_GOLDEN_CASES: usize = 7581;
+const MIN_GOLDEN_CASES: usize = 7588;
 
 #[test]
 fn paired_statistics_match_geogebra() {
@@ -20,6 +20,24 @@ fn paired_statistics_match_geogebra() {
         "statistics-pairedselection-001",
         "statistics-pairedkindfreeze-001",
         "statistics-pairedwideindex-001",
+    ];
+    let mut cases = model::load_all(&repo_root()).unwrap();
+    cases.retain(|case| ids.contains(&case.id.as_str()));
+    assert_eq!(cases.len(), ids.len());
+    let report = report::evaluate(&cases, &gaps::Gaps::new());
+    assert!(report.failures.is_empty(), "{}", report.failures.join("\n"));
+}
+
+#[test]
+fn x_moments_match_geogebra() {
+    let ids = [
+        "statistics-centeredmoments-001",
+        "statistics-centeredmoments-002",
+        "statistics-momentsedges-001",
+        "statistics-momentsangles-001",
+        "statistics-momentsdispatch-001",
+        "statistics-momentsgeometry-001",
+        "statistics-momentsfallback-001",
     ];
     let mut cases = model::load_all(&repo_root()).unwrap();
     cases.retain(|case| ids.contains(&case.id.as_str()));

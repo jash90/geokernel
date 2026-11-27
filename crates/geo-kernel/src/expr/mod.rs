@@ -493,6 +493,14 @@ pub(crate) enum ListOp {
     Spearman,
     Syy,
     SigmaYy,
+    Sxx {
+        points: bool,
+        angle: bool,
+    },
+    SigmaXX {
+        points: bool,
+        angle: bool,
+    },
 
     // algebra (`commands/algebra.rs`)
     /// `Min(list)` and `Max(list)` (`AlgoListMinMax`).

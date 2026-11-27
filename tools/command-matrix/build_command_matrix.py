@@ -205,6 +205,8 @@ PARTIAL = {
     "GeometricMean": "Geometric mean of a numeric-compatible list or at least two separate numbers.",
     "HarmonicMean": "Harmonic mean of a numeric-compatible list or at least two separate numbers.",
     "RootMeanSquare": "Root mean square of a numeric-compatible list or at least two separate numbers.",
+    "SXX": "Centered sum of squares of a numeric-compatible list, x coordinates of 2D points, or X in two equal-length numeric-compatible lists.",
+    "SigmaXX": "Sum of squares of a numeric-compatible list or x coordinates of 2D points, with fractional frequencies for values or class midpoints.",
     "Sequence": "Sequence(end); Sequence(start, end); Sequence(start, end, step); "
                 "Sequence(expression, variable, start, end); Sequence(expression, variable, start, end, step)",
     "Reverse": "Reverse(list); Reverse(number, number, ...); Reverse(point, point, ...)",

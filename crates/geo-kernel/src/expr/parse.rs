@@ -1628,6 +1628,63 @@ impl Parser<'_> {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::Num(_)))
     }
 
+    /// Some list algorithms dispatch on the first element at creation.
+    pub(super) fn first_list_kind(&mut self, start: usize, i: u32) -> Result<Option<Kind>, String> {
+        if let Node::Obj(id) = self.node(i) {
+            return Ok(super::list_slots(self.c, id)
+                .and_then(|slots| slots.first())
+                .map(|slot| slot.kind));
+        }
+        let end = i as usize + 1;
+        let count = end - start;
+        if self.share_cell_work {
+            self.cell_work.charge_visits(count)?;
+        }
+        let reserved = eval::with_work_deadline(self.list_probe_deadline, || {
+            eval::reserve_work(count as u64)
+        });
+        if !reserved {
+            if self.share_cell_work {
+                self.cell_work.visits = None;
+                return Err(crate::spreadsheet::LIMIT.into());
+            }
+            return Err("List dispatch exceeds the evaluation budget".into());
+        }
+        let mut nodes = self.nodes[start..end].to_vec();
+        for node in &mut nodes {
+            super::map_children(node, |child| child - start as u32);
+        }
+        let Some(parsed) = super::reparse(
+            self.c,
+            Kind::List,
+            &nodes,
+            &self.lits[start..end],
+            (count - 1) as u32,
+        ) else {
+            return Ok(None);
+        };
+        let entry = super::Entry::new(self.c, parsed, false);
+        let before = eval::work_done();
+        // Ordinary list probes share the evaluation allowance, not the smaller
+        // spreadsheet visit limit. Spreadsheet callers still spend their own budget.
+        let mut deadline = self.list_probe_deadline;
+        if self.share_cell_work {
+            deadline = deadline
+                .min(before.saturating_add(self.cell_work.visits.unwrap_or_default() as u64));
+        }
+        let kind =
+            eval::with_work_deadline(deadline, || eval::root_list_first_kind(self.c, &entry));
+        if self.share_cell_work {
+            if kind.is_err() {
+                self.cell_work.visits = None;
+                return Err(crate::spreadsheet::LIMIT.into());
+            }
+            self.cell_work
+                .charge_visits((eval::work_done() - before) as usize)?;
+        }
+        kind.map_err(|()| "List dispatch exceeds the evaluation budget".into())
+    }
+
     /// Preserve the initial point/vector class without building an object.
     pub(super) fn element_command(
         &mut self,
