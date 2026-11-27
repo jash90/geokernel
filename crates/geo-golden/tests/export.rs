@@ -3706,6 +3706,165 @@ fn exported_xml(wb: &Workbench) -> String {
 }
 
 #[test]
+fn reloaded_fit_lines_follow_point_edits() {
+    let wb = Workbench::from_script(
+        "A = (1, 2)\nB = (3, 4)\nC = (5, 1)\nL = {A, B, C}\ng = FitLine(L)\nh = FitLineX({A, B, C})",
+    )
+    .unwrap();
+    let (_, mut reloaded) = round_trip("fit lines", &wb, None);
+    let original = Workbench::from_script(
+        "A = (1, 7)\nB = (3, 4)\nC = (5, 1)\nL = {A, B, C}\ng = FitLine(L)\nh = FitLineX({A, B, C})",
+    )
+    .unwrap();
+    assert!(reloaded.move_point(reloaded.construction().id("A").unwrap(), 1.0, 7.0));
+    for label in ["g", "h"] {
+        let value = |w: &Workbench| {
+            let c = w.construction();
+            c.value(c.id(label).unwrap())
+        };
+        assert_ne!(value(&wb), value(&original));
+        assert_eq!(value(&reloaded), value(&original), "{label}");
+    }
+}
+
+#[test]
+fn fit_line_archive_checks_definedness_before_the_coefficient_tolerance() {
+    for (x, defined, replacement) in [
+        ("0.00007", false, "-1.02e-8"),
+        ("0.0000715", true, "-9.8e-9"),
+    ] {
+        let wb = Workbench::from_script(&format!("g = FitLine({{(-{x},0),({x},0)}})")).unwrap();
+        let (bytes, reloaded) = round_trip("fit near the definedness threshold", &wb, None);
+        let construction = reloaded.construction();
+        let value = construction.stored_value(construction.id("g").unwrap());
+        assert_eq!(value.is_defined(), defined);
+        let (geo_kernel::Value::Line { b, .. } | geo_kernel::Value::UndefinedLine { b, .. }) =
+            value
+        else {
+            panic!("expected fit coefficients");
+        };
+        let xml = geo_import::archive::extract_xml(&bytes).unwrap();
+        let coords = format!(r#"x="0" y="{b}" z="0""#);
+        assert!(xml.contains(&coords));
+        let changed = xml.replace(&coords, &format!(r#"x="0" y="{replacement}" z="0""#));
+        let result = geo_import::import_for_replay(changed.as_bytes()).unwrap();
+        assert_eq!(result.mismatched.len(), 1);
+        assert_eq!(result.mismatched[0].label, "g");
+    }
+}
+
+#[test]
+fn reloaded_fit_lines_keep_their_infinite_intercepts() {
+    let wb = Workbench::from_script(
+        "t = 2^341\ng = FitLine({(0,4*t),(t,5*t)})\nh = FitLineX({(4*t,0),(5*t,t)})",
+    )
+    .unwrap();
+    let (bytes, reloaded) = round_trip("fit lines with infinite intercepts", &wb, None);
+    let c = reloaded.construction();
+    for (label, a, b, equation) in [("g", 1.0, -1.0, "y = x + ∞"), ("h", -1.0, 1.0, "y = x - ∞")]
+    {
+        let id = c.id(label).unwrap();
+        assert_eq!(geo_app_core::describe::object_text(c, id), equation);
+        assert_eq!(
+            c.value(id),
+            geo_kernel::Value::Line {
+                a,
+                b,
+                c: f64::INFINITY
+            }
+        );
+    }
+    let xml = geo_import::archive::extract_xml(&bytes).unwrap();
+    let explicit = r#"<eqnStyle style="explicit"/>"#;
+    assert_eq!(xml.matches(explicit).count(), 2);
+    let implicit = r#"<eqnStyle style="implicit"/>"#;
+    let restyled = xml.replacen(explicit, implicit, 1);
+    let mut changed = Workbench::default();
+    changed
+        .load_for_export(restyled.as_bytes(), "restyled fit")
+        .unwrap();
+    let c = changed.construction();
+    assert_eq!(
+        c.equation_form(c.id("g").unwrap()),
+        Some(&geo_kernel::kernel::EquationForm::Implicit)
+    );
+    let again = exported_xml(&changed);
+    assert_eq!(again.matches(implicit).count(), 1);
+    assert_eq!(again.matches(explicit).count(), 1);
+    let rescaled = xml.replace(
+        r#"x="1" y="-1" z="Infinity""#,
+        r#"x="2" y="-2" z="Infinity""#,
+    );
+    assert!(geo_import::import_for_replay(rescaled.as_bytes())
+        .unwrap()
+        .mismatched
+        .is_empty());
+    let wrong_sign = xml.replace(r#"z="Infinity""#, r#"z="-Infinity""#);
+    let imported = geo_import::import_for_replay(wrong_sign.as_bytes()).unwrap();
+    let labels: Vec<_> = imported
+        .mismatched
+        .iter()
+        .map(|m| m.label.as_str())
+        .collect();
+    assert_eq!(labels, ["g", "h"]);
+    let wrong_normal = xml.replace(
+        r#"x="1" y="-1" z="Infinity""#,
+        r#"x="2" y="-1" z="Infinity""#,
+    );
+    let imported = geo_import::import_for_replay(wrong_normal.as_bytes()).unwrap();
+    assert_eq!(imported.mismatched.len(), 1);
+    assert_eq!(imported.mismatched[0].label, "g");
+}
+
+#[test]
+fn archive_checks_infinite_components_of_fit_line_directions() {
+    let wb = Workbench::from_script(
+        "A = (1,-10^308)\nB = (2,10^308)\ng = FitLine({A,B})\nv = Direction(g)",
+    )
+    .unwrap();
+    let (bytes, reloaded) = round_trip("infinite normal", &wb, None);
+    let c = reloaded.construction();
+    assert_eq!(
+        c.value(c.id("v").unwrap()),
+        geo_kernel::Value::Vector {
+            x: -0.5,
+            y: f64::NEG_INFINITY
+        }
+    );
+    let xml = geo_import::archive::extract_xml(&bytes).unwrap();
+    let wrong = xml.replace(
+        r#"x="-0.5" y="-Infinity" z="0""#,
+        r#"x="-0.5" y="Infinity" z="0""#,
+    );
+    let imported = geo_import::import_for_replay(wrong.as_bytes()).unwrap();
+    assert_eq!(imported.mismatched.len(), 1);
+    assert_eq!(imported.mismatched[0].label, "v");
+}
+
+#[test]
+fn reloaded_undefined_fit_keeps_its_direction_through_edits() {
+    let wb = Workbench::from_script(
+        "n = 342\nt = 2^n\nL = {(t,t),(2*t,2*t)}\ng = FitLine(L)\nv = Direction(g)",
+    )
+    .unwrap();
+    let (_, mut again) = round_trip("fit with undefined intercept", &wb, None);
+    for n in [342, 343, 2] {
+        let id = again.construction().id("n").unwrap();
+        again.set_number(id, f64::from(n));
+        let c = again.construction();
+        assert_eq!(c.value(c.id("g").unwrap()).is_defined(), n == 2);
+        let component = -2.0_f64.powi(2 * n - 1);
+        assert_eq!(
+            c.value(c.id("v").unwrap()),
+            geo_kernel::Value::Vector {
+                x: component,
+                y: component
+            }
+        );
+    }
+}
+
+#[test]
 fn export_keeps_live_slider_endpoints_with_a_colon_label() {
     let mut wb = Workbench::default();
     wb.run_line("b = 36").unwrap();

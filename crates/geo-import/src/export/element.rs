@@ -746,7 +746,9 @@ impl<'a> Writer<'a> {
             }
             Value::HomogeneousPoint { x, y, z } => self.xml.coords("coords", [x, y, z])?,
             Value::Vector { x, y } => self.xml.coords("coords", [x, y, 0.0])?,
-            Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => {
+            Value::Line { a, b, c }
+            | Value::UndefinedLine { a, b, c }
+            | Value::Ray { a, b, c, .. } => {
                 self.xml.coords("coords", [a, b, c])?;
             }
             Value::Segment { x1, y1, x2, y2 } => {

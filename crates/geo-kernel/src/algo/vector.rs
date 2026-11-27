@@ -294,13 +294,17 @@ pub(crate) fn raw_or_undefined(c: &Construction, id: Id) -> Option<(f64, f64, f6
 /// `STANDARD_PRECISION`, but it keeps them, and `Direction`,
 /// `OrthogonalVector` and the unit vectors read them (a tiny or zero
 /// vector, or a unit vector of the tiny one). `Value::Undefined` carries no
-/// coefficients, so they are computed again from the definition for the
+/// coefficients. A fit stores its raw triple, so successive edits can update
+/// its direction while it stays undefined. The coefficients are recomputed for the
 /// lines made from points and directions: `AlgoJoinPoints`,
 /// `AlgoJoinPointsRay`, `AlgoRayPointVector`, `AlgoLinePointVector`,
 /// `AlgoOrthoLinePointVector`, and parallels, perpendiculars and
 /// translations of these. `None` when an input is undefined (GeoGebra's
 /// coefficients are then NaN) or the line is made otherwise.
 fn undefined_raw(c: &Construction, id: Id) -> Option<(f64, f64, f64)> {
+    if let Value::UndefinedLine { a, b, c } = c.stored_value(id) {
+        return Some((a, b, c));
+    }
     match c.def(id) {
         Def::Line(p, q) | Def::Vector(VectorDef::RayPoints(p, q)) => {
             super::basic::raw_line_through(c, p, q)
@@ -464,6 +468,7 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
         Value::Point { .. }
         | Value::HomogeneousPoint { .. }
         | Value::NormalizedPointAtInfinity { .. }
+        | Value::UndefinedLine { .. }
         | Value::Circle { .. }
         | Value::Number(_)
         | Value::Bool(_)

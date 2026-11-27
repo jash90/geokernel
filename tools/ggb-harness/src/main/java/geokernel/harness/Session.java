@@ -2047,6 +2047,9 @@ final class Session {
             case "MinorAxis":
             case "SecondAxis":
             case "Directrix":
+            case "FitLine":
+            case "FitLineX":
+            case "FitLineY":
                 return "line";
             case "ImplicitCurve":
             case "Cubic":

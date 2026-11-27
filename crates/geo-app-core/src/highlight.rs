@@ -81,12 +81,8 @@ fn of_value_unchecked(
                 r: r.abs() * t.xscale().mul_add(t.yscale(), 0.0).sqrt(),
             })
         }
-        Value::Line { a, b, c } if finite(&[a, b, c]) => {
-            let n = a.hypot(b);
-            if n == 0.0 {
-                return None;
-            }
-            let (a, b, c) = (a / n, b / n, c / n);
+        Value::Line { .. } => {
+            let (a, b, c) = value.unit_line()?;
             // Foot of the perpendicular from the area centre, then walk
             // along the direction (b, -a) far enough to leave the area.
             let (mx, my) = t.screen_to_world(0.5 * width, 0.5 * height);
@@ -159,6 +155,15 @@ mod tests {
         assert!((x1 - 120.0).abs() < 1e-9 && (x2 - 120.0).abs() < 1e-9);
         let (lo, hi) = (y1.min(y2), y1.max(y2));
         assert!(lo < 0.0 && hi > 100.0);
+    }
+
+    #[test]
+    fn large_diagonal_has_the_same_highlight_as_a_unit_scale_diagonal() {
+        let highlight = |a, b, c| of_value(&Value::Line { a, b, c }, &t(), 200.0, 100.0);
+        let diagonal = highlight(1.0, -1.0, 0.0);
+        assert!(diagonal.is_some());
+        assert_eq!(highlight(1.62e308, -1.62e308, 0.0), diagonal);
+        assert_eq!(highlight(1.0, -1.0, f64::INFINITY), None);
     }
 
     #[test]

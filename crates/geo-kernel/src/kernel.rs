@@ -242,6 +242,13 @@ pub enum Value {
         b: f64,
         c: f64,
     },
+    /// Stored coefficients of an undefined line whose direction is still observable.
+    #[doc(hidden)]
+    UndefinedLine {
+        a: f64,
+        b: f64,
+        c: f64,
+    },
     Segment {
         x1: f64,
         y1: f64,
@@ -368,9 +375,9 @@ impl Value {
                 }
                 Self::Undefined
             }
-            Self::HomogeneousPoint { .. } | Self::NormalizedPointAtInfinity { .. } => {
-                Self::Undefined
-            }
+            Self::HomogeneousPoint { .. }
+            | Self::NormalizedPointAtInfinity { .. }
+            | Self::UndefinedLine { .. } => Self::Undefined,
             Self::Ray { x, y, .. } if !x.is_finite() || !y.is_finite() => Self::Undefined,
             Self::Arc { length } if !length.is_finite() => Self::Undefined,
             Self::Sector { area } if !area.is_finite() => Self::Undefined,
@@ -379,16 +386,17 @@ impl Value {
     }
 
     pub fn is_defined(&self) -> bool {
-        !matches!(self, Value::Undefined)
+        !matches!(self, Value::Undefined | Value::UndefinedLine { .. })
     }
 
     /// For a line, `(a, b, c)` scaled so that `(a, b)` has length 1, with the
-    /// same orientation. `None` for every other value.
+    /// same orientation. Returns `None` if the normalized line has no finite
+    /// representation, or the value is another kind.
     pub fn unit_line(&self) -> Option<(f64, f64, f64)> {
         match *self {
-            Value::Line { a, b, c } => {
-                let len = a.hypot(b);
-                (len > 0.0).then(|| (a / len, b / len, c / len))
+            Value::Line { a, b, c } if c.is_finite() => {
+                let [a, b, c] = crate::algo::unit_normal_coefficients([a, b, c])?;
+                c.is_finite().then_some((a, b, c))
             }
             _ => None,
         }
@@ -403,7 +411,7 @@ impl Value {
                 Value::Point { x, y } | Value::Vector { x, y } => [x, y, 0.0, 0.0, 0.0],
                 Value::HomogeneousPoint { x, y, z } => [x, y, z, 0.0, 0.0],
                 Value::NormalizedPointAtInfinity { x, y } => [x, y, 1.0, 0.0, 0.0],
-                Value::Line { a, b, c } => [a, b, c, 0.0, 0.0],
+                Value::Line { a, b, c } | Value::UndefinedLine { a, b, c } => [a, b, c, 0.0, 0.0],
                 Value::Segment { x1, y1, x2, y2 } => [x1, y1, x2, y2, 0.0],
                 Value::Circle { cx, cy, r } => [cx, cy, r, 0.0, 0.0],
                 Value::Ray { x, y, a, b, c } => [x, y, a, b, c],
@@ -429,7 +437,12 @@ impl Value {
                 | Value::Undefined => [0.0; 5],
             }
         }
-        self == other && parts(self).map(f64::to_bits) == parts(other).map(f64::to_bits)
+        let both_undefined_lines = matches!(
+            (self, other),
+            (Self::UndefinedLine { .. }, Self::UndefinedLine { .. })
+        );
+        (self == other || both_undefined_lines)
+            && parts(self).map(f64::to_bits) == parts(other).map(f64::to_bits)
     }
 
     fn is_valid(&self) -> bool {
@@ -465,6 +478,7 @@ impl Value {
             | Value::Conic { .. }
             | Value::Locus { .. }
             | Value::PenStroke { .. }
+            | Value::UndefinedLine { .. }
             | Value::Undefined => true,
         }
     }
@@ -1727,9 +1741,15 @@ impl Construction {
             .unwrap_or_else(|| axis::get(id).expect("object id").value)
     }
 
-    /// An object's selected equation form, if it has one.
+    /// The selected equation form, or the fit algorithm's explicit default.
     pub fn equation_form(&self, id: Id) -> Option<&EquationForm> {
-        self.equation_forms.get(&id).map(|(form, _)| form)
+        self.equation_forms
+            .get(&id)
+            .map(|(form, _)| form)
+            .or_else(|| {
+                matches!(self.defs.get(id.0), Some(Def::Lines(LineDef::Fit { .. })))
+                    .then_some(&EquationForm::Explicit)
+            })
     }
 
     /// A cache key for the equation's display state within this construction.
@@ -5869,6 +5889,9 @@ impl Construction {
     fn compute_with(&self, def: Def, hint: impl Fn(&Self) -> algo::intersect::Hint) -> Value {
         match self.try_compute(def, hint) {
             Some(v) if v.is_valid() => v,
+            // The fit algorithm checks GeoLine.isDefined itself. Its finite inputs
+            // can produce an infinite coefficient and a usable direction.
+            Some(v @ Value::Line { .. }) if matches!(def, Def::Lines(LineDef::Fit { .. })) => v,
             _ => Value::Undefined,
         }
     }

@@ -1,0 +1,127 @@
+{
+  "cases": [
+    {
+      "id": "statistics-fitlinedirection-001",
+      "group": "statistics",
+      "script": [
+        "A = (2, 1)",
+        "B = (3, 3)",
+        "C = (2, 5)",
+        "g = FitLine({A,B,C})",
+        "v = Direction(g)",
+        "a = x(v)",
+        "b = y(v)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "move",
+          "label": "B",
+          "x": 2,
+          "y": 3
+        },
+        {
+          "action": "move",
+          "label": "B",
+          "x": 2.0001,
+          "y": 3
+        },
+        {
+          "action": "move",
+          "label": "B",
+          "x": 3,
+          "y": 3
+        }
+      ],
+      "observe": [
+        "g",
+        "v",
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "statistics-fitlinedirection-002",
+      "group": "statistics",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 3)",
+        "C = (5, 2)",
+        "g = FitLineX({A,B,C})",
+        "v = Direction(g)",
+        "a = x(v)",
+        "b = y(v)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "move",
+          "label": "B",
+          "x": 3,
+          "y": 2
+        },
+        {
+          "action": "move",
+          "label": "B",
+          "x": 3,
+          "y": 2.0001
+        },
+        {
+          "action": "move",
+          "label": "B",
+          "x": 3,
+          "y": 3
+        }
+      ],
+      "observe": [
+        "g",
+        "v",
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "statistics-fitlinedirection-003",
+      "group": "statistics",
+      "script": [
+        "n = 2",
+        "t = 2^n",
+        "L = {(t,t),(2*t,2*t)}",
+        "g = FitLine(L)",
+        "h = FitLineX(L)",
+        "v = Direction(g)",
+        "w = Direction(h)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 342
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 343
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 2
+        }
+      ],
+      "observe": [
+        "g",
+        "h",
+        "v",
+        "w"
+      ]
+    }
+  ]
+}

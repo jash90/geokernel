@@ -105,6 +105,13 @@ else
 fi
 ```
 
+For the fifteen `FitLine`/`FitLineY` and `FitLineX` cases, pass
+`golden fitline_r17 fitlinescale fitlineoverflow fitlinedirection fitlinenan` with the same image and pinned checkout.
+The five files in `golden/statistics/` cover edits, degenerate samples and
+power-of-two rescaling. The overflow cases read both finite components of
+`Direction(g)` while the intercept exceeds the range of a double. The direction cases move a point through a degenerate
+fit and change the scale until the intercept is NaN, then restore the original input.
+
 ### Selecting CAS topics
 
 To record one or more CAS topics without rewriting other golden files, set

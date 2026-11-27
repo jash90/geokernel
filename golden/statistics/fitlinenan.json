@@ -1,0 +1,72 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-fitlinenan-001",
+      "group": "statistics",
+      "script": [
+        "n = 511",
+        "t = 2^n",
+        "L = {(t,t),(-t,-t)}",
+        "g = FitLine(L)",
+        "h = FitLineX(L)",
+        "v = Direction(g)",
+        "w = Direction(h)",
+        "a = x(v)",
+        "b = y(v)",
+        "p = x(w)",
+        "q = y(w)"
+      ],
+      "observe": [
+        "g",
+        "h",
+        "a",
+        "b",
+        "p",
+        "q"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 512.0 },
+        { "action": "set_number", "label": "n", "value": 513.0 },
+        { "action": "set_number", "label": "n", "value": 511.0 }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 8.98846567431158E307, "b": -8.98846567431158E307, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": -8.98846567431158E307, "b": 8.98846567431158E307, "c": 0.0 },
+          "a": { "type": "number", "defined": true, "value": -8.98846567431158E307 },
+          "b": { "type": "number", "defined": true, "value": -8.98846567431158E307 },
+          "p": { "type": "number", "defined": true, "value": 8.98846567431158E307 },
+          "q": { "type": "number", "defined": true, "value": 8.98846567431158E307 }
+        },
+        {
+          "g": { "type": "line", "defined": false },
+          "h": { "type": "line", "defined": false },
+          "a": { "type": "number", "defined": true, "infinity": -1 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "p": { "type": "number", "defined": true, "infinity": 1 },
+          "q": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "g": { "type": "line", "defined": false },
+          "h": { "type": "line", "defined": false },
+          "a": { "type": "number", "defined": true, "infinity": -1 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "p": { "type": "number", "defined": true, "infinity": 1 },
+          "q": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 8.98846567431158E307, "b": -8.98846567431158E307, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": -8.98846567431158E307, "b": 8.98846567431158E307, "c": 0.0 },
+          "a": { "type": "number", "defined": true, "value": -8.98846567431158E307 },
+          "b": { "type": "number", "defined": true, "value": -8.98846567431158E307 },
+          "p": { "type": "number", "defined": true, "value": 8.98846567431158E307 },
+          "q": { "type": "number", "defined": true, "value": 8.98846567431158E307 }
+        }
+      ]
+    }
+  ]
+}

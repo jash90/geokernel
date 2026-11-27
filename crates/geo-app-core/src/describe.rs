@@ -50,12 +50,11 @@ fn signed_tail(v: f64) -> Option<String> {
 /// The equation of `a*x + b*y + c = 0`: `y = -0.12x + 3.75`, or `x = -5.64`
 /// when the line is vertical.
 pub fn line_equation(a: f64, b: f64, c: f64) -> String {
-    let len = a.hypot(b);
-    if !(len.is_finite() && len > 0.0) {
+    let Some([_, unit_b, _]) = geo_kernel::algo::unit_normal_coefficients([a, b, 0.0]) else {
         return "?".into();
-    }
+    };
     // Vertical when the slope would be beyond what the display can show.
-    if b.abs() <= 1e-9 * len {
+    if unit_b.abs() <= 1e-9 {
         return format!("x = {}", n2(-c / a));
     }
     let slope = -a / b;
@@ -332,9 +331,31 @@ mod tests {
         assert_eq!(line_equation(0.0, 1.0, -3.0), "y = 3");
         assert_eq!(line_equation(0.0, 2.0, 0.0), "y = 0");
         assert_eq!(line_equation(-1.0, 1.0, 0.0), "y = x");
+        assert_eq!(line_equation(-1.62e308, 1.62e308, 0.0), "y = x");
         assert_eq!(line_equation(1.0, 1.0, 0.0), "y = -x");
         assert_eq!(line_equation(-2.0, 1.0, 3.0), "y = 2x - 3");
         assert_eq!(line_equation(0.0, 0.0, 1.0), "?");
+    }
+
+    #[test]
+    fn fit_line_algebra_shows_the_explicit_equation_through_scale_edits() {
+        use crate::workbench::Workbench;
+        use geo_kernel::kernel::EquationForm;
+
+        let mut w = Workbench::from_script(
+            "n = 0\nt = 9*10^n\nA = (-t,-t)\nB = (t,t)\ng = FitLine({A,B})\nh = FitLineX({A,B})",
+        )
+        .unwrap();
+        let n = w.construction().id("n").unwrap();
+        for exponent in [153.0, 0.0, 153.0] {
+            assert!(w.set_number(n, exponent));
+            let c = w.construction();
+            for name in ["g", "h"] {
+                let id = c.id(name).unwrap();
+                assert_eq!(c.equation_form(id), Some(&EquationForm::Explicit));
+                assert_eq!(object_text(c, id), "y = x");
+            }
+        }
     }
 
     #[test]

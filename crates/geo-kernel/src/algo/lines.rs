@@ -29,6 +29,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/MyMath.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoFitLineX.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoFitLineY.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -61,6 +63,11 @@ pub enum LineDef {
     NormalToConic {
         point: Id,
         conic: Id,
+    },
+    /// Least-squares line through a list of 2D points (`FitLine`, `FitLineX`).
+    Fit {
+        points: Id,
+        x_on_y: bool,
     },
     /// Perpendicular bisector of two points (`LineBisector(A, B)`).
     BisectorPoints(Id, Id),
@@ -128,7 +135,7 @@ impl Group for LineDef {
             LineDef::ThroughRay { point, ray, .. } => Parents::of(&[point, ray]),
             LineDef::NormalToConic { point, conic } => Parents::of(&[point, conic]),
             LineDef::BisectorPoints(p, q) => Parents::of(&[p, q]),
-            LineDef::BisectorSegment(s) => Parents::of(&[s]),
+            LineDef::BisectorSegment(s) | LineDef::Fit { points: s, .. } => Parents::of(&[s]),
             LineDef::AngleBisectorPoints { leg1, vertex, leg2 } => {
                 Parents::of(&[leg1, vertex, leg2])
             }
@@ -163,6 +170,7 @@ impl Group for LineDef {
                 c.expect(q, POINT)
             }
             LineDef::BisectorSegment(s) => c.expect(s, SEGMENT),
+            LineDef::Fit { points, .. } => c.expect(points, &[Kind::List]),
             LineDef::AngleBisectorPoints { leg1, vertex, leg2 } => {
                 c.expect(leg1, POINT)?;
                 c.expect(vertex, POINT)?;
@@ -239,6 +247,7 @@ impl Group for LineDef {
                 let (a, b, z) = super::join(p, (x, y));
                 line_value(a, b, z)
             }
+            LineDef::Fit { points, x_on_y } => fit_line(c.elements(points)?, x_on_y),
             LineDef::BisectorPoints(p, q) => {
                 let (ax, ay) = c.point(p)?;
                 let (bx, by) = c.point(q)?;
@@ -304,6 +313,17 @@ impl Group for LineDef {
                     _ => return None,
                 }
             }
+            "FitLine" | "FitLineX" | "FitLineY" => (|| {
+                let &[list] = args else {
+                    return Err(arg_count(func, args.len()));
+                };
+                let points = object(c, list)?;
+                expect_kinds(c, func, &[points], &[Kind::List])?;
+                Ok(LineDef::Fit {
+                    points,
+                    x_on_y: func == "FitLineX",
+                })
+            })(),
             "LineBisector" | "PerpendicularBisector" => parse_line_bisector(c, func, args),
             "AngularBisector" | "AngleBisector" => match args.len() {
                 3 => {
@@ -466,6 +486,41 @@ fn parse_line_bisector(c: &Construction, func: &str, args: &[&str]) -> Result<Li
         }
         n => Err(arg_count(func, n)),
     }
+}
+
+fn fit_line(points: crate::expr::List<'_>, x_on_y: bool) -> Option<Value> {
+    let n = points.len();
+    if n < 2 || !crate::expr::IntersectionWork::new().charge(n as u64) {
+        return None;
+    }
+    let (mut sum_u, mut sum_v, mut sum_uu, mut sum_uv) = (0.0, 0.0, 0.0, 0.0);
+    for i in 0..n {
+        let Value::Point { x, y } = points.raw_point(i)?.cartesian() else {
+            return None;
+        };
+        let (u, v) = if x_on_y { (y, x) } else { (x, y) };
+        sum_u += u;
+        sum_v += v;
+        sum_uu += u * u;
+        sum_uv += u * v;
+    }
+    let n = n as f64;
+    let cov = sum_uv - sum_u * sum_v / n;
+    let var = sum_uu - sum_u * sum_u / n;
+    let intercept = -cov * (sum_u / n) + var * (sum_v / n);
+    let (a, b) = if x_on_y { (-var, cov) } else { (cov, -var) };
+    let coefficients = [a, b, intercept];
+    // Three infinities would never change in the reference's halving loop.
+    if coefficients.into_iter().all(f64::is_infinite) {
+        return None;
+    }
+    // Fit lines skip rescaling if any coefficient is near zero, including c.
+    let (a, b, c) = if coefficients.into_iter().any(is_zero) {
+        (a, b, intercept)
+    } else {
+        super::scale_coefficients((a, b, intercept), 1.0, 0.5)
+    };
+    Some(line_value(a, b, c).unwrap_or(Value::UndefinedLine { a, b, c }))
 }
 
 fn parse_polar(c: &Construction, func: &str, args: &[&str]) -> Result<LineDef, String> {
@@ -922,6 +977,38 @@ mod tests {
         let (a, b, cc) = line(c, label);
         for (got, want) in [(a, raw.0), (b, raw.1), (cc, raw.2)] {
             assert!((got - want).abs() < 1e-12, "{label}: {got} != {want}");
+        }
+    }
+
+    #[test]
+    fn fit_line_reserves_the_point_scan_under_the_shared_deadline() {
+        use crate::expr::{with_work_deadline, work_done};
+
+        let c = build("L = {A, B, C}");
+        let points = c.elements(c.id("L").unwrap()).unwrap();
+        let before = work_done();
+        assert!(with_work_deadline(before + 2, || fit_line(points, false)).is_none());
+        assert_eq!(work_done(), before);
+        assert!(with_work_deadline(before + 3, || fit_line(points, false)).is_some());
+        assert_eq!(work_done(), before + 3);
+    }
+
+    #[test]
+    fn fit_lines_scale_the_normal_when_the_intercept_overflows() {
+        let c = load(
+            "t = 2^341\ng = FitLine({(0, 4*t), (t, 5*t)})\nh = FitLineX({(4*t, 0), (5*t, t)})",
+        )
+        .unwrap();
+        assert_eq!(line(&c, "g"), (1.0, -1.0, f64::INFINITY));
+        assert_eq!(line(&c, "h"), (-1.0, 1.0, f64::INFINITY));
+    }
+
+    #[test]
+    fn fit_lines_stop_when_all_three_coefficients_overflow() {
+        let c =
+            load("t = 10^154\nL = {(t,-t),(-t,t),(1,1)}\ng = FitLine(L)\nh = FitLineX(L)").unwrap();
+        for label in ["g", "h"] {
+            assert_eq!(c.value(c.id(label).unwrap()), Value::Undefined);
         }
     }
 

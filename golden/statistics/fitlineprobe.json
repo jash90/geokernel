@@ -1,0 +1,167 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-fitlineprobe-001",
+      "group": "statistics",
+      "script": [
+        "g = FitLine({(1,1),(2,2),(3,3),(4,1/4),(5,1/5)})",
+        "h = FitLineX({(1,1),(2,2),(3,3),(4,1/4),(5,1/5)})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": -0.8375000000000004, "b": -2.5, "c": 5.737500000000001 },
+          "h": { "type": "line", "defined": true, "a": -1.4455, "b": -0.8375000000000004, "c": 5.416875000000001 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-fitlineprobe-002",
+      "group": "statistics",
+      "script": [
+        "g = FitLine({(2,1),(2,3),(2,5)})",
+        "h = FitLineX({(2,1),(2,3),(2,5)})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": false },
+          "h": { "type": "line", "defined": true, "a": -8.0, "b": 0.0, "c": 16.0 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-fitlineprobe-003",
+      "group": "statistics",
+      "script": [
+        "g = FitLine({(1,4),(3,4),(5,4)})",
+        "h = FitLineX({(1,4),(3,4),(5,4)})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": -8.0, "c": 32.0 },
+          "h": { "type": "line", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "statistics-fitlineprobe-004",
+      "group": "statistics",
+      "script": [
+        "g = FitLine({(2,4)})",
+        "h = FitLineX({(2,4)})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": false },
+          "h": { "type": "line", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "statistics-fitlineprobe-005",
+      "group": "statistics",
+      "script": [
+        "g = FitLine({(0,0),(1,0),(0,1),(1,1)})",
+        "h = FitLineX({(0,0),(1,0),(0,1),(1,1)})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": -1.0, "c": 0.5 },
+          "h": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-fitlineprobe-006",
+      "group": "statistics",
+      "script": [
+        "a = 2",
+        "P = (1, a)",
+        "Q = (3, 4)",
+        "R = (5, 1)",
+        "l = {P, Q, R}",
+        "g = FitLine(l)",
+        "h = FitLineX(l)",
+        "j = FitLineY(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 7.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "R": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+            ]
+          },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": -4.0, "c": 12.333333333333334 },
+          "h": { "type": "line", "defined": true, "a": -2.333333333333334, "b": -1.0, "c": 9.333333333333336 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": -4.0, "c": 12.333333333333334 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 7.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "R": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 7.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+            ]
+          },
+          "g": { "type": "line", "defined": true, "a": -1.5, "b": -1.0, "c": 8.5 },
+          "h": { "type": "line", "defined": true, "a": -1.125, "b": -0.75, "c": 6.375 },
+          "j": { "type": "line", "defined": true, "a": -1.5, "b": -1.0, "c": 8.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "R": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 5.0, "y": 1.0 }
+            ]
+          },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": -4.0, "c": 12.333333333333334 },
+          "h": { "type": "line", "defined": true, "a": -2.333333333333334, "b": -1.0, "c": 9.333333333333336 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": -4.0, "c": 12.333333333333334 }
+        }
+      ]
+    }
+  ]
+}

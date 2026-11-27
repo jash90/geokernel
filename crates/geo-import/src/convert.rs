@@ -2414,11 +2414,56 @@ fn coords3(el: &Element) -> Option<[f64; 3]> {
     Some([num(x)?, num(y)?, num(z)?])
 }
 
+/// Lines and vectors can retain infinite coordinates, and undefined fits can retain NaN.
+fn raw_coords3(el: &Element) -> Option<[f64; 3]> {
+    let [x, y, z] = el.coords.as_ref()?;
+    let parse = crate::xml::java_double;
+    Some([parse(x)?, parse(y)?, parse(z)?])
+}
+
+fn same_coordinate(p: f64, q: f64) -> bool {
+    p == q || close(p, q)
+}
+
 /// Whether the lines `(a, b, c)` and `(sa, sb, sc)` are the same up to a
 /// positive factor (the orientation of a line is part of its value).
-fn same_line(line: [f64; 3], saved: [f64; 3]) -> bool {
-    let (n, sn) = (line[0].hypot(line[1]), saved[0].hypot(saved[1]));
-    n > 0.0 && sn > 0.0 && (0..3).all(|i| close(line[i] / n, saved[i] / sn))
+fn same_line(mut line: [f64; 3], mut saved: [f64; 3]) -> bool {
+    let normalized = |coords: [f64; 3]| {
+        if coords[0].is_infinite() || coords[1].is_infinite() {
+            // Only the finite components can supply a positive scale.
+            let scale = coords
+                .into_iter()
+                .filter(|v| v.is_finite() && *v != 0.0)
+                .map(f64::abs)
+                .reduce(f64::max)
+                .unwrap_or(1.0);
+            Some(coords.map(|v| v / scale))
+        } else {
+            geo_kernel::algo::unit_normal_coefficients(coords)
+        }
+    };
+    loop {
+        let (Some(unit), Some(saved_unit)) = (normalized(line), normalized(saved)) else {
+            return false;
+        };
+        if line[2].is_finite()
+            && saved[2].is_finite()
+            && (unit[2].is_infinite() || saved_unit[2].is_infinite())
+        {
+            // Compare both offsets in the same units. A factor of 2^-52
+            // leaves an overflowing distance well within the relative-tolerance range.
+            line[2] *= f64::EPSILON;
+            saved[2] *= f64::EPSILON;
+            continue;
+        }
+        return (0..3).all(|i| {
+            if line[i].is_infinite() || saved[i].is_infinite() {
+                line[i] == saved[i]
+            } else {
+                close(unit[i], saved_unit[i])
+            }
+        });
+    }
 }
 
 fn saved_text(el: &Element) -> String {
@@ -2518,11 +2563,17 @@ fn saved_defined(el: &Element) -> Option<bool> {
             .coords
             .as_ref()
             .map(|_| coords3(el).is_some_and(|[_, _, z]| z != 0.0)),
-        "vector" => el.coords.as_ref().map(|_| coords3(el).is_some()),
+        "vector" => el.coords.as_ref().map(|_| {
+            raw_coords3(el).is_some_and(|[x, y, z]| !x.is_nan() && !y.is_nan() && z.is_finite())
+        }),
         // A degenerate segment (equal end points) is a defined object whose
         // saved line is (0, 0, 0).
         "segment" => el.coords.as_ref().map(|_| coords3(el).is_some()),
-        "line" | "ray" => el
+        "line" => el
+            .coords
+            .as_ref()
+            .map(|_| raw_coords3(el).is_some_and(geo_kernel::algo::line_is_defined)),
+        "ray" => el
             .coords
             .as_ref()
             .map(|_| coords3(el).is_some_and(|[a, b, _]| a != 0.0 || b != 0.0)),
@@ -2671,6 +2722,19 @@ fn cross_check(
         saved_defined(el).or_else(|| expression.filter(|exp| exp.trim() == "?").map(|_| false));
     match (value.is_defined(), saved_defined) {
         (false, Some(true)) | (true, Some(false)) => return report(),
+        (false, Some(false)) if kind == Kind::Line && el.coords.is_some() => {
+            if let Value::UndefinedLine { a, b, c: intercept } = c.stored_value(id) {
+                // Two undefined fits can still have different observable directions.
+                let agrees = raw_coords3(el).is_some_and(|saved| {
+                    [a, b, intercept]
+                        .into_iter()
+                        .zip(saved)
+                        .all(|(p, q)| same_coordinate(p, q) || p.is_nan() && q.is_nan())
+                });
+                return (!agrees).then(report).flatten();
+            }
+            return None;
+        }
         (false, _) | (_, None) => return None,
         (true, Some(true)) => {}
     }
@@ -2678,8 +2742,11 @@ fn cross_check(
         Value::Point { x, y } => {
             coords3(el).map(|[sx, sy, sz]| close(x, sx / sz) && close(y, sy / sz))
         }
-        Value::Vector { x, y } => coords3(el).map(|[sx, sy, _]| close(x, sx) && close(y, sy)),
-        Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => {
+        Value::Vector { x, y } => raw_coords3(el).map(|[sx, sy, _]| {
+            same_coordinate(x, sx) && same_coordinate(y, sy)
+        }),
+        Value::Line { a, b, c } => raw_coords3(el).map(|saved| same_line([a, b, c], saved)),
+        Value::Ray { a, b, c, .. } => {
             coords3(el).map(|saved| same_line([a, b, c], saved))
         }
         Value::Segment { x1, y1, x2, y2 } => coords3(el).map(|saved| {
@@ -2821,6 +2888,19 @@ fn list_item_agrees(actual: geo_kernel::expr::Element<'_>, saved: &str) -> bool 
 mod tests {
     use crate::import;
     use geo_kernel::{script, Value};
+
+    #[test]
+    fn large_finite_line_normals_preserve_slope_and_orientation() {
+        use super::same_line;
+        let line = [1.62e308, -1.62e308, 0.0];
+        assert!(same_line(line, [8.1e307, -8.1e307, 0.0]));
+        assert!(!same_line(line, [1.7e308, -9e307, 0.0]));
+        assert!(!same_line(line, [-1.62e308, 1.62e308, 0.0]));
+        let distant = [0.25, 0.0, 1e308];
+        assert!(same_line(distant, [0.125, 0.0, 5e307]));
+        assert!(!same_line(distant, [0.25, 0.0, 9e307]));
+        assert!(!same_line(distant, [0.25, 0.0, f64::INFINITY]));
+    }
 
     #[test]
     fn saved_text_verification_reports_exact_string_differences() {

@@ -161,7 +161,23 @@ pub fn is_all_finite(v: &Value) -> bool {
 pub fn first_non_finite(c: &Construction) -> Option<String> {
     c.ids().find_map(|id| {
         let v = c.value(id);
-        (!is_all_finite(&v)).then(|| format!("`{}` = {v:?}", c.label(id)))
+        if is_all_finite(&v) {
+            return None;
+        }
+        // A fit can keep an infinite intercept or normal component. A NaN or
+        // three infinities must still produce an undefined Cartesian value.
+        if let Value::Line { a, b, c: offset } = v {
+            let coords = [a, b, offset];
+            if matches!(
+                c.def(id),
+                Def::Lines(geo_kernel::algo::lines::LineDef::Fit { .. })
+            ) && coords.iter().all(|v| !v.is_nan())
+                && coords.iter().any(|v| v.is_finite())
+            {
+                return None;
+            }
+        }
+        Some(format!("`{}` = {v:?}", c.label(id)))
     })
 }
 

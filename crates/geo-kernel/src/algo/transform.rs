@@ -378,6 +378,7 @@ impl Map {
             | Value::Locus { .. }
             | Value::HomogeneousPoint { .. }
             | Value::NormalizedPointAtInfinity { .. }
+            | Value::UndefinedLine { .. }
             | Value::Curve { .. }
             | Value::Button
             | Value::InputBox

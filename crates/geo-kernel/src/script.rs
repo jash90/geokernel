@@ -1799,6 +1799,9 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             | "Corner"
             | "Point"
             | "Barycenter"
+            | "FitLine"
+            | "FitLineX"
+            | "FitLineY"
             | "Polygon"
             | "PolyLine"
             | "Arc"
@@ -1868,7 +1871,8 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         {
             &[(1, Kind::Number), (2, Kind::Number)]
         }
-        ("Point" | "Polygon" | "PolyLine", [_]) | ("PolyLine", [_, _]) => &[(0, Kind::List)],
+        ("Point" | "Polygon" | "PolyLine" | "FitLine" | "FitLineX" | "FitLineY", [_])
+        | ("PolyLine", [_, _]) => &[(0, Kind::List)],
         ("Barycenter", [_, _]) => &[(0, Kind::List), (1, Kind::List)],
         ("Circle", [_, radius]) if crate::expr::plain_number(radius).is_none() => {
             &[(0, Kind::Point), (1, Kind::Number), (1, Kind::Point)]
@@ -2242,6 +2246,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Locus { .. } | Value::PenStroke { .. } => true,
         Value::HomogeneousPoint { .. }
         | Value::NormalizedPointAtInfinity { .. }
+        | Value::UndefinedLine { .. }
         | Value::Button
         | Value::InputBox
         | Value::Image

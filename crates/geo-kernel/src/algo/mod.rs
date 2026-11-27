@@ -156,15 +156,16 @@ pub(crate) fn length(dx: f64, dy: f64) -> f64 {
     (dx * dx + dy * dy).sqrt()
 }
 
-/// A line value from GeoGebra's raw coefficients `(x, y, z)`, kept as they
-/// are. Undefined like `GeoLine.isDefined`: a NaN, or `x` and `y` both zero
-/// within the standard precision (`DoubleUtil.isZero`).
-pub(crate) fn line_value(x: f64, y: f64, z: f64) -> Option<Value> {
+/// GeoLine is undefined if a coefficient is NaN or both normal components
+/// are within the standard zero tolerance.
+pub fn line_is_defined([x, y, z]: [f64; 3]) -> bool {
     let zero = |v: f64| -STANDARD_PRECISION < v && v < STANDARD_PRECISION;
-    if x.is_nan() || y.is_nan() || z.is_nan() || (zero(x) && zero(y)) {
-        return None;
-    }
-    Some(Value::Line { a: x, b: y, c: z })
+    !(x.is_nan() || y.is_nan() || z.is_nan() || (zero(x) && zero(y)))
+}
+
+/// A defined line keeps its raw coefficients.
+pub(crate) fn line_value(a: f64, b: f64, c: f64) -> Option<Value> {
+    line_is_defined([a, b, c]).then_some(Value::Line { a, b, c })
 }
 
 /// `GeoVec3D.lineThroughPoints(P, Q, g)` for two finite points: the raw
@@ -174,15 +175,51 @@ pub(crate) fn join(p: (f64, f64), q: (f64, f64)) -> (f64, f64, f64) {
     (p.1 - q.1, q.0 - p.0, p.0 * q.1 - p.1 * q.0)
 }
 
+/// Scales a finite, nonzero normal to unit length. A nonfinite offset remains
+/// observable to archive readers. Drawing requires a finite offset as well.
+pub fn unit_normal_coefficients([a, b, c]: [f64; 3]) -> Option<[f64; 3]> {
+    if !a.is_finite() || !b.is_finite() {
+        return None;
+    }
+    let largest = a.abs().max(b.abs());
+    if largest == 0.0 {
+        return None;
+    }
+    if (f64::MIN_POSITIVE..=f64::MAX / 2.0).contains(&largest) {
+        let length = a.hypot(b);
+        return Some([a / length, b / length, c / length]);
+    }
+    // At either end of the exponent range the length itself can overflow
+    // or lose precision. The scaled normal has length between 1 and sqrt(2).
+    let (x, y) = (a / largest, b / largest);
+    let length = x.hypot(y);
+    let offset = c / largest;
+    let offset = if offset.is_infinite() && c.is_finite() {
+        (c / length) / largest
+    } else {
+        offset / length
+    };
+    Some([x / length, y / length, offset])
+}
+
 /// `GeoLine.getNormalizedCoefficients(ret, max, min)`: scales the raw
 /// coefficients by powers of two until one of them lies in `[min, max]`.
 /// Coefficients that are all zero or not all finite are returned as they are.
 pub(crate) fn normalized_coefficients(g: (f64, f64, f64), max: f64, min: f64) -> (f64, f64, f64) {
     let zero = |v: f64| -STANDARD_PRECISION < v && v < STANDARD_PRECISION;
-    let (mut x, mut y, mut z) = g;
+    let (x, y, z) = g;
     if (zero(x) && zero(y) && zero(z)) || !(x.is_finite() && y.is_finite() && z.is_finite()) {
         return g;
     }
+    scale_coefficients(g, max, min)
+}
+
+// The callers handle all-zero and all-infinite triples. A NaN stops both loops.
+fn scale_coefficients(
+    (mut x, mut y, mut z): (f64, f64, f64),
+    max: f64,
+    min: f64,
+) -> (f64, f64, f64) {
     while x.abs() < min && y.abs() < min && z.abs() < min {
         x *= 2.0;
         y *= 2.0;
