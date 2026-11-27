@@ -1,0 +1,44 @@
+{
+  "cases": [
+    {
+      "id": "statistics-linecallupdates-001",
+      "group": "statistics",
+      "script": [
+        "n = 0",
+        "g: y = (x+n)-n",
+        "f(x) = g(x)",
+        "a = f(1)"
+      ],
+      "observe": [
+        "g",
+        "a"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 9007199254740992
+        }
+      ]
+    },
+    {
+      "id": "statistics-linecallupdates-002",
+      "group": "statistics",
+      "script": [
+        "g: y = x+x",
+        "a = g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(1))))))))))))))))))"
+      ],
+      "observe": [
+        "a"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    }
+  ]
+}

@@ -1490,6 +1490,29 @@ mod tests {
     }
 
     #[test]
+    fn an_explicitly_displayed_line_updates_its_expanded_calls() {
+        let mut c = load("n = 0\ng: y = (x+n)-n\nf(x) = g(x)\na = f(1)").unwrap();
+        let [g, n, a] = ["g", "n", "a"].map(|label| c.id(label).unwrap());
+        c.set_equation_form(g, EquationForm::Explicit).unwrap();
+        assert_eq!(c.value(a), Value::Number(1.0));
+        let coefficients = c.raw_line(g).unwrap();
+        c.set_number(n, 9_007_199_254_740_992.0).unwrap();
+        assert_eq!(c.raw_line(g).unwrap(), coefficients);
+        assert_eq!(c.value(a), Value::Number(0.0));
+    }
+
+    #[test]
+    fn repeated_line_expansion_in_a_constant_function_still_has_a_work_limit() {
+        let mut c = load("g: y = x+x").unwrap();
+        let source = format!("f(x) = {}1{}", "g(".repeat(24), ")".repeat(24));
+        let error = exec(&mut c, &source).unwrap_err();
+        assert!(
+            error.to_string().contains("too large to evaluate"),
+            "{error}"
+        );
+    }
+
+    #[test]
     fn linear_equations_make_lines_with_raw_coefficients() {
         let c = load(
             "a: 2x + 3y = 6\n\

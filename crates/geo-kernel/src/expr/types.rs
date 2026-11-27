@@ -26,6 +26,7 @@ use crate::kernel::{Construction, Def, Id, Kind};
 /// The types, depths, costs and variable counts of the nodes typed so far.
 struct State {
     body_root: u32,
+    expand_line_calls: bool,
     graph_rewrites: usize,
     tys: Vec<Ty>,
     depth: Vec<u32>,
@@ -64,6 +65,15 @@ thread_local! {
 }
 
 pub(crate) fn check(c: &Construction, nodes: &[Node], root: u32) -> Result<Checked, String> {
+    check_line_calls(c, nodes, root, true)
+}
+
+pub(super) fn check_line_calls(
+    c: &Construction,
+    nodes: &[Node],
+    root: u32,
+    expand_line_calls: bool,
+) -> Result<Checked, String> {
     let n = nodes.len();
     #[cfg(test)]
     CHECKED_SLOTS.set(CHECKED_SLOTS.get() + n);
@@ -78,6 +88,7 @@ pub(crate) fn check(c: &Construction, nodes: &[Node], root: u32) -> Result<Check
     }
     let mut state = State {
         body_root: super::body_root(nodes, root),
+        expand_line_calls,
         graph_rewrites: 0,
         tys: Vec::with_capacity(n),
         depth: Vec::with_capacity(n),
@@ -540,7 +551,13 @@ fn type_node(
             if !matches!(state.tys[a], Ty::Num(_) | Ty::Bool) {
                 return Err("a function takes a number".into());
             }
-            let (fd, fc, fv) = super::function_metrics(c, f);
+            // A direct line call samples its cached coefficients once.
+            // In a function body it can substitute the argument repeatedly.
+            let (fd, fc, fv) = if !state.expand_line_calls && c.kind(f) == Kind::Line {
+                (1, 1, 1)
+            } else {
+                super::function_metrics(c, f)
+            };
             let ty = if super::function_signature(c, f).is_some_and(|f| f.boolean) {
                 Ty::Bool
             } else {
