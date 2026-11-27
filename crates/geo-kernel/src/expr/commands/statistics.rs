@@ -250,7 +250,7 @@ fn sample_number(slot: Slot) -> Option<f64> {
     }
 }
 
-fn percentile_sample(slot: Slot) -> Option<f64> {
+fn magnitude_sample(slot: Slot) -> Option<f64> {
     match (slot.kind, slot.value) {
         (Kind::Polygon, Value::Polygon { area }) => Some(area.abs()),
         (Kind::PolyLine, Value::PolyLine { length }) | (Kind::Arc, Value::Arc { length }) => {
@@ -293,9 +293,9 @@ impl<const M: bool> Ctx<'_, M> {
         let mut rows = Vec::with_capacity(len as usize);
         let mut total = 0i32;
         for k in 0..len {
-            let value = percentile_sample(lists.read(self.c, start + k))?;
+            let value = magnitude_sample(lists.read(self.c, start + k))?;
             let count = if let Some(fstart) = frequencies {
-                let frequency = percentile_sample(lists.read(self.c, fstart + k))?;
+                let frequency = magnitude_sample(lists.read(self.c, fstart + k))?;
                 if !frequency.is_finite()
                     || frequency < 0.0
                     || frequency.trunc() > f64::from(i32::MAX)

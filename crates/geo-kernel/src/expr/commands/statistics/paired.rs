@@ -7,7 +7,7 @@
 
 use std::cmp::Ordering;
 
-use super::sample_number;
+use super::magnitude_sample;
 use crate::expr::eval::{slot_val, Ctx, Val};
 use crate::expr::parse::{list_arity, Parser};
 use crate::expr::{ListOp, Node, Ty, NONE};
@@ -74,7 +74,7 @@ impl<const M: bool> Ctx<'_, M> {
             let first = lists.read(self.c, start + k);
             if let Some(second) = second {
                 let second = lists.read(self.c, second + k);
-                Some([sample_number(first)?, sample_number(second)?])
+                Some([magnitude_sample(first)?, magnitude_sample(second)?])
             } else if first.kind == Kind::Point {
                 let Val::V(x, y) = slot_val(&first) else {
                     return None;
@@ -185,12 +185,24 @@ mod tests {
     }
 
     #[test]
+    fn paired_statistics_read_numeric_geometry() {
+        let c = script::load(
+            "O = (0,0)\nA = (2,0)\nB = (0,3)\np = Polygon(O,B,A)\nxy = SigmaXY({p,1},{1,2})\nrk = Spearman({p,1},{1,2})",
+        )
+        .unwrap();
+        assert_eq!(c.number(c.id("xy").unwrap()), Some(5.0));
+        assert_eq!(c.number(c.id("rk").unwrap()), Some(-1.0));
+    }
+
+    #[test]
     fn paired_statistics_require_point_arguments_or_lists() {
-        let mut c = script::load("v = Vector((1, 2))").unwrap();
+        let mut c = script::load("v = Vector((1, 2))\nL = {v}\nP = {(1,2)}").unwrap();
         for call in [
             "Covariance((1, 2))",
             "PMCC(1, 2)",
             "Spearman(v, (1, 2))",
+            "Covariance(Element(L, 1), (0, 0))",
+            "Covariance(Element({v}, 1), (0, 0))",
             "SYY({1, 2}, {3, 4})",
             "SigmaYY({1, 2}, {3, 4})",
         ] {
@@ -216,5 +228,9 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(c.value(id), Value::Number(4.0));
+        let id = script::exec(&mut c, "a = Covariance(Element(P, 1), (0, 0))")
+            .unwrap()
+            .unwrap();
+        assert_eq!(c.value(id), Value::Number(0.5));
     }
 }

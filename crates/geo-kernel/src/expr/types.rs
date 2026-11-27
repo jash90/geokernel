@@ -878,6 +878,36 @@ pub(super) fn vec_kind(c: &Construction, nodes: &[Node], tys: &[Ty], i: u32) -> 
         Node::CellLookup(_, _, k) => kind(k),
         Node::Cmd(def, _) => kind(def.kind()),
         Node::Vector(_) => Kind::Vector,
+        Node::ListOp(ListOp::Element, list, index) => {
+            // shortcut: computed lists and indices use the point fallback until Element keeps its creation-time kind.
+            let index = match nodes[index as usize] {
+                Node::Num(n) => Some(n),
+                Node::Obj(id) => c.number(id),
+                _ => None,
+            };
+            let Some(index) = index else {
+                return Kind::Point;
+            };
+            let index = super::math::java_round(index).saturating_sub(1).max(0) as usize;
+            match nodes[list as usize] {
+                Node::Obj(id) => c
+                    .elements(id)
+                    .and_then(|items| items.get(index).or_else(|| items.get(0)))
+                    .map_or(Kind::Point, |element| match element {
+                        super::Element::Value(k, _) => kind(k),
+                        _ => Kind::Point,
+                    }),
+                Node::List(first, len) if len > 0 => {
+                    let offset = if index < len as usize {
+                        index as u32
+                    } else {
+                        0
+                    };
+                    vec_kind(c, nodes, tys, first + offset)
+                }
+                _ => Kind::Point,
+            }
+        }
         Node::Item(a) | Node::Un(_, a) | Node::If(_, _, a, _) => vec_kind(c, nodes, tys, a),
         Node::Bin(_, a, b) => {
             let kinds =

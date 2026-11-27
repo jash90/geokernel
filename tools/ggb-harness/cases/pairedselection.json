@@ -1,0 +1,17 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedselection-001",
+      "group": "statistics",
+      "script": [
+        "k = 1", "P = (1,2)", "v = Vector((3,4))",
+        "L = {P,v}", "r = Covariance(Element(L,k),(0,0))"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "k", "value": 2},
+        {"action": "set_number", "label": "k", "value": 1}
+      ]
+    }
+  ]
+}

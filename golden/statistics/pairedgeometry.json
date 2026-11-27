@@ -1,0 +1,260 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-pairedgeometry-001",
+      "group": "statistics",
+      "script": [
+        "u = 4",
+        "O = (0,0)",
+        "A = (u,0)",
+        "B = (0,2)",
+        "C = (0,u)",
+        "poly = Polygon(O,B,A)",
+        "path = PolyLine(A,O,B)",
+        "arc = CircularArc(O,A,C)",
+        "sector = CircularSector(O,A,C)",
+        "pr = SigmaXY({poly,1},{1,2})",
+        "pl = SigmaXY({path,1},{1,2})",
+        "pa = SigmaXY({arc,1},{1,2})",
+        "ps = SigmaXY({sector,1},{1,2})",
+        "rk = Spearman({poly,1},{1,2})",
+        "rs = Spearman({path,arc,sector,poly},{1,2,3,4})",
+        "cv = Covariance({poly,1},{1,2})",
+        "cx = Sxy({1,2},{sector,1})",
+        "pc = PMCC({poly,path,arc,sector},{1,2,3,4})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "u", "value": 6.0 },
+        { "action": "set_number", "label": "u", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "number", "defined": true, "value": 4.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "poly": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 2.0],
+              [4.0, 0.0]
+            ],
+            "area": 4.0,
+            "signed_area": -4.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "o": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "path": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [4.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "length": 6.0
+          },
+          "arc": {
+            "type": "arc",
+            "defined": true,
+            "value": 6.283185307179586,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 6.283185307179586,
+            "area": 4.5663706143591725,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "sector": {
+            "type": "sector",
+            "defined": true,
+            "value": 12.566370614359172,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 6.283185307179586,
+            "area": 12.566370614359172,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "pr": { "type": "number", "defined": true, "value": 6.0 },
+          "pl": { "type": "number", "defined": true, "value": 8.0 },
+          "pa": { "type": "number", "defined": true, "value": 8.283185307179586 },
+          "ps": { "type": "number", "defined": true, "value": 14.566370614359172 },
+          "rk": { "type": "number", "defined": true, "value": -1.0 },
+          "rs": { "type": "number", "defined": true, "value": -0.2000000000000001 },
+          "cv": { "type": "number", "defined": true, "value": -0.75 },
+          "cx": { "type": "number", "defined": true, "value": -5.783185307179586 },
+          "pc": { "type": "number", "defined": true, "value": 0.9038442330196346 }
+        },
+        {
+          "u": { "type": "number", "defined": true, "value": 6.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 6.0 },
+          "poly": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 2.0],
+              [6.0, 0.0]
+            ],
+            "area": 6.0,
+            "signed_area": -6.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "o": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": 6.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 6.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "path": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [6.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "length": 8.0
+          },
+          "arc": {
+            "type": "arc",
+            "defined": true,
+            "value": 9.42477796076938,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 9.42477796076938,
+            "area": 10.274333882308138,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [6.0, 6.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "sector": {
+            "type": "sector",
+            "defined": true,
+            "value": 28.274333882308138,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 9.42477796076938,
+            "area": 28.274333882308138,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [6.0, 6.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "pr": { "type": "number", "defined": true, "value": 8.0 },
+          "pl": { "type": "number", "defined": true, "value": 10.0 },
+          "pa": { "type": "number", "defined": true, "value": 11.42477796076938 },
+          "ps": { "type": "number", "defined": true, "value": 30.274333882308138 },
+          "rk": { "type": "number", "defined": true, "value": -1.0 },
+          "rs": { "type": "number", "defined": true, "value": -0.2000000000000001 },
+          "cv": { "type": "number", "defined": true, "value": -1.25 },
+          "cx": { "type": "number", "defined": true, "value": -13.637166941154067 },
+          "pc": { "type": "number", "defined": true, "value": 0.8530108091489264 }
+        },
+        {
+          "u": { "type": "number", "defined": true, "value": 4.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "poly": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 2.0],
+              [4.0, 0.0]
+            ],
+            "area": 4.0,
+            "signed_area": -4.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "o": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "path": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [4.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "length": 6.0
+          },
+          "arc": {
+            "type": "arc",
+            "defined": true,
+            "value": 6.283185307179586,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 6.283185307179586,
+            "area": 4.5663706143591725,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "sector": {
+            "type": "sector",
+            "defined": true,
+            "value": 12.566370614359172,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 6.283185307179586,
+            "area": 12.566370614359172,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 4.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "pr": { "type": "number", "defined": true, "value": 6.0 },
+          "pl": { "type": "number", "defined": true, "value": 8.0 },
+          "pa": { "type": "number", "defined": true, "value": 8.283185307179586 },
+          "ps": { "type": "number", "defined": true, "value": 14.566370614359172 },
+          "rk": { "type": "number", "defined": true, "value": -1.0 },
+          "rs": { "type": "number", "defined": true, "value": -0.2000000000000001 },
+          "cv": { "type": "number", "defined": true, "value": -0.75 },
+          "cx": { "type": "number", "defined": true, "value": -5.783185307179586 },
+          "pc": { "type": "number", "defined": true, "value": 0.9038442330196346 }
+        }
+      ]
+    }
+  ]
+}
