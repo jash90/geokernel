@@ -1,0 +1,100 @@
+{
+  "cases": [
+    {
+      "id": "statistics-percentileraw-001",
+      "group": "statistics",
+      "script": [
+        "p = 0.25",
+        "D = {9,1,4,6}",
+        "a = Percentile(D,p)",
+        "b = Percentile({9,1,4,6},1)",
+        "c = Percentile({9,1,4,6},0.05)",
+        "d = Percentile({4},0.5)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.75
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.0
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": -0.5
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 1.01
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.25
+        }
+      ]
+    },
+    {
+      "id": "statistics-percentileweighted-001",
+      "group": "statistics",
+      "script": [
+        "w = 1",
+        "D = {9,1,4,1}",
+        "F = {w,1,0,2}",
+        "a = Percentile(D,F,0.5)",
+        "b = Percentile({1,2,3},{1,2,3},0.5)",
+        "c = Percentile({1,10},{1,2147483646},0.5)",
+        "d = Percentile({1,2},{0.5,1.9},0.5)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "w",
+          "value": 8.0
+        },
+        {
+          "action": "set_number",
+          "label": "w",
+          "value": 0.0
+        },
+        {
+          "action": "set_number",
+          "label": "w",
+          "value": -1.0
+        },
+        {
+          "action": "set_number",
+          "label": "w",
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": "statistics-percentileundefined-001",
+      "group": "statistics",
+      "script": [
+        "a = Percentile({},0.5)",
+        "b = Percentile({1,2},{1},0.5)",
+        "c = Percentile({1,10},{0/0,1},0.5)",
+        "d = Percentile({1,10},{0,0},0.5)",
+        "e = Percentile({1,2,8},{1,1},0.5)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    }
+  ]
+}

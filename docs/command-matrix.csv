@@ -277,7 +277,7 @@ TMeanEstimate,,statistics,,out_of_scope,,,
 TMean2Estimate,,statistics,,out_of_scope,,,
 ChiSquaredTest,,statistics,,out_of_scope,,,
 ANOVA,,statistics,,out_of_scope,,,
-Percentile,,statistics,,out_of_scope,,,
+Percentile,,statistics,P2,done,2,2,"Numeric-compatible list with a probability, with optional frequencies whose truncated counts total at most 2147483647."
 GeometricMean,,statistics,P2,partial,4,2,Geometric mean of a numeric-compatible list or at least two separate numbers.
 HarmonicMean,,statistics,P2,partial,4,2,Harmonic mean of a numeric-compatible list or at least two separate numbers.
 RootMeanSquare,,statistics,P2,partial,4,2,Root mean square of a numeric-compatible list or at least two separate numbers.

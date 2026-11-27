@@ -1,0 +1,23 @@
+{
+  "cases": [
+    {
+      "id": "statistics-percentilegeometry-001",
+      "group": "statistics",
+      "script": [
+        "u = 4", "O = (0,0)", "A = (u,0)", "B = (0,2)", "C = (0,u)",
+        "pa = Polygon(O,A,B)", "pr = Polygon(O,B,A)", "pl = PolyLine(A,O,B)",
+        "ar = CircularArc(O,A,C)", "sc = CircularSector(O,A,C)",
+        "q1 = Percentile({pa,1,100},0.5)", "q2 = Percentile({pa,1,100},{1,1,1},0.5)",
+        "q3 = Percentile({1,10},{pa,1},0.5)", "q4 = Percentile({pr,1,100},0.5)",
+        "q5 = Percentile({pl,1,100},0.5)", "q6 = Percentile({ar,1,100},0.5)",
+        "q7 = Percentile({sc,1,100},0.5)", "q8 = Percentile({pl,1,100},{1,1,1},0.5)",
+        "q9 = Percentile({ar,1,100},{1,1,1},0.5)", "q10 = Percentile({sc,1,100},{1,1,1},0.5)"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "u", "value": 6},
+        {"action": "set_number", "label": "u", "value": 4}
+      ]
+    }
+  ]
+}
