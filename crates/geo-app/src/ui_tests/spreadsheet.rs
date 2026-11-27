@@ -131,6 +131,48 @@ fn short_spreadsheet_keeps_cells_editable_with_analysis_open() {
 }
 
 #[test]
+fn paired_analysis_swaps_axes_and_tracks_sheet_edits_and_undo() {
+    let mut window = sheet(Profile::Desktop, (1000.0, 800.0));
+    for (cell, value) in [("B1", "10"), ("B2", "30"), ("B3", "50")] {
+        window
+            .app
+            .wb
+            .edit_spreadsheet_cell(Address::parse(cell).unwrap(), value)
+            .unwrap();
+    }
+    window.frame(DT, Vec::new());
+    activate(&mut window, "A1");
+    activate(&mut window, EXTEND);
+    activate(&mut window, "B3");
+    activate(&mut window, "Analiza dwóch zmiennych");
+    assert!(analysis(&window).is_paired());
+    let rows = |window: &mut Headless| {
+        let app = &mut window.app;
+        app.spreadsheet_analysis
+            .as_mut()
+            .unwrap()
+            .as_mut()
+            .unwrap()
+            .refresh_paired(app.wb.construction())
+            .unwrap()
+            .rows
+    };
+    assert_eq!(rows(&mut window)[..2], [3.0, 30.0]);
+    activate(&mut window, "Zamień X i Y");
+    assert_eq!(rows(&mut window)[..2], [30.0, 3.0]);
+
+    activate(&mut window, "B2");
+    window.frame(DT, vec![Event::Text("60".into())]);
+    press_key(&mut window, Key::Enter);
+    assert_eq!(rows(&mut window)[..2], [40.0, 3.0]);
+    assert!(window.app.wb.undo());
+    window.frame(DT, Vec::new());
+    assert_eq!(rows(&mut window)[..2], [30.0, 3.0]);
+    activate(&mut window, CLOSE);
+    assert!(window.app.spreadsheet_analysis.as_ref().unwrap().is_none());
+}
+
+#[test]
 fn selected_spreadsheet_cells_keep_their_gridlines() {
     use eframe::egui::Shape;
 

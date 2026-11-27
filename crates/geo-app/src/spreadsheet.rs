@@ -28,9 +28,20 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
         app.select_spreadsheet_cell(address);
     }
     let analysis_open = matches!(app.spreadsheet_analysis, Ok(Some(_)));
+    let (first, last) = app
+        .spreadsheet_editor
+        .as_ref()
+        .expect("spreadsheet selection")
+        .selection
+        .bounds();
+    let paired = first.column != last.column && first.row != last.row;
     let (launch, close) = if Analysis::available() {
         ui.horizontal_wrapped(|ui| {
-            let title = "Analiza jednej zmiennej";
+            let title = if paired {
+                "Analiza dwóch zmiennych"
+            } else {
+                "Analiza jednej zmiennej"
+            };
             let launch = ui.button("Analiza");
             launch.widget_info(|| WidgetInfo::labeled(Role::Button, true, title));
             let launch = launch.on_hover_text(title).clicked();
@@ -129,14 +140,18 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
             summary_ui.set_clip_rect(summary);
             show_analysis(analysis, construction, &mut summary_ui);
         } else {
-            let _ = analysis.refresh(construction);
+            let _ = analysis.refresh_active(construction);
         }
     }
     if enter {
         app.submit_spreadsheet_input();
         ui.ctx().request_repaint();
     } else if launch {
-        app.launch_spreadsheet_analysis();
+        if paired {
+            app.launch_paired_spreadsheet_analysis();
+        } else {
+            app.launch_spreadsheet_analysis();
+        }
         ui.ctx().request_repaint();
     } else if let Some(action) = clicked {
         match action {
@@ -184,6 +199,10 @@ fn analysis_error(error: AnalysisError) -> &'static str {
     match error {
         AnalysisError::Range => "Zaznacz jeden wiersz lub jedną kolumnę (do 256 komórek).",
         AnalysisError::Cells => "Wszystkie komórki zakresu muszą zawierać skończone liczby.",
+        AnalysisError::PairedRange => {
+            "Zaznacz zakres dwóch wierszy lub dwóch kolumn (do 256 komórek)."
+        }
+        AnalysisError::Pairs => "Zaznacz zakres z co najmniej jedną parą liczb.",
         AnalysisError::Evaluation => "Nie udało się obliczyć statystyk.",
     }
 }
@@ -196,6 +215,31 @@ fn show_analysis(analysis: &mut Analysis, c: &Construction, ui: &mut Ui) {
         format!("{}:{}", first.label(), last.label())
     };
     ui.heading(range);
+    if analysis.is_paired() {
+        if ui.button("Zamień X i Y").clicked() {
+            analysis.swap_axes();
+        }
+        let names = [
+            "Średnia X",
+            "Średnia Y",
+            "Odchylenie standardowe próby X",
+            "Odchylenie standardowe próby Y",
+            "Korelacja Pearsona",
+            "Korelacja Spearmana",
+            "Sxx",
+            "Syy",
+            "Sxy",
+        ];
+        ScrollArea::vertical()
+            .min_scrolled_height(0.0)
+            .show(ui, |ui| match analysis.refresh_paired(c) {
+                Ok(summary) => show_statistic_rows(ui, c, &names, &summary.rows),
+                Err(error) => {
+                    ui.colored_label(theme::ERROR, analysis_error(error));
+                }
+            });
+        return;
+    }
     ScrollArea::vertical()
         .min_scrolled_height(0.0)
         .show(ui, |ui| match analysis.refresh(c) {
@@ -213,18 +257,22 @@ fn show_analysis(analysis: &mut Analysis, c: &Construction, ui: &mut Ui) {
                     "Trzeci kwartyl",
                     "Maksimum",
                 ];
-                eframe::egui::Grid::new("one_variable_summary").show(ui, |ui| {
-                    for (name, &value) in names.into_iter().zip(&summary.rows) {
-                        ui.label(name);
-                        ui.label(c.format_display_number(value));
-                        ui.end_row();
-                    }
-                });
+                show_statistic_rows(ui, c, &names, &summary.rows);
             }
             Err(error) => {
                 ui.colored_label(theme::ERROR, analysis_error(error));
             }
         });
+}
+
+fn show_statistic_rows(ui: &mut Ui, c: &Construction, names: &[&str], rows: &[f64]) {
+    eframe::egui::Grid::new("spreadsheet_statistics").show(ui, |ui| {
+        for (&name, &value) in names.iter().zip(rows) {
+            ui.label(name);
+            ui.label(c.format_display_number(value));
+            ui.end_row();
+        }
+    });
 }
 
 fn grid(app: &App, ui: &mut Ui, selected: Address, reveal: bool) -> Option<GridAction> {
