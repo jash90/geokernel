@@ -410,6 +410,8 @@ pub(crate) enum CallOp {
     Classes,
     /// `Frequency(...)` (`AlgoFrequency`).
     Frequency,
+    /// `Percentile(data, [frequencies,] probability)` (`AlgoPercentile`).
+    Percentile,
     /// `Zip(expression, variable, list, ...)` (`AlgoZip`): the expression,
     /// then a [`Node::Local`] and its list per variable.
     Zip,

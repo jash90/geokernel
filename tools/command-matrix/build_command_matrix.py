@@ -193,6 +193,7 @@ PARTIAL = {
     "Median": "Numeric list, weighted values or grouped interpolation, and separate numbers.",
     "Q1": "Lower quartile of a numeric list, values with frequencies, and separate numbers.",
     "Q3": "Upper quartile of a numeric list, values with frequencies, and separate numbers.",
+    "Percentile": "Numeric-compatible list with a probability, with optional frequencies whose truncated counts total at most 2147483647.",
     "Mode": "Ascending modes of a numeric-compatible list or at least two separate numbers.",
     "GeometricMean": "Geometric mean of a numeric-compatible list or at least two separate numbers.",
     "HarmonicMean": "Harmonic mean of a numeric-compatible list or at least two separate numbers.",

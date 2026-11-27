@@ -203,6 +203,7 @@ mad,statistics,5,"list | list,list | number,number,... | point,point,... | funct
 Median,statistics,5,"list | list,list | number,number,... | point,point,... | function"
 Q1,statistics,5,"list | list,list | number,number,... | point,point,... | function"
 Q3,statistics,5,"list | list,list | number,number,... | point,point,... | function"
+Percentile,statistics,2,"list,number | list,list,number"
 Mode,statistics,4,"list | number,number,... | point,point,... | function"
 GeometricMean,statistics,4,"list | number,number,... | point,point,... | function"
 HarmonicMean,statistics,4,"list | number,number,... | point,point,... | function"

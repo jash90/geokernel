@@ -5426,6 +5426,16 @@ form = "number,number,..."
 cases = ["statistics-variadic-001"]
 
 [[form]]
+command = "Percentile"
+form = "list,number"
+cases = ["statistics-percentileraw-001", "statistics-percentileundefined-001", "statistics-percentilesamples-001"]
+
+[[form]]
+command = "Percentile"
+form = "list,list,number"
+cases = ["statistics-percentileweighted-001", "statistics-percentileundefined-001", "statistics-percentilesamples-001"]
+
+[[form]]
 command = "Mode"
 form = "list"
 cases = ["statistics-nextlists-001", "statistics-nextedges-001", "statistics-nextkinds-001", "statistics-nextedit-001", "statistics-nextpoints-001"]

@@ -700,6 +700,16 @@ pub(crate) fn call_type(
             }
             return Err("`Frequency` needs a list of data".into());
         }
+        CallOp::Percentile => {
+            list_elem(0)?;
+            if len == 3 {
+                list_elem(1)?;
+            }
+            if !matches!(tys[(first + len - 1) as usize], Ty::Num(_)) {
+                return Err("`Percentile` needs a numeric probability".into());
+            }
+            Ty::Num(0)
+        }
         CallOp::Zip => Ty::List(elem_of(tys[first as usize])),
         // points and vectors fold to a point (`PointNDFold`)
         CallOp::Fold | CallOp::SumFold if tys[first as usize] == Ty::Vec => Ty::Vec,
@@ -756,6 +766,7 @@ pub(crate) fn call_value<const M: bool>(
 ) -> Option<Val> {
     Some(match op {
         CallOp::IndexOf => Val::N(ctx.index_of(first, len)),
+        CallOp::Percentile => Val::N(ctx.percentile(first, len).unwrap_or(f64::NAN)),
         CallOp::Fold => ctx.fold(first, len, true),
         CallOp::SumFold => ctx.fold(first, len, false),
         // a list: built by `list`
