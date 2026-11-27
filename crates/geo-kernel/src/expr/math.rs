@@ -62,6 +62,11 @@ pub(crate) fn java_round(x: f64) -> i64 {
     r as i64
 }
 
+/// `AlgoListElement` narrows the rounded index to a Java `int` first.
+pub(super) fn element_index(x: f64) -> i64 {
+    i64::from((java_round(x) as i32).wrapping_sub(1))
+}
+
 /// `DoubleUtil.isInteger`.
 pub(crate) fn is_integer(x: f64) -> bool {
     if !x.is_finite() {

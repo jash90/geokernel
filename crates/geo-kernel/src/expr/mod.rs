@@ -430,7 +430,7 @@ pub(crate) enum ListOp {
     /// (`ExpressionNodeEvaluator.handleElementOf`).
     Index,
     /// `Element(l, n)`: rounded, from 1 (`AlgoListElement`).
-    Element,
+    Element(Option<Kind>),
     /// `Product(list)` and `Product(list, n)` (`AlgoStats1D`).
     Product,
     /// `Reverse(list)` (`AlgoReverse`).
@@ -2971,6 +2971,7 @@ fn argument_is_vector_at(c: &Construction, nodes: &[Node], types: &[Ty], root: u
                 Node::Cmd(def, _) => def.kind() == Kind::Vector,
                 Node::Vector(_) => true,
                 Node::ListOp(ListOp::ApplyMatrixCoordinates { vector }, ..) => vector,
+                Node::ListOp(ListOp::Element(Some(Kind::Vector)), ..) => true,
                 Node::Bin(Bin::Add, a, b) if types[a as usize] == Ty::Vec => read(a) && read(b),
                 Node::Bin(Bin::Add | Bin::Sub | Bin::Mul | Bin::Div, a, b) => read(a) || read(b),
                 Node::If(_, _, value, _) => read(value),
@@ -3355,7 +3356,7 @@ fn add_entry(
     let allows_infinite_point = independent
         || matches!(
             entry.nodes[entry.root as usize],
-            Node::If(IfMode::Algo, ..) | Node::ListOp(ListOp::Element, ..)
+            Node::If(IfMode::Algo, ..) | Node::ListOp(ListOp::Element(_), ..)
         );
     c.exprs.entries.push(entry);
     c.exprs.pending = Some(index);

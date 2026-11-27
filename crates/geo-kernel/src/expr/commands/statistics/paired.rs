@@ -196,13 +196,16 @@ mod tests {
 
     #[test]
     fn paired_statistics_require_point_arguments_or_lists() {
-        let mut c = script::load("v = Vector((1, 2))\nL = {v}\nP = {(1,2)}").unwrap();
+        let mut c =
+            script::load("v = Vector((1, 2))\nL = {v}\nP = {(1,2)}\nk = 1\nM = {(1,2),v}").unwrap();
         for call in [
             "Covariance((1, 2))",
             "PMCC(1, 2)",
             "Spearman(v, (1, 2))",
             "Covariance(Element(L, 1), (0, 0))",
             "Covariance(Element({v}, 1), (0, 0))",
+            "Covariance(Element(M, k+1), (0, 0))",
+            "Covariance(Element(Reverse(M), 1), (0, 0))",
             "SYY({1, 2}, {3, 4})",
             "SigmaYY({1, 2}, {3, 4})",
         ] {

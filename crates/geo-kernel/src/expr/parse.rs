@@ -173,7 +173,7 @@ enum Mode<'a> {
 }
 
 fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, String> {
-    parse_in_with_work(c, src, mode, &mut Some(MAX_CELL_VISITS))
+    parse_in_with_work(c, src, mode, &mut Some(MAX_CELL_VISITS), false)
 }
 
 pub(super) fn parse_spreadsheet_coordinate(
@@ -182,7 +182,7 @@ pub(super) fn parse_spreadsheet_coordinate(
     budget: &mut usize,
 ) -> Result<Option<Parsed>, String> {
     let mut work = Some(*budget);
-    let parsed = parse_in_with_work(c, src, Mode::Argument, &mut work);
+    let parsed = parse_in_with_work(c, src, Mode::Argument, &mut work, true);
     *budget = work.ok_or(crate::spreadsheet::LIMIT)?;
     match parsed {
         Err(error) if error == crate::spreadsheet::LIMIT => Err(error),
@@ -195,6 +195,7 @@ fn parse_in_with_work(
     src: &str,
     mode: Mode<'_>,
     work: &mut Option<usize>,
+    share_cell_work: bool,
 ) -> Result<Parsed, String> {
     let equation = matches!(
         mode,
@@ -240,6 +241,8 @@ fn parse_in_with_work(
         },
         cas_variables: Vec::new(),
         watching_cells: false,
+        share_cell_work,
+        list_probe_deadline: eval::carrier_deadline(),
         cell_work: CellBudget {
             visits: *work,
             ..CellBudget::default()
@@ -324,6 +327,8 @@ pub(super) struct Parser<'a> {
     pub(super) locals: Vec<(String, Elem)>,
     cas_variables: Vec<String>,
     watching_cells: bool,
+    share_cell_work: bool,
+    list_probe_deadline: u64,
     cell_work: CellBudget,
 }
 
@@ -1621,6 +1626,61 @@ impl Parser<'_> {
 
     pub(super) fn is_number(&self, i: u32) -> bool {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::Num(_)))
+    }
+
+    /// Preserve the initial point/vector class without building an object.
+    pub(super) fn element_command(
+        &mut self,
+        start: usize,
+        list: u32,
+        index: u32,
+    ) -> Result<u32, String> {
+        let root = self.push(Node::ListOp(ListOp::Element(None), list, index));
+        let end = self.nodes.len();
+        let count = end - start;
+        if self.share_cell_work {
+            self.cell_work.charge_visits(count)?;
+        }
+        let before = eval::work_done();
+        let mut deadline = self.list_probe_deadline;
+        if self.share_cell_work {
+            deadline = deadline
+                .min(before.saturating_add(self.cell_work.visits.unwrap_or_default() as u64));
+        }
+        let result = eval::with_work_deadline(deadline, || {
+            if !eval::reserve_work(count as u64) {
+                return Err(());
+            }
+            let mut nodes = self.nodes[start..end].to_vec();
+            for node in &mut nodes {
+                super::map_children(node, |child| child - start as u32);
+            }
+            let Some(parsed) = super::reparse(
+                self.c,
+                Kind::Point,
+                &nodes,
+                &self.lits[start..end],
+                root - start as u32,
+            ) else {
+                return Ok(None);
+            };
+            if parsed.tys[parsed.root as usize] != Ty::Vec {
+                return Ok(None);
+            }
+            let entry = super::Entry::new(self.c, parsed, false);
+            eval::root_element_kind(self.c, &entry)
+        });
+        if self.share_cell_work {
+            if result.is_err() {
+                self.cell_work.visits = None;
+                return Err(crate::spreadsheet::LIMIT.into());
+            }
+            self.cell_work
+                .charge_visits((eval::work_done() - before - count as u64) as usize)?;
+        }
+        let kind = result.map_err(|()| "Element classification exceeds the evaluation budget")?;
+        self.nodes[root as usize] = Node::ListOp(ListOp::Element(kind), list, index);
+        Ok(root)
     }
 
     /// AlgoDimension chooses its output kind from the list at creation.

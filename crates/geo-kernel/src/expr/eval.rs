@@ -913,6 +913,35 @@ fn outermost_local(node: &Node, free_locals: &[u32]) -> u32 {
         .unwrap_or(NONE)
 }
 
+pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Kind>, ()> {
+    let Node::ListOp(ListOp::Element(None), list, index) = e.nodes[e.root as usize] else {
+        return Ok(None);
+    };
+    let lists = Lists::new(Vec::new());
+    let ctx = Ctx::<true> {
+        lists: Some(&lists),
+        meter: Some(&lists),
+        ..Ctx::new(c, e, &Env::None)
+    };
+    let refusals = shared_work_refusals();
+    let index = math::element_index(ctx.full_number(index)).max(0);
+    lists.truncate(0);
+    let kind = ctx.list(list).and_then(|(start, len)| {
+        (len != 0 && lists.charge(1)).then(|| {
+            let offset = if index < i64::from(len) {
+                index as u32
+            } else {
+                0
+            };
+            lists.read(c, start + offset).kind
+        })
+    });
+    if work_done() > lists.end.get() || shared_work_refusals() != refusals {
+        return Err(());
+    }
+    Ok(kind.filter(|kind| matches!(kind, Kind::Point | Kind::Vector) && !lists.over()))
+}
+
 /// Evaluates an entry whose result is a list: its elements go to `out`,
 /// compacted (the top level first); its length, `None` when undefined.
 pub(super) fn root_list(

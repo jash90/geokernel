@@ -1,0 +1,18 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedkindfreeze-001",
+      "group": "statistics",
+      "script": [
+        "k = 2", "P = (1,2)", "v = Vector((3,4))", "L = {P,v}",
+        "r = Covariance({Element(L,k),(0,0)})",
+        "s = Covariance({Element({P,v},k),(0,0)})"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "k", "value": 1},
+        {"action": "set_number", "label": "k", "value": 2}
+      ]
+    }
+  ]
+}
