@@ -38,6 +38,16 @@ mismatches = ["0:A", "0:D", "0:E", "0:F", "0:f", "0:g", "0:h", "0:i", "0:r_{1}"]
 
 # lines
 
+[[gap]]
+id = "infinity-inputs-023"
+reason = "The recording schema omits nonfinite line coefficients. GeoGebra keeps the line defined with an infinite slope, as IsDefined(g) and the scalar calls show in statistics-linecallhorizontal-004."
+mismatches = ["1:g", "3:g"]
+
+[[gap]]
+id = "infinity-inputs-024"
+reason = "The recording schema omits nonfinite line coefficients. GeoGebra keeps the line defined with an infinite offset, as IsDefined(g) and g(0) show in statistics-linecallhorizontal-005."
+mismatches = ["1:g", "3:g"]
+
 # intersect
 
 # vector

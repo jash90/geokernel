@@ -3759,6 +3759,20 @@ fn reloaded_line_expansion_keeps_the_typed_equation() {
 }
 
 #[test]
+fn reloaded_typed_line_calls_keep_infinite_coefficients() {
+    let wb = Workbench::from_script("n = 0\ng: y = 1/n\nh: y = x/n\na = g(0)\nb = h(1)").unwrap();
+    let (_, mut reloaded) = round_trip("typed lines with infinite coefficients", &wb, None);
+    let [n, a, b] = ["n", "a", "b"].map(|label| reloaded.construction().id(label).unwrap());
+    let outputs = |w: &Workbench| [a, b].map(|id| w.construction().value(id));
+    let number = geo_kernel::Value::Number;
+    assert_eq!(outputs(&reloaded), [number(f64::INFINITY); 2]);
+    assert!(reloaded.set_number(n, -2.0));
+    assert_eq!(outputs(&reloaded), [number(-0.5); 2]);
+    assert!(reloaded.set_number(n, 0.0));
+    assert_eq!(outputs(&reloaded), [number(f64::INFINITY); 2]);
+}
+
+#[test]
 fn fit_line_archive_checks_definedness_before_the_coefficient_tolerance() {
     for (x, defined, replacement) in [
         ("0.00007", false, "-1.02e-8"),

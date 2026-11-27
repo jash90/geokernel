@@ -1394,16 +1394,9 @@ fn evaluate_number(c: &Construction, index: u32) -> f64 {
     }
 }
 
-/// `GeoLine.isDefined`: the coefficients are numbers and `(a, b)` is not
-/// both zero at the standard precision.
 fn line_value(v: &[f64]) -> Value {
     let [a, b, c] = v.try_into().unwrap_or([f64::NAN; 3]);
-    let is_zero = |x: f64| -STANDARD_PRECISION < x && x < STANDARD_PRECISION;
-    if a.is_finite() && b.is_finite() && c.is_finite() && !(is_zero(a) && is_zero(b)) {
-        Value::Line { a, b, c }
-    } else {
-        Value::Undefined
-    }
+    algo::line_value(a, b, c).unwrap_or(Value::Undefined)
 }
 
 /// `GeoConic.setCoeffs`: the matrix of the coefficients of

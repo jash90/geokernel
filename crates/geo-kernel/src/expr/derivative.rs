@@ -147,7 +147,13 @@ impl Walker<'_> {
                 } else {
                     return Some(f64::NAN);
                 };
-                df * self.gradient(arg, depth)?
+                // A horizontal line stays constant even where the argument
+                // itself has no derivative.
+                if df == 0.0 && self.ctx.c.kind(f) == crate::Kind::Line {
+                    df
+                } else {
+                    df * self.gradient(arg, depth)?
+                }
             }
             Node::If(mode, cond, then, rest) => {
                 // `Operation.IF` and `IF_LIST` keep the condition and
