@@ -1359,12 +1359,6 @@ reason = "the kernel refuses the input: unknown command `Eccentricity`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1558"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Element` takes a list and one index"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1565"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `Ellipse` does not take 6 argument(s)"

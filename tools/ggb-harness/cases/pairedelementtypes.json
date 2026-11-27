@@ -1,0 +1,16 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedelementtypes-001",
+      "group": "statistics",
+      "script": [
+        "P = (1,2)", "v = Vector((3,4))", "L = {{P,v}}",
+        "r = Covariance({Element(L,1,2),(0,0)})",
+        "s = Element({{10},{20}},9007199254740994,1)",
+        "t = Covariance(Element(Flatten({{(1,2),(3,4)}}),2),(0,0))",
+        "u = Covariance(Element({1,P},2),(0,0))"
+      ],
+      "steps": [{"action":"initial"}]
+    }
+  ]
+}

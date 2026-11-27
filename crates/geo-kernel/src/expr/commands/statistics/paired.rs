@@ -206,6 +206,7 @@ mod tests {
             "Covariance(Element({v}, 1), (0, 0))",
             "Covariance(Element(M, k+1), (0, 0))",
             "Covariance(Element(Reverse(M), 1), (0, 0))",
+            "Covariance(Element({ApplyMatrix({{1,0},{0,1}},v)},1),(0,0))",
             "SYY({1, 2}, {3, 4})",
             "SigmaYY({1, 2}, {3, 4})",
         ] {

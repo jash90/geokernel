@@ -431,6 +431,8 @@ pub(crate) enum ListOp {
     Index,
     /// `Element(l, n)`: rounded, from 1 (`AlgoListElement`).
     Element(Option<Kind>),
+    /// An intermediate index of `Element(list, row, ..., column)`.
+    ElementRow,
     /// `Product(list)` and `Product(list, n)` (`AlgoStats1D`).
     Product,
     /// `Reverse(list)` (`AlgoReverse`).

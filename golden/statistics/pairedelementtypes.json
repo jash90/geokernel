@@ -1,0 +1,47 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-pairedelementtypes-001",
+      "group": "statistics",
+      "script": [
+        "P = (1,2)",
+        "v = Vector((3,4))",
+        "L = {{P,v}}",
+        "r = Covariance({Element(L,1,2),(0,0)})",
+        "s = Element({{10},{20}},9007199254740994,1)",
+        "t = Covariance(Element(Flatten({{(1,2),(3,4)}}),2),(0,0))",
+        "u = Covariance(Element({1,P},2),(0,0))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+                  { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 }
+                ]
+              }
+            ]
+          },
+          "r": { "type": "number", "defined": false },
+          "s": { "type": "number", "defined": true, "value": 10.0 },
+          "t": { "type": "number", "defined": true, "value": 3.0 },
+          "u": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    }
+  ]
+}

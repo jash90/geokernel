@@ -124,7 +124,7 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
             };
             // Only the final selection fixes the result kind.
             let list = prefix.iter().fold(*list, |list, &index| {
-                p.push(Node::ListOp(ListOp::Element(None), list, index))
+                p.push(Node::ListOp(ListOp::ElementRow, list, index))
             });
             return p.element_command(start, list, *last).map(Some);
         }
@@ -625,10 +625,10 @@ pub(super) fn list_type(
             of_numbers(numbers)?
         }
         ListOp::Product => of_numbers(numbers)?,
-        // `Element` of a list whose elements the types cannot tell apart
-        // (an `Element` of it, an `If` of lists) is typed as a number:
-        // GeoGebra finds what it is when it evaluates the line
-        ListOp::Element(_) if matches!(elem, Elem::Any) => Ty::Num(0),
+        ListOp::Element(Some(Kind::Point | Kind::Vector)) => Ty::Vec,
+        ListOp::ElementRow => Ty::List(Elem::Any),
+        // Keep the numeric fallback for an unclassified heterogeneous list.
+        ListOp::Element(None) if elem == Elem::Any => Ty::Num(0),
         ListOp::Index | ListOp::Element(_) => ty_of(elem)?,
         ListOp::Reverse | ListOp::First | ListOp::Last => Ty::List(elem),
         ListOp::FirstFreehand => Ty::List(Elem::Vec),
@@ -1432,6 +1432,10 @@ impl<const M: bool> Ctx<'_, M> {
         let (start, len) = self.list(l)?;
         let mut k = match op {
             ListOp::Element(_) => math::element_index(index),
+            ListOp::ElementRow if !index.is_nan() => {
+                i64::from(math::java_round(index - 1.0) as i32)
+            }
+            ListOp::ElementRow => return None,
             _ => math::java_round(index).saturating_sub(1),
         };
         if op == ListOp::Index && k < 0 {
@@ -1456,8 +1460,12 @@ impl<const M: bool> Ctx<'_, M> {
             }
             template
         };
-        if let ListOp::Element(kind) = op {
-            return kind.is_none_or(|k| selected.kind == k).then_some(selected);
+        match op {
+            ListOp::Element(kind) => {
+                return kind.is_none_or(|k| selected.kind == k).then_some(selected);
+            }
+            ListOp::ElementRow => return Some(selected),
+            _ => {}
         }
         let Some((row, width)) = selected.run() else {
             return present.then_some(selected);

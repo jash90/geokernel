@@ -879,6 +879,7 @@ pub(super) fn vec_kind(c: &Construction, nodes: &[Node], tys: &[Ty], i: u32) -> 
         Node::Cmd(def, _) => kind(def.kind()),
         Node::Vector(_) => Kind::Vector,
         Node::ListOp(ListOp::Element(Some(k)), ..) => kind(k),
+        Node::ListOp(ListOp::ApplyMatrixCoordinates { vector: true }, ..) => Kind::Vector,
         Node::Item(a) | Node::Un(_, a) | Node::If(_, _, a, _) => vec_kind(c, nodes, tys, a),
         Node::Bin(_, a, b) => {
             let kinds =

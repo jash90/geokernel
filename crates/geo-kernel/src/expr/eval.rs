@@ -955,19 +955,38 @@ pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Ki
         meter: Some(&lists),
         ..Ctx::new(c, e, &Env::None)
     };
+    fn template_slot(ctx: &Ctx<'_, true>, (start, len): (u32, u32), index: i64) -> Option<Slot> {
+        let lists = ctx.lists?;
+        let offset = if index < i64::from(len) {
+            index as u32
+        } else {
+            0
+        };
+        (len != 0 && lists.charge(1)).then(|| lists.read(ctx.c, start + offset))
+    }
+
+    fn template_row(ctx: &Ctx<'_, true>, list: u32) -> Option<(u32, u32)> {
+        let Node::ListOp(ListOp::ElementRow, source, index) = ctx.node(list) else {
+            return ctx.list(list);
+        };
+        let lists = ctx.lists?;
+        let mark = lists.len();
+        let index = math::element_index(ctx.full_number(index)).max(0);
+        lists.truncate(mark);
+        template_slot(ctx, template_row(ctx, source)?, index)?.run()
+    }
+
     let refusals = shared_work_refusals();
-    let index = math::element_index(ctx.full_number(index)).max(0);
+    // A nested Element takes its output class from the first item in the row.
+    let index = if matches!(ctx.node(list), Node::ListOp(ListOp::ElementRow, ..)) {
+        0
+    } else {
+        math::element_index(ctx.full_number(index)).max(0)
+    };
     lists.truncate(0);
-    let kind = ctx.list(list).and_then(|(start, len)| {
-        (len != 0 && lists.charge(1)).then(|| {
-            let offset = if index < i64::from(len) {
-                index as u32
-            } else {
-                0
-            };
-            lists.read(c, start + offset).kind
-        })
-    });
+    let kind = template_row(&ctx, list)
+        .and_then(|row| template_slot(&ctx, row, index))
+        .map(|slot| slot.kind);
     if work_done() > lists.end.get() || shared_work_refusals() != refusals {
         return Err(());
     }

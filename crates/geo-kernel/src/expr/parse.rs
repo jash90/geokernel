@@ -1698,6 +1698,9 @@ impl Parser<'_> {
         if self.share_cell_work {
             self.cell_work.charge_visits(count)?;
         }
+        let reserved = eval::with_work_deadline(self.list_probe_deadline, || {
+            eval::reserve_work(count as u64)
+        });
         let before = eval::work_done();
         let mut deadline = self.list_probe_deadline;
         if self.share_cell_work {
@@ -1705,7 +1708,7 @@ impl Parser<'_> {
                 .min(before.saturating_add(self.cell_work.visits.unwrap_or_default() as u64));
         }
         let result = eval::with_work_deadline(deadline, || {
-            if !eval::reserve_work(count as u64) {
+            if !reserved {
                 return Err(());
             }
             let mut nodes = self.nodes[start..end].to_vec();
@@ -1721,7 +1724,10 @@ impl Parser<'_> {
             ) else {
                 return Ok(None);
             };
-            if parsed.tys[parsed.root as usize] != Ty::Vec {
+            if !matches!(
+                parsed.tys[(list - start as u32) as usize],
+                Ty::List(Elem::Vec | Elem::Any)
+            ) {
                 return Ok(None);
             }
             let entry = super::Entry::new(self.c, parsed, false);
@@ -1733,7 +1739,7 @@ impl Parser<'_> {
                 return Err(crate::spreadsheet::LIMIT.into());
             }
             self.cell_work
-                .charge_visits((eval::work_done() - before - count as u64) as usize)?;
+                .charge_visits((eval::work_done() - before) as usize)?;
         }
         let kind = result.map_err(|()| "Element classification exceeds the evaluation budget")?;
         self.nodes[root as usize] = Node::ListOp(ListOp::Element(kind), list, index);
@@ -1977,6 +1983,17 @@ mod spreadsheet_tests {
         assert_eq!(c.numeric_value(&short), Some(3.0));
         let source = std::iter::repeat_n(unit, 100).collect::<Vec<_>>().join("+");
         assert!(matches!(parse(&c, &source), Err(error) if error == crate::spreadsheet::LIMIT));
+    }
+
+    #[test]
+    fn element_probe_charges_the_arena_span_once() {
+        let c = Construction::new();
+        let mut budget = 8;
+        let parsed = parse_spreadsheet_coordinate(&c, "Element({1},1)", &mut budget)
+            .unwrap()
+            .unwrap();
+        assert_eq!(parsed.tys[parsed.root as usize], Ty::Num(0));
+        assert_eq!(budget, 3);
     }
 
     #[test]
