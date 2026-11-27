@@ -173,7 +173,7 @@ enum Mode<'a> {
 }
 
 fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, String> {
-    parse_in_with_work(c, src, mode, &mut Some(MAX_CELL_VISITS))
+    parse_in_with_work(c, src, mode, &mut Some(MAX_CELL_VISITS), false)
 }
 
 pub(super) fn parse_spreadsheet_coordinate(
@@ -182,7 +182,7 @@ pub(super) fn parse_spreadsheet_coordinate(
     budget: &mut usize,
 ) -> Result<Option<Parsed>, String> {
     let mut work = Some(*budget);
-    let parsed = parse_in_with_work(c, src, Mode::Argument, &mut work);
+    let parsed = parse_in_with_work(c, src, Mode::Argument, &mut work, true);
     *budget = work.ok_or(crate::spreadsheet::LIMIT)?;
     match parsed {
         Err(error) if error == crate::spreadsheet::LIMIT => Err(error),
@@ -195,6 +195,7 @@ fn parse_in_with_work(
     src: &str,
     mode: Mode<'_>,
     work: &mut Option<usize>,
+    share_cell_work: bool,
 ) -> Result<Parsed, String> {
     let equation = matches!(
         mode,
@@ -240,6 +241,8 @@ fn parse_in_with_work(
         },
         cas_variables: Vec::new(),
         watching_cells: false,
+        share_cell_work,
+        list_probe_deadline: eval::carrier_deadline(),
         cell_work: CellBudget {
             visits: *work,
             ..CellBudget::default()
@@ -324,6 +327,8 @@ pub(super) struct Parser<'a> {
     pub(super) locals: Vec<(String, Elem)>,
     cas_variables: Vec<String>,
     watching_cells: bool,
+    share_cell_work: bool,
+    list_probe_deadline: u64,
     cell_work: CellBudget,
 }
 
@@ -1636,13 +1641,24 @@ impl Parser<'_> {
         };
         let entry = super::Entry::new(self.c, parsed, false);
         let before = eval::work_done();
-        let limit = self.cell_work.visits.unwrap_or_default() as u64;
-        let kind = eval::with_work_deadline(before.saturating_add(limit), || {
-            eval::root_list_first_kind(self.c, &entry)
-        });
-        self.cell_work
-            .charge_visits((eval::work_done() - before) as usize)?;
-        Ok(kind)
+        // Ordinary list probes share the evaluation allowance, not the smaller
+        // spreadsheet visit limit. Spreadsheet callers still spend their own budget.
+        let mut deadline = self.list_probe_deadline;
+        if self.share_cell_work {
+            deadline = deadline
+                .min(before.saturating_add(self.cell_work.visits.unwrap_or_default() as u64));
+        }
+        let kind =
+            eval::with_work_deadline(deadline, || eval::root_list_first_kind(self.c, &entry));
+        if self.share_cell_work {
+            if kind.is_err() {
+                self.cell_work.visits = None;
+                return Err(crate::spreadsheet::LIMIT.into());
+            }
+            self.cell_work
+                .charge_visits((eval::work_done() - before) as usize)?;
+        }
+        kind.map_err(|()| "List dispatch exceeds the evaluation budget".into())
     }
 
     /// AlgoDimension chooses its output kind from the list at creation.

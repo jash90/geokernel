@@ -913,15 +913,20 @@ fn outermost_local(node: &Node, free_locals: &[u32]) -> u32 {
         .unwrap_or(NONE)
 }
 
-pub(super) fn root_list_first_kind(c: &Construction, e: &Entry) -> Option<Kind> {
+pub(super) fn root_list_first_kind(c: &Construction, e: &Entry) -> Result<Option<Kind>, ()> {
     let lists = Lists::new(Vec::new());
     let ctx = Ctx::<true> {
         lists: Some(&lists),
         meter: Some(&lists),
         ..Ctx::new(c, e, &Env::None)
     };
-    let (start, len) = ctx.list(e.root)?;
-    (len != 0 && lists.charge(1)).then(|| lists.read(c, start).kind)
+    let kind = ctx
+        .list(e.root)
+        .and_then(|(start, len)| (len != 0 && lists.charge(1)).then(|| lists.read(c, start).kind));
+    if lists.over() {
+        return Err(());
+    }
+    Ok(kind)
 }
 
 /// Evaluates an entry whose result is a list: its elements go to `out`,

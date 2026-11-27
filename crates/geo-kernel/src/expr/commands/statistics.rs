@@ -184,7 +184,7 @@ fn parse_x_moment(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         } else {
             None
         };
-        let points = right == NONE && first == Some(Kind::Point);
+        let points = right == NONE && first.is_some_and(|kind| !numeric_magnitude(kind));
         let angle = first == Some(Kind::Angle);
         let op = if sigma {
             ListOp::SigmaXX { points, angle }
@@ -276,6 +276,20 @@ fn sample_number(slot: Slot) -> Option<f64> {
     }
 }
 
+fn numeric_magnitude(kind: Kind) -> bool {
+    matches!(
+        kind,
+        Kind::Number
+            | Kind::Angle
+            | Kind::Boolean
+            | Kind::Segment
+            | Kind::Polygon
+            | Kind::PolyLine
+            | Kind::Arc
+            | Kind::Sector
+    )
+}
+
 fn magnitude_sample(slot: Slot) -> Option<f64> {
     match (slot.kind, slot.value) {
         (Kind::Polygon, Value::Polygon { area }) => Some(area.abs()),
@@ -311,8 +325,8 @@ impl<const M: bool> Ctx<'_, M> {
         }
         let (mut sum, mut squares) = (0.0, 0.0);
         for k in 0..len {
-            if let Some(y_start) = y_start {
-                magnitude_sample(lists.read(self.c, y_start + k))?;
+            if y_start.is_some_and(|start| !numeric_magnitude(lists.read(self.c, start + k).kind)) {
+                return None;
             }
             let slot = lists.read(self.c, start + k);
             let x = if points {
@@ -796,6 +810,16 @@ mod tests {
             assert_eq!(outputs.map(|id| c.number(id)), expected);
             assert!(outputs.iter().all(|&id| c.kind(id) == Kind::Number));
         }
+    }
+
+    #[test]
+    fn x_moments_classify_large_inline_lists() {
+        let c = script::load(
+            "P = Sequence((k,k), k, 1, 20000)\na = SigmaXX(P)\nb = SigmaXX(Reverse(P))",
+        )
+        .unwrap();
+        assert_eq!(c.number(c.id("a").unwrap()), Some(2_666_866_670_000.0));
+        assert_eq!(c.number(c.id("b").unwrap()), c.number(c.id("a").unwrap()));
     }
 
     #[test]

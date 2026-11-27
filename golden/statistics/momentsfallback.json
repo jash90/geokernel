@@ -1,0 +1,63 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-momentsfallback-001",
+      "group": "statistics",
+      "script": [
+        "n = 1",
+        "L = If(n > 0, {\"a\",\"b\"}, {(1,5),(3,7)})",
+        "a = Sxx(L)",
+        "b = SigmaXX(L)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "text", "defined": true, "text": "a" },
+              { "type": "text", "defined": true, "text": "b" }
+            ]
+          },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 7.0 }
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 10.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "text", "defined": true, "text": "a" },
+              { "type": "text", "defined": true, "text": "b" }
+            ]
+          },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}
