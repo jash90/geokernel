@@ -105,6 +105,11 @@ else
 fi
 ```
 
+For the nine `FitLine`/`FitLineY` and `FitLineX` cases, pass `golden fitline_r17 fitlinescale`
+with the same image and pinned checkout. The inputs write `golden/statistics/fitlineprobe.json`
+and `golden/statistics/fitlinescale.json` and check raw coefficients through edits,
+degenerate samples and power-of-two rescaling.
+
 ### Selecting CAS topics
 
 To record one or more CAS topics without rewriting other golden files, set

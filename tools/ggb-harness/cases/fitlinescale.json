@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "id": "statistics-fitlinescale-001",
+      "group": "statistics",
+      "script": [
+        "L = {(0.1,0.2),(0.2,0.4),(0.3,0.5)}",
+        "g = FitLineY(L)", "h = FitLineX(L)"
+      ],
+      "steps": [{"action": "initial"}]
+    },
+    {
+      "id": "statistics-fitlinescale-002",
+      "group": "statistics",
+      "script": [
+        "L = {(10,20),(20,40),(30,50)}",
+        "g = FitLineY(L)", "h = FitLineX(L)"
+      ],
+      "steps": [{"action": "initial"}]
+    },
+    {
+      "id": "statistics-fitlinescale-003",
+      "group": "statistics",
+      "script": [
+        "L = {(-4,-8),(0,0),(4,8)}",
+        "g = FitLineY(L)", "h = FitLineX(L)"
+      ],
+      "steps": [{"action": "initial"}]
+    }
+  ]
+}

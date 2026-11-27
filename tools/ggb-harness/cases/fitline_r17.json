@@ -1,0 +1,98 @@
+{
+  "cases": [
+    {
+      "id": "statistics-fitlineprobe-001",
+      "group": "statistics",
+      "script": [
+        "g = FitLine({(1,1),(2,2),(3,3),(4,1/4),(5,1/5)})",
+        "h = FitLineX({(1,1),(2,2),(3,3),(4,1/4),(5,1/5)})"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "statistics-fitlineprobe-002",
+      "group": "statistics",
+      "script": [
+        "g = FitLine({(2,1),(2,3),(2,5)})",
+        "h = FitLineX({(2,1),(2,3),(2,5)})"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "statistics-fitlineprobe-003",
+      "group": "statistics",
+      "script": [
+        "g = FitLine({(1,4),(3,4),(5,4)})",
+        "h = FitLineX({(1,4),(3,4),(5,4)})"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "statistics-fitlineprobe-004",
+      "group": "statistics",
+      "script": [
+        "g = FitLine({(2,4)})",
+        "h = FitLineX({(2,4)})"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "statistics-fitlineprobe-005",
+      "group": "statistics",
+      "script": [
+        "g = FitLine({(0,0),(1,0),(0,1),(1,1)})",
+        "h = FitLineX({(0,0),(1,0),(0,1),(1,1)})"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "statistics-fitlineprobe-006",
+      "group": "statistics",
+      "script": [
+        "a = 2",
+        "P = (1, a)",
+        "Q = (3, 4)",
+        "R = (5, 1)",
+        "l = {P, Q, R}",
+        "g = FitLine(l)",
+        "h = FitLineX(l)",
+        "j = FitLineY(l)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "a",
+          "value": 7.0
+        },
+        {
+          "action": "set_number",
+          "label": "a",
+          "value": 2.0
+        }
+      ]
+    }
+  ]
+}

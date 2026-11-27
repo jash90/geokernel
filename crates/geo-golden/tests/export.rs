@@ -3706,6 +3706,28 @@ fn exported_xml(wb: &Workbench) -> String {
 }
 
 #[test]
+fn reloaded_fit_lines_follow_point_edits() {
+    let wb = Workbench::from_script(
+        "A = (1, 2)\nB = (3, 4)\nC = (5, 1)\nL = {A, B, C}\ng = FitLine(L)\nh = FitLineX({A, B, C})",
+    )
+    .unwrap();
+    let (_, mut reloaded) = round_trip("fit lines", &wb, None);
+    let original = Workbench::from_script(
+        "A = (1, 7)\nB = (3, 4)\nC = (5, 1)\nL = {A, B, C}\ng = FitLine(L)\nh = FitLineX({A, B, C})",
+    )
+    .unwrap();
+    assert!(reloaded.move_point(reloaded.construction().id("A").unwrap(), 1.0, 7.0));
+    for label in ["g", "h"] {
+        let value = |w: &Workbench| {
+            let c = w.construction();
+            c.value(c.id(label).unwrap())
+        };
+        assert_ne!(value(&wb), value(&original));
+        assert_eq!(value(&reloaded), value(&original), "{label}");
+    }
+}
+
+#[test]
 fn export_keeps_live_slider_endpoints_with_a_colon_label() {
     let mut wb = Workbench::default();
     wb.run_line("b = 36").unwrap();

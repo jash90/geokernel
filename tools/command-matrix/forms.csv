@@ -203,6 +203,8 @@ mad,statistics,5,"list | list,list | number,number,... | point,point,... | funct
 Median,statistics,5,"list | list,list | number,number,... | point,point,... | function"
 Q1,statistics,5,"list | list,list | number,number,... | point,point,... | function"
 Q3,statistics,5,"list | list,list | number,number,... | point,point,... | function"
+FitLineX,statistics,4,"list | point,point,... | number,number,... | function"
+FitLineY,statistics,4,"list | point,point,... | number,number,... | function"
 Percentile,statistics,2,"list,number | list,list,number"
 Covariance,statistics,3,"list | list,list | point,point,..."
 PMCC,statistics,3,"list | list,list | point,point,..."

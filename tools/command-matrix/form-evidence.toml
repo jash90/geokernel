@@ -5531,6 +5531,16 @@ form = "point,point,..."
 cases = ["statistics-pairedpoints-001"]
 
 [[form]]
+command = "FitLineX"
+form = "list"
+cases = ["statistics-fitlineprobe-001", "statistics-fitlineprobe-002", "statistics-fitlineprobe-003", "statistics-fitlineprobe-004", "statistics-fitlineprobe-005", "statistics-fitlineprobe-006", "statistics-fitlinescale-001", "statistics-fitlinescale-002", "statistics-fitlinescale-003"]
+
+[[form]]
+command = "FitLineY"
+form = "list"
+cases = ["statistics-fitlineprobe-001", "statistics-fitlineprobe-002", "statistics-fitlineprobe-003", "statistics-fitlineprobe-004", "statistics-fitlineprobe-005", "statistics-fitlineprobe-006", "statistics-fitlinescale-001", "statistics-fitlinescale-002", "statistics-fitlinescale-003"]
+
+[[form]]
 command = "Mode"
 form = "list"
 cases = ["statistics-nextlists-001", "statistics-nextedges-001", "statistics-nextkinds-001", "statistics-nextedit-001", "statistics-nextpoints-001"]

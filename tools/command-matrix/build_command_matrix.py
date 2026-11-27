@@ -193,6 +193,8 @@ PARTIAL = {
     "Median": "Numeric list, weighted values or grouped interpolation, and separate numbers.",
     "Q1": "Lower quartile of a numeric list, values with frequencies, and separate numbers.",
     "Q3": "Upper quartile of a numeric list, values with frequencies, and separate numbers.",
+    "FitLineX": "Least-squares regression of x on y from a list of finite 2D points.",
+    "FitLineY": "Least-squares regression of y on x from a list of finite 2D points.",
     "Percentile": "Numeric-compatible list with a probability, with optional frequencies whose truncated counts total at most 2147483647.",
     "Covariance": "Population covariance of a 2D point list, paired numeric-compatible lists, or at least two separate 2D points.",
     "PMCC": "Pearson correlation of a 2D point list, paired numeric-compatible lists, or at least two separate 2D points.",
@@ -547,7 +549,7 @@ def summary(rows, unclassified, declared, giac=None):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").partition("\n")[0])
     ap.add_argument("--source", required=True, help="GeoGebra checkout root")
     ap.add_argument("--out", required=True, help="CSV file to write")
     ap.add_argument("--forms", default=str(HERE / "forms.csv"),

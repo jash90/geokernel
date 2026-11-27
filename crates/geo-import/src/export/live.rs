@@ -35,6 +35,9 @@ impl Writer<'_> {
             CircleRadius { center, radius } => command("Circle", &[center, radius]),
             Lines(LineDef::BisectorPoints(a, b)) => command("LineBisector", &[a, b]),
             Lines(LineDef::BisectorSegment(s)) => command("LineBisector", &[s]),
+            Lines(LineDef::Fit { points, x_on_y }) => {
+                command(if x_on_y { "FitLineX" } else { "FitLineY" }, &[points])
+            }
             Lines(LineDef::AngleBisectorPoints { leg1, vertex, leg2 }) => {
                 command("AngularBisector", &[leg1, vertex, leg2])
             }
