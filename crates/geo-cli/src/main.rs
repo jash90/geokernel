@@ -208,11 +208,14 @@ fn describe(c: &Construction, id: Id) -> String {
     let v = c.value(id);
     match v {
         Value::Point { x, y } => format!("({x:.4}, {y:.4})"),
-        // Prefer a unit normal for display. A line can be defined even when
-        // its unit coefficients are not representable. Adding 0.0 clears -0.
         Value::Line { a, b, c } => {
-            let (a, b, c) = v.unit_line().unwrap_or((a, b, c));
-            format!("{:.4}x + {:.4}y + {:.4} = 0", a + 0.0, b + 0.0, c + 0.0)
+            if let Some((a, b, c)) = v.unit_line() {
+                format!("{:.4}x + {:.4}y + {:.4} = 0", a + 0.0, b + 0.0, c + 0.0)
+            } else {
+                // A raw normal can be arbitrarily small. Keep a round-tripping
+                // decimal for each coefficient and clear negative zero for display.
+                format!("{:?}x + {:?}y + {:?} = 0", a + 0.0, b + 0.0, c + 0.0)
+            }
         }
         Value::Segment { x1, y1, x2, y2 } => {
             format!(
@@ -447,15 +450,15 @@ mod tests {
     #[test]
     fn line_description_uses_raw_coefficients_when_unit_form_is_unrepresentable() {
         let c = script::load(
-            "k: 3x + 4y = 10\nl: 0.25x + 10^308 = 0\nt = 2^341\ng = FitLine({(0,4*t),(t,5*t)})",
+            "k: 3x + 4y = 10\nl: 0.25x + 10^308 = 0\nt = 2^341\ng = FitLine({(0,4*t),(t,5*t)})\n\
+             p: 0.00001x + 10^308 = 0\nq: 0.00001y + 10^308 = 0",
         )
         .unwrap();
         let equation = |label| describe(&c, c.id(label).unwrap());
         assert_eq!(equation("k"), "0.6000x + 0.8000y + -2.0000 = 0");
-        assert_eq!(
-            equation("l"),
-            format!("0.2500x + 0.0000y + {:.4} = 0", 1e308)
-        );
-        assert_eq!(equation("g"), "1.0000x + -1.0000y + inf = 0");
+        assert_eq!(equation("l"), "0.25x + 0.0y + 1e308 = 0");
+        assert_eq!(equation("g"), "1.0x + -1.0y + inf = 0");
+        assert_eq!(equation("p"), "1e-5x + 0.0y + 1e308 = 0");
+        assert_eq!(equation("q"), "0.0x + 1e-5y + 1e308 = 0");
     }
 }
