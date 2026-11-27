@@ -186,7 +186,7 @@ pub(crate) fn normalized_coefficients(g: (f64, f64, f64), max: f64, min: f64) ->
     scale_coefficients(g, max, min)
 }
 
-// The callers apply their algorithm's zero test and guarantee a finite coefficient.
+// The callers handle all-zero and all-infinite triples. A NaN stops both loops.
 fn scale_coefficients(
     (mut x, mut y, mut z): (f64, f64, f64),
     max: f64,

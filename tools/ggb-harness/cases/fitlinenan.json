@@ -1,0 +1,49 @@
+{
+  "cases": [
+    {
+      "id": "statistics-fitlinenan-001",
+      "group": "statistics",
+      "script": [
+        "n = 511",
+        "t = 2^n",
+        "L = {(t,t),(-t,-t)}",
+        "g = FitLine(L)",
+        "h = FitLineX(L)",
+        "v = Direction(g)",
+        "w = Direction(h)",
+        "a = x(v)",
+        "b = y(v)",
+        "p = x(w)",
+        "q = y(w)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 512
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 513
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 511
+        }
+      ],
+      "observe": [
+        "g",
+        "h",
+        "a",
+        "b",
+        "p",
+        "q"
+      ]
+    }
+  ]
+}

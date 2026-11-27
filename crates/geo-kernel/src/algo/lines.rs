@@ -511,7 +511,7 @@ fn fit_line(points: crate::expr::List<'_>, x_on_y: bool) -> Option<Value> {
     let (a, b) = if x_on_y { (-var, cov) } else { (cov, -var) };
     let coefficients = [a, b, intercept];
     // Three infinities would never change in the reference's halving loop.
-    if !coefficients.into_iter().any(f64::is_finite) {
+    if coefficients.into_iter().all(f64::is_infinite) {
         return None;
     }
     // Fit lines skip rescaling if any coefficient is near zero, including c.

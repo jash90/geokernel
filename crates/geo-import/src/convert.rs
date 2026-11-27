@@ -2428,21 +2428,29 @@ fn same_coordinate(p: f64, q: f64) -> bool {
 /// Whether the lines `(a, b, c)` and `(sa, sb, sc)` are the same up to a
 /// positive factor (the orientation of a line is part of its value).
 fn same_line(line: [f64; 3], saved: [f64; 3]) -> bool {
-    let scale = |[a, b, c]: [f64; 3]| {
-        if a.is_infinite() || b.is_infinite() {
+    let prepare = |mut coords: [f64; 3]| {
+        let largest = coords[0].abs().max(coords[1].abs());
+        let scale = if largest.is_infinite() {
             // The infinite normal has no finite length. The remaining finite
             // coefficients still determine a scale when any is nonzero.
-            [a, b, c]
+            coords
                 .into_iter()
                 .filter(|v| v.is_finite() && *v != 0.0)
                 .map(f64::abs)
                 .reduce(f64::max)
                 .unwrap_or(1.0)
         } else {
-            a.hypot(b)
-        }
+            // Halving the whole triple leaves its orientation and offset unchanged.
+            // Its normal length then fits in a double even near the upper limit.
+            if largest > f64::MAX / 2.0 {
+                coords = coords.map(|v| v * 0.5);
+            }
+            coords[0].hypot(coords[1])
+        };
+        (coords, scale)
     };
-    let (n, sn) = (scale(line), scale(saved));
+    let (line, n) = prepare(line);
+    let (saved, sn) = prepare(saved);
     n > 0.0
         && sn > 0.0
         && line.into_iter().zip(saved).all(|(p, q)| {
@@ -2876,6 +2884,15 @@ fn list_item_agrees(actual: geo_kernel::expr::Element<'_>, saved: &str) -> bool 
 mod tests {
     use crate::import;
     use geo_kernel::{script, Value};
+
+    #[test]
+    fn large_finite_line_normals_preserve_slope_and_orientation() {
+        use super::same_line;
+        let line = [1.62e308, -1.62e308, 0.0];
+        assert!(same_line(line, [8.1e307, -8.1e307, 0.0]));
+        assert!(!same_line(line, [1.7e308, -9e307, 0.0]));
+        assert!(!same_line(line, [-1.62e308, 1.62e308, 0.0]));
+    }
 
     #[test]
     fn saved_text_verification_reports_exact_string_differences() {
