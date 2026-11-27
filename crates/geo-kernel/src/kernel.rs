@@ -390,12 +390,13 @@ impl Value {
     }
 
     /// For a line, `(a, b, c)` scaled so that `(a, b)` has length 1, with the
-    /// same orientation. `None` for every other value.
+    /// same orientation. Returns `None` if the normalized line has no finite
+    /// representation, or the value is another kind.
     pub fn unit_line(&self) -> Option<(f64, f64, f64)> {
         match *self {
-            Value::Line { a, b, c } => {
-                let len = a.hypot(b);
-                (len > 0.0).then(|| (a / len, b / len, c / len))
+            Value::Line { a, b, c } if c.is_finite() => {
+                let [a, b, c] = crate::algo::unit_normal_coefficients([a, b, c])?;
+                c.is_finite().then_some((a, b, c))
             }
             _ => None,
         }

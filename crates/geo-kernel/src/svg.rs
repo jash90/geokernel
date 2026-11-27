@@ -307,14 +307,14 @@ fn render_geometry(
     let (mx, my) = (0.5 * (view.xmin + view.xmax), 0.5 * (view.ymin + view.ymax));
     let reach = vw.hypot(vh);
     let write_line = |out: &mut String, [(x1, y1), (x2, y2)]: [(f64, f64); 2]| {
-        let _ = writeln!(
-            out,
-            r#"<line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>"#,
-            sx(x1),
-            sy(y1),
-            sx(x2),
-            sy(y2),
-        );
+        let pixels = [sx(x1), sy(y1), sx(x2), sy(y2)];
+        if pixels.iter().all(|v| v.is_finite()) {
+            let [x1, y1, x2, y2] = pixels;
+            let _ = writeln!(
+                out,
+                r#"<line x1="{x1:.2}" y1="{y1:.2}" x2="{x2:.2}" y2="{y2:.2}"/>"#
+            );
+        }
     };
     let write_circle = |out: &mut String, cx, cy, r: f64| {
         let _ = writeln!(
@@ -351,13 +351,12 @@ fn render_geometry(
                 };
                 let d = a * mx + b * my + k;
                 let (fx, fy) = (mx - a * d, my - b * d);
-                let _ = writeln!(
-                    lines,
-                    r##"<line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>"##,
-                    sx(fx - reach * b),
-                    sy(fy + reach * a),
-                    sx(fx + reach * b),
-                    sy(fy - reach * a),
+                write_line(
+                    &mut lines,
+                    [
+                        (fx - reach * b, fy + reach * a),
+                        (fx + reach * b, fy - reach * a),
+                    ],
                 );
             }
             Value::Segment { x1, y1, x2, y2 } => write_line(&mut segments, [(x1, y1), (x2, y2)]),
@@ -1086,6 +1085,28 @@ mod control_tests {
         assert!(svg.contains(">a = 2</text>"));
         assert!(!svg.contains(">k = 2</text>"));
     }
+}
+
+#[cfg(test)]
+#[test]
+fn fit_line_svg_draws_the_large_diagonal_and_skips_the_infinite_offset() {
+    let c = crate::script::load(
+        "t = 9*10^153\ng = FitLine({(-t,-t),(t,t)})\nu = 2^341\nh = FitLine({(0,4*u),(u,5*u)})",
+    )
+    .unwrap();
+    let view = View {
+        xmin: -5.0,
+        xmax: 5.0,
+        ymin: -5.0,
+        ymax: 5.0,
+    };
+    let svg = |label: &str| render_visible(&c, view, 400, 300, |id| c.label(id) == label);
+    let diagonal = svg("g");
+    assert!(
+        diagonal.contains(r#"<line x1="500.00" y1="-150.00" x2="-100.00" y2="450.00"/>"#),
+        "{diagonal}"
+    );
+    assert!(!svg("h").contains("<line "));
 }
 
 #[cfg(test)]

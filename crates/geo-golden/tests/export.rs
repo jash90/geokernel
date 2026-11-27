@@ -3728,6 +3728,32 @@ fn reloaded_fit_lines_follow_point_edits() {
 }
 
 #[test]
+fn fit_line_archive_checks_definedness_before_the_coefficient_tolerance() {
+    for (x, defined, replacement) in [
+        ("0.00007", false, "-1.02e-8"),
+        ("0.0000715", true, "-9.8e-9"),
+    ] {
+        let wb = Workbench::from_script(&format!("g = FitLine({{(-{x},0),({x},0)}})")).unwrap();
+        let (bytes, reloaded) = round_trip("fit near the definedness threshold", &wb, None);
+        let construction = reloaded.construction();
+        let value = construction.stored_value(construction.id("g").unwrap());
+        assert_eq!(value.is_defined(), defined);
+        let (geo_kernel::Value::Line { b, .. } | geo_kernel::Value::UndefinedLine { b, .. }) =
+            value
+        else {
+            panic!("expected fit coefficients");
+        };
+        let xml = geo_import::archive::extract_xml(&bytes).unwrap();
+        let coords = format!(r#"x="0" y="{b}" z="0""#);
+        assert!(xml.contains(&coords));
+        let changed = xml.replace(&coords, &format!(r#"x="0" y="{replacement}" z="0""#));
+        let result = geo_import::import_for_replay(changed.as_bytes()).unwrap();
+        assert_eq!(result.mismatched.len(), 1);
+        assert_eq!(result.mismatched[0].label, "g");
+    }
+}
+
+#[test]
 fn reloaded_fit_lines_keep_their_infinite_intercepts() {
     let wb = Workbench::from_script(
         "t = 2^341\ng = FitLine({(0,4*t),(t,5*t)})\nh = FitLineX({(4*t,0),(5*t,t)})",

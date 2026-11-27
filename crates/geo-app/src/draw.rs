@@ -624,13 +624,14 @@ fn paint_layer<'c>(
         if let Some((a, b, k)) = c.value(id).unit_line() {
             let d = a * mx + b * my + k;
             let (fx, fy) = (mx - a * d, my - b * d);
-            line(
-                id,
-                [
-                    p(fx - reach * b, fy + reach * a),
-                    p(fx + reach * b, fy - reach * a),
-                ],
-            );
+            let ends = [
+                p(fx - reach * b, fy + reach * a),
+                p(fx + reach * b, fy - reach * a),
+            ];
+            if !ends.iter().all(|p| p.is_finite()) {
+                continue;
+            }
+            line(id, ends);
             if let Some(entry) = labelpos::line_entry(screen(fx, fy), (b, a), w, h) {
                 let pos = labelpos::line_label(entry, w, h, 24.0, 12.0);
                 labels.push(label(

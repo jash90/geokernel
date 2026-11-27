@@ -2427,39 +2427,43 @@ fn same_coordinate(p: f64, q: f64) -> bool {
 
 /// Whether the lines `(a, b, c)` and `(sa, sb, sc)` are the same up to a
 /// positive factor (the orientation of a line is part of its value).
-fn same_line(line: [f64; 3], saved: [f64; 3]) -> bool {
-    let prepare = |mut coords: [f64; 3]| {
-        let largest = coords[0].abs().max(coords[1].abs());
-        let scale = if largest.is_infinite() {
-            // The infinite normal has no finite length. The remaining finite
-            // coefficients still determine a scale when any is nonzero.
-            coords
+fn same_line(mut line: [f64; 3], mut saved: [f64; 3]) -> bool {
+    let normalized = |coords: [f64; 3]| {
+        if coords[0].is_infinite() || coords[1].is_infinite() {
+            // Only the finite components can supply a positive scale.
+            let scale = coords
                 .into_iter()
                 .filter(|v| v.is_finite() && *v != 0.0)
                 .map(f64::abs)
                 .reduce(f64::max)
-                .unwrap_or(1.0)
+                .unwrap_or(1.0);
+            Some(coords.map(|v| v / scale))
         } else {
-            // Halving the whole triple leaves its orientation and offset unchanged.
-            // Its normal length then fits in a double even near the upper limit.
-            if largest > f64::MAX / 2.0 {
-                coords = coords.map(|v| v * 0.5);
-            }
-            coords[0].hypot(coords[1])
-        };
-        (coords, scale)
+            geo_kernel::algo::unit_normal_coefficients(coords)
+        }
     };
-    let (line, n) = prepare(line);
-    let (saved, sn) = prepare(saved);
-    n > 0.0
-        && sn > 0.0
-        && line.into_iter().zip(saved).all(|(p, q)| {
-            if p.is_infinite() || q.is_infinite() {
-                p == q
+    loop {
+        let (Some(unit), Some(saved_unit)) = (normalized(line), normalized(saved)) else {
+            return false;
+        };
+        if line[2].is_finite()
+            && saved[2].is_finite()
+            && (unit[2].is_infinite() || saved_unit[2].is_infinite())
+        {
+            // Compare both offsets in the same units. A factor of 2^-52
+            // leaves an overflowing distance well within the relative-tolerance range.
+            line[2] *= f64::EPSILON;
+            saved[2] *= f64::EPSILON;
+            continue;
+        }
+        return (0..3).all(|i| {
+            if line[i].is_infinite() || saved[i].is_infinite() {
+                line[i] == saved[i]
             } else {
-                close(p / n, q / sn)
+                close(unit[i], saved_unit[i])
             }
-        })
+        });
+    }
 }
 
 fn saved_text(el: &Element) -> String {
@@ -2565,11 +2569,10 @@ fn saved_defined(el: &Element) -> Option<bool> {
         // A degenerate segment (equal end points) is a defined object whose
         // saved line is (0, 0, 0).
         "segment" => el.coords.as_ref().map(|_| coords3(el).is_some()),
-        "line" => el.coords.as_ref().map(|_| {
-            raw_coords3(el).is_some_and(|[a, b, c]| {
-                !(a.is_nan() || b.is_nan() || c.is_nan()) && (a != 0.0 || b != 0.0)
-            })
-        }),
+        "line" => el
+            .coords
+            .as_ref()
+            .map(|_| raw_coords3(el).is_some_and(geo_kernel::algo::line_is_defined)),
         "ray" => el
             .coords
             .as_ref()
@@ -2715,22 +2718,23 @@ fn cross_check(
             }
         }
     }
-    if !value.is_defined() && kind == Kind::Line && el.coords.is_some() {
-        if let Value::UndefinedLine { a, b, c: intercept } = c.stored_value(id) {
-            // Direction reads the raw normal even when the line is undefined.
-            let agrees = raw_coords3(el).is_some_and(|saved| {
-                [a, b, intercept]
-                    .into_iter()
-                    .zip(saved)
-                    .all(|(p, q)| same_coordinate(p, q) || p.is_nan() && q.is_nan())
-            });
-            return (!agrees).then(report).flatten();
-        }
-    }
     let saved_defined =
         saved_defined(el).or_else(|| expression.filter(|exp| exp.trim() == "?").map(|_| false));
     match (value.is_defined(), saved_defined) {
         (false, Some(true)) | (true, Some(false)) => return report(),
+        (false, Some(false)) if kind == Kind::Line && el.coords.is_some() => {
+            if let Value::UndefinedLine { a, b, c: intercept } = c.stored_value(id) {
+                // Two undefined fits can still have different observable directions.
+                let agrees = raw_coords3(el).is_some_and(|saved| {
+                    [a, b, intercept]
+                        .into_iter()
+                        .zip(saved)
+                        .all(|(p, q)| same_coordinate(p, q) || p.is_nan() && q.is_nan())
+                });
+                return (!agrees).then(report).flatten();
+            }
+            return None;
+        }
         (false, _) | (_, None) => return None,
         (true, Some(true)) => {}
     }
@@ -2892,6 +2896,10 @@ mod tests {
         assert!(same_line(line, [8.1e307, -8.1e307, 0.0]));
         assert!(!same_line(line, [1.7e308, -9e307, 0.0]));
         assert!(!same_line(line, [-1.62e308, 1.62e308, 0.0]));
+        let distant = [0.25, 0.0, 1e308];
+        assert!(same_line(distant, [0.125, 0.0, 5e307]));
+        assert!(!same_line(distant, [0.25, 0.0, 9e307]));
+        assert!(!same_line(distant, [0.25, 0.0, f64::INFINITY]));
     }
 
     #[test]
