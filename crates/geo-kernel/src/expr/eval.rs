@@ -977,16 +977,37 @@ pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Ki
     }
 
     let refusals = shared_work_refusals();
-    // A nested Element takes its output class from the first item in the row.
-    let index = if matches!(ctx.node(list), Node::ListOp(ListOp::ElementRow, ..)) {
+    // A nested Element starts with the first item in the row as its template.
+    let mut source = list;
+    while let Node::ListOp(ListOp::ElementRow, parent, _) = ctx.node(source) {
+        source = parent;
+    }
+    let nested = source != list;
+    let literal_rows = match ctx.node(source) {
+        Node::List(..) => true,
+        Node::Obj(id) => super::literal_list_source(c, id).is_some(),
+        _ => false,
+    };
+    let index = if nested {
         0
     } else {
         math::element_index(ctx.full_number(index)).max(0)
     };
     lists.truncate(0);
-    let kind = template_row(&ctx, list)
-        .and_then(|row| template_slot(&ctx, row, index))
-        .map(|slot| slot.kind);
+    let kind = template_row(&ctx, list).and_then(|row| {
+        let slot = template_slot(&ctx, row, index)?;
+        // An anonymous numeric template in a literal row can promote to a point.
+        if nested && literal_rows && slot.kind == Kind::Number && slot.object_id().is_none() {
+            let (start, len) = row;
+            if !lists.charge(u64::from(len)) {
+                return None;
+            }
+            if (start..start + len).any(|i| lists.read(c, i).kind == Kind::Point) {
+                return Some(Kind::Point);
+            }
+        }
+        Some(slot.kind)
+    });
     if work_done() > lists.end.get() || shared_work_refusals() != refusals {
         return Err(());
     }

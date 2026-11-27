@@ -1461,6 +1461,9 @@ impl<const M: bool> Ctx<'_, M> {
             template
         };
         match op {
+            ListOp::Element(Some(Kind::Point)) if selected.kind == Kind::Number => {
+                return Some(Slot::coords(Kind::Point, selected.numeric_cell()?, 0.0));
+            }
             ListOp::Element(kind) => {
                 return kind.is_none_or(|k| selected.kind == k).then_some(selected);
             }
