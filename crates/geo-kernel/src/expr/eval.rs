@@ -945,6 +945,151 @@ pub(super) fn root_list_first_kind(c: &Construction, e: &Entry) -> Result<Option
     Ok(kind.filter(|_| !lists.over()))
 }
 
+pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Kind>, ()> {
+    let Node::ListOp(ListOp::Element(None), list, index) = e.nodes[e.root as usize] else {
+        return Ok(None);
+    };
+    let lists = Lists::new(Vec::new());
+    let ctx = Ctx::<true> {
+        lists: Some(&lists),
+        meter: Some(&lists),
+        ..Ctx::new(c, e, &Env::None)
+    };
+    enum RowOrigin<'a> {
+        Literal(Ctx<'a, true>, u32, Option<bool>), // node, reversal parity if copied by Reverse
+        Copied,
+        NamedCopy,
+    }
+    type TemplateRow<'a> = ((u32, u32), Option<RowOrigin<'a>>);
+
+    fn row_origin(mut ctx: Ctx<'_, true>, mut node: u32, outer: bool) -> Option<RowOrigin<'_>> {
+        let mut reversed = None;
+        while ctx.lists?.charge(1) {
+            match ctx.node(node) {
+                Node::List(..) => return Some(RowOrigin::Literal(ctx, node, reversed)),
+                Node::Item(child) => node = child,
+                Node::Obj(id) | Node::ItemObject(id) => {
+                    let Def::Expr(def) = ctx.c.def(id) else {
+                        return None;
+                    };
+                    ctx.e = super::entry(ctx.c, def);
+                    node = ctx.e.root;
+                    // A dependent list expression rebuilds its nested rows as anonymous lists.
+                    if matches!(ctx.node(node), Node::Obj(_)) {
+                        return Some(if outer {
+                            RowOrigin::Copied
+                        } else {
+                            RowOrigin::NamedCopy
+                        });
+                    }
+                }
+                Node::ListOp(ListOp::Reverse, source, _) if outer => {
+                    reversed = Some(!reversed.unwrap_or(false));
+                    node = source;
+                }
+                _ => return None,
+            }
+        }
+        None
+    }
+
+    fn selected_origin<'a>(origin: RowOrigin<'a>, offset: u32, len: u32) -> Option<RowOrigin<'a>> {
+        let RowOrigin::Literal(ctx, node, reversed) = origin else {
+            return Some(RowOrigin::Copied);
+        };
+        let Node::List(first, width) = ctx.node(node) else {
+            return None;
+        };
+        if width != len || !ctx.lists?.charge(1) {
+            return None;
+        }
+        let offset = if reversed == Some(true) {
+            len - 1 - offset
+        } else {
+            offset
+        };
+        let index = first + offset;
+        if reversed.is_some()
+            && matches!(ctx.node(index), Node::Item(child) if matches!(ctx.node(child),
+                Node::List(..) | Node::ListOp(ListOp::Reverse, ..)))
+        {
+            return Some(RowOrigin::Copied);
+        }
+        row_origin(ctx, index, false)
+    }
+
+    fn independent_number(origin: RowOrigin<'_>) -> bool {
+        match origin {
+            RowOrigin::Copied => true,
+            RowOrigin::NamedCopy => false,
+            RowOrigin::Literal(ctx, node, _) => {
+                matches!(ctx.node(node), Node::List(first, len) if len != 0
+                    && ctx.lists.is_some_and(|lists| lists.charge(1))
+                    && matches!(ctx.node(first), Node::Item(item) if !ctx.dependent_list_item(item)))
+            }
+        }
+    }
+
+    fn template_row<'a>(
+        ctx: Ctx<'a, true>,
+        list: u32,
+        track_origin: bool,
+    ) -> Option<TemplateRow<'a>> {
+        let Node::ListOp(ListOp::ElementRow, source, index) = ctx.node(list) else {
+            return Some((
+                ctx.list(list)?,
+                track_origin.then(|| row_origin(ctx, list, true)).flatten(),
+            ));
+        };
+        let lists = ctx.lists?;
+        let mark = lists.len();
+        // GeoGebra chooses the template with round(x) - 1, but reads the live row with round(x - 1).
+        let index = math::element_index(ctx.full_number(index)).max(0) as u32;
+        lists.truncate(mark);
+        let ((start, len), origin) = template_row(ctx, source, true)?;
+        if len == 0 || !lists.charge(1) {
+            return None;
+        }
+        let offset = if index < len { index } else { 0 };
+        let row = lists.read(ctx.c, start + offset).run()?;
+        let origin = origin.and_then(|origin| selected_origin(origin, offset, len));
+        Some((row, origin))
+    }
+
+    let refusals = shared_work_refusals();
+    let nested = matches!(ctx.node(list), Node::ListOp(ListOp::ElementRow, ..));
+    // A nested Element starts with the first item in the selected row.
+    let index = if nested {
+        0
+    } else {
+        math::element_index(ctx.full_number(index)).max(0) as u32
+    };
+    lists.truncate(0);
+    let kind = template_row(ctx, list, nested).and_then(|((start, len), origin)| {
+        if len == 0 || !lists.charge(1) {
+            return None;
+        }
+        let offset = if index < len { index } else { 0 };
+        let slot = lists.read(c, start + offset);
+        // Only an independent numeric template in a literal or rebuilt row may promote.
+        if slot.kind == Kind::Number
+            && origin.is_some_and(independent_number)
+            && lists.charge(u64::from(len))
+            && (start..start + len).any(|i| lists.read(c, i).kind == Kind::Point)
+        {
+            return Some(Kind::Point);
+        }
+        Some(slot.kind)
+    });
+    if work_done() > lists.end.get() || shared_work_refusals() != refusals {
+        return Err(());
+    }
+    Ok(kind.filter(|kind| {
+        !lists.over()
+            && (matches!(kind, Kind::Point | Kind::Vector) || nested && *kind == Kind::Number)
+    }))
+}
+
 /// Evaluates an entry whose result is a list: its elements go to `out`,
 /// compacted (the top level first); its length, `None` when undefined.
 pub(super) fn root_list(
@@ -2001,6 +2146,9 @@ impl<const M: bool> Ctx<'_, M> {
                 | Node::Apply2(..)
                 | Node::Local(..)
                 | Node::Cmd(..) => true,
+                Node::Bin(op, ..) if op.is_command() && !matches!(op, Bin::Ncr | Bin::Npr) => true,
+                // A list command creates a dependent result even with literal inputs.
+                node if super::is_list_node(&node) => true,
                 node => super::children(&node).any(|child| self.dependent_list_item(child)),
             }
     }

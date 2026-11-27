@@ -1,0 +1,21 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedsamples-001",
+      "group": "statistics",
+      "script": [
+        "u = 3", "A = (0,0)", "B = (u,0)", "seg = Segment(A,B)",
+        "X = {seg,true,2}", "Y = {4,7,1}", "T = {4,\"x\",1}",
+        "q1 = SigmaXY(X,Y)", "q2 = Sxy(X,Y)", "q3 = Covariance(X,Y)",
+        "q4 = PMCC(X,Y)", "q5 = Spearman(X,Y)",
+        "q6 = SigmaXY(X,T)", "q7 = Sxy(X,T)", "q8 = Covariance(X,T)",
+        "q9 = PMCC(X,T)", "q10 = Spearman(X,T)"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "u", "value": 1},
+        {"action": "set_number", "label": "u", "value": 3}
+      ]
+    }
+  ]
+}

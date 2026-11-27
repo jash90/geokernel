@@ -1065,18 +1065,6 @@ reason = "values agree but `GeoFunction` of kind function has no the reference-s
 mismatches = ["g_1"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1224"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Covariance`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1225"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Covariance`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:123"
 category = "text-formatting"
 reason = "values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{2, 3}`"
@@ -1368,12 +1356,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:1553"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Eccentricity`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1558"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Element` takes a list and one index"
 mismatches = ["step"]
 
 [[gap]]
@@ -3033,18 +3015,6 @@ reason = "the kernel refuses the input: unknown command `PerpendicularPlane`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3288"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `CorrelationCoefficient`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3289"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `CorrelationCoefficient`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3306"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `Point` takes a path, or a path and a number"
@@ -4125,27 +4095,9 @@ reason = "the kernel refuses the input: `x-1` is not a valid object name"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:4196"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SigmaXY`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4197"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SigmaXY`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:420"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `(x-1)/3` is not a valid object name"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4202"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SigmaYY`"
 mismatches = ["step"]
 
 [[gap]]
@@ -4248,18 +4200,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:4252"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `StartRecord`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4257"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Spearman`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4258"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Spearman`"
 mismatches = ["step"]
 
 [[gap]]
@@ -4422,24 +4362,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:438"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `list2`; the method's step `commands/CommandsTest.java:433` was expected to create the missing label"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4408"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Sxy`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4409"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Sxy`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4414"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Syy`"
 mismatches = ["step"]
 
 [[gap]]

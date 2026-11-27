@@ -20,6 +20,8 @@
 
 //! Sums and descriptive statistics.
 
+mod paired;
+
 use crate::algo::measure::segment_length;
 use crate::expr::eval::{number_of, slot_val, Ctx, Lists, Val};
 use crate::expr::parse::{list_arity, list_form, Parser};
@@ -50,6 +52,16 @@ pub(super) const NAMES: &[&str] = &[
     "GeometricMean",
     "HarmonicMean",
     "RootMeanSquare",
+    "Covariance",
+    "PMCC",
+    "CorrelationCoefficient",
+    "SXY",
+    "Sxy",
+    "SigmaXY",
+    "Spearman",
+    "SYY",
+    "Syy",
+    "SigmaYY",
     "SXX",
     "Sxx",
     "SigmaXX",
@@ -95,7 +107,7 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         "HarmonicMean" => ListOp::HarmonicMean,
         "RootMeanSquare" => ListOp::RootMeanSquare,
         "SXX" | "Sxx" | "SigmaXX" => return parse_x_moment(p, text),
-        _ => return Ok(None),
+        _ => return paired::parse(p, text),
     };
     // `Sum(expression, variable, from, to)`: the four-argument fold of
     // `CmdSum.processSymb`, with the variable bound locally, so it shadows
@@ -234,6 +246,7 @@ pub(super) fn list_type(
         ListOp::GeometricMean | ListOp::HarmonicMean | ListOp::RootMeanSquare => Ty::Num(0),
         ListOp::Sxx { angle, .. } | ListOp::SigmaXX { angle, .. } => Ty::Num(i8::from(angle)),
         op if takes_frequencies(op) => Ty::Num(0),
+        op if op.is_paired_statistic() => Ty::Num(0),
         _ => return Ok(None),
     }))
 }
@@ -262,6 +275,9 @@ pub(super) fn list_value<const M: bool>(
             Val::N(ctx.x_moment(false, points, l, NONE).unwrap_or(f64::NAN))
         }
         op if takes_frequencies(op) => Val::N(ctx.moments(op, l, n).unwrap_or(f64::NAN)),
+        op if op.is_paired_statistic() => {
+            Val::N(ctx.paired_statistic(op, l, n).unwrap_or(f64::NAN))
+        }
         _ => return None,
     })
 }

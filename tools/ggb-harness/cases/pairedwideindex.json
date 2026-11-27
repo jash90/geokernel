@@ -1,0 +1,10 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedwideindex-001",
+      "group": "statistics",
+      "script": ["r = Covariance(Element({(1,2),(3,4)},4294967298),(0,0))"],
+      "steps": [{"action": "initial"}]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedpoints-001",
+      "group": "statistics",
+      "script": [
+        "u = 4", "A = (1,5)", "B = (2,1)", "C = (u,7)",
+        "a = SigmaXY(A,B,C)", "b = Sxy(A,B,C)", "c = Covariance(A,B,C)",
+        "d = PMCC(A,B,C)", "e = Spearman(A,B,C)",
+        "f = SigmaYY(A,B,C)", "g = Syy(A,B,C)",
+        "h = SigmaXY(A,B)", "i = PMCC(A,B)", "j = Spearman(A,B)"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "u", "value": 2},
+        {"action": "set_number", "label": "u", "value": 4}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedrowrounding-001",
+      "group": "statistics",
+      "script": [
+        "P = (1,2)", "v = Vector((3,4))", "k = 9007199254740994",
+        "A = {{P},{20}}", "B = {{1},{P}}", "C = {{v},{P}}",
+        "R = Element(A,k,1)", "S = Element(B,k,1)", "T = Element(C,k,1)"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "k", "value": 2},
+        {"action": "set_number", "label": "k", "value": 1}
+      ]
+    }
+  ]
+}

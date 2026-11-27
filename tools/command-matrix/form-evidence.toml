@@ -5436,6 +5436,101 @@ form = "list,list,number"
 cases = ["statistics-percentileweighted-001", "statistics-percentileundefined-001", "statistics-percentilesamples-001", "statistics-percentileround-001", "statistics-percentilegeometry-001"]
 
 [[form]]
+command = "Covariance"
+form = "list"
+cases = ["statistics-pairedstats-001", "statistics-pairedstats-002"]
+
+[[form]]
+command = "Covariance"
+form = "list,list"
+cases = ["statistics-pairedstats-001", "statistics-pairedstats-002", "statistics-pairedsamples-001"]
+
+[[form]]
+command = "Covariance"
+form = "point,point,..."
+cases = ["statistics-pairedpoints-001"]
+
+[[form]]
+command = "PMCC"
+form = "list"
+cases = ["statistics-pairedstats-001", "statistics-pairedstats-002", "statistics-pairedalias-001"]
+
+[[form]]
+command = "PMCC"
+form = "list,list"
+cases = ["statistics-pairedstats-001", "statistics-pairedstats-002", "statistics-pairedalias-001", "statistics-pairedsamples-001", "statistics-pairedmissing-001"]
+
+[[form]]
+command = "PMCC"
+form = "point,point,..."
+cases = ["statistics-pairedpoints-001"]
+
+[[form]]
+command = "SXY"
+form = "list"
+cases = ["statistics-pairedstats-001", "statistics-pairedstats-002"]
+
+[[form]]
+command = "SXY"
+form = "list,list"
+cases = ["statistics-pairedstats-001", "statistics-pairedstats-002", "statistics-pairedsamples-001"]
+
+[[form]]
+command = "SXY"
+form = "point,point,..."
+cases = ["statistics-pairedpoints-001"]
+
+[[form]]
+command = "SigmaXY"
+form = "list"
+cases = ["statistics-pairedstats-001", "statistics-pairedstats-002"]
+
+[[form]]
+command = "SigmaXY"
+form = "list,list"
+cases = ["statistics-pairedstats-001", "statistics-pairedstats-002", "statistics-pairedsamples-001"]
+
+[[form]]
+command = "SigmaXY"
+form = "point,point,..."
+cases = ["statistics-pairedpoints-001"]
+
+[[form]]
+command = "Spearman"
+form = "list"
+cases = ["statistics-pairedstats-001", "statistics-pairedstats-002"]
+
+[[form]]
+command = "Spearman"
+form = "list,list"
+cases = ["statistics-pairedstats-001", "statistics-pairedstats-002", "statistics-pairedsamples-001", "statistics-pairedmissing-001"]
+
+[[form]]
+command = "Spearman"
+form = "point,point,..."
+cases = ["statistics-pairedpoints-001"]
+
+[[form]]
+command = "SYY"
+form = "list"
+cases = ["statistics-pairedstats-001", "statistics-pairedstats-002"]
+
+[[form]]
+command = "SYY"
+form = "point,point,..."
+cases = ["statistics-pairedpoints-001"]
+
+[[form]]
+command = "SigmaYY"
+form = "list"
+cases = ["statistics-pairedstats-001"]
+
+[[form]]
+command = "SigmaYY"
+form = "point,point,..."
+cases = ["statistics-pairedpoints-001"]
+
+[[form]]
 command = "Mode"
 form = "list"
 cases = ["statistics-nextlists-001", "statistics-nextedges-001", "statistics-nextkinds-001", "statistics-nextedit-001", "statistics-nextpoints-001"]

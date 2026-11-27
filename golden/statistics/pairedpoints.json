@@ -1,0 +1,82 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-pairedpoints-001",
+      "group": "statistics",
+      "script": [
+        "u = 4",
+        "A = (1,5)",
+        "B = (2,1)",
+        "C = (u,7)",
+        "a = SigmaXY(A,B,C)",
+        "b = Sxy(A,B,C)",
+        "c = Covariance(A,B,C)",
+        "d = PMCC(A,B,C)",
+        "e = Spearman(A,B,C)",
+        "f = SigmaYY(A,B,C)",
+        "g = Syy(A,B,C)",
+        "h = SigmaXY(A,B)",
+        "i = PMCC(A,B)",
+        "j = Spearman(A,B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "u", "value": 2.0 },
+        { "action": "set_number", "label": "u", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 7.0 },
+          "a": { "type": "number", "defined": true, "value": 35.0 },
+          "b": { "type": "number", "defined": true, "value": 4.666666666666668 },
+          "c": { "type": "number", "defined": true, "value": 1.5555555555555554 },
+          "d": { "type": "number", "defined": true, "value": 0.5 },
+          "e": { "type": "number", "defined": true, "value": 0.5 },
+          "f": { "type": "number", "defined": true, "value": 75.0 },
+          "g": { "type": "number", "defined": true, "value": 18.666666666666664 },
+          "h": { "type": "number", "defined": true, "value": 7.0 },
+          "i": { "type": "number", "defined": true, "value": -1.0 },
+          "j": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "u": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 7.0 },
+          "a": { "type": "number", "defined": true, "value": 21.0 },
+          "b": { "type": "number", "defined": true, "value": -0.6666666666666679 },
+          "c": { "type": "number", "defined": true, "value": -0.22222222222222232 },
+          "d": { "type": "number", "defined": true, "value": -0.1889822365046136 },
+          "e": { "type": "number", "defined": true, "value": 0.0 },
+          "f": { "type": "number", "defined": true, "value": 75.0 },
+          "g": { "type": "number", "defined": true, "value": 18.666666666666664 },
+          "h": { "type": "number", "defined": true, "value": 7.0 },
+          "i": { "type": "number", "defined": true, "value": -1.0 },
+          "j": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "u": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 7.0 },
+          "a": { "type": "number", "defined": true, "value": 35.0 },
+          "b": { "type": "number", "defined": true, "value": 4.666666666666668 },
+          "c": { "type": "number", "defined": true, "value": 1.5555555555555554 },
+          "d": { "type": "number", "defined": true, "value": 0.5 },
+          "e": { "type": "number", "defined": true, "value": 0.5 },
+          "f": { "type": "number", "defined": true, "value": 75.0 },
+          "g": { "type": "number", "defined": true, "value": 18.666666666666664 },
+          "h": { "type": "number", "defined": true, "value": 7.0 },
+          "i": { "type": "number", "defined": true, "value": -1.0 },
+          "j": { "type": "number", "defined": true, "value": -1.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedrowdepth-001",
+      "group": "statistics",
+      "script": [
+        "P = (1,2)", "a = 3", "k = 2",
+        "R = {{a+1,P}}", "J = R", "L = {J}",
+        "B = {{nCr(7,3),P}}", "C = {{nPr(7,3),P}}",
+        "D = {{Mod(7,3),P}}", "E = {Reverse({P,a+1})}",
+        "r = Covariance({Element(L,1,1,k),(0,0)})",
+        "s = Covariance({Element(B,1,k),(0,0)})",
+        "t = Covariance({Element(C,1,k),(0,0)})",
+        "u = Covariance({Element(D,1,k),(0,0)})",
+        "v = Covariance({Element(Reverse(E),1,k),(0,0)})"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "k", "value": 1},
+        {"action": "set_number", "label": "k", "value": 2}
+      ]
+    }
+  ]
+}

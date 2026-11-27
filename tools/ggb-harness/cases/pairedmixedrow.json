@@ -1,0 +1,21 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedmixedrow-001",
+      "group": "statistics",
+      "script": [
+        "P = (1,2)", "v = Vector((3,4))", "k = 2",
+        "L = {{1,P}}", "N = {{v,P}}", "M = {{P,v}}",
+        "r = Covariance(Element(L,1,k),(0,0))",
+        "s = Covariance(Element({{1,P}},1,k),(0,0))",
+        "t = Covariance({Element(N,1,k),(0,0)})",
+        "u = Covariance({Element(M,1,k),(0,0)})"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "k", "value": 1},
+        {"action": "set_number", "label": "k", "value": 2}
+      ]
+    }
+  ]
+}

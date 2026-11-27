@@ -1,0 +1,23 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedgeometry-001",
+      "group": "statistics",
+      "script": [
+        "u = 4", "O = (0,0)", "A = (u,0)", "B = (0,2)", "C = (0,u)",
+        "poly = Polygon(O,B,A)", "path = PolyLine(A,O,B)",
+        "arc = CircularArc(O,A,C)", "sector = CircularSector(O,A,C)",
+        "pr = SigmaXY({poly,1},{1,2})", "pl = SigmaXY({path,1},{1,2})",
+        "pa = SigmaXY({arc,1},{1,2})", "ps = SigmaXY({sector,1},{1,2})",
+        "rk = Spearman({poly,1},{1,2})", "rs = Spearman({path,arc,sector,poly},{1,2,3,4})",
+        "cv = Covariance({poly,1},{1,2})", "cx = Sxy({1,2},{sector,1})",
+        "pc = PMCC({poly,path,arc,sector},{1,2,3,4})"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "u", "value": 6},
+        {"action": "set_number", "label": "u", "value": 4}
+      ]
+    }
+  ]
+}

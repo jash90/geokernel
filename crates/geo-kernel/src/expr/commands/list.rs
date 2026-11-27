@@ -114,18 +114,19 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
     let (op, count) = match text {
         "Sequence" => return p.sequence().map(Some),
         "Element" => {
-            return match p.arguments()?.as_slice() {
-                [l, n] => Ok(Some(p.push(Node::ListOp(ListOp::Element, *l, *n)))),
-                // more indices walk into a list of lists (`AlgoListElement`)
-                [l, n, rest @ ..] if !rest.is_empty() => {
-                    let mut node = p.push(Node::ListOp(ListOp::Element, *l, *n));
-                    for &k in rest {
-                        node = p.push(Node::ListOp(ListOp::Element, node, k));
-                    }
-                    Ok(Some(node))
-                }
-                _ => Err("`Element` takes a list and one index".into()),
+            let start = p.nodes.len();
+            let args = p.arguments()?;
+            let [list, indices @ ..] = args.as_slice() else {
+                return Err("`Element` takes a list and one index".into());
             };
+            let Some((last, prefix)) = indices.split_last() else {
+                return Err("`Element` takes a list and one index".into());
+            };
+            // Only the final selection fixes the result kind.
+            let list = prefix.iter().fold(*list, |list, &index| {
+                p.push(Node::ListOp(ListOp::ElementRow, list, index))
+            });
+            return p.element_command(start, list, *last).map(Some);
         }
         "Append" => return p.list_command(|_, args, lists| append(text, args, lists)),
         "Join" => return p.list_command(|p, args, lists| join(p, text, args, lists)),
@@ -624,11 +625,12 @@ pub(super) fn list_type(
             of_numbers(numbers)?
         }
         ListOp::Product => of_numbers(numbers)?,
-        // `Element` of a list whose elements the types cannot tell apart
-        // (an `Element` of it, an `If` of lists) is typed as a number:
-        // GeoGebra finds what it is when it evaluates the line
-        ListOp::Element if matches!(elem, Elem::Any) => Ty::Num(0),
-        ListOp::Index | ListOp::Element => ty_of(elem)?,
+        ListOp::Element(Some(Kind::Point | Kind::Vector)) => Ty::Vec,
+        ListOp::Element(Some(Kind::Number)) => Ty::Num(0),
+        ListOp::ElementRow => Ty::List(Elem::Any),
+        // Keep the numeric fallback for an unclassified heterogeneous list.
+        ListOp::Element(None) if elem == Elem::Any => Ty::Num(0),
+        ListOp::Index | ListOp::Element(_) => ty_of(elem)?,
         ListOp::Reverse | ListOp::First | ListOp::Last => Ty::List(elem),
         ListOp::FirstFreehand => Ty::List(Elem::Vec),
         // `AlgoSort` outputs the elements of its value list
@@ -746,7 +748,7 @@ pub(super) fn list_value<const M: bool>(
         | ListOp::Union
         | ListOp::Intersect
         | ListOp::Remove => Val::N(f64::NAN),
-        ListOp::Index | ListOp::Element => match (ctx.pick(op, l, n), ctx.e.tys[i as usize]) {
+        ListOp::Index | ListOp::Element(_) => match (ctx.pick(op, l, n), ctx.e.tys[i as usize]) {
             (Some(slot), _) => slot_val(&slot),
             (None, Ty::Vec) => Val::V(f64::NAN, f64::NAN),
             (None, Ty::Bool) => Val::B(false, true),
@@ -1429,7 +1431,14 @@ impl<const M: bool> Ctx<'_, M> {
         let index = self.full_number(n);
         lists.truncate(mark);
         let (start, len) = self.list(l)?;
-        let mut k = math::java_round(index).saturating_sub(1);
+        let mut k = match op {
+            ListOp::Element(_) => math::element_index(index),
+            ListOp::ElementRow if !index.is_nan() => {
+                i64::from(math::java_round(index - 1.0) as i32)
+            }
+            ListOp::ElementRow => return None,
+            _ => math::java_round(index).saturating_sub(1),
+        };
         if op == ListOp::Index && k < 0 {
             k += i64::from(len) + 1;
         }
@@ -1452,8 +1461,18 @@ impl<const M: bool> Ctx<'_, M> {
             }
             template
         };
-        if op != ListOp::Index {
-            return Some(selected);
+        match op {
+            ListOp::Element(Some(Kind::Point)) if selected.kind == Kind::Number => {
+                return Some(Slot::coords(Kind::Point, selected.numeric_cell()?, 0.0));
+            }
+            ListOp::Element(Some(Kind::Number)) => {
+                return number_of(selected).map(Slot::number);
+            }
+            ListOp::Element(kind) => {
+                return kind.is_none_or(|k| selected.kind == k).then_some(selected);
+            }
+            ListOp::ElementRow => return Some(selected),
+            _ => {}
         }
         let Some((row, width)) = selected.run() else {
             return present.then_some(selected);
