@@ -5428,12 +5428,12 @@ cases = ["statistics-variadic-001"]
 [[form]]
 command = "Percentile"
 form = "list,number"
-cases = ["statistics-percentileraw-001", "statistics-percentileundefined-001", "statistics-percentilesamples-001"]
+cases = ["statistics-percentileraw-001", "statistics-percentileundefined-001", "statistics-percentilesamples-001", "statistics-percentileround-001", "statistics-percentilegeometry-001"]
 
 [[form]]
 command = "Percentile"
 form = "list,list,number"
-cases = ["statistics-percentileweighted-001", "statistics-percentileundefined-001", "statistics-percentilesamples-001"]
+cases = ["statistics-percentileweighted-001", "statistics-percentileundefined-001", "statistics-percentilesamples-001", "statistics-percentileround-001", "statistics-percentilegeometry-001"]
 
 [[form]]
 command = "Mode"

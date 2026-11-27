@@ -234,10 +234,24 @@ fn sample_number(slot: Slot) -> Option<f64> {
     }
 }
 
+fn percentile_sample(slot: Slot) -> Option<f64> {
+    match (slot.kind, slot.value) {
+        (Kind::Polygon, Value::Polygon { area }) => Some(area.abs()),
+        (Kind::PolyLine, Value::PolyLine { length }) | (Kind::Arc, Value::Arc { length }) => {
+            Some(length)
+        }
+        (Kind::Sector, Value::Sector { area }) => Some(area),
+        (Kind::Polygon | Kind::PolyLine | Kind::Arc | Kind::Sector, Value::Undefined) => {
+            Some(f64::NAN)
+        }
+        _ => sample_number(slot),
+    }
+}
+
 impl<const M: bool> Ctx<'_, M> {
     pub(super) fn percentile(&self, first: u32, arity: u32) -> Option<f64> {
-        let p = self.full_number(first + arity - 1);
-        if !(p > 0.0 && p <= 1.0) {
+        let percent = self.full_number(first + arity - 1) * 100.0;
+        if !(percent > 0.0 && percent <= 100.0) {
             return None;
         }
         let lists = self.lists?;
@@ -263,9 +277,9 @@ impl<const M: bool> Ctx<'_, M> {
         let mut rows = Vec::with_capacity(len as usize);
         let mut total = 0i32;
         for k in 0..len {
-            let value = sample_number(lists.read(self.c, start + k))?;
+            let value = percentile_sample(lists.read(self.c, start + k))?;
             let count = if let Some(fstart) = frequencies {
-                let frequency = sample_number(lists.read(self.c, fstart + k))?;
+                let frequency = percentile_sample(lists.read(self.c, fstart + k))?;
                 if !frequency.is_finite()
                     || frequency < 0.0
                     || frequency.trunc() > f64::from(i32::MAX)
@@ -286,7 +300,8 @@ impl<const M: bool> Ctx<'_, M> {
             return None;
         }
 
-        let rank = p * (f64::from(total) + 1.0);
+        // Keep the percent round-trip: rounding can cross an interpolation boundary.
+        let rank = (percent / 100.0) * (f64::from(total) + 1.0);
         let (lower, upper, fraction) = if rank < 1.0 {
             (0, 0, 0.0)
         } else if rank >= f64::from(total) {
@@ -684,6 +699,7 @@ mod tests {
         assert_eq!(c.value(c.id("a").unwrap()), Value::Number(10.0));
 
         for args in [
+            "{4}, 0 / 0",
             "{1, 10}, 0 / 0",
             "{1, 10}, {1, 1}, 0 / 0",
             "{1, 10}, {1, 2147483647}, 0.5",
