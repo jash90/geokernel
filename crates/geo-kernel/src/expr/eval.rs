@@ -958,6 +958,7 @@ pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Ki
     enum RowOrigin<'a> {
         Literal(Ctx<'a, true>, u32, Option<bool>), // node, reversal parity if copied by Reverse
         Copied,
+        NamedCopy,
     }
     type TemplateRow<'a> = ((u32, u32), Option<RowOrigin<'a>>);
 
@@ -975,7 +976,11 @@ pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Ki
                     node = ctx.e.root;
                     // A dependent list expression rebuilds its nested rows as anonymous lists.
                     if matches!(ctx.node(node), Node::Obj(_)) {
-                        return outer.then_some(RowOrigin::Copied);
+                        return Some(if outer {
+                            RowOrigin::Copied
+                        } else {
+                            RowOrigin::NamedCopy
+                        });
                     }
                 }
                 Node::ListOp(ListOp::Reverse, source, _) if outer => {
@@ -1005,7 +1010,8 @@ pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Ki
         };
         let index = first + offset;
         if reversed.is_some()
-            && matches!(ctx.node(index), Node::Item(child) if matches!(ctx.node(child), Node::List(..)))
+            && matches!(ctx.node(index), Node::Item(child) if matches!(ctx.node(child),
+                Node::List(..) | Node::ListOp(ListOp::Reverse, ..)))
         {
             return Some(RowOrigin::Copied);
         }
@@ -1015,6 +1021,7 @@ pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Ki
     fn independent_number(origin: RowOrigin<'_>) -> bool {
         match origin {
             RowOrigin::Copied => true,
+            RowOrigin::NamedCopy => false,
             RowOrigin::Literal(ctx, node, _) => {
                 matches!(ctx.node(node), Node::List(first, len) if len != 0
                     && ctx.lists.is_some_and(|lists| lists.charge(1))
@@ -2138,7 +2145,7 @@ impl<const M: bool> Ctx<'_, M> {
                 | Node::Apply2(..)
                 | Node::Local(..)
                 | Node::Cmd(..) => true,
-                Node::Bin(op, ..) if op.is_command() => true,
+                Node::Bin(op, ..) if op.is_command() && !matches!(op, Bin::Ncr | Bin::Npr) => true,
                 node => super::children(&node).any(|child| self.dependent_list_item(child)),
             }
     }
