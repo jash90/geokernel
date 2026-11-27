@@ -1629,14 +1629,34 @@ impl Parser<'_> {
     }
 
     /// Some list algorithms dispatch on the first element at creation.
-    pub(super) fn first_list_kind(&mut self, i: u32) -> Result<Option<Kind>, String> {
+    pub(super) fn first_list_kind(&mut self, start: usize, i: u32) -> Result<Option<Kind>, String> {
         if let Node::Obj(id) = self.node(i) {
             return Ok(super::list_slots(self.c, id)
                 .and_then(|slots| slots.first())
                 .map(|slot| slot.kind));
         }
-        self.cell_work.charge_visits(self.nodes.len())?;
-        let Some(parsed) = super::reparse(self.c, Kind::List, &self.nodes, &self.lits, i) else {
+        let end = i as usize + 1;
+        let count = end - start;
+        if self.share_cell_work {
+            self.cell_work.charge_visits(count)?;
+        }
+        let reserved = eval::with_work_deadline(self.list_probe_deadline, || {
+            eval::reserve_work(count as u64)
+        });
+        if !reserved {
+            return Err("List dispatch exceeds the evaluation budget".into());
+        }
+        let mut nodes = self.nodes[start..end].to_vec();
+        for node in &mut nodes {
+            super::map_children(node, |child| child - start as u32);
+        }
+        let Some(parsed) = super::reparse(
+            self.c,
+            Kind::List,
+            &nodes,
+            &self.lits[start..end],
+            (count - 1) as u32,
+        ) else {
             return Ok(None);
         };
         let entry = super::Entry::new(self.c, parsed, false);

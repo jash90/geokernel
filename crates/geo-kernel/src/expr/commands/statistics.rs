@@ -171,6 +171,7 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
 }
 
 fn parse_x_moment(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
+    let start = p.nodes.len();
     p.typed_list_command(|p, args| {
         let (left, right) = match *args {
             [(l, Some(Ty::List(_)), _)] => (l, NONE),
@@ -180,7 +181,7 @@ fn parse_x_moment(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         let sigma = text == "SigmaXX";
         // Paired Sxx is always scalar; the other forms keep their initial dispatch.
         let first = if sigma || right == NONE {
-            p.first_list_kind(left)?
+            p.first_list_kind(start, left)?
         } else {
             None
         };
@@ -820,6 +821,22 @@ mod tests {
         .unwrap();
         assert_eq!(c.number(c.id("a").unwrap()), Some(2_666_866_670_000.0));
         assert_eq!(c.number(c.id("b").unwrap()), c.number(c.id("a").unwrap()));
+    }
+
+    #[test]
+    fn x_moment_probes_do_not_use_spreadsheet_visits_in_algebra() {
+        let samples = (0..17_000)
+            .map(|i| i.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
+        let terms = (0..70)
+            .map(|i| format!("Sxx({{{i},{},{}}})", i + 1, i + 2))
+            .collect::<Vec<_>>()
+            .join("+");
+        let c = script::load(&format!("a = SigmaXX({{{samples}}})\nb = {terms}")).unwrap();
+        let squares = (0..17_000_i64).map(|i| i * i).sum::<i64>() as f64;
+        assert_eq!(c.number(c.id("a").unwrap()), Some(squares));
+        assert_eq!(c.number(c.id("b").unwrap()), Some(140.0));
     }
 
     #[test]
