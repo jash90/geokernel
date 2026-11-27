@@ -1667,7 +1667,7 @@ fn reparse(
                 read(f, true);
             }
             Node::Apply(f, _) => {
-                (f.0 < c.len() && c.kind(f) == Kind::Function).then_some(())?;
+                (f.0 < c.len() && matches!(c.kind(f), Kind::Function | Kind::Line)).then_some(())?;
                 read(f, true);
             }
             Node::Cmd(def, _) => {
@@ -1714,6 +1714,9 @@ fn reparse(
 
 /// Depth, cost and variable count of a function object's tree.
 pub(crate) fn function_metrics(c: &Construction, f: Id) -> (u32, u64, u64) {
+    if c.kind(f) == Kind::Line {
+        return (1, 1, 1);
+    }
     match c.def(f) {
         Def::Expr(d) => {
             let e = entry(c, d);

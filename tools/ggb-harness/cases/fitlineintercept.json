@@ -1,0 +1,39 @@
+{
+  "cases": [
+    {
+      "id": "statistics-fitlineintercept-001",
+      "group": "statistics",
+      "script": [
+        "n = 341",
+        "t = 2^n",
+        "g = FitLine({(0, 4*t), (t, 5*t)})",
+        "h = FitLineX({(4*t, 0), (5*t, t)})",
+        "v = Direction(g)",
+        "w = Direction(h)",
+        "p = g(0)",
+        "q = h(0)"
+      ],
+      "observe": [
+        "v",
+        "w",
+        "p",
+        "q"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 2
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 341
+        }
+      ]
+    }
+  ]
+}

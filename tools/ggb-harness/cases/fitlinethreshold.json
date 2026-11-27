@@ -1,0 +1,34 @@
+{
+  "cases": [
+    {
+      "id": "statistics-fitlinethreshold-001",
+      "group": "statistics",
+      "script": [
+        "n = 0.0000715",
+        "g = FitLine({(-n,0),(n,0)})",
+        "v = Direction(g)",
+        "a = x(v)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 7e-05
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 7.15e-05
+        }
+      ],
+      "observe": [
+        "g",
+        "v",
+        "a"
+      ]
+    }
+  ]
+}

@@ -1536,10 +1536,16 @@ impl<const M: bool> Ctx<'_, M> {
 
     fn sample_application(&self, source: Id, argument: impl FnOnce() -> f64) -> Option<f64> {
         if self.c.kind(source) == Kind::Line {
-            let Value::Line { a, b, c } = self.c.value(source) else {
+            let (a, b, c) = self.c.raw_line(source)?;
+            if self.stop(1) {
                 return None;
-            };
-            return (b != 0.0 && !self.stop(1)).then(|| -(a * argument() + c) / b);
+            }
+            // GeoLine.getFunction supplies slope and intercept separately
+            // when expanding a function. A direct call uses GeoLine.value.
+            if self.e.function {
+                return Some((-a / b) * argument() + (-c / b));
+            }
+            return (b.abs() >= STANDARD_PRECISION).then(|| (-a * argument() - c) / b);
         }
         if super::is_sampled_function(self.c, source) && !self.stop(32) {
             return super::function_value(self.c, source, argument());

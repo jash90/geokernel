@@ -1,0 +1,45 @@
+{
+  "cases": [
+    {
+      "id": "statistics-linecalllimits-001",
+      "group": "statistics",
+      "script": [
+        "width = 0.00000002",
+        "g = Line((0,0),(width,1))",
+        "direct = g(2)",
+        "f(x) = 1 + g(x)",
+        "nested = f(2)"
+      ],
+      "observe": [
+        "g",
+        "direct",
+        "nested"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "width",
+          "value": 1e-09
+        },
+        {
+          "action": "set_number",
+          "label": "width",
+          "value": 1e-08
+        },
+        {
+          "action": "set_number",
+          "label": "width",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "width",
+          "value": -2e-08
+        }
+      ]
+    }
+  ]
+}

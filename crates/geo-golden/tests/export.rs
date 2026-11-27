@@ -3728,6 +3728,26 @@ fn reloaded_fit_lines_follow_point_edits() {
 }
 
 #[test]
+fn reloaded_line_calls_follow_point_edits() {
+    let wb = Workbench::from_script(
+        "A = (0, 1)\nB = (2, 5)\ng = Line(A, B)\na = g(3)\nf(x) = 1 + g(x)\nb = f(3)",
+    )
+    .unwrap();
+    let (_, mut reloaded) = round_trip("a line applied as a function", &wb, None);
+    let values = |w: &Workbench| {
+        let c = w.construction();
+        ["a", "b"].map(|label| c.value(c.id(label).unwrap()))
+    };
+    let point = reloaded.construction().id("B").unwrap();
+    let number = geo_kernel::Value::Number;
+    assert_eq!(values(&reloaded), [number(7.0), number(8.0)]);
+    assert!(reloaded.move_point(point, 0.0, 5.0));
+    assert!(values(&reloaded).iter().all(|v| !v.is_defined()));
+    assert!(reloaded.move_point(point, 2.0, 3.0));
+    assert_eq!(values(&reloaded), [number(4.0), number(5.0)]);
+}
+
+#[test]
 fn fit_line_archive_checks_definedness_before_the_coefficient_tolerance() {
     for (x, defined, replacement) in [
         ("0.00007", false, "-1.02e-8"),

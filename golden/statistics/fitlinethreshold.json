@@ -1,0 +1,44 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-fitlinethreshold-001",
+      "group": "statistics",
+      "script": [
+        "n = 0.0000715",
+        "g = FitLine({(-n,0),(n,0)})",
+        "v = Direction(g)",
+        "a = x(v)"
+      ],
+      "observe": [
+        "g",
+        "v",
+        "a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 7.0E-5 },
+        { "action": "set_number", "label": "n", "value": 7.15E-5 }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": -1.0224500000000002E-8, "c": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -1.0224500000000002E-8, "y": -0.0 },
+          "a": { "type": "number", "defined": true, "value": -1.0224500000000002E-8 }
+        },
+        {
+          "g": { "type": "line", "defined": false },
+          "v": { "type": "vector", "defined": true, "x": -9.799999999999998E-9, "y": -0.0 },
+          "a": { "type": "number", "defined": true, "value": -9.799999999999998E-9 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": -1.0224500000000002E-8, "c": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -1.0224500000000002E-8, "y": -0.0 },
+          "a": { "type": "number", "defined": true, "value": -1.0224500000000002E-8 }
+        }
+      ]
+    }
+  ]
+}

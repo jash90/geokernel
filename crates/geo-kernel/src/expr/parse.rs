@@ -1300,10 +1300,10 @@ impl Parser<'_> {
                     _ => Err(format!("the function `{text}` takes two arguments")),
                 };
             }
-            if self.c.kind(id) == Kind::Function {
-                if !call {
-                    return Ok(self.push(Node::FunctionObject(id)));
-                }
+            if !call && self.c.kind(id) == Kind::Function {
+                return Ok(self.push(Node::FunctionObject(id)));
+            }
+            if call && matches!(self.c.kind(id), Kind::Function | Kind::Line) {
                 return match self.arguments()?[..] {
                     [a] => Ok(self.push(Node::Apply(id, a))),
                     _ => Err(format!("the function `{text}` takes one argument")),
