@@ -4119,27 +4119,9 @@ reason = "the kernel refuses the input: unknown command `Shuffle`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:4189"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SigmaXX`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:419"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `x-1` is not a valid object name"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4190"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SigmaXX`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4191"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SigmaXX`"
 mismatches = ["step"]
 
 [[gap]]
@@ -4440,24 +4422,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:438"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `list2`; the method's step `commands/CommandsTest.java:433` was expected to create the missing label"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4401"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Sxx`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4402"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Sxx`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4403"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Sxx`"
 mismatches = ["step"]
 
 [[gap]]

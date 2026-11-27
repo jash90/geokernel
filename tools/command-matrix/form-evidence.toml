@@ -5474,3 +5474,23 @@ cases = ["statistics-nextlists-001", "statistics-nextedges-001", "statistics-nex
 command = "RootMeanSquare"
 form = "number,number,..."
 cases = ["statistics-nextvariadic-001"]
+
+[[form]]
+command = "SXX"
+form = "list"
+cases = ["statistics-centeredmoments-001", "statistics-centeredmoments-002", "statistics-momentsedges-001", "statistics-momentsangles-001", "statistics-momentsdispatch-001", "statistics-momentsgeometry-001", "statistics-momentsfallback-001"]
+
+[[form]]
+command = "SXX"
+form = "list,list"
+cases = ["statistics-centeredmoments-001", "statistics-centeredmoments-002", "statistics-momentsedges-001", "statistics-momentsangles-001", "statistics-momentsgeometry-001"]
+
+[[form]]
+command = "SigmaXX"
+form = "list"
+cases = ["statistics-centeredmoments-001", "statistics-centeredmoments-002", "statistics-momentsedges-001", "statistics-momentsangles-001", "statistics-momentsdispatch-001", "statistics-momentsgeometry-001", "statistics-momentsfallback-001"]
+
+[[form]]
+command = "SigmaXX"
+form = "list,list"
+cases = ["statistics-centeredmoments-001", "statistics-centeredmoments-002", "statistics-momentsedges-001", "statistics-momentsangles-001", "statistics-momentsgeometry-001"]
