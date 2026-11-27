@@ -105,10 +105,11 @@ else
 fi
 ```
 
-For the nine `FitLine`/`FitLineY` and `FitLineX` cases, pass `golden fitline_r17 fitlinescale`
-with the same image and pinned checkout. The inputs write `golden/statistics/fitlineprobe.json`
-and `golden/statistics/fitlinescale.json` and check raw coefficients through edits,
-degenerate samples and power-of-two rescaling.
+For the eleven `FitLine`/`FitLineY` and `FitLineX` cases, pass
+`golden fitline_r17 fitlinescale fitlineoverflow` with the same image and pinned checkout.
+The three files in `golden/statistics/` cover edits, degenerate samples and
+power-of-two rescaling. The overflow cases read both finite components of
+`Direction(g)` while the intercept exceeds the range of a double.
 
 ### Selecting CAS topics
 

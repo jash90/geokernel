@@ -1,0 +1,55 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-fitlineoverflow-001",
+      "group": "statistics",
+      "script": [
+        "L = {(-10^149,10^20),(10^149,2*10^20)}",
+        "g = FitLine(L)",
+        "v = Direction(g)",
+        "a = x(v)",
+        "b = y(v)"
+      ],
+      "observe": [
+        "a",
+        "b"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -1.3248674568444953E129 },
+          "b": { "type": "number", "defined": true, "value": -0.6624337284222477 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-fitlineoverflow-002",
+      "group": "statistics",
+      "script": [
+        "L = {(-10^20,-10^149),(-2*10^20,10^149)}",
+        "g = FitLineX(L)",
+        "v = Direction(g)",
+        "a = x(v)",
+        "b = y(v)"
+      ],
+      "observe": [
+        "a",
+        "b"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -0.6624337284222477 },
+          "b": { "type": "number", "defined": true, "value": 1.3248674568444953E129 }
+        }
+      ]
+    }
+  ]
+}

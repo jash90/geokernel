@@ -179,10 +179,19 @@ pub(crate) fn join(p: (f64, f64), q: (f64, f64)) -> (f64, f64, f64) {
 /// Coefficients that are all zero or not all finite are returned as they are.
 pub(crate) fn normalized_coefficients(g: (f64, f64, f64), max: f64, min: f64) -> (f64, f64, f64) {
     let zero = |v: f64| -STANDARD_PRECISION < v && v < STANDARD_PRECISION;
-    let (mut x, mut y, mut z) = g;
+    let (x, y, z) = g;
     if (zero(x) && zero(y) && zero(z)) || !(x.is_finite() && y.is_finite() && z.is_finite()) {
         return g;
     }
+    scale_coefficients(g, max, min)
+}
+
+// The callers apply their algorithm's zero test and guarantee a finite coefficient.
+fn scale_coefficients(
+    (mut x, mut y, mut z): (f64, f64, f64),
+    max: f64,
+    min: f64,
+) -> (f64, f64, f64) {
     while x.abs() < min && y.abs() < min && z.abs() < min {
         x *= 2.0;
         y *= 2.0;

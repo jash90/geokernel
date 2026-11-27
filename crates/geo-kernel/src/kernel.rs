@@ -5869,6 +5869,9 @@ impl Construction {
     fn compute_with(&self, def: Def, hint: impl Fn(&Self) -> algo::intersect::Hint) -> Value {
         match self.try_compute(def, hint) {
             Some(v) if v.is_valid() => v,
+            // The fit algorithm checks GeoLine.isDefined itself. Its finite inputs
+            // can produce an infinite coefficient and a usable direction.
+            Some(v @ Value::Line { .. }) if matches!(def, Def::Lines(LineDef::Fit { .. })) => v,
             _ => Value::Undefined,
         }
     }

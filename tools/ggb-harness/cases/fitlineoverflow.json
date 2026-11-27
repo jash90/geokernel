@@ -1,0 +1,44 @@
+{
+  "cases": [
+    {
+      "id": "statistics-fitlineoverflow-001",
+      "group": "statistics",
+      "script": [
+        "L = {(-10^149,10^20),(10^149,2*10^20)}",
+        "g = FitLine(L)",
+        "v = Direction(g)",
+        "a = x(v)",
+        "b = y(v)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "observe": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "statistics-fitlineoverflow-002",
+      "group": "statistics",
+      "script": [
+        "L = {(-10^20,-10^149),(-2*10^20,10^149)}",
+        "g = FitLineX(L)",
+        "v = Direction(g)",
+        "a = x(v)",
+        "b = y(v)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "observe": [
+        "a",
+        "b"
+      ]
+    }
+  ]
+}

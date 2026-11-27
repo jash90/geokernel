@@ -509,11 +509,16 @@ fn fit_line(points: crate::expr::List<'_>, x_on_y: bool) -> Option<Value> {
     let var = sum_uu - sum_u * sum_u / n;
     let intercept = -cov * (sum_u / n) + var * (sum_v / n);
     let (a, b) = if x_on_y { (-var, cov) } else { (cov, -var) };
+    let coefficients = [a, b, intercept];
+    // Three infinities would never change in the reference's halving loop.
+    if !coefficients.into_iter().any(f64::is_finite) {
+        return None;
+    }
     // Fit lines skip rescaling if any coefficient is near zero, including c.
-    let (a, b, c) = if [a, b, intercept].into_iter().any(is_zero) {
+    let (a, b, c) = if coefficients.into_iter().any(is_zero) {
         (a, b, intercept)
     } else {
-        normalized_coefficients((a, b, intercept), 1.0, 0.5)
+        super::scale_coefficients((a, b, intercept), 1.0, 0.5)
     };
     line_value(a, b, c)
 }
@@ -986,6 +991,25 @@ mod tests {
         assert_eq!(work_done(), before);
         assert!(with_work_deadline(before + 3, || fit_line(points, false)).is_some());
         assert_eq!(work_done(), before + 3);
+    }
+
+    #[test]
+    fn fit_lines_scale_the_normal_when_the_intercept_overflows() {
+        let c = load(
+            "t = 2^341\ng = FitLine({(0, 4*t), (t, 5*t)})\nh = FitLineX({(4*t, 0), (5*t, t)})",
+        )
+        .unwrap();
+        assert_eq!(line(&c, "g"), (1.0, -1.0, f64::INFINITY));
+        assert_eq!(line(&c, "h"), (-1.0, 1.0, f64::INFINITY));
+    }
+
+    #[test]
+    fn fit_lines_stop_when_all_three_coefficients_overflow() {
+        let c =
+            load("t = 10^154\nL = {(t,-t),(-t,t),(1,1)}\ng = FitLine(L)\nh = FitLineX(L)").unwrap();
+        for label in ["g", "h"] {
+            assert_eq!(c.value(c.id(label).unwrap()), Value::Undefined);
+        }
     }
 
     #[test]
