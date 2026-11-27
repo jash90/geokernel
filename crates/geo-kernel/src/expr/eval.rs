@@ -1043,6 +1043,7 @@ pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Ki
         };
         let lists = ctx.lists?;
         let mark = lists.len();
+        // GeoGebra chooses the template with round(x) - 1, but reads the live row with round(x - 1).
         let index = math::element_index(ctx.full_number(index)).max(0) as u32;
         lists.truncate(mark);
         let ((start, len), origin) = template_row(ctx, source, true)?;
