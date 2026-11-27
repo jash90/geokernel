@@ -2146,6 +2146,8 @@ impl<const M: bool> Ctx<'_, M> {
                 | Node::Local(..)
                 | Node::Cmd(..) => true,
                 Node::Bin(op, ..) if op.is_command() && !matches!(op, Bin::Ncr | Bin::Npr) => true,
+                // A list command creates a dependent result even with literal inputs.
+                node if super::is_list_node(&node) => true,
                 node => super::children(&node).any(|child| self.dependent_list_item(child)),
             }
     }

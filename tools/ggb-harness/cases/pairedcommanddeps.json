@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedcommanddeps-001",
+      "group": "statistics",
+      "script": [
+        "P = (1,2)", "k = 2",
+        "A = {{nCr(Sum({3,4}),3),P}}",
+        "B = {{nPr(Length({1,2,3,4,5,6,7}),3),P}}",
+        "r = Covariance({Element(A,1,k),(0,0)})",
+        "s = Covariance({Element(B,1,k),(0,0)})",
+        "m = Length(RemoveUndefined({(nCr(Sum({3,4}),3)/0,1)}))",
+        "n = Length(RemoveUndefined(Sequence((nPr(Sum({3,4}),3)/0,1), j, 1, 1)))"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "k", "value": 1},
+        {"action": "set_number", "label": "k", "value": 2}
+      ]
+    }
+  ]
+}
