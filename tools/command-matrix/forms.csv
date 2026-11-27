@@ -207,6 +207,8 @@ Mode,statistics,4,"list | number,number,... | point,point,... | function"
 GeometricMean,statistics,4,"list | number,number,... | point,point,... | function"
 HarmonicMean,statistics,4,"list | number,number,... | point,point,... | function"
 RootMeanSquare,statistics,4,"list | number,number,... | point,point,... | function"
+SXX,statistics,3,"list | list,list | point,point,..."
+SigmaXX,statistics,5,"list | list,list | number,number,... | point,point,... | function"
 ApplyMatrix,vector,10,"list,point | list,vector | list,line | list,conic | list,curve | list,image | list,function | list,polygon | list,polyline | list,list"
 UnitVector,vector,3,line | vector | point
 Vector,vector,3,"point | vector | point,point"

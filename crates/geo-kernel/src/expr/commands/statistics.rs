@@ -10,6 +10,9 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoGeometricMean.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoHarmonicMean.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoRootMeanSquare.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/AlgoStats2D.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/CmdSXX.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/statistics/CmdSigmaXX.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -44,10 +47,17 @@ pub(super) const NAMES: &[&str] = &[
     "GeometricMean",
     "HarmonicMean",
     "RootMeanSquare",
+    "SXX",
+    "Sxx",
+    "SigmaXX",
 ];
 
+pub(super) fn second_list(op: ListOp) -> bool {
+    op == ListOp::Sxx || takes_frequencies(op)
+}
+
 /// These statistics also accept a second list of frequencies.
-pub(super) fn takes_frequencies(op: ListOp) -> bool {
+fn takes_frequencies(op: ListOp) -> bool {
     matches!(
         op,
         ListOp::Mean
@@ -59,6 +69,7 @@ pub(super) fn takes_frequencies(op: ListOp) -> bool {
             | ListOp::Median
             | ListOp::Q1
             | ListOp::Q3
+            | ListOp::SigmaXX
     )
 }
 
@@ -79,6 +90,8 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         "GeometricMean" => ListOp::GeometricMean,
         "HarmonicMean" => ListOp::HarmonicMean,
         "RootMeanSquare" => ListOp::RootMeanSquare,
+        "SXX" | "Sxx" => ListOp::Sxx,
+        "SigmaXX" => ListOp::SigmaXX,
         _ => return Ok(None),
     };
     // `Sum(expression, variable, from, to)`: the four-argument fold of
@@ -91,6 +104,15 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         }
     }
     p.typed_list_command(|p, arguments| {
+        if matches!(op, ListOp::Sxx | ListOp::SigmaXX) {
+            return match *arguments {
+                [(l, Some(Ty::List(_)), _)] => Ok(Some(Node::ListOp(op, l, NONE))),
+                [(l, Some(Ty::List(_)), _), (r, Some(Ty::List(_)), _)] => {
+                    Ok(Some(Node::ListOp(op, l, r)))
+                }
+                _ => Err(list_arity(text, arguments.len())),
+            };
+        }
         let weighted = takes_frequencies(op);
         let args: Vec<_> = arguments.iter().map(|&(root, _, _)| root).collect();
         let lists: Vec<_> = arguments
@@ -170,7 +192,9 @@ pub(super) fn list_type(
         ListOp::Sum => of_numbers(numbers)?,
         ListOp::Mean if n == NONE => of_numbers(numbers)?,
         ListOp::Mode => Ty::List(Elem::Num),
-        ListOp::GeometricMean | ListOp::HarmonicMean | ListOp::RootMeanSquare => Ty::Num(0),
+        ListOp::GeometricMean | ListOp::HarmonicMean | ListOp::RootMeanSquare | ListOp::Sxx => {
+            Ty::Num(0)
+        }
         op if takes_frequencies(op) => Ty::Num(0),
         _ => return Ok(None),
     }))
@@ -195,12 +219,14 @@ pub(super) fn list_value<const M: bool>(
         ListOp::GeometricMean | ListOp::HarmonicMean | ListOp::RootMeanSquare => {
             Val::N(ctx.simple_mean(op, l).unwrap_or(f64::NAN))
         }
+        ListOp::Sxx => Val::N(ctx.x_moment(op, l, n).unwrap_or(f64::NAN)),
+        ListOp::SigmaXX if n == NONE => Val::N(ctx.x_moment(op, l, NONE).unwrap_or(f64::NAN)),
         op if takes_frequencies(op) => Val::N(ctx.moments(op, l, n).unwrap_or(f64::NAN)),
         _ => return None,
     })
 }
 
-/// Mode and the three means read segments and Booleans through `NumberValue`.
+/// Read numeric-compatible samples, including segments and Booleans.
 fn sample_number(slot: Slot) -> Option<f64> {
     match (slot.kind, slot.value) {
         (Kind::Segment, Value::Segment { x1, y1, x2, y2 }) => Some(segment_length(x1, y1, x2, y2)),
@@ -212,6 +238,57 @@ fn sample_number(slot: Slot) -> Option<f64> {
 }
 
 impl<const M: bool> Ctx<'_, M> {
+    /// Raw x samples. The paired form of `Sxx` checks Y's size and element
+    /// types. Its centered sum depends only on X.
+    fn x_moment(&self, op: ListOp, x: u32, y: u32) -> Option<f64> {
+        let lists = self.lists?;
+        let (start, len) = self.list(x)?;
+        let y_start = if y == NONE {
+            None
+        } else {
+            let (start, y_len) = self.list(y)?;
+            if len != y_len {
+                return None;
+            }
+            Some(start)
+        };
+        let may_read_points = y_start.is_none() && len > 0;
+        let reads = u64::from(len) * (1 + u64::from(y_start.is_some()));
+        if !lists.charge(reads + u64::from(may_read_points)) {
+            return None;
+        }
+        let points = may_read_points && lists.read(self.c, start).kind == Kind::Point;
+        let (mut sum, mut squares) = (0.0, 0.0);
+        for k in 0..len {
+            if let Some(y_start) = y_start {
+                let kind = lists.read(self.c, y_start + k).kind;
+                if !matches!(
+                    kind,
+                    Kind::Number | Kind::Angle | Kind::Boolean | Kind::Segment
+                ) {
+                    return None;
+                }
+            }
+            let slot = lists.read(self.c, start + k);
+            let x = if points {
+                match (slot.kind, slot.shown()) {
+                    (Kind::Point, Value::Point { x, .. }) => x,
+                    (Kind::Point, _) => f64::NAN,
+                    _ => return None,
+                }
+            } else {
+                sample_number(slot)?
+            };
+            sum += x;
+            squares += x * x;
+        }
+        Some(if op == ListOp::Sxx {
+            squares - sum * sum / f64::from(len)
+        } else {
+            squares
+        })
+    }
+
     pub(super) fn mode(&self, l: u32) -> Option<(u32, u32)> {
         let lists = self.lists?;
         let (start, len) = self.list(l)?;
@@ -289,19 +366,24 @@ impl<const M: bool> Ctx<'_, M> {
         };
         let reads = 1 + u64::from(frequencies.is_some()) + u64::from(grouped);
         let passes = if op == ListOp::Mad { 2 } else { 1 };
-        if size == 0 || !lists.charge(u64::from(size) * reads * passes) {
+        if (size == 0 && op != ListOp::SigmaXX) || !lists.charge(u64::from(size) * reads * passes) {
             return None;
         }
+        let read_number = if op == ListOp::SigmaXX {
+            sample_number
+        } else {
+            number_of
+        };
         let samples = (0..size).map(|k| {
-            let first = number_of(lists.read(self.c, start + k))?;
+            let first = read_number(lists.read(self.c, start + k))?;
             let value = if grouped {
-                let next = number_of(lists.read(self.c, start + k + 1))?;
+                let next = read_number(lists.read(self.c, start + k + 1))?;
                 (first + next) / 2.0
             } else {
                 first
             };
             let weight = match frequencies {
-                Some(fstart) => number_of(lists.read(self.c, fstart + k))?,
+                Some(fstart) => read_number(lists.read(self.c, fstart + k))?,
                 None => 1.0,
             };
             if weight < 0.0 {
@@ -319,6 +401,7 @@ impl<const M: bool> Ctx<'_, M> {
         }
         let mean = sum / total;
         Some(match op {
+            ListOp::SigmaXX => squares,
             ListOp::Mean => mean,
             ListOp::Mad => {
                 let mut deviation = 0.0;
@@ -569,7 +652,86 @@ impl<const M: bool> Ctx<'_, M> {
 #[cfg(test)]
 mod tests {
     use crate::expr::{with_evaluation_budget, work_done};
-    use crate::{script, Value};
+    use crate::{script, Kind, Value};
+
+    #[test]
+    fn x_moments_follow_named_lists_and_recover() {
+        let mut c = script::load(
+            "n = 1\nX = {2, 3}\nY = If(n > 0, {n, 1}, {})\na = SXX(X, Y)\nb = SigmaXX(X, Y)\nc = Sxx(Y)\nd = SigmaXX(Y)",
+        )
+        .unwrap();
+        let outputs = ["a", "b", "c", "d"].map(|name| c.id(name).unwrap());
+        let n = c.id("n").unwrap();
+        for (input, expected) in [
+            (1.0, [Some(0.5), Some(13.0), Some(0.0), Some(2.0)]),
+            (2.0, [Some(0.5), Some(17.0), Some(0.5), Some(5.0)]),
+            (0.0, [None, None, None, Some(0.0)]),
+            (2.0, [Some(0.5), Some(17.0), Some(0.5), Some(5.0)]),
+        ] {
+            c.set_number(n, input).unwrap();
+            assert_eq!(outputs.map(|id| c.number(id)), expected);
+            assert!(outputs.iter().all(|&id| c.kind(id) == Kind::Number));
+        }
+    }
+
+    #[test]
+    fn x_moments_respect_list_forms_and_the_scan_budget() {
+        let mut c = script::load(
+            "L = Sequence(1024)\nF = {0.5, 1.25}\nG = {50000000, 125000000}\nX = {1, 3, 9}",
+        )
+        .unwrap();
+        for (call, expected) in [
+            ("Sxx({})", None),
+            ("SigmaXX({})", Some(0.0)),
+            ("SigmaXX({}, {})", Some(0.0)),
+            ("SigmaXX({2}, {})", Some(0.0)),
+            ("Sxx({(1, 2)}, {0})", None),
+            ("SigmaXX({(1, 2)}, {0})", None),
+            ("SigmaXX({Vector((1, 2))})", None),
+        ] {
+            let id = script::exec(&mut c, &format!("a = {call}"))
+                .unwrap()
+                .unwrap();
+            assert_eq!(c.number(id), expected, "{call}");
+            assert_eq!(c.kind(id), Kind::Number, "{call}");
+        }
+        for call in [
+            "Sxx(1, 2)",
+            "Sxx({1, 2}, 1)",
+            "SigmaXX({1, 2}, {1, 2}, true)",
+            "SigmaXX(1, 2)",
+        ] {
+            assert!(
+                script::exec(&mut c, &format!("a = {call}")).is_err(),
+                "{call}"
+            );
+        }
+        for (call, budget) in [
+            ("Sxx(L)", 512),
+            ("Sxx(L, L)", 1024),
+            ("SigmaXX(L)", 512),
+            ("SigmaXX(L, L)", 1024),
+        ] {
+            let line = format!("a = {call}");
+            let id = with_evaluation_budget(budget, || script::exec(&mut c, &line))
+                .unwrap()
+                .unwrap();
+            assert_eq!(c.value(id), Value::Undefined, "{call}");
+            let id = script::exec(&mut c, &line).unwrap().unwrap();
+            assert!(c.value(id).is_defined(), "{call}");
+        }
+        let work = [("F", 47.0), ("G", 4_700_000_000.0)].map(|(frequency, expected)| {
+            let before = work_done();
+            let id = with_evaluation_budget(128, || {
+                script::exec(&mut c, &format!("a = SigmaXX(X, {frequency})"))
+            })
+            .unwrap()
+            .unwrap();
+            assert_eq!(c.value(id), Value::Number(expected));
+            work_done() - before
+        });
+        assert_eq!(work[0], work[1]);
+    }
 
     #[test]
     fn variadic_statistics_require_numbers_and_keep_list_and_numeric_expression_forms() {

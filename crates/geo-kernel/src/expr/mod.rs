@@ -484,6 +484,8 @@ pub(crate) enum ListOp {
     GeometricMean,
     HarmonicMean,
     RootMeanSquare,
+    Sxx,
+    SigmaXX,
 
     // algebra (`commands/algebra.rs`)
     /// `Min(list)` and `Max(list)` (`AlgoListMinMax`).
