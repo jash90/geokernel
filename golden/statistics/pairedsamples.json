@@ -1,0 +1,166 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-pairedsamples-001",
+      "group": "statistics",
+      "script": [
+        "u = 3",
+        "A = (0,0)",
+        "B = (u,0)",
+        "seg = Segment(A,B)",
+        "X = {seg,true,2}",
+        "Y = {4,7,1}",
+        "T = {4,\"x\",1}",
+        "q1 = SigmaXY(X,Y)",
+        "q2 = Sxy(X,Y)",
+        "q3 = Covariance(X,Y)",
+        "q4 = PMCC(X,Y)",
+        "q5 = Spearman(X,Y)",
+        "q6 = SigmaXY(X,T)",
+        "q7 = Sxy(X,T)",
+        "q8 = Covariance(X,T)",
+        "q9 = PMCC(X,T)",
+        "q10 = Spearman(X,T)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "u", "value": 1.0 },
+        { "action": "set_number", "label": "u", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "seg": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "X": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+              { "type": "boolean", "defined": true, "value": true },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "Y": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 7.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "T": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "text", "defined": true, "text": "x" },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "q1": { "type": "number", "defined": true, "value": 21.0 },
+          "q2": { "type": "number", "defined": true, "value": -3.0 },
+          "q3": { "type": "number", "defined": true, "value": -1.0 },
+          "q4": { "type": "number", "defined": true, "value": -0.5 },
+          "q5": { "type": "number", "defined": true, "value": -0.5 },
+          "q6": { "type": "number", "defined": false },
+          "q7": { "type": "number", "defined": false },
+          "q8": { "type": "number", "defined": false },
+          "q9": { "type": "number", "defined": false },
+          "q10": { "type": "number", "defined": false }
+        },
+        {
+          "u": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "seg": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 0.0 },
+          "X": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 0.0 },
+              { "type": "boolean", "defined": true, "value": true },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "Y": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 7.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "T": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "text", "defined": true, "text": "x" },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "q1": { "type": "number", "defined": true, "value": 13.0 },
+          "q2": { "type": "number", "defined": true, "value": -3.0 },
+          "q3": { "type": "number", "defined": true, "value": -1.0 },
+          "q4": { "type": "number", "defined": true, "value": -0.8660254037844386 },
+          "q5": { "type": "number", "defined": true, "value": -0.8660254037844386 },
+          "q6": { "type": "number", "defined": false },
+          "q7": { "type": "number", "defined": false },
+          "q8": { "type": "number", "defined": false },
+          "q9": { "type": "number", "defined": false },
+          "q10": { "type": "number", "defined": false }
+        },
+        {
+          "u": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "seg": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "X": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+              { "type": "boolean", "defined": true, "value": true },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "Y": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 7.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "T": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "text", "defined": true, "text": "x" },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "q1": { "type": "number", "defined": true, "value": 21.0 },
+          "q2": { "type": "number", "defined": true, "value": -3.0 },
+          "q3": { "type": "number", "defined": true, "value": -1.0 },
+          "q4": { "type": "number", "defined": true, "value": -0.5 },
+          "q5": { "type": "number", "defined": true, "value": -0.5 },
+          "q6": { "type": "number", "defined": false },
+          "q7": { "type": "number", "defined": false },
+          "q8": { "type": "number", "defined": false },
+          "q9": { "type": "number", "defined": false },
+          "q10": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}

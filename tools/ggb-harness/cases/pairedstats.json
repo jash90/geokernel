@@ -1,0 +1,36 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedstats-001",
+      "group": "statistics",
+      "script": [
+        "u = 4", "v = 7", "A = (1,5)", "B = (2,1)", "C = (u,v)",
+        "L = {A,B,C}", "X = {1,2,u}", "Y = {5,1,v}",
+        "a = SigmaXY(L)", "b = SigmaXY(X,Y)", "c = SigmaYY(L)",
+        "d = Sxy(L)", "e = Sxy(X,Y)", "f = Syy(L)",
+        "g = Covariance(L)", "h = Covariance(X,Y)",
+        "i = CorrelationCoefficient(L)", "j = CorrelationCoefficient(X,Y)",
+        "k = Spearman(L)", "m = Spearman(X,Y)"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "u", "value": 2},
+        {"action": "set_number", "label": "v", "value": 1},
+        {"action": "set_number", "label": "u", "value": 4},
+        {"action": "set_number", "label": "v", "value": 7}
+      ]
+    },
+    {
+      "id": "statistics-pairedstats-002",
+      "group": "statistics",
+      "script": [
+        "U = {1,1,1}", "V = {2,3,4}", "W = {6}", "K = {(2,3)}",
+        "a = Covariance(U,V)", "b = CorrelationCoefficient(U,V)", "c = Spearman(U,V)",
+        "d = SigmaXY(W,V)", "e = Sxy(W,V)", "f = Covariance(W,V)",
+        "g = Covariance(K)", "h = CorrelationCoefficient(K)", "i = Spearman(K)",
+        "j = SigmaXY(K)", "k = Sxy(K)", "m = Syy(K)"
+      ],
+      "steps": [{"action": "initial"}]
+    }
+  ]
+}

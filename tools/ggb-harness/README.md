@@ -85,6 +85,19 @@ A full run at the reference commit (November 2026) rewrote every file of
 The bounds of a text depend on the fonts of the system and are not
 recorded this way.
 
+### Paired statistics corpus
+
+The five paired-statistics inputs live in `cases/paired*.json` and produce
+the corresponding files under `golden/statistics/`. Their six cases and
+16 snapshots cover list and separate 2D point forms, aliases, dependent
+edits, numeric-compatible samples and undefined results. To reproduce
+these files with a compiled harness and the pinned GeoGebra checkout, run:
+
+```sh
+GGB_HARNESS_IMAGE=eclipse-temurin@sha256:7a0b2bc7e1372bb05ee361fb79e8a9e822df47343b8716253b3bbaa75060653e \
+  tools/ggb-harness/linux-x86_64.sh golden pairedstats pairedalias pairedpoints pairedsamples pairedmissing
+```
+
 ### Selecting CAS topics
 
 To record one or more CAS topics without rewriting other golden files, set

@@ -1,0 +1,19 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedalias-001",
+      "group": "statistics",
+      "script": [
+        "u = 4", "A = (1,5)", "B = (2,1)", "C = (u,7)",
+        "L = {A,B,C}", "X = {1,2,u}", "Y = {5,1,7}",
+        "a = PMCC(L)", "b = CorrelationCoefficient(L)",
+        "c = PMCC(X,Y)", "d = CorrelationCoefficient(X,Y)"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "u", "value": 2},
+        {"action": "set_number", "label": "u", "value": 4}
+      ]
+    }
+  ]
+}

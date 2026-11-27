@@ -1,0 +1,50 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-pairedmissing-001",
+      "group": "statistics",
+      "script": [
+        "X = {1,0/0,3,4}",
+        "Y = {1,2,0/0,4}",
+        "a = Spearman(X,Y)",
+        "b = PMCC(X,Y)",
+        "c = Spearman({1,0/0,3},{1,2,3})",
+        "d = Spearman({-0,0,1,2},{1,2,3,4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "X": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "Y": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    }
+  ]
+}
