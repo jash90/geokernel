@@ -3761,9 +3761,12 @@ fn reloaded_fit_lines_keep_their_infinite_intercepts() {
     .unwrap();
     let (bytes, reloaded) = round_trip("fit lines with infinite intercepts", &wb, None);
     let c = reloaded.construction();
-    for (label, a, b) in [("g", 1.0, -1.0), ("h", -1.0, 1.0)] {
+    for (label, a, b, equation) in [("g", 1.0, -1.0, "y = x + ∞"), ("h", -1.0, 1.0, "y = x - ∞")]
+    {
+        let id = c.id(label).unwrap();
+        assert_eq!(geo_app_core::describe::object_text(c, id), equation);
         assert_eq!(
-            c.value(c.id(label).unwrap()),
+            c.value(id),
             geo_kernel::Value::Line {
                 a,
                 b,
@@ -3772,6 +3775,22 @@ fn reloaded_fit_lines_keep_their_infinite_intercepts() {
         );
     }
     let xml = geo_import::archive::extract_xml(&bytes).unwrap();
+    let explicit = r#"<eqnStyle style="explicit"/>"#;
+    assert_eq!(xml.matches(explicit).count(), 2);
+    let implicit = r#"<eqnStyle style="implicit"/>"#;
+    let restyled = xml.replacen(explicit, implicit, 1);
+    let mut changed = Workbench::default();
+    changed
+        .load_for_export(restyled.as_bytes(), "restyled fit")
+        .unwrap();
+    let c = changed.construction();
+    assert_eq!(
+        c.equation_form(c.id("g").unwrap()),
+        Some(&geo_kernel::kernel::EquationForm::Implicit)
+    );
+    let again = exported_xml(&changed);
+    assert_eq!(again.matches(implicit).count(), 1);
+    assert_eq!(again.matches(explicit).count(), 1);
     let rescaled = xml.replace(
         r#"x="1" y="-1" z="Infinity""#,
         r#"x="2" y="-2" z="Infinity""#,

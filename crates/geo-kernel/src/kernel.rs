@@ -1741,9 +1741,15 @@ impl Construction {
             .unwrap_or_else(|| axis::get(id).expect("object id").value)
     }
 
-    /// An object's selected equation form, if it has one.
+    /// The selected equation form, or the fit algorithm's explicit default.
     pub fn equation_form(&self, id: Id) -> Option<&EquationForm> {
-        self.equation_forms.get(&id).map(|(form, _)| form)
+        self.equation_forms
+            .get(&id)
+            .map(|(form, _)| form)
+            .or_else(|| {
+                matches!(self.defs.get(id.0), Some(Def::Lines(LineDef::Fit { .. })))
+                    .then_some(&EquationForm::Explicit)
+            })
     }
 
     /// A cache key for the equation's display state within this construction.
