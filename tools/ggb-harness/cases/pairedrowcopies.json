@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "statistics-pairedrowcopies-001",
+      "group": "statistics",
+      "script": [
+        "P = (1,2)", "a = 3", "k = 2",
+        "A = {{a+1,P}}", "D = A", "E = Reverse({{a+1,P}})",
+        "F = Reverse({{a+1,P},{2,(3,4)}})",
+        "R = {1,P}", "J = R", "L = ({J})", "N = ({{Mod(7,3),P}})",
+        "B = {R}", "C = B", "H = Reverse(B)",
+        "r = Covariance({Element(D,1,k),(0,0)})",
+        "s = Covariance({Element(E,1,k),(0,0)})",
+        "t = Covariance({Element(L,1,k),(0,0)})",
+        "u = Covariance({Element(N,1,k),(0,0)})",
+        "f = Covariance({Element(F,1,k),(0,0)})",
+        "g = Covariance({Element(F,2,k),(0,0)})",
+        "h = Covariance({Element(C,1,k),(0,0)})",
+        "q = Covariance({Element(H,1,k),(0,0)})"
+      ],
+      "steps": [
+        {"action": "initial"},
+        {"action": "set_number", "label": "k", "value": 1},
+        {"action": "set_number", "label": "k", "value": 2}
+      ]
+    }
+  ]
+}

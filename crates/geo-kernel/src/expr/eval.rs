@@ -955,13 +955,17 @@ pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Ki
         meter: Some(&lists),
         ..Ctx::new(c, e, &Env::None)
     };
-    type Literal<'a> = (Ctx<'a, true>, u32);
-    type TemplateRow<'a> = ((u32, u32), Option<Literal<'a>>);
+    enum RowOrigin<'a> {
+        Literal(Ctx<'a, true>, u32, Option<bool>), // node, reversal parity if copied by Reverse
+        Copied,
+    }
+    type TemplateRow<'a> = ((u32, u32), Option<RowOrigin<'a>>);
 
-    fn literal(mut ctx: Ctx<'_, true>, mut node: u32) -> Option<Literal<'_>> {
+    fn row_origin(mut ctx: Ctx<'_, true>, mut node: u32, outer: bool) -> Option<RowOrigin<'_>> {
+        let mut reversed = None;
         while ctx.lists?.charge(1) {
             match ctx.node(node) {
-                Node::List(..) => return Some((ctx, node)),
+                Node::List(..) => return Some(RowOrigin::Literal(ctx, node, reversed)),
                 Node::Item(child) => node = child,
                 Node::Obj(id) | Node::ItemObject(id) => {
                     let Def::Expr(def) = ctx.c.def(id) else {
@@ -969,11 +973,54 @@ pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Ki
                     };
                     ctx.e = super::entry(ctx.c, def);
                     node = ctx.e.root;
+                    // A dependent list expression rebuilds its nested rows as anonymous lists.
+                    if matches!(ctx.node(node), Node::Obj(_)) {
+                        return outer.then_some(RowOrigin::Copied);
+                    }
+                }
+                Node::ListOp(ListOp::Reverse, source, _) if outer => {
+                    reversed = Some(!reversed.unwrap_or(false));
+                    node = source;
                 }
                 _ => return None,
             }
         }
         None
+    }
+
+    fn selected_origin<'a>(origin: RowOrigin<'a>, offset: u32, len: u32) -> Option<RowOrigin<'a>> {
+        let RowOrigin::Literal(ctx, node, reversed) = origin else {
+            return Some(RowOrigin::Copied);
+        };
+        let Node::List(first, width) = ctx.node(node) else {
+            return None;
+        };
+        if width != len || !ctx.lists?.charge(1) {
+            return None;
+        }
+        let offset = if reversed == Some(true) {
+            len - 1 - offset
+        } else {
+            offset
+        };
+        let index = first + offset;
+        if reversed.is_some()
+            && matches!(ctx.node(index), Node::Item(child) if matches!(ctx.node(child), Node::List(..)))
+        {
+            return Some(RowOrigin::Copied);
+        }
+        row_origin(ctx, index, false)
+    }
+
+    fn independent_number(origin: RowOrigin<'_>) -> bool {
+        match origin {
+            RowOrigin::Copied => true,
+            RowOrigin::Literal(ctx, node, _) => {
+                matches!(ctx.node(node), Node::List(first, len) if len != 0
+                    && ctx.lists.is_some_and(|lists| lists.charge(1))
+                    && matches!(ctx.node(first), Node::Item(item) if !ctx.dependent_list_item(item)))
+            }
+        }
     }
 
     fn template_row<'a>(
@@ -984,7 +1031,7 @@ pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Ki
         let Node::ListOp(ListOp::ElementRow, source, index) = ctx.node(list) else {
             return Some((
                 ctx.list(list)?,
-                track_origin.then(|| literal(ctx, list)).flatten(),
+                track_origin.then(|| row_origin(ctx, list, true)).flatten(),
             ));
         };
         let lists = ctx.lists?;
@@ -997,10 +1044,7 @@ pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Ki
         }
         let offset = if index < len { index } else { 0 };
         let row = lists.read(ctx.c, start + offset).run()?;
-        let origin = origin.and_then(|(ctx, node)| match ctx.node(node) {
-            Node::List(first, len) if offset < len => literal(ctx, first + offset),
-            _ => None,
-        });
+        let origin = origin.and_then(|origin| selected_origin(origin, offset, len));
         Some((row, origin))
     }
 
@@ -1019,13 +1063,9 @@ pub(super) fn root_element_kind(c: &Construction, e: &Entry) -> Result<Option<Ki
         }
         let offset = if index < len { index } else { 0 };
         let slot = lists.read(c, start + offset);
-        // Only an independent numeric template in a literal row may promote.
+        // Only an independent numeric template in a literal or rebuilt row may promote.
         if slot.kind == Kind::Number
-            && origin.is_some_and(|(ctx, node)| {
-                matches!(ctx.node(node), Node::List(first, _) if
-                    lists.charge(1) && matches!(ctx.node(first), Node::Item(item)
-                        if !ctx.dependent_list_item(item)))
-            })
+            && origin.is_some_and(independent_number)
             && lists.charge(u64::from(len))
             && (start..start + len).any(|i| lists.read(c, i).kind == Kind::Point)
         {
@@ -2098,6 +2138,7 @@ impl<const M: bool> Ctx<'_, M> {
                 | Node::Apply2(..)
                 | Node::Local(..)
                 | Node::Cmd(..) => true,
+                Node::Bin(op, ..) if op.is_command() => true,
                 node => super::children(&node).any(|child| self.dependent_list_item(child)),
             }
     }
