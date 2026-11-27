@@ -1,0 +1,160 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-fitlinedirection-001",
+      "group": "statistics",
+      "script": [
+        "A = (2, 1)",
+        "B = (3, 3)",
+        "C = (2, 5)",
+        "g = FitLine({A,B,C})",
+        "v = Direction(g)",
+        "a = x(v)",
+        "b = y(v)"
+      ],
+      "observe": [
+        "g",
+        "v",
+        "a",
+        "b"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 2.0, "y": 3.0 },
+        { "action": "move", "label": "B", "x": 2.0001, "y": 3.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": -0.6666666666666679, "c": 2.0000000000000036 },
+          "v": { "type": "vector", "defined": true, "x": -0.6666666666666679, "y": -0.0 },
+          "a": { "type": "number", "defined": true, "value": -0.6666666666666679 },
+          "b": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": false },
+          "v": { "type": "vector", "defined": true, "x": -0.0, "y": -0.0 },
+          "a": { "type": "number", "defined": true, "value": -0.0 },
+          "b": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": false },
+          "v": { "type": "vector", "defined": true, "x": -6.66666721826914E-9, "y": -3.552713678800501E-15 },
+          "a": { "type": "number", "defined": true, "value": -6.66666721826914E-9 },
+          "b": { "type": "number", "defined": true, "value": -3.552713678800501E-15 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": -0.6666666666666679, "c": 2.0000000000000036 },
+          "v": { "type": "vector", "defined": true, "x": -0.6666666666666679, "y": -0.0 },
+          "a": { "type": "number", "defined": true, "value": -0.6666666666666679 },
+          "b": { "type": "number", "defined": true, "value": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-fitlinedirection-002",
+      "group": "statistics",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 3)",
+        "C = (5, 2)",
+        "g = FitLineX({A,B,C})",
+        "v = Direction(g)",
+        "a = x(v)",
+        "b = y(v)"
+      ],
+      "observe": [
+        "g",
+        "v",
+        "a",
+        "b"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 3.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 2.0001 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": -0.6666666666666679, "b": 0.0, "c": 2.0000000000000036 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.6666666666666679 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.6666666666666679 }
+        },
+        {
+          "g": { "type": "line", "defined": false },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": false },
+          "v": { "type": "vector", "defined": true, "x": 3.552713678800501E-15, "y": 6.66666721826914E-9 },
+          "a": { "type": "number", "defined": true, "value": 3.552713678800501E-15 },
+          "b": { "type": "number", "defined": true, "value": 6.66666721826914E-9 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": -0.6666666666666679, "b": 0.0, "c": 2.0000000000000036 },
+          "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.6666666666666679 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.6666666666666679 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-fitlinedirection-003",
+      "group": "statistics",
+      "script": [
+        "n = 2",
+        "t = 2^n",
+        "L = {(t,t),(2*t,2*t)}",
+        "g = FitLine(L)",
+        "h = FitLineX(L)",
+        "v = Direction(g)",
+        "w = Direction(h)"
+      ],
+      "observe": [
+        "g",
+        "h",
+        "v",
+        "w"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 342.0 },
+        { "action": "set_number", "label": "n", "value": 343.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 8.0, "b": -8.0, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": -8.0, "b": 8.0, "c": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -8.0, "y": -8.0 },
+          "w": { "type": "vector", "defined": true, "x": 8.0, "y": 8.0 }
+        },
+        {
+          "g": { "type": "line", "defined": false },
+          "h": { "type": "line", "defined": false },
+          "v": { "type": "vector", "defined": true, "x": -4.013165208090495E205, "y": -4.013165208090495E205 },
+          "w": { "type": "vector", "defined": true, "x": 4.013165208090495E205, "y": 4.013165208090495E205 }
+        },
+        {
+          "g": { "type": "line", "defined": false },
+          "h": { "type": "line", "defined": false },
+          "v": { "type": "vector", "defined": true, "x": -1.605266083236198E206, "y": -1.605266083236198E206 },
+          "w": { "type": "vector", "defined": true, "x": 1.605266083236198E206, "y": 1.605266083236198E206 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 8.0, "b": -8.0, "c": 0.0 },
+          "h": { "type": "line", "defined": true, "a": -8.0, "b": 8.0, "c": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": -8.0, "y": -8.0 },
+          "w": { "type": "vector", "defined": true, "x": 8.0, "y": 8.0 }
+        }
+      ]
+    }
+  ]
+}

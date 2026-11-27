@@ -520,7 +520,7 @@ fn fit_line(points: crate::expr::List<'_>, x_on_y: bool) -> Option<Value> {
     } else {
         super::scale_coefficients((a, b, intercept), 1.0, 0.5)
     };
-    line_value(a, b, c)
+    Some(line_value(a, b, c).unwrap_or(Value::UndefinedLine { a, b, c }))
 }
 
 fn parse_polar(c: &Construction, func: &str, args: &[&str]) -> Result<LineDef, String> {

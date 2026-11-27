@@ -3728,6 +3728,98 @@ fn reloaded_fit_lines_follow_point_edits() {
 }
 
 #[test]
+fn reloaded_fit_lines_keep_their_infinite_intercepts() {
+    let wb = Workbench::from_script(
+        "t = 2^341\ng = FitLine({(0,4*t),(t,5*t)})\nh = FitLineX({(4*t,0),(5*t,t)})",
+    )
+    .unwrap();
+    let (bytes, reloaded) = round_trip("fit lines with infinite intercepts", &wb, None);
+    let c = reloaded.construction();
+    for (label, a, b) in [("g", 1.0, -1.0), ("h", -1.0, 1.0)] {
+        assert_eq!(
+            c.value(c.id(label).unwrap()),
+            geo_kernel::Value::Line {
+                a,
+                b,
+                c: f64::INFINITY
+            }
+        );
+    }
+    let xml = geo_import::archive::extract_xml(&bytes).unwrap();
+    let rescaled = xml.replace(
+        r#"x="1" y="-1" z="Infinity""#,
+        r#"x="2" y="-2" z="Infinity""#,
+    );
+    assert!(geo_import::import_for_replay(rescaled.as_bytes())
+        .unwrap()
+        .mismatched
+        .is_empty());
+    let wrong_sign = xml.replace(r#"z="Infinity""#, r#"z="-Infinity""#);
+    let imported = geo_import::import_for_replay(wrong_sign.as_bytes()).unwrap();
+    let labels: Vec<_> = imported
+        .mismatched
+        .iter()
+        .map(|m| m.label.as_str())
+        .collect();
+    assert_eq!(labels, ["g", "h"]);
+    let wrong_normal = xml.replace(
+        r#"x="1" y="-1" z="Infinity""#,
+        r#"x="2" y="-1" z="Infinity""#,
+    );
+    let imported = geo_import::import_for_replay(wrong_normal.as_bytes()).unwrap();
+    assert_eq!(imported.mismatched.len(), 1);
+    assert_eq!(imported.mismatched[0].label, "g");
+}
+
+#[test]
+fn archive_checks_infinite_components_of_fit_line_directions() {
+    let wb = Workbench::from_script(
+        "A = (1,-10^308)\nB = (2,10^308)\ng = FitLine({A,B})\nv = Direction(g)",
+    )
+    .unwrap();
+    let (bytes, reloaded) = round_trip("infinite normal", &wb, None);
+    let c = reloaded.construction();
+    assert_eq!(
+        c.value(c.id("v").unwrap()),
+        geo_kernel::Value::Vector {
+            x: -0.5,
+            y: f64::NEG_INFINITY
+        }
+    );
+    let xml = geo_import::archive::extract_xml(&bytes).unwrap();
+    let wrong = xml.replace(
+        r#"x="-0.5" y="-Infinity" z="0""#,
+        r#"x="-0.5" y="Infinity" z="0""#,
+    );
+    let imported = geo_import::import_for_replay(wrong.as_bytes()).unwrap();
+    assert_eq!(imported.mismatched.len(), 1);
+    assert_eq!(imported.mismatched[0].label, "v");
+}
+
+#[test]
+fn reloaded_undefined_fit_keeps_its_direction_through_edits() {
+    let wb = Workbench::from_script(
+        "n = 342\nt = 2^n\nL = {(t,t),(2*t,2*t)}\ng = FitLine(L)\nv = Direction(g)",
+    )
+    .unwrap();
+    let (_, mut again) = round_trip("fit with undefined intercept", &wb, None);
+    for n in [342, 343, 2] {
+        let id = again.construction().id("n").unwrap();
+        again.set_number(id, f64::from(n));
+        let c = again.construction();
+        assert_eq!(c.value(c.id("g").unwrap()).is_defined(), n == 2);
+        let component = -2.0_f64.powi(2 * n - 1);
+        assert_eq!(
+            c.value(c.id("v").unwrap()),
+            geo_kernel::Value::Vector {
+                x: component,
+                y: component
+            }
+        );
+    }
+}
+
+#[test]
 fn export_keeps_live_slider_endpoints_with_a_colon_label() {
     let mut wb = Workbench::default();
     wb.run_line("b = 36").unwrap();

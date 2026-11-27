@@ -762,6 +762,7 @@ fn render_geometry(
             | Value::FunctionNVar
             | Value::HomogeneousPoint { .. }
             | Value::NormalizedPointAtInfinity { .. }
+            | Value::UndefinedLine { .. }
             | Value::Button
             | Value::Image
             | Value::PieChart

@@ -2246,6 +2246,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Locus { .. } | Value::PenStroke { .. } => true,
         Value::HomogeneousPoint { .. }
         | Value::NormalizedPointAtInfinity { .. }
+        | Value::UndefinedLine { .. }
         | Value::Button
         | Value::InputBox
         | Value::Image

@@ -2414,11 +2414,44 @@ fn coords3(el: &Element) -> Option<[f64; 3]> {
     Some([num(x)?, num(y)?, num(z)?])
 }
 
+/// Lines and vectors can retain infinite coordinates, and undefined fits can retain NaN.
+fn raw_coords3(el: &Element) -> Option<[f64; 3]> {
+    let [x, y, z] = el.coords.as_ref()?;
+    let parse = crate::xml::java_double;
+    Some([parse(x)?, parse(y)?, parse(z)?])
+}
+
+fn same_coordinate(p: f64, q: f64) -> bool {
+    p == q || close(p, q)
+}
+
 /// Whether the lines `(a, b, c)` and `(sa, sb, sc)` are the same up to a
 /// positive factor (the orientation of a line is part of its value).
 fn same_line(line: [f64; 3], saved: [f64; 3]) -> bool {
-    let (n, sn) = (line[0].hypot(line[1]), saved[0].hypot(saved[1]));
-    n > 0.0 && sn > 0.0 && (0..3).all(|i| close(line[i] / n, saved[i] / sn))
+    let scale = |[a, b, c]: [f64; 3]| {
+        if a.is_infinite() || b.is_infinite() {
+            // The infinite normal has no finite length. The remaining finite
+            // coefficients still determine a scale when any is nonzero.
+            [a, b, c]
+                .into_iter()
+                .filter(|v| v.is_finite() && *v != 0.0)
+                .map(f64::abs)
+                .reduce(f64::max)
+                .unwrap_or(1.0)
+        } else {
+            a.hypot(b)
+        }
+    };
+    let (n, sn) = (scale(line), scale(saved));
+    n > 0.0
+        && sn > 0.0
+        && line.into_iter().zip(saved).all(|(p, q)| {
+            if p.is_infinite() || q.is_infinite() {
+                p == q
+            } else {
+                close(p / n, q / sn)
+            }
+        })
 }
 
 fn saved_text(el: &Element) -> String {
@@ -2518,11 +2551,18 @@ fn saved_defined(el: &Element) -> Option<bool> {
             .coords
             .as_ref()
             .map(|_| coords3(el).is_some_and(|[_, _, z]| z != 0.0)),
-        "vector" => el.coords.as_ref().map(|_| coords3(el).is_some()),
+        "vector" => el.coords.as_ref().map(|_| {
+            raw_coords3(el).is_some_and(|[x, y, z]| !x.is_nan() && !y.is_nan() && z.is_finite())
+        }),
         // A degenerate segment (equal end points) is a defined object whose
         // saved line is (0, 0, 0).
         "segment" => el.coords.as_ref().map(|_| coords3(el).is_some()),
-        "line" | "ray" => el
+        "line" => el.coords.as_ref().map(|_| {
+            raw_coords3(el).is_some_and(|[a, b, c]| {
+                !(a.is_nan() || b.is_nan() || c.is_nan()) && (a != 0.0 || b != 0.0)
+            })
+        }),
+        "ray" => el
             .coords
             .as_ref()
             .map(|_| coords3(el).is_some_and(|[a, b, _]| a != 0.0 || b != 0.0)),
@@ -2667,6 +2707,18 @@ fn cross_check(
             }
         }
     }
+    if !value.is_defined() && kind == Kind::Line && el.coords.is_some() {
+        if let Value::UndefinedLine { a, b, c: intercept } = c.stored_value(id) {
+            // Direction reads the raw normal even when the line is undefined.
+            let agrees = raw_coords3(el).is_some_and(|saved| {
+                [a, b, intercept]
+                    .into_iter()
+                    .zip(saved)
+                    .all(|(p, q)| same_coordinate(p, q) || p.is_nan() && q.is_nan())
+            });
+            return (!agrees).then(report).flatten();
+        }
+    }
     let saved_defined =
         saved_defined(el).or_else(|| expression.filter(|exp| exp.trim() == "?").map(|_| false));
     match (value.is_defined(), saved_defined) {
@@ -2678,8 +2730,11 @@ fn cross_check(
         Value::Point { x, y } => {
             coords3(el).map(|[sx, sy, sz]| close(x, sx / sz) && close(y, sy / sz))
         }
-        Value::Vector { x, y } => coords3(el).map(|[sx, sy, _]| close(x, sx) && close(y, sy)),
-        Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => {
+        Value::Vector { x, y } => raw_coords3(el).map(|[sx, sy, _]| {
+            same_coordinate(x, sx) && same_coordinate(y, sy)
+        }),
+        Value::Line { a, b, c } => raw_coords3(el).map(|saved| same_line([a, b, c], saved)),
+        Value::Ray { a, b, c, .. } => {
             coords3(el).map(|saved| same_line([a, b, c], saved))
         }
         Value::Segment { x1, y1, x2, y2 } => coords3(el).map(|saved| {
