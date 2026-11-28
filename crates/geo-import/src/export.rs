@@ -897,8 +897,26 @@ fn distribution_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
     normalized.into()
 }
 
-fn is_distribution_variable(source: &str) -> bool {
-    source.trim_matches(|ch: char| ch == '(' || ch == ')' || ch.is_whitespace()) == "x"
+/// Whether a distribution argument parses to the bare variable `x`.
+///
+/// The parser drops a leading `+`, an even run of leading `-` signs and
+/// redundant brackets, so `+x`, `--x` and `(+(x))` all select the function
+/// form. `-(-x)` does not, because it keeps the multiplications by -1.
+fn is_distribution_variable(argument: &str) -> bool {
+    let compact: String = argument.chars().filter(|ch| !ch.is_whitespace()).collect();
+    let mut rest = compact.as_str();
+    loop {
+        let next = if let Some(inner) = rest.strip_prefix('(').and_then(|r| r.strip_suffix(')')) {
+            inner
+        } else if let Some(inner) = rest.strip_prefix("--") {
+            inner
+        } else if let Some(inner) = rest.strip_prefix('+') {
+            inner
+        } else {
+            return rest == "x";
+        };
+        rest = next;
+    }
 }
 
 /// Lower journal-only inline arguments before writing the command parameters.
