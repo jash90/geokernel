@@ -53,6 +53,31 @@ fn svg_texts_use_the_object_colour_and_measured_width() {
     );
 }
 
+#[test]
+fn svg_plain_text_keeps_the_saved_serif_family() {
+    let source = format!(
+        "t = {}\n$textProperties(t, false, 1, 7, -, -, screen, 40, 50)\n\
+         p = {}\n$textProperties(p, false, 1, 0, -, -, screen, 40, 150)\n",
+        script::text::literal("serif first\nserif second"),
+        script::text::literal("plain sans")
+    );
+    let c = script::load(&source).unwrap();
+    let svg = svg::render(&c, svg::View::fit(&c), 400, 300);
+    for label in ["serif first", "serif second"] {
+        let row = svg.lines().find(|line| line.contains(label)).unwrap();
+        assert!(row.contains(r#"font-family="serif""#), "{row}");
+        assert!(
+            row.contains(r#"font-style="italic" font-weight="bold""#),
+            "{row}"
+        );
+    }
+    let row = svg
+        .lines()
+        .find(|line| line.contains("plain sans"))
+        .unwrap();
+    assert!(!row.contains("font-family"), "{row}");
+}
+
 /// A text parked at a huge coordinate does not swallow the fitted view;
 /// only a construction of texts alone is fitted to them.
 #[test]
