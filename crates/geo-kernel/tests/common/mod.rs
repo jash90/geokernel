@@ -164,10 +164,16 @@ pub fn first_non_finite(c: &Construction) -> Option<String> {
         if is_all_finite(&v) {
             return None;
         }
-        // A fit can keep an infinite intercept or normal component. A NaN or
-        // three infinities must still produce an undefined Cartesian value.
         if let Value::Line { a, b, c: offset } = v {
             let coords = [a, b, offset];
+            // A typed line uses GeoLine's raw-coefficient definedness rule.
+            if matches!(c.def(id), Def::Equation(def) if !def.is_conic())
+                && geo_kernel::algo::line_is_defined(coords)
+            {
+                return None;
+            }
+            // A fit can retain an infinite intercept or normal component.
+            // NaN and three infinities still make the fit undefined.
             if matches!(
                 c.def(id),
                 Def::Lines(geo_kernel::algo::lines::LineDef::Fit { .. })
