@@ -249,7 +249,7 @@ The 2D command dispatcher has no function–Cartesian curve overload.
 
 | Area | GeoGebra | GeoKernel | Remaining work |
 | --- | --- | --- | --- |
-| `Normal(mean, deviation, x)` and its cumulative flag | Constructs a function of `x` whose samples follow the live parameters. | The explicit function forms evaluate and update their samples, including the recorded zero and negative deviations. | The symbolic and tangent derivative paths do not yet handle the normal function. |
+| `Normal(mean, deviation, x)` and its cumulative flag | Constructs a function of `x` whose samples follow the live parameters. | The explicit function forms evaluate and update their samples, including the recorded zero and negative deviations. The archive writes an explicit cumulative flag for nested defaults. The formula formatter displays the CDF or density and retains the command when values are left symbolic. | The symbolic and tangent derivative paths do not yet handle the normal function. |
 
 ## Text objects and commands
 

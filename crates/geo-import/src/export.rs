@@ -786,6 +786,15 @@ impl Writer<'_> {
     }
 
     fn expression(&mut self, id: Id, source: &str) -> Result<(), ExportError> {
+        let normalized;
+        let source = if matches!(self.c.kind(id), Kind::Function | Kind::FunctionNVar)
+            && source.contains("Normal")
+        {
+            normalized = normal_function_defaults(source);
+            normalized.as_ref()
+        } else {
+            source
+        };
         self.xml.tag(
             "expression",
             &[
@@ -816,6 +825,73 @@ impl Writer<'_> {
         self.xml.buffer.push_str("</command>\n");
         Ok(())
     }
+}
+
+/// GeoGebra's archive reader needs an explicit cumulative flag even when the
+/// defaulted Normal function is nested in a larger expression.
+fn normal_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
+    struct Group {
+        normal: bool,
+        commas: usize,
+        third: usize,
+    }
+    let mut groups: Vec<Group> = Vec::new();
+    let mut replacements = Vec::new();
+    for (index, ch) in script::unquoted(source) {
+        match ch {
+            '(' | '[' | '{' => {
+                let normal = ch != '{'
+                    && source[..index]
+                        .trim_end()
+                        .strip_suffix("Normal")
+                        .is_some_and(|prefix| {
+                            !prefix.chars().next_back().is_some_and(|c| {
+                                c.is_alphanumeric() || matches!(c, '_' | '$' | '\'')
+                            })
+                        });
+                groups.push(Group {
+                    normal,
+                    commas: 0,
+                    third: 0,
+                });
+            }
+            ',' => {
+                if let Some(group) = groups.last_mut().filter(|group| group.normal) {
+                    group.commas += 1;
+                    if group.commas == 2 {
+                        group.third = index + 1;
+                    }
+                }
+            }
+            ')' | ']' | '}' => {
+                if let Some(group) = groups
+                    .pop()
+                    .filter(|group| group.normal && group.commas == 2)
+                {
+                    let argument = &source[group.third..index];
+                    if argument
+                        .trim_matches(|ch: char| ch == '(' || ch == ')' || ch.is_whitespace())
+                        == "x"
+                    {
+                        replacements.push((group.third, index));
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    if replacements.is_empty() {
+        return source.into();
+    }
+    let mut normalized = String::with_capacity(source.len());
+    let mut start = 0;
+    for (argument, end) in replacements {
+        normalized.push_str(&source[start..argument]);
+        normalized.push_str("x, true");
+        start = end;
+    }
+    normalized.push_str(&source[start..]);
+    normalized.into()
 }
 
 /// Lower journal-only inline arguments before writing the command parameters.

@@ -40,10 +40,8 @@ pub(super) fn parse(p: &mut Parser, name: &str) -> Result<Option<u32>, String> {
 
 pub(in crate::expr) fn value_type(
     op: Probability,
-    args: [u32; 4],
-    types: &[Ty],
+    [mean, scale, x, flag]: [Option<Ty>; 4],
 ) -> Result<Ty, String> {
-    let [mean, scale, x, flag] = args.map(|arg| types.get(arg as usize).copied());
     let valid = matches!(
         (mean, scale, x),
         (Some(Ty::Num(_)), Some(Ty::Num(_)), Some(Ty::Num(_)))
@@ -65,9 +63,9 @@ pub(in crate::expr) fn value<const M: bool>(
     op: Probability,
     [mean, deviation, x, flag]: [u32; 4],
 ) -> f64 {
-    let mean = ctx.fast(mean);
-    let deviation = ctx.fast(deviation);
-    let x = ctx.fast(x);
+    let mean = ctx.full_number(mean);
+    let deviation = ctx.full_number(deviation);
+    let x = ctx.full_number(x);
     let fourth = if flag != NONE {
         ctx.full(flag).val
     } else {
@@ -107,7 +105,7 @@ pub(in crate::expr) fn value<const M: bool>(
 }
 
 fn cdf(mean: f64, deviation: f64, x: f64) -> f64 {
-    libm::erfc(-(x - mean) / deviation * FRAC_1_SQRT_2) * 0.5
+    libm::erfc(-(x - mean) / (deviation * SQRT_2)) * 0.5
 }
 
 fn inverse(mean: f64, deviation: f64, probability: f64) -> f64 {
@@ -140,4 +138,19 @@ fn inverse(mean: f64, deviation: f64, probability: f64) -> f64 {
         }
     }
     mean + deviation * ((lo + hi) * 0.5).copysign(centered)
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn only_the_distribution_function_slot_accepts_a_free_variable() {
+        for source in [
+            "f = Normal(0,1,x+1)",
+            "f = Normal(x,1,x)",
+            "f = Normal(0,1,1, x > 0)",
+            "f = InverseNormal(0,1,x)",
+        ] {
+            assert!(crate::script::load(source).is_err(), "{source}");
+        }
+    }
 }

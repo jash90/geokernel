@@ -6,7 +6,8 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use super::{super::superscript, Format, MAX_TEXT_BYTES};
-use crate::expr::eval::{Ctx, Env};
+use crate::expr::commands::probability::Probability;
+use crate::expr::eval::{Ctx, Env, Val};
 use crate::expr::{self, Bin, Entry, Lit, Node, Un, NONE};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -75,6 +76,7 @@ impl Format {
             | Node::Polar(..)
             | Node::Text
             | Node::If(..)
+            | Node::Probability(Probability::Normal { function: true }, _)
             | Node::List(..)
             | Node::Un(..)
             | Node::Apply2(..) => {
@@ -262,6 +264,50 @@ impl Format {
                 Some(command) => command,
                 None => self.value(ctx, i)?,
             },
+            Node::Probability(
+                Probability::Normal { function: true },
+                [mean, deviation, x, flag],
+            ) => {
+                let x = term(x, 0)?;
+                if !substitute {
+                    let flag = if flag == NONE {
+                        "true".into()
+                    } else {
+                        term(flag, 0)?
+                    };
+                    return Some(
+                        self.command("Normal", &[term(mean, 0)?, term(deviation, 0)?, x, flag]),
+                    );
+                }
+                let mean = self.number(ctx.full_number(mean));
+                let sd = self.number(ctx.full_number(deviation));
+                let offset = if mean == "0" {
+                    x
+                } else if let Some(positive) = mean.strip_prefix('-') {
+                    format!("{x} + {positive}")
+                } else {
+                    format!("{x} - {mean}")
+                };
+                let cumulative = flag == NONE || matches!(ctx.full(flag).val, Val::B(true, _));
+                if self.latex && cumulative {
+                    format!(
+                        r"\frac{{\operatorname{{erf}}\left(\frac{{{offset}}}{{\left|{sd}\right| \; \sqrt{{2}}}} \right) + 1}}{{2}}"
+                    )
+                } else if self.latex {
+                    format!(
+                        r"\frac{{\mathit{{e}}^{{\frac{{-\left({offset} \right)^{{2}}}}{{{sd}^{{2}} \cdot 2}}}}}}{{\left|{sd}\right| \; \sqrt{{2 \; \pi }}}}"
+                    )
+                } else if cumulative {
+                    format!("(erf(({offset}) / (abs({sd}) sqrt(2))) + 1) / 2")
+                } else {
+                    let base = if sd.starts_with('-') {
+                        self.parenthesize(&sd)
+                    } else {
+                        sd.clone()
+                    };
+                    format!("exp(-({offset})² / ({base}² * 2)) / (abs({sd}) sqrt(2 π))")
+                }
+            }
             Node::Item(a) => return term(a, outer),
             _ => self.value(ctx, i)?,
         };

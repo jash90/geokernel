@@ -315,6 +315,82 @@
           "action": "initial"
         }
       ]
+    },
+    {
+      "id": "probability-normalreview-001",
+      "group": "probability",
+      "script": [
+        "s = 1.4*10^308",
+        "a = Normal(0,s,s)",
+        "b = Normal(0,s,-s,s)",
+        "c = Normal(-s,s,s)",
+        "d = InverseNormal(0,10^20,0.7-0.2)",
+        "e = Normal(1.1-1,10^(-16),0.1)",
+        "j = Normal(0,1,1/0)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normalreview-002",
+      "group": "probability",
+      "script": [
+        "f = (Normal(2,3,x))",
+        "g = 2*Normal(2,3,x)",
+        "h = Normal(2,3,x,false)",
+        "a = f(-1)",
+        "b = g(-1)",
+        "c = IsDefined(f)",
+        "d = IsDefined(g)",
+        "e = IsDefined(h)",
+        "t = FormulaText(f)",
+        "u = FormulaText(h)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normalreview-003",
+      "group": "probability",
+      "script": [
+        "s = Segment((0,0),(1,0))",
+        "a = Normal(0,s,1)",
+        "b = InverseNormal(0,s,0.75)",
+        "c = Normal(0,1,0,s)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normalformat-001",
+      "group": "probability",
+      "script": [
+        "f = Normal(0,1,x)",
+        "g = Normal(0,1,x,false)",
+        "h = Normal(-2,-3,x,false)",
+        "m = -2",
+        "s = 3",
+        "q = Normal(m,s,x)",
+        "a = FormulaText(f)",
+        "b = FormulaText(g)",
+        "c = FormulaText(h)",
+        "d = FormulaText(q)",
+        "k = FormulaText(q,false)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
     }
   ]
 }
