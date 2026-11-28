@@ -741,13 +741,18 @@ fn render_geometry(
                         line_height,
                         0.0,
                     );
+                    let font_family = if style.serif {
+                        r#" font-family="serif""#
+                    } else {
+                        ""
+                    };
                     let font_style = if style.italic { "italic" } else { "normal" };
                     let weight = if style.bold { "bold" } else { "normal" };
                     for (row, line) in source.lines().enumerate() {
                         let y = y + row as f32 * line_height;
                         let _ = writeln!(
                             texts,
-                            r#"<text x="{x:.2}" y="{y:.2}" font-size="{size:.2}" font-style="{font_style}" font-weight="{weight}" fill="{}" xml:space="preserve">{}</text>"#,
+                            r#"<text x="{x:.2}" y="{y:.2}" font-size="{size:.2}" font-style="{font_style}" font-weight="{weight}"{font_family} fill="{}" xml:space="preserve">{}</text>"#,
                             hex(TEXT_COLOR),
                             escape(line)
                         );
