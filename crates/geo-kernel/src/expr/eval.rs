@@ -1680,10 +1680,7 @@ impl<const M: bool> Ctx<'_, M> {
         let (x, digits) = (self.operand(a), self.operand(b));
         let object = match self.node(b) {
             Node::Obj(_) | Node::Cmd(..) => true,
-            Node::Probability(op, _) => !matches!(
-                op,
-                commands::probability::Probability::Normal { function: true }
-            ),
+            Node::Probability(op, _) => !op.is_function(),
             _ => false,
         };
         match (x.val, digits.val) {

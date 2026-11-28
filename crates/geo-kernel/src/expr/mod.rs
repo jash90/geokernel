@@ -2190,7 +2190,7 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
         }
         // A normal function stays defined even when its parameters make
         // the samples undefined. A scalar distribution is a numeric helper.
-        Node::Probability(commands::probability::Probability::Normal { function: true }, _) => true,
+        Node::Probability(op, _) if op.is_function() => true,
         Node::Probability(..) => !ctx.full_number(i).is_nan(),
         // The predicate returns a boolean even when its operand is undefined.
         Node::Defined(..) | Node::ObjectDefined(_) => true,

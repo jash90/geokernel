@@ -44,6 +44,7 @@ impl Format {
         }
         let node = ctx.node(i);
         match node {
+            Node::Probability(op, _) if op.is_function() => return Some(Printed::Other),
             Node::Un(Un::X | Un::Y, _) if ctx.e.vars == 0 => {
                 if ctx.stop(1) {
                     return None;
@@ -76,7 +77,6 @@ impl Format {
             | Node::Polar(..)
             | Node::Text
             | Node::If(..)
-            | Node::Probability(Probability::Normal { function: true }, _)
             | Node::List(..)
             | Node::Un(..)
             | Node::Apply2(..) => {
@@ -264,19 +264,58 @@ impl Format {
                 Some(command) => command,
                 None => self.value(ctx, i)?,
             },
+            Node::Probability(Probability::Exponential { function: true }, [_, rate, x, flag]) => {
+                let x = term(x, 0)?;
+                let rate = if substitute {
+                    self.number(ctx.full_number(rate))
+                } else {
+                    term(rate, 6)?
+                };
+                let cumulative = flag == NONE || matches!(ctx.full(flag).val, Val::B(true, _));
+                let product = if self.latex { r" \; " } else { " * " };
+                let exponent = match rate.as_str() {
+                    "1" => format!("-{x}"),
+                    "-1" => x.clone(),
+                    _ => format!("-{rate}{product}{x}"),
+                };
+                let survival = if self.latex {
+                    format!(r"\mathit{{e}}^{{{exponent}}}")
+                } else {
+                    format!("exp({exponent})")
+                };
+                let branch = if cumulative {
+                    format!("1 - {survival}")
+                } else {
+                    match rate.as_str() {
+                        "1" => survival,
+                        "-1" => format!("-{survival}"),
+                        _ => format!("{rate}{product}{survival}"),
+                    }
+                };
+                if self.latex {
+                    format!(
+                        r"\left\{{\begin{{array}}{{ll}} 0& : {x} < 0\\ {branch}& : \text{{otherwise}} \end{{array}}\right. "
+                    )
+                } else {
+                    format!("If({x} < 0, 0, {branch})")
+                }
+            }
             Node::Probability(
-                Probability::Normal { function: true },
+                op @ (Probability::Normal { function: true }
+                | Probability::Cauchy { function: true }),
                 [mean, deviation, x, flag],
             ) => {
                 let x = term(x, 0)?;
+                let cauchy = matches!(op, Probability::Cauchy { .. });
                 if !substitute {
                     let flag = if flag == NONE {
                         "true".into()
                     } else {
                         term(flag, 0)?
                     };
+                    let name = if cauchy { "Cauchy" } else { "Normal" };
                     return Some(
-                        self.command("Normal", &[term(mean, 0)?, term(deviation, 0)?, x, flag]),
+                        self.command(name, &[term(mean, 0)?, term(deviation, 0)?, x, flag]),
                     );
                 }
                 let mean = self.number(ctx.full_number(mean));
@@ -289,7 +328,28 @@ impl Format {
                     format!("{x} - {mean}")
                 };
                 let cumulative = flag == NONE || matches!(ctx.full(flag).val, Val::B(true, _));
-                if cumulative {
+                if cauchy {
+                    match (self.latex, cumulative) {
+                        (true, true) => format!(
+                            r"\frac{{\operatorname{{tan⁻¹}} \left( \frac{{{offset}}}{{\left|{sd}\right|}} \right)}}{{\pi }} + 0.5"
+                        ),
+                        (false, true) => format!("atan(({offset}) / abs({sd})) / π + 0.5"),
+                        (_, false) => {
+                            let base = if sd.starts_with('-') {
+                                self.parenthesize(&sd)
+                            } else {
+                                sd.clone()
+                            };
+                            if self.latex {
+                                format!(
+                                    r"\frac{{\left|{sd}\right|}}{{\left({base}^{{2}} + \left({offset} \right)^{{2}} \right) \; \pi }}"
+                                )
+                            } else {
+                                format!("abs({sd}) / (({base}² + ({offset})²) * π)")
+                            }
+                        }
+                    }
+                } else if cumulative {
                     if self.latex {
                         format!(
                             r"\frac{{\operatorname{{erf}}\left(\frac{{{offset}}}{{\left|{sd}\right| \; \sqrt{{2}}}} \right) + 1}}{{2}}"

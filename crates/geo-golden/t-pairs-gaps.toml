@@ -2001,12 +2001,6 @@ reason = "the kernel refuses the input: unknown command `InverseBinomialMinimumT
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2316"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `InverseCauchy`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2346"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `InverseHyperGeometric`"

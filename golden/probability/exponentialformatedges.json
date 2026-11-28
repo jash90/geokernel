@@ -1,0 +1,210 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-exponentialformatedges-001",
+      "group": "probability",
+      "script": [
+        "r = 1",
+        "n = 0",
+        "p = n > 0",
+        "f = Exponential(r,x,p)",
+        "g = Exponential(0,x)",
+        "h = Exponential(-1,x,false)",
+        "a = FormulaText(f)",
+        "b = FormulaText(g)",
+        "c = FormulaText(h)",
+        "d = FormulaText(f,false)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "r", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 1.0],
+              [0.5, 0.6065306597126334],
+              [1.0, 0.36787944117144233],
+              [2.0, 0.1353352832366127],
+              [4.0, 0.01831563888873418],
+              [8.0, 3.3546262790251185E-4]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, -1.0],
+              [0.5, -1.6487212707001282],
+              [1.0, -2.718281828459045],
+              [2.0, -7.38905609893065],
+              [4.0, -54.598150033144236],
+              [8.0, -2980.9579870417283]
+            ]
+          },
+          "a": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ \\mathit{e}^{-x}& : \\text{otherwise} \\end{array}\\right. " },
+          "b": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 1 - \\mathit{e}^{-0 \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "c": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ -\\mathit{e}^{x}& : \\text{otherwise} \\end{array}\\right. " },
+          "d": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ r \\; \\mathit{e}^{-r \\; x}& : \\text{otherwise} \\end{array}\\right. " }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.3934693402873666],
+              [1.0, 0.6321205588285577],
+              [2.0, 0.8646647167633873],
+              [4.0, 0.9816843611112658],
+              [8.0, 0.9996645373720975]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, -1.0],
+              [0.5, -1.6487212707001282],
+              [1.0, -2.718281828459045],
+              [2.0, -7.38905609893065],
+              [4.0, -54.598150033144236],
+              [8.0, -2980.9579870417283]
+            ]
+          },
+          "a": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 1 - \\mathit{e}^{-x}& : \\text{otherwise} \\end{array}\\right. " },
+          "b": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 1 - \\mathit{e}^{-0 \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "c": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ -\\mathit{e}^{x}& : \\text{otherwise} \\end{array}\\right. " },
+          "d": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 1 - \\mathit{e}^{-r \\; x}& : \\text{otherwise} \\end{array}\\right. " }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, -1.0],
+              [0.5, -1.6487212707001282],
+              [1.0, -2.718281828459045],
+              [2.0, -7.38905609893065],
+              [4.0, -54.598150033144236],
+              [8.0, -2980.9579870417283]
+            ]
+          },
+          "a": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 1 - \\mathit{e}^{-0 \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "b": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 1 - \\mathit{e}^{-0 \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "c": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ -\\mathit{e}^{x}& : \\text{otherwise} \\end{array}\\right. " },
+          "d": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 1 - \\mathit{e}^{-r \\; x}& : \\text{otherwise} \\end{array}\\right. " }
+        }
+      ]
+    }
+  ]
+}

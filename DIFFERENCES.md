@@ -250,6 +250,8 @@ The 2D command dispatcher has no function–Cartesian curve overload.
 | Area | GeoGebra | GeoKernel | Remaining work |
 | --- | --- | --- | --- |
 | `Normal(mean, deviation, x)` and its cumulative flag | Constructs a function of `x` whose samples follow the live parameters. | The explicit function forms evaluate and update their samples, including the recorded zero and negative deviations. The archive writes an explicit cumulative flag for nested defaults. The formula formatter displays the CDF or density and retains the command when values are left symbolic. | The symbolic and tangent derivative paths do not yet handle the normal function. |
+| `Exponential` and `InverseExponential` | Scalar forms evaluate the distribution or quantile. The function forms use a zero branch below x=0 and evaluate the live rate and cumulative flag. | Supports the recorded scalar and function forms, including their distinct negative-rate behavior, and writes explicit cumulative flags for function defaults in saved files. | Symbolic derivatives, tangents and the probability calculator remain open. |
+| `Cauchy` and `InverseCauchy` | The scalar forms take a positive scale. Function forms use the absolute scale and accept a live cumulative flag. | Supports both numeric forms, the two function forms, and the quantile. The archive records cumulative defaults in saved functions. | Tangents, symbolic derivatives and the probability calculator remain open. |
 
 ## Text objects and commands
 
@@ -998,7 +1000,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:2214`, `commands/CommandsTest.java:2217` | **unsupported-command.** the kernel refuses the input: unknown command `IntersectConic` |
 | `commands/CommandsTest.java:2294` | **unsupported-command.** the kernel refuses the input: unknown command `InverseBinomial` |
 | `commands/CommandsTest.java:2299`, `commands/CommandsTest.java:2300`, `commands/CommandsTest.java:2301`, `commands/CommandsTest.java:2302`, `commands/CommandsTest.java:2303`, `commands/CommandsTest.java:2304`, `commands/CommandsTest.java:2305`, `commands/CommandsTest.java:2306`, `commands/CommandsTest.java:2307`, `commands/CommandsTest.java:2308`, `commands/CommandsTest.java:2309`, `commands/CommandsTest.java:2310`, `commands/CommandsTest.java:2311` | **unsupported-command.** the kernel refuses the input: unknown command `InverseBinomialMinimumTrials` |
-| `commands/CommandsTest.java:2316` | **unsupported-command.** the kernel refuses the input: unknown command `InverseCauchy` |
 | `commands/CommandsTest.java:2346` | **unsupported-command.** the kernel refuses the input: unknown command `InverseHyperGeometric` |
 | `commands/CommandsTest.java:2351` | **unsupported-command.** the kernel refuses the input: unknown command `InverseLogistic` |
 | `commands/CommandsTest.java:2356` | **unsupported-command.** the kernel refuses the input: unknown command `InverseLogNormal` |

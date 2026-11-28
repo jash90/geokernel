@@ -691,13 +691,20 @@ impl Writer<'_> {
             };
             return self.command(command, &args[..1], outputs);
         }
-        if let Some(("Normal", inputs)) = &call {
-            if let [mean, deviation, x] | [mean, deviation, x, _] = inputs.as_slice() {
-                if c.kind(id) == Kind::Function && is_variable_x(x) {
-                    // The file reader needs an explicit cumulative flag.
-                    let cumulative = inputs.get(3).copied().unwrap_or("true");
-                    return self.command("Normal", &[mean, deviation, "x", cumulative], outputs);
+        if let Some((name @ ("Normal" | "Exponential" | "Cauchy"), inputs)) = &call {
+            let sample_slot = if *name == "Exponential" { 1 } else { 2 };
+            if c.kind(id) == Kind::Function
+                && inputs
+                    .get(sample_slot)
+                    .is_some_and(|input| is_distribution_variable(input))
+            {
+                // The file reader needs an explicit cumulative flag.
+                let mut args = inputs.clone();
+                args[sample_slot] = "x";
+                if args.len() == sample_slot + 1 {
+                    args.push("true");
                 }
+                return self.command(name, &args, outputs);
             }
         }
         if matches!(c.kind(id), Kind::Function | Kind::FunctionNVar) && lhs.ends_with(')') {
@@ -784,10 +791,8 @@ impl Writer<'_> {
 
     fn expression(&mut self, id: Id, source: &str) -> Result<(), ExportError> {
         let normalized;
-        let source = if matches!(self.c.kind(id), Kind::Function | Kind::FunctionNVar)
-            && source.contains("Normal")
-        {
-            normalized = normal_function_defaults(source);
+        let source = if matches!(self.c.kind(id), Kind::Function | Kind::FunctionNVar) {
+            normalized = distribution_function_defaults(source);
             normalized.as_ref()
         } else {
             source
@@ -814,7 +819,7 @@ impl Writer<'_> {
             "input",
             inputs
                 .iter()
-                .map(|input| syntax(input).map(normal_function_defaults))
+                .map(|input| syntax(input).map(distribution_function_defaults))
                 .collect::<Result<Vec<_>, _>>()?,
         )?;
         self.xml
@@ -825,52 +830,53 @@ impl Writer<'_> {
 }
 
 /// GeoGebra's archive reader needs an explicit cumulative flag even when the
-/// defaulted Normal function is nested in a larger expression.
-fn normal_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
-    if !source.contains("Normal") {
+/// defaulted distribution function is nested in a larger expression.
+fn distribution_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
+    if !source.contains("Normal") && !source.contains("Exponential") && !source.contains("Cauchy") {
         return source.into();
     }
     struct Group {
-        normal: bool,
+        sample_slot: Option<usize>,
         commas: usize,
-        third: usize,
+        sample: usize,
     }
     let mut groups: Vec<Group> = Vec::new();
     let mut replacements = Vec::new();
     for (index, ch) in script::unquoted(source) {
         match ch {
             '(' | '[' | '{' => {
-                let normal = ch != '{'
-                    && source[..index]
-                        .trim_end()
-                        .strip_suffix("Normal")
-                        .is_some_and(|prefix| {
-                            !prefix.chars().next_back().is_some_and(|c| {
-                                c.is_alphanumeric() || matches!(c, '_' | '$' | '\'')
+                let sample_slot = (ch != '{')
+                    .then(|| {
+                        let name = source[..index].trim_end();
+                        [("Normal", 2), ("Exponential", 1), ("Cauchy", 2)]
+                            .into_iter()
+                            .find_map(|(command, slot)| {
+                                let prefix = name.strip_suffix(command)?;
+                                (!prefix.chars().next_back().is_some_and(|c| {
+                                    c.is_alphanumeric() || matches!(c, '_' | '$' | '\'')
+                                }))
+                                .then_some(slot)
                             })
-                        });
+                    })
+                    .flatten();
                 groups.push(Group {
-                    normal,
+                    sample_slot,
                     commas: 0,
-                    third: 0,
+                    sample: 0,
                 });
             }
             ',' => {
-                if let Some(group) = groups.last_mut().filter(|group| group.normal) {
+                if let Some(group) = groups.last_mut() {
                     group.commas += 1;
-                    if group.commas == 2 {
-                        group.third = index + 1;
+                    if group.sample_slot == Some(group.commas) {
+                        group.sample = index + 1;
                     }
                 }
             }
             ')' | ']' | '}' => {
-                if let Some(group) = groups
-                    .pop()
-                    .filter(|group| group.normal && group.commas == 2)
-                {
-                    let argument = &source[group.third..index];
-                    if is_variable_x(argument) {
-                        replacements.push((group.third, index));
+                if let Some(group) = groups.pop().filter(|g| g.sample_slot == Some(g.commas)) {
+                    if is_distribution_variable(&source[group.sample..index]) {
+                        replacements.push((group.sample, index));
                     }
                 }
             }
@@ -896,7 +902,7 @@ fn normal_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
 /// The parser drops a leading `+`, an even run of leading `-` signs and
 /// redundant brackets, so `+x`, `--x` and `(+(x))` all select the function
 /// form. `-(-x)` does not, because it keeps the multiplications by -1.
-fn is_variable_x(argument: &str) -> bool {
+fn is_distribution_variable(argument: &str) -> bool {
     let compact: String = argument.chars().filter(|ch| !ch.is_whitespace()).collect();
     let mut rest = compact.as_str();
     loop {

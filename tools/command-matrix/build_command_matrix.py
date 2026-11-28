@@ -109,6 +109,10 @@ KNOWN_GROUPS = OUT_OF_SCOPE_GROUPS | P1_GROUPS | {
 PARTIAL = {
     "Normal": "Numeric density, cumulative probability and interval, and the explicit distribution function in x.",
     "InverseNormal": "Normal quantile for a numeric probability.",
+    "Exponential": "Numeric density, cumulative probability and the explicit distribution function in x.",
+    "InverseExponential": "Exponential quantile for a numeric probability.",
+    "Cauchy": "Numeric density, cumulative probability and the explicit distribution function in x.",
+    "InverseCauchy": "Cauchy quantile for a numeric probability.",
     "Locus": "Tracing point with a movable path point or slider, slope function with initial point, or slope field with initial point",
     "Line": "Line(point, point); Line(point, line, segment or ray); Line(point, vector)",
     "Segment": "Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output",
