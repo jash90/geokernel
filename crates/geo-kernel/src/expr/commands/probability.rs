@@ -455,6 +455,21 @@ fn inverse(mean: f64, deviation: f64, probability: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn log_normal_text_brackets_a_compound_deviation_before_squaring() {
+        let c = crate::script::load(
+            "m = 1\ns = 2\nq = LogNormal(m,s+1,x,false)\nt = FormulaText(q,false)\nu = Text(q,false)",
+        )
+        .unwrap();
+        let text = |label| c.text(c.id(label).unwrap()).unwrap().to_owned();
+        assert!(
+            text("t").contains(r"\left(s + 1 \right)^{2}"),
+            "{}",
+            text("t")
+        );
+        assert!(text("u").contains("(s + 1)²"), "{}", text("u"));
+    }
+
+    #[test]
     fn only_the_distribution_function_slot_accepts_a_free_variable() {
         for source in [
             "f = Normal(0,1,x+1)",

@@ -304,11 +304,19 @@ impl Format {
                 // The reference builds the expression from the live inputs,
                 // so unsubstituted text keeps their names, not the command.
                 let x = term(x, 0)?;
-                let (mean, sd) = if substitute {
+                let (mean, sd, base) = if substitute {
                     let mean = self.number(ctx.full_number(mean));
-                    (mean, self.number(ctx.full_number(sd)))
+                    let sd = self.number(ctx.full_number(sd));
+                    let base = if sd.starts_with('-') {
+                        self.parenthesize(&sd)
+                    } else {
+                        sd.clone()
+                    };
+                    (mean, sd, base)
                 } else {
-                    (term(mean, 6)?, term(sd, 0)?)
+                    // The squared deviation needs power-level brackets, so
+                    // `s + 1` is written as `(s + 1)²`.
+                    (term(mean, 6)?, term(sd, 0)?, term(sd, 8)?)
                 };
                 let log = if self.latex {
                     format!(r"\ln\left({x} \right)")
@@ -323,11 +331,6 @@ impl Format {
                     format!("{log} - {mean}")
                 };
                 let cumulative = flag == NONE || matches!(ctx.full(flag).val, Val::B(true, _));
-                let base = if sd.starts_with('-') {
-                    self.parenthesize(&sd)
-                } else {
-                    sd.clone()
-                };
                 let branch = match (self.latex, cumulative) {
                     (true, true) => format!(
                         r"\operatorname{{erf}}\left(\frac{{{offset}}}{{\sqrt{{2}} \; \left|{sd}\right|}} \right) \cdot 0.5 + 0.5"
