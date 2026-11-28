@@ -3708,7 +3708,7 @@ fn exported_xml(wb: &Workbench) -> String {
 #[test]
 fn normal_function_archive_keeps_the_default_cumulative_flag() {
     let wb = Workbench::from_script(
-        "m = 2\ns = 3\nf = Normal(m,s,x)\ng = Normal(m,s,(( x )),false)\nh = Normal(m,s,(x))\na = f(-1)\nb = g(-1)\ni = h(-1)\nf2 = (Normal(m,s,x))\nf3 = 2*Normal(m,s,(x))\nu = f2(-1)\nv = f3(-1)\nz = If(x>0,Normal(0,1,(x)),0)\nw = z(1)",
+        "m = 2\ns = 3\nf = Normal(m,s,x)\ng = Normal(m,s,(( x )),false)\nh = Normal(m,s,(x))\na = f(-1)\nb = g(-1)\ni = h(-1)\nf2 = (Normal(m,s,x))\nf3 = 2*Normal(m,s,(x))\nu = f2(-1)\nv = f3(-1)\nf4 = If(x>0,Normal(0,1,(x)),0)\nw = f4(1)",
     )
     .unwrap();
     let xml = exported_xml(&wb);
