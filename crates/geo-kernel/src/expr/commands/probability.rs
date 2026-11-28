@@ -469,6 +469,13 @@ mod tests {
             text("t")
         );
         assert!(text("u").contains("(s + 1)²"), "{}", text("u"));
+        let c = crate::script::load(
+            "q = LogNormal(1,-3,x,false)\nt = FormulaText(q,false)\nu = Text(q,false)",
+        )
+        .unwrap();
+        let text = |label| c.text(c.id(label).unwrap()).unwrap().to_owned();
+        assert!(text("t").contains(r"\left(-3 \right)^{2}"), "{}", text("t"));
+        assert!(text("u").contains("(-3)²"), "{}", text("u"));
     }
 
     #[test]

@@ -307,16 +307,17 @@ impl Format {
                 let (mean, sd, base) = if substitute {
                     let mean = self.number(ctx.full_number(mean));
                     let sd = self.number(ctx.full_number(sd));
-                    let base = if sd.starts_with('-') {
-                        self.parenthesize(&sd)
-                    } else {
-                        sd.clone()
-                    };
-                    (mean, sd, base)
+                    (mean, sd.clone(), sd)
                 } else {
                     // The squared deviation needs power-level brackets, so
                     // `s + 1` is written as `(s + 1)²`.
                     (term(mean, 6)?, term(sd, 0)?, term(sd, 8)?)
+                };
+                // A negative number is not bracketed at power level.
+                let base = if base.starts_with('-') {
+                    self.parenthesize(&base)
+                } else {
+                    base
                 };
                 let log = if self.latex {
                     format!(r"\ln\left({x} \right)")
