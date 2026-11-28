@@ -2698,10 +2698,18 @@ fn object(c: &Construction, id: Id) -> Val {
         (Kind::Boolean, _, _) => Val::B(false, true),
         // `GeoSegment.getDouble`: the length, snapped to 0 near 0
         (Kind::Segment, _, Value::Segment { x1, y1, x2, y2 }) => {
-            let length = (x2 - x1).hypot(y2 - y1);
-            Val::N(if math::is_zero(length) { 0.0 } else { length })
+            Val::N(segment_length(x1, y1, x2, y2))
         }
         _ => Val::N(nan),
+    }
+}
+
+fn segment_length(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
+    let length = (x2 - x1).hypot(y2 - y1);
+    if math::is_zero(length) {
+        0.0
+    } else {
+        length
     }
 }
 
@@ -2712,6 +2720,7 @@ fn command(c: &Construction, def: Def, hint: Hint) -> Val {
         Some(Value::Number(v)) => Val::N(v),
         Some(Value::Point { x, y } | Value::Vector { x, y }) => Val::V(x, y),
         Some(Value::Bool(b)) => Val::B(b, true),
+        Some(Value::Segment { x1, y1, x2, y2 }) => Val::N(segment_length(x1, y1, x2, y2)),
         _ if def.kind() == Kind::Boolean => Val::B(false, true),
         _ if def.kind().is_number() => Val::N(nan),
         _ => Val::V(nan, nan),

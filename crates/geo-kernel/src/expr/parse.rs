@@ -1920,10 +1920,10 @@ impl Parser<'_> {
         let kind = def.kind();
         if !matches!(
             kind,
-            Kind::Number | Kind::Angle | Kind::Point | Kind::Vector | Kind::Boolean
+            Kind::Number | Kind::Angle | Kind::Point | Kind::Vector | Kind::Boolean | Kind::Segment
         ) {
             return Err(format!(
-                "`{text}` is a {kind}, not a number, a point or a boolean"
+                "`{text}` is a {kind}, not a number, a point, a boolean or a segment"
             ));
         }
         self.c.check(&def).map_err(|e| e.to_string())?;

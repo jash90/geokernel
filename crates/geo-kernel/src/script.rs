@@ -1704,11 +1704,17 @@ fn resolve_text_argument(c: &mut Construction, rhs: &str) -> Result<Option<Strin
     let Some((command, args)) = split_call(first) else {
         return Ok(None);
     };
-    if crate::expr::is_expression_command(command) || crate::expr::accepts_text_argument(c, first) {
-        return Ok(None);
-    }
     let label = format!("\0textarg{}", c.len());
-    let id = if command == "Polygon" && args.len() >= 2 {
+    let id = if command == "Normal" {
+        let Some(function) = crate::expr::argument_function(c, first, &label) else {
+            return Ok(None);
+        };
+        function
+    } else if crate::expr::is_expression_command(command)
+        || command != "Segment" && crate::expr::accepts_text_argument(c, first)
+    {
+        return Ok(None);
+    } else if command == "Polygon" && args.len() >= 2 {
         inline_polygon(c, &label, &args)?
     } else {
         define_after_label(c, &label, first)?.ok_or("the text argument has no value")?

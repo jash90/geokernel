@@ -457,6 +457,55 @@
           "value": 0
         }
       ]
+    },
+    {
+      "id": "probability-normalinline-001",
+      "group": "probability",
+      "script": [
+        "A = (0,0)",
+        "B = (1,0)",
+        "a = Normal(0,Segment(A,B),1)",
+        "b = InverseNormal(0,Segment(A,B),0.75)",
+        "c = Normal(0,1,0,Segment(A,B))"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "move",
+          "label": "B",
+          "x": 2,
+          "y": 0
+        },
+        {
+          "action": "move",
+          "label": "B",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "probability-normalinline-002",
+      "group": "probability",
+      "script": [
+        "m = 2",
+        "s = 3",
+        "a = FormulaText(Normal(0,1,x))",
+        "b = FormulaText(Normal(m,s,x,false))",
+        "c = FormulaText(Normal(m,s,x),false)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": -2
+        }
+      ]
     }
   ]
 }

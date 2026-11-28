@@ -207,6 +207,7 @@ fn type_node(
                 let ty = *state.tys.get(index)?;
                 Some(match nodes[index] {
                     Node::Obj(id) if c.kind(id) == Kind::Segment => Ty::Num(0),
+                    Node::Cmd(def, _) if def.kind() == Kind::Segment => Ty::Num(0),
                     _ => ty,
                 })
             });
