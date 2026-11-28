@@ -508,6 +508,69 @@
       ]
     },
     {
+      "id": "probability-normalfunctionguards-001",
+      "group": "probability",
+      "script": [
+        "s = 0",
+        "f = round(1.25,Normal(0,s,x))",
+        "g = (x > 0) && !IsDefined(Normal(0,s,0))",
+        "h(x,y) = x+y+Normal(0,s,0)",
+        "a = f(0)",
+        "b = IsDefined(g)",
+        "c = g(1)",
+        "d = IsDefined(h)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "probability-normalgroupedtext-001",
+      "group": "probability",
+      "script": [
+        "a = FormulaText((Normal(0,1,x)))",
+        "b = FormulaText(((Normal(0,1,x,false))))"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normalliteralsegment-001",
+      "group": "probability",
+      "script": [
+        "A = (0,0)",
+        "a = Normal(0,Segment(A,(2,0)),1)",
+        "b = InverseNormal(0,Segment((0,0),(2,0)),0.75)",
+        "c = Normal(0,1,0,Segment(A,(2,0)))"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "move",
+          "label": "A",
+          "x": 1,
+          "y": 0
+        }
+      ]
+    },
+    {
       "id": "probability-exponential-001",
       "group": "probability",
       "script": [
