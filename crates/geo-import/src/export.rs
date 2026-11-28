@@ -817,7 +817,7 @@ impl Writer<'_> {
             "input",
             inputs
                 .iter()
-                .map(|input| syntax(input))
+                .map(|input| syntax(input).map(normal_function_defaults))
                 .collect::<Result<Vec<_>, _>>()?,
         )?;
         self.xml
@@ -830,6 +830,9 @@ impl Writer<'_> {
 /// GeoGebra's archive reader needs an explicit cumulative flag even when the
 /// defaulted Normal function is nested in a larger expression.
 fn normal_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
+    if !source.contains("Normal") {
+        return source.into();
+    }
     struct Group {
         normal: bool,
         commas: usize,

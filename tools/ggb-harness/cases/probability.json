@@ -391,6 +391,37 @@
           "action": "initial"
         }
       ]
+    },
+    {
+      "id": "probability-normalround-001",
+      "group": "probability",
+      "script": [
+        "s = 0",
+        "p = 2",
+        "a = round(1.25,Normal(0,s,0))",
+        "b = round(1.25,InverseNormal(0,1,p))",
+        "c = round(1.25,Normal(0,s,0)+0)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.5
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 0
+        }
+      ]
     }
   ]
 }
