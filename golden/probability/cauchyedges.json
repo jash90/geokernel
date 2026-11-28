@@ -1,0 +1,74 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-cauchyedges-001",
+      "group": "probability",
+      "script": [
+        "s = 10^154",
+        "p = 10^(-162)",
+        "a = Cauchy(0,s,0,false)*s",
+        "b = Cauchy(0,p,p,false)",
+        "c = InverseCauchy(1/0,1,0)",
+        "d = InverseCauchy(-1/0,1,1)",
+        "f = Cauchy(2,3,x)",
+        "g = Cauchy(-2,-3,x,false)",
+        "h = FormulaText(f)",
+        "j = FormulaText(g)",
+        "k = FormulaText(Cauchy(0,1,x),false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "number", "defined": true, "value": 1.0E154 },
+          "p": { "type": "number", "defined": true, "value": 1.0E-162 },
+          "a": { "type": "number", "defined": true, "value": 0.3183098861837907 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "c": { "type": "number", "defined": true, "infinity": -1 },
+          "d": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.09277357907774231],
+              [-4.0, 0.14758361765043326],
+              [-2.0, 0.20483276469913347],
+              [-1.0, 0.25],
+              [-0.5, 0.27885793837630446],
+              [0.0, 0.3128329581890012],
+              [0.5, 0.35241638234956674],
+              [1.0, 0.39758361765043326],
+              [2.0, 0.5],
+              [4.0, 0.6871670418109987],
+              [8.0, 0.8524163823495667]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.021220659078919377],
+              [-4.0, 0.07345612758087476],
+              [-2.0, 0.1061032953945969],
+              [-1.0, 0.09549296585513721],
+              [-0.5, 0.08488263631567751],
+              [0.0, 0.07345612758087476],
+              [0.5, 0.06261833826566374],
+              [1.0, 0.05305164769729845],
+              [2.0, 0.03819718634205488],
+              [4.0, 0.021220659078919377],
+              [8.0, 0.008760822555517175]
+            ]
+          },
+          "h": { "type": "text", "defined": true, "text": "\\frac{\\operatorname{tan⁻¹} \\left( \\frac{x - 2}{\\left|3\\right|} \\right)}{\\pi } + 0.5" },
+          "j": { "type": "text", "defined": true, "text": "\\frac{\\left|-3\\right|}{\\left(\\left(-3 \\right)^{2} + \\left(x + 2 \\right)^{2} \\right) \\; \\pi }" },
+          "k": { "type": "text", "defined": true, "text": "Cauchy\\left(0, 1, x, true \\right)" }
+        }
+      ]
+    }
+  ]
+}

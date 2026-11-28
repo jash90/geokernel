@@ -5654,3 +5654,28 @@ cases = ["probability-exponential-002"]
 command = "InverseExponential"
 form = "number,number"
 cases = ["probability-exponential-003"]
+
+[[form]]
+command = "Cauchy"
+form = "number,number,number"
+cases = ["probability-cauchy-001"]
+
+[[form]]
+command = "Cauchy"
+form = "number,number,number,boolean"
+cases = ["probability-cauchy-001"]
+
+[[form]]
+command = "Cauchy"
+form = "number,number,function"
+cases = ["probability-cauchy-002"]
+
+[[form]]
+command = "Cauchy"
+form = "number,number,function,boolean"
+cases = ["probability-cauchy-002"]
+
+[[form]]
+command = "InverseCauchy"
+form = "number,number,number"
+cases = ["probability-cauchy-003"]

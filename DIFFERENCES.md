@@ -251,6 +251,7 @@ The 2D command dispatcher has no function–Cartesian curve overload.
 | --- | --- | --- | --- |
 | `Normal(mean, deviation, x)` and its cumulative flag | Constructs a function of `x` whose samples follow the live parameters. | The explicit function forms evaluate and update their samples, including the recorded zero and negative deviations. The archive writes an explicit cumulative flag for nested defaults. The formula formatter displays the CDF or density and retains the command when values are left symbolic. | The symbolic and tangent derivative paths do not yet handle the normal function. |
 | `Exponential` and `InverseExponential` | Scalar forms evaluate the distribution or quantile. The function forms use a zero branch below x=0 and evaluate the live rate and cumulative flag. | Supports the recorded scalar and function forms, including their distinct negative-rate behavior, and writes explicit cumulative flags for function defaults in saved files. | Symbolic derivatives, tangents and the probability calculator remain open. |
+| `Cauchy` and `InverseCauchy` | The scalar forms take a positive scale. Function forms use the absolute scale and accept a live cumulative flag. | Supports both numeric forms, the two function forms, and the quantile. The archive records cumulative defaults in saved functions. | Tangents, symbolic derivatives and the probability calculator remain open. |
 
 ## Text objects and commands
 

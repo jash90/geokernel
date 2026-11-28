@@ -301,18 +301,21 @@ impl Format {
                 }
             }
             Node::Probability(
-                Probability::Normal { function: true },
+                op @ (Probability::Normal { function: true }
+                | Probability::Cauchy { function: true }),
                 [mean, deviation, x, flag],
             ) => {
                 let x = term(x, 0)?;
+                let cauchy = matches!(op, Probability::Cauchy { .. });
                 if !substitute {
                     let flag = if flag == NONE {
                         "true".into()
                     } else {
                         term(flag, 0)?
                     };
+                    let name = if cauchy { "Cauchy" } else { "Normal" };
                     return Some(
-                        self.command("Normal", &[term(mean, 0)?, term(deviation, 0)?, x, flag]),
+                        self.command(name, &[term(mean, 0)?, term(deviation, 0)?, x, flag]),
                     );
                 }
                 let mean = self.number(ctx.full_number(mean));
@@ -325,7 +328,28 @@ impl Format {
                     format!("{x} - {mean}")
                 };
                 let cumulative = flag == NONE || matches!(ctx.full(flag).val, Val::B(true, _));
-                if cumulative {
+                if cauchy {
+                    match (self.latex, cumulative) {
+                        (true, true) => format!(
+                            r"\frac{{\operatorname{{tan⁻¹}} \left( \frac{{{offset}}}{{\left|{sd}\right|}} \right)}}{{\pi }} + 0.5"
+                        ),
+                        (false, true) => format!("atan(({offset}) / abs({sd})) / π + 0.5"),
+                        (_, false) => {
+                            let base = if sd.starts_with('-') {
+                                self.parenthesize(&sd)
+                            } else {
+                                sd.clone()
+                            };
+                            if self.latex {
+                                format!(
+                                    r"\frac{{\left|{sd}\right|}}{{\left({base}^{{2}} + \left({offset} \right)^{{2}} \right) \; \pi }}"
+                                )
+                            } else {
+                                format!("abs({sd}) / (({base}² + ({offset})²) * π)")
+                            }
+                        }
+                    }
+                } else if cumulative {
                     if self.latex {
                         format!(
                             r"\frac{{\operatorname{{erf}}\left(\frac{{{offset}}}{{\left|{sd}\right| \; \sqrt{{2}}}} \right) + 1}}{{2}}"

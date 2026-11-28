@@ -323,3 +323,5 @@ Normal,probability,5,"number,number,number | number,number,number,boolean | numb
 InverseNormal,probability,1,"number,number,number"
 Exponential,probability,4,"number,number | number,number,boolean | number,function | number,function,boolean"
 InverseExponential,probability,1,"number,number"
+Cauchy,probability,4,"number,number,number | number,number,number,boolean | number,number,function | number,number,function,boolean"
+InverseCauchy,probability,1,"number,number,number"

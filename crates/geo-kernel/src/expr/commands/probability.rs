@@ -8,6 +8,8 @@ pub(super) const NAMES: &[&str] = &[
     "InverseNormal",
     "Exponential",
     "InverseExponential",
+    "Cauchy",
+    "InverseCauchy",
 ];
 const QUANTILE_STEPS: u64 = 60;
 
@@ -17,20 +19,24 @@ pub(crate) enum Probability {
     InverseNormal,
     Exponential { function: bool },
     InverseExponential,
+    Cauchy { function: bool },
+    InverseCauchy,
 }
 
 impl Probability {
     pub(in crate::expr) fn is_function(self) -> bool {
         matches!(
             self,
-            Self::Normal { function: true } | Self::Exponential { function: true }
+            Self::Normal { function: true }
+                | Self::Exponential { function: true }
+                | Self::Cauchy { function: true }
         )
     }
 
     pub(in crate::expr) fn cost(self) -> u64 {
         match self {
-            Self::Normal { .. } | Self::Exponential { .. } | Self::InverseExponential => 1,
             Self::InverseNormal => QUANTILE_STEPS + 1,
+            _ => 1,
         }
     }
 }
@@ -49,10 +55,14 @@ pub(super) fn parse(p: &mut Parser, name: &str) -> Result<Option<u32>, String> {
             function: matches!(p.node(*x), Node::Var),
         },
         ("InverseExponential", [_, _]) => Probability::InverseExponential,
+        ("Cauchy", [_, _, x] | [_, _, x, _]) => Probability::Cauchy {
+            function: matches!(p.node(*x), Node::Var),
+        },
+        ("InverseCauchy", [_, _, _]) => Probability::InverseCauchy,
         _ => return Err(format!("wrong number of arguments to `{name}`")),
     };
     let mut slots = [NONE; 4];
-    // Both distribution families share the parameter, sample and flag slots.
+    // Distribution families share the parameter, sample and flag slots.
     let offset = usize::from(matches!(
         op,
         Probability::Exponential { .. } | Probability::InverseExponential
@@ -65,14 +75,19 @@ pub(in crate::expr) fn value_type(
     op: Probability,
     [mean, scale, x, flag]: [Option<Ty>; 4],
 ) -> Result<Ty, String> {
-    let has_mean = matches!(op, Probability::Normal { .. } | Probability::InverseNormal);
+    let has_mean = !matches!(
+        op,
+        Probability::Exponential { .. } | Probability::InverseExponential
+    );
     let valid = (!has_mean || matches!(mean, Some(Ty::Num(_))))
         && matches!((scale, x), (Some(Ty::Num(_)), Some(Ty::Num(_))))
         && match flag {
             None => true,
             Some(Ty::Bool) => matches!(
                 op,
-                Probability::Normal { .. } | Probability::Exponential { .. }
+                Probability::Normal { .. }
+                    | Probability::Exponential { .. }
+                    | Probability::Cauchy { .. }
             ),
             Some(Ty::Num(_)) => matches!(op, Probability::Normal { function: false }),
             _ => false,
@@ -104,6 +119,19 @@ pub(in crate::expr) fn value<const M: bool>(
         _ => {}
     }
     let mean = ctx.full_number(mean);
+    match op {
+        Probability::Cauchy { function } => {
+            return cauchy(
+                mean,
+                deviation,
+                x,
+                matches!(fourth, Val::B(true, _)),
+                function,
+            );
+        }
+        Probability::InverseCauchy => return inverse_cauchy(mean, deviation, x),
+        _ => {}
+    }
     if matches!(op, Probability::Normal { function: true }) {
         let delta = x - mean;
         return if matches!(fourth, Val::B(true, _)) {
@@ -177,6 +205,35 @@ fn inverse_exponential(rate: f64, probability: f64) -> f64 {
     -scale * libm::log(1.0 - probability)
 }
 
+fn cauchy(location: f64, scale: f64, x: f64, cumulative: bool, function: bool) -> f64 {
+    if !function && scale <= 0.0 {
+        return f64::NAN;
+    }
+    let offset = x - location;
+    if cumulative {
+        return libm::atan(offset / scale.abs()) / PI + 0.5;
+    }
+    let squares = scale * scale + offset * offset;
+    // The function's denominator includes pi before division. The scalar
+    // density divides the scale first, which matters when squares is large.
+    if function {
+        scale.abs() / (squares * PI)
+    } else {
+        (scale / PI) / squares
+    }
+}
+
+fn inverse_cauchy(location: f64, scale: f64, probability: f64) -> f64 {
+    if location.is_nan() || scale.is_nan() || scale <= 0.0 || !(0.0..=1.0).contains(&probability) {
+        return f64::NAN;
+    }
+    match probability {
+        0.0 => f64::NEG_INFINITY,
+        1.0 => f64::INFINITY,
+        _ => location + scale * libm::tan(PI * (probability - 0.5)),
+    }
+}
+
 fn cdf(mean: f64, deviation: f64, x: f64) -> f64 {
     libm::erfc(-(x - mean) / (deviation * SQRT_2)) * 0.5
 }
@@ -227,6 +284,10 @@ mod tests {
             "f = Exponential(2,1,x>0)",
             "f = Exponential(2,1,3)",
             "f = InverseExponential(2,x)",
+            "f = Cauchy(0,1,x+1)",
+            "f = Cauchy(0,x,x)",
+            "f = Cauchy(0,1,2,3)",
+            "f = InverseCauchy(0,1,x)",
         ] {
             assert!(crate::script::load(source).is_err(), "{source}");
         }

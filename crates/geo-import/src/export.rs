@@ -691,8 +691,8 @@ impl Writer<'_> {
             };
             return self.command(command, &args[..1], outputs);
         }
-        if let Some((name @ ("Normal" | "Exponential"), inputs)) = &call {
-            let sample_slot = if *name == "Normal" { 2 } else { 1 };
+        if let Some((name @ ("Normal" | "Exponential" | "Cauchy"), inputs)) = &call {
+            let sample_slot = if *name == "Exponential" { 1 } else { 2 };
             if c.kind(id) == Kind::Function
                 && inputs
                     .get(sample_slot)
@@ -832,7 +832,7 @@ impl Writer<'_> {
 /// GeoGebra's archive reader needs an explicit cumulative flag even when the
 /// defaulted distribution function is nested in a larger expression.
 fn distribution_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
-    if !source.contains("Normal") && !source.contains("Exponential") {
+    if !source.contains("Normal") && !source.contains("Exponential") && !source.contains("Cauchy") {
         return source.into();
     }
     struct Group {
@@ -848,15 +848,15 @@ fn distribution_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
                 let sample_slot = (ch != '{')
                     .then(|| {
                         let name = source[..index].trim_end();
-                        [("Normal", 2), ("Exponential", 1)].into_iter().find_map(
-                            |(command, slot)| {
+                        [("Normal", 2), ("Exponential", 1), ("Cauchy", 2)]
+                            .into_iter()
+                            .find_map(|(command, slot)| {
                                 let prefix = name.strip_suffix(command)?;
                                 (!prefix.chars().next_back().is_some_and(|c| {
                                     c.is_alphanumeric() || matches!(c, '_' | '$' | '\'')
                                 }))
                                 .then_some(slot)
-                            },
-                        )
+                            })
                     })
                     .flatten();
                 groups.push(Group {

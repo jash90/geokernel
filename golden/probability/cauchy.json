@@ -1,0 +1,789 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-cauchy-001",
+      "group": "probability",
+      "script": [
+        "m = 2",
+        "s = 3",
+        "t = -1",
+        "a = Cauchy(m,s,t)",
+        "b = Cauchy(m,s,t,true)",
+        "c = Cauchy(m,s,t,false)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 2.0 },
+        { "action": "set_number", "label": "t", "value": 5.0 },
+        { "action": "set_number", "label": "s", "value": 0.0 },
+        { "action": "set_number", "label": "s", "value": -3.0 },
+        { "action": "set_number", "label": "s", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "b": { "type": "number", "defined": true, "value": 0.25 },
+          "c": { "type": "number", "defined": true, "value": 0.05305164769729845 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 0.1061032953945969 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 5.0 },
+          "a": { "type": "number", "defined": true, "value": 0.75 },
+          "b": { "type": "number", "defined": true, "value": 0.75 },
+          "c": { "type": "number", "defined": true, "value": 0.05305164769729845 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 5.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": -3.0 },
+          "t": { "type": "number", "defined": true, "value": 5.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "number", "defined": true, "value": 5.0 },
+          "a": { "type": "number", "defined": true, "value": 0.8128329581890013 },
+          "b": { "type": "number", "defined": true, "value": 0.8128329581890013 },
+          "c": { "type": "number", "defined": true, "value": 0.04897075172058318 }
+        }
+      ]
+    },
+    {
+      "id": "probability-cauchy-002",
+      "group": "probability",
+      "script": [
+        "m = 2",
+        "s = 3",
+        "n = 1",
+        "p = n>0",
+        "f = Cauchy(m,s,x)",
+        "g = Cauchy(m,s,(x),false)",
+        "h = Cauchy(m,s,x,p)",
+        "a = f(-1)",
+        "b = g(2)",
+        "c = h(5)",
+        "d = IsDefined(h)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "s", "value": -3.0 },
+        { "action": "set_number", "label": "s", "value": 0.0 },
+        { "action": "set_number", "label": "m", "value": -2.0 },
+        { "action": "set_number", "label": "s", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.09277357907774231],
+              [-4.0, 0.14758361765043326],
+              [-2.0, 0.20483276469913347],
+              [-1.0, 0.25],
+              [-0.5, 0.27885793837630446],
+              [0.0, 0.3128329581890012],
+              [0.5, 0.35241638234956674],
+              [1.0, 0.39758361765043326],
+              [2.0, 0.5],
+              [4.0, 0.6871670418109987],
+              [8.0, 0.8524163823495667]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.008760822555517175],
+              [-4.0, 0.021220659078919377],
+              [-2.0, 0.03819718634205488],
+              [-1.0, 0.05305164769729845],
+              [-0.5, 0.06261833826566374],
+              [0.0, 0.07345612758087476],
+              [0.5, 0.08488263631567751],
+              [1.0, 0.09549296585513721],
+              [2.0, 0.1061032953945969],
+              [4.0, 0.07345612758087476],
+              [8.0, 0.021220659078919377]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.09277357907774231],
+              [-4.0, 0.14758361765043326],
+              [-2.0, 0.20483276469913347],
+              [-1.0, 0.25],
+              [-0.5, 0.27885793837630446],
+              [0.0, 0.3128329581890012],
+              [0.5, 0.35241638234956674],
+              [1.0, 0.39758361765043326],
+              [2.0, 0.5],
+              [4.0, 0.6871670418109987],
+              [8.0, 0.8524163823495667]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "b": { "type": "number", "defined": true, "value": 0.1061032953945969 },
+          "c": { "type": "number", "defined": true, "value": 0.75 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.09277357907774231],
+              [-4.0, 0.14758361765043326],
+              [-2.0, 0.20483276469913347],
+              [-1.0, 0.25],
+              [-0.5, 0.27885793837630446],
+              [0.0, 0.3128329581890012],
+              [0.5, 0.35241638234956674],
+              [1.0, 0.39758361765043326],
+              [2.0, 0.5],
+              [4.0, 0.6871670418109987],
+              [8.0, 0.8524163823495667]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.008760822555517175],
+              [-4.0, 0.021220659078919377],
+              [-2.0, 0.03819718634205488],
+              [-1.0, 0.05305164769729845],
+              [-0.5, 0.06261833826566374],
+              [0.0, 0.07345612758087476],
+              [0.5, 0.08488263631567751],
+              [1.0, 0.09549296585513721],
+              [2.0, 0.1061032953945969],
+              [4.0, 0.07345612758087476],
+              [8.0, 0.021220659078919377]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.008760822555517175],
+              [-4.0, 0.021220659078919377],
+              [-2.0, 0.03819718634205488],
+              [-1.0, 0.05305164769729845],
+              [-0.5, 0.06261833826566374],
+              [0.0, 0.07345612758087476],
+              [0.5, 0.08488263631567751],
+              [1.0, 0.09549296585513721],
+              [2.0, 0.1061032953945969],
+              [4.0, 0.07345612758087476],
+              [8.0, 0.021220659078919377]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "b": { "type": "number", "defined": true, "value": 0.1061032953945969 },
+          "c": { "type": "number", "defined": true, "value": 0.05305164769729845 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": -3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.09277357907774231],
+              [-4.0, 0.14758361765043326],
+              [-2.0, 0.20483276469913347],
+              [-1.0, 0.25],
+              [-0.5, 0.27885793837630446],
+              [0.0, 0.3128329581890012],
+              [0.5, 0.35241638234956674],
+              [1.0, 0.39758361765043326],
+              [2.0, 0.5],
+              [4.0, 0.6871670418109987],
+              [8.0, 0.8524163823495667]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.008760822555517175],
+              [-4.0, 0.021220659078919377],
+              [-2.0, 0.03819718634205488],
+              [-1.0, 0.05305164769729845],
+              [-0.5, 0.06261833826566374],
+              [0.0, 0.07345612758087476],
+              [0.5, 0.08488263631567751],
+              [1.0, 0.09549296585513721],
+              [2.0, 0.1061032953945969],
+              [4.0, 0.07345612758087476],
+              [8.0, 0.021220659078919377]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.008760822555517175],
+              [-4.0, 0.021220659078919377],
+              [-2.0, 0.03819718634205488],
+              [-1.0, 0.05305164769729845],
+              [-0.5, 0.06261833826566374],
+              [0.0, 0.07345612758087476],
+              [0.5, 0.08488263631567751],
+              [1.0, 0.09549296585513721],
+              [2.0, 0.1061032953945969],
+              [4.0, 0.07345612758087476],
+              [8.0, 0.021220659078919377]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.25 },
+          "b": { "type": "number", "defined": true, "value": 0.1061032953945969 },
+          "c": { "type": "number", "defined": true, "value": 0.05305164769729845 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, null],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, null],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, null],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, null],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, null],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, null],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -2.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.052568456711253375],
+              [-4.0, 0.14758361765043326],
+              [-2.0, 0.5],
+              [-1.0, 0.75],
+              [-0.5, 0.8128329581890013],
+              [0.0, 0.8524163823495667],
+              [0.5, 0.8788810584091566],
+              [1.0, 0.8975836176504333],
+              [2.0, 0.9220208696226307],
+              [4.0, 0.9474315432887466],
+              [8.0, 0.9682744825694465]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.008602969896859207],
+              [-4.0, 0.06366197723675814],
+              [-2.0, 0.3183098861837907],
+              [-1.0, 0.15915494309189535],
+              [-0.5, 0.09794150344116635],
+              [0.0, 0.06366197723675814],
+              [0.5, 0.043904811887419404],
+              [1.0, 0.03183098861837907],
+              [2.0, 0.018724110951987685],
+              [4.0, 0.008602969896859207],
+              [8.0, 0.00315158303152268]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.008602969896859207],
+              [-4.0, 0.06366197723675814],
+              [-2.0, 0.3183098861837907],
+              [-1.0, 0.15915494309189535],
+              [-0.5, 0.09794150344116635],
+              [0.0, 0.06366197723675814],
+              [0.5, 0.043904811887419404],
+              [1.0, 0.03183098861837907],
+              [2.0, 0.018724110951987685],
+              [4.0, 0.008602969896859207],
+              [8.0, 0.00315158303152268]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.75 },
+          "b": { "type": "number", "defined": true, "value": 0.018724110951987685 },
+          "c": { "type": "number", "defined": true, "value": 0.006366197723675813 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -2.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.052568456711253375],
+              [-4.0, 0.14758361765043326],
+              [-2.0, 0.5],
+              [-1.0, 0.75],
+              [-0.5, 0.8128329581890013],
+              [0.0, 0.8524163823495667],
+              [0.5, 0.8788810584091566],
+              [1.0, 0.8975836176504333],
+              [2.0, 0.9220208696226307],
+              [4.0, 0.9474315432887466],
+              [8.0, 0.9682744825694465]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.008602969896859207],
+              [-4.0, 0.06366197723675814],
+              [-2.0, 0.3183098861837907],
+              [-1.0, 0.15915494309189535],
+              [-0.5, 0.09794150344116635],
+              [0.0, 0.06366197723675814],
+              [0.5, 0.043904811887419404],
+              [1.0, 0.03183098861837907],
+              [2.0, 0.018724110951987685],
+              [4.0, 0.008602969896859207],
+              [8.0, 0.00315158303152268]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.052568456711253375],
+              [-4.0, 0.14758361765043326],
+              [-2.0, 0.5],
+              [-1.0, 0.75],
+              [-0.5, 0.8128329581890013],
+              [0.0, 0.8524163823495667],
+              [0.5, 0.8788810584091566],
+              [1.0, 0.8975836176504333],
+              [2.0, 0.9220208696226307],
+              [4.0, 0.9474315432887466],
+              [8.0, 0.9682744825694465]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.75 },
+          "b": { "type": "number", "defined": true, "value": 0.018724110951987685 },
+          "c": { "type": "number", "defined": true, "value": 0.9548327646991335 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "probability-cauchy-003",
+      "group": "probability",
+      "script": [
+        "m = 2",
+        "s = 3",
+        "p = 0",
+        "a = InverseCauchy(m,s,p)",
+        "b = InverseCauchy(m,s,0.7-0.2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "p", "value": 1.0E-16 },
+        { "action": "set_number", "label": "p", "value": 0.25 },
+        { "action": "set_number", "label": "p", "value": 0.5 },
+        { "action": "set_number", "label": "p", "value": 0.75 },
+        { "action": "set_number", "label": "p", "value": 1.0 },
+        { "action": "set_number", "label": "p", "value": -0.1 },
+        { "action": "set_number", "label": "p", "value": 1.1 },
+        { "action": "set_number", "label": "p", "value": 0.75 },
+        { "action": "set_number", "label": "s", "value": 0.0 },
+        { "action": "set_number", "label": "s", "value": -3.0 },
+        { "action": "set_number", "label": "s", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "infinity": -1 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 1.0E-16 },
+          "a": { "type": "number", "defined": true, "value": -5.936813898285655E15 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "a": { "type": "number", "defined": true, "value": -0.9999999999999996 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "infinity": 1 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": -0.1 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 1.1 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": -3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "probability-cauchy-004",
+      "group": "probability",
+      "script": [
+        "s = 10^308",
+        "p = 10^(-162)",
+        "a = Cauchy(0,s,0,false)*s",
+        "b = Cauchy(0,s,s)",
+        "c = Cauchy(-s,s,s)",
+        "d = Cauchy(0,1,1/0)",
+        "e1 = Cauchy(0,1,-1/0)",
+        "f = Cauchy(0,s,x,false)",
+        "g = Cauchy(0,p,x,false)",
+        "u = f(0)*s",
+        "v = g(p)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "number", "defined": true, "value": 1.0E308 },
+          "p": { "type": "number", "defined": true, "value": 1.0E-162 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.75 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "e1": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 4.973591971621729E-165],
+              [-4.0, 1.9894367886486918E-164],
+              [-2.0, 7.957747154594767E-164],
+              [-1.0, 3.183098861837907E-163],
+              [-0.5, 1.2732395447351627E-162],
+              [0.0, { "infinity": 1 }],
+              [0.5, 1.2732395447351627E-162],
+              [1.0, 3.183098861837907E-163],
+              [2.0, 7.957747154594767E-164],
+              [4.0, 1.9894367886486918E-164],
+              [8.0, 4.973591971621729E-165]
+            ]
+          },
+          "u": { "type": "number", "defined": true, "value": 0.0 },
+          "v": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "probability-cauchy-005",
+      "group": "probability",
+      "script": [
+        "L = Segment((0,0),(2,0))",
+        "a = Cauchy(0,L,1)",
+        "b = InverseCauchy(0,L,0.75)",
+        "f = (Cauchy(0,L,x))",
+        "g = 2*Cauchy(0,L,x)",
+        "h = If(x>0,Cauchy(0,L,x),0)",
+        "c = f(1)",
+        "d = g(1)",
+        "q = h(1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "L": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.6475836176504333 },
+          "b": { "type": "number", "defined": true, "value": 1.9999999999999998 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.07797913037736925],
+              [-4.0, 0.14758361765043326],
+              [-2.0, 0.25],
+              [-1.0, 0.35241638234956674],
+              [-0.5, 0.4220208696226307],
+              [0.0, 0.5],
+              [0.5, 0.5779791303773694],
+              [1.0, 0.6475836176504333],
+              [2.0, 0.75],
+              [4.0, 0.8524163823495667],
+              [8.0, 0.9220208696226307]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.1559582607547385],
+              [-4.0, 0.2951672353008665],
+              [-2.0, 0.5],
+              [-1.0, 0.7048327646991335],
+              [-0.5, 0.8440417392452614],
+              [0.0, 1.0],
+              [0.5, 1.1559582607547387],
+              [1.0, 1.2951672353008665],
+              [2.0, 1.5],
+              [4.0, 1.7048327646991335],
+              [8.0, 1.8440417392452615]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.5779791303773694],
+              [1.0, 0.6475836176504333],
+              [2.0, 0.75],
+              [4.0, 0.8524163823495667],
+              [8.0, 0.9220208696226307]
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 0.6475836176504333 },
+          "d": { "type": "number", "defined": true, "value": 1.2951672353008665 },
+          "q": { "type": "number", "defined": true, "value": 0.6475836176504333 }
+        }
+      ]
+    }
+  ]
+}
