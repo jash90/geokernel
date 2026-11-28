@@ -316,7 +316,7 @@ impl Format {
                 }
                 return format!("{lhs}{eq}0");
             }
-            return format!("x{eq}{}", self.number(-c / a));
+            return equation::explicit_line([a, b, c], self.latex, &|v| self.number(v));
         }
         if general && a.abs() < STANDARD_PRECISION {
             let constant = c / b;
@@ -324,21 +324,7 @@ impl Format {
             return format!("y {sign} {}{eq}0", self.number(constant.abs()));
         }
         if !general && (a.abs() < STANDARD_PRECISION || form == Some(&EquationForm::Explicit)) {
-            let slope = -a / b;
-            let intercept = -c / b;
-            if slope.abs() <= 0.005 {
-                return format!("y{eq}{}", self.number(intercept));
-            }
-            let mut rhs = self.coefficient(slope);
-            if self.latex {
-                rhs.push(' ');
-            }
-            rhs.push('x');
-            if intercept.abs() > 0.005 {
-                let sign = if intercept < 0.0 { '-' } else { '+' };
-                rhs.push_str(&format!(" {sign} {}", self.number(intercept.abs())));
-            }
-            return format!("y{eq}{rhs}");
+            return equation::explicit_line([a, b, c], self.latex, &|v| self.number(v));
         }
         let scale = if general {
             1.0

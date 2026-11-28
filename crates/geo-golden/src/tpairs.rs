@@ -27,7 +27,9 @@
 
 use crate::compare::{compare_arc, compare_conic, compare_extra, compare_list, compare_sampled};
 use crate::model::Expected;
-use geo_kernel::{script, Construction, Id, Kind, Value};
+use geo_kernel::algo::lines::LineDef;
+use geo_kernel::kernel::EquationForm;
+use geo_kernel::{script, Construction, Def, Id, Kind, Value};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -192,6 +194,18 @@ fn display_number(value: f64, template: &str) -> String {
     if rounded == "-0" { "0" } else { rounded }.into()
 }
 
+/// The explicit fit equation in the XML template at the harness's default
+/// two-decimal setting. Display precision controls which terms are omitted,
+/// while retained coefficients are printed with their full precision.
+fn xml_fit_equation(a: f64, b: f64, c: f64) -> Option<String> {
+    let finite = if b.abs() < geo_kernel::tol::STANDARD_PRECISION {
+        (-c / a).is_finite()
+    } else {
+        (-a / b).is_finite() && (-c / b).is_finite()
+    };
+    finite.then(|| geo_kernel::equation::explicit_line([a, b, c], false, &ggb_double))
+}
+
 fn object_template(c: &Construction, id: Id, template: &str) -> Option<String> {
     use geo_kernel::algo::charts::ChartMark;
     if matches!(c.def(id), geo_kernel::Def::Analysis(_)) && c.kind(id) == Kind::Circle {
@@ -284,6 +298,13 @@ pub fn value_string(c: &Construction, id: Id, template: &str) -> Option<String> 
         (Value::Segment { x1, y1, x2, y2 }, _) => Some(number((x2 - x1).hypot(y2 - y1))),
         (Value::Polygon { area }, _) | (Value::Sector { area }, _) => Some(number(area.abs())),
         (Value::PolyLine { length }, _) | (Value::Arc { length }, _) => Some(number(*length)),
+        (Value::Line { a, b, c: offset }, Kind::Line)
+            if template == "xml"
+                && matches!(c.def(id), Def::Lines(LineDef::Fit { .. }))
+                && matches!(c.equation_form(id), Some(EquationForm::Explicit)) =>
+        {
+            xml_fit_equation(*a, *b, *offset)
+        }
         (_, Kind::List) => list_string(c, c.elements(id)?, template, &mut 16_384),
         _ => object_template(c, id, template),
     }

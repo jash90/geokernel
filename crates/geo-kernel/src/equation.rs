@@ -6,7 +6,7 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-//! The equation of a conic as text. The implicit form is
+//! Line and conic equations as text. The implicit conic form is
 //! `a x² + b x y + c y² + d x + e y = f`.
 //!
 //! Numbers are written by a formatter the caller passes, so the window and
@@ -14,6 +14,7 @@
 
 use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::kernel::EquationForm;
+use crate::tol::STANDARD_PRECISION;
 
 /// `GeoConicND.vars`.
 const VARS: [&str; 5] = ["x²", "x y", "y²", "x", "y"];
@@ -32,6 +33,28 @@ pub(crate) fn equation_scale(numbers: &[f64]) -> f64 {
 /// `Kernel.STANDARD_PRECISION`, the tolerance of `DoubleUtil.isZero` and
 /// `DoubleUtil.isInteger`.
 const EPS: f64 = 1e-8;
+
+/// The explicit equation of a line given its raw coefficients `[a, b, c]`.
+pub fn explicit_line([a, b, c]: [f64; 3], latex: bool, fmt: &dyn Fn(f64) -> String) -> String {
+    let eq = if latex { r"\, = \," } else { " = " };
+    if b.abs() < STANDARD_PRECISION {
+        return format!("x{eq}{}", fmt(-c / a));
+    }
+
+    let slope = -a / b;
+    let intercept = -c / b;
+    const DISPLAY_ZERO: f64 = 0.005;
+    if slope.abs() <= DISPLAY_ZERO {
+        return format!("y{eq}{}", fmt(intercept));
+    }
+    let coefficient = format_coeff(slope, fmt);
+    let spacing = if latex { " " } else { "" };
+    let mut equation = format!("y{eq}{coefficient}{spacing}x");
+    if intercept.abs() > DISPLAY_ZERO {
+        equation.push_str(&format!(" {} {}", sign(intercept), fmt(intercept.abs())));
+    }
+    equation
+}
 
 /// The implicit equation of the conic with flat matrix
 /// `[A00, A11, A22, A01, A02, A12]`, numbers written by `fmt`. A
