@@ -2007,12 +2007,6 @@ reason = "the kernel refuses the input: unknown command `InverseHyperGeometric`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2351"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `InverseLogistic`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2356"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `InverseLogNormal`"

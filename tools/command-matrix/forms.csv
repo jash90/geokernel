@@ -325,3 +325,5 @@ Exponential,probability,4,"number,number | number,number,boolean | number,functi
 InverseExponential,probability,1,"number,number"
 Cauchy,probability,4,"number,number,number | number,number,number,boolean | number,number,function | number,number,function,boolean"
 InverseCauchy,probability,1,"number,number,number"
+Logistic,probability,4,"number,number,number | number,number,number,boolean | number,number,function | number,number,function,boolean"
+InverseLogistic,probability,1,"number,number,number"

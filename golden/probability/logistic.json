@@ -1,0 +1,821 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-logistic-001",
+      "group": "probability",
+      "script": [
+        "m = 2",
+        "s = 3",
+        "t = -1",
+        "a = Logistic(m,s,t)",
+        "b = Logistic(m,s,t,true)",
+        "c = Logistic(m,s,t,false)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 2.0 },
+        { "action": "set_number", "label": "t", "value": 5.0 },
+        { "action": "set_number", "label": "s", "value": 0.0 },
+        { "action": "set_number", "label": "t", "value": 2.0 },
+        { "action": "set_number", "label": "t", "value": -1.0 },
+        { "action": "set_number", "label": "s", "value": -3.0 },
+        { "action": "set_number", "label": "s", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.2689414213699951 },
+          "b": { "type": "number", "defined": true, "value": 0.2689414213699951 },
+          "c": { "type": "number", "defined": true, "value": 0.06553731108049395 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 0.08333333333333333 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 5.0 },
+          "a": { "type": "number", "defined": true, "value": 0.7310585786300049 },
+          "b": { "type": "number", "defined": true, "value": 0.7310585786300049 },
+          "c": { "type": "number", "defined": true, "value": 0.06553731108049396 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 5.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": -3.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.2689414213699951 },
+          "b": { "type": "number", "defined": true, "value": 0.2689414213699951 },
+          "c": { "type": "number", "defined": true, "value": 0.06553731108049395 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.18242552380635635 },
+          "b": { "type": "number", "defined": true, "value": 0.18242552380635635 },
+          "c": { "type": "number", "defined": true, "value": 0.07457322603516643 }
+        }
+      ]
+    },
+    {
+      "id": "probability-logistic-002",
+      "group": "probability",
+      "script": [
+        "m = 2",
+        "s = 3",
+        "n = 1",
+        "p = n>0",
+        "f = Logistic(m,s,x)",
+        "g = Logistic(m,s,(x),false)",
+        "h = Logistic(m,s,x,p)",
+        "a = f(-1)",
+        "b = g(2)",
+        "c = h(5)",
+        "d = IsDefined(h)",
+        "e1 = h(2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "s", "value": -3.0 },
+        { "action": "set_number", "label": "s", "value": 0.0 },
+        { "action": "set_number", "label": "m", "value": -2.0 },
+        { "action": "set_number", "label": "s", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.03444519566621117],
+              [-4.0, 0.11920292202211755],
+              [-2.0, 0.20860852732604496],
+              [-1.0, 0.2689414213699951],
+              [-0.5, 0.3029407160345927],
+              [0.0, 0.33924363123418283],
+              [0.5, 0.3775406687981454],
+              [1.0, 0.4174297935376853],
+              [2.0, 0.5],
+              [4.0, 0.6607563687658172],
+              [8.0, 0.8807970779778823]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.011086241387242532],
+              [-4.0, 0.03499786180116884],
+              [-2.0, 0.055030336550967895],
+              [-1.0, 0.06553731108049396],
+              [-0.5, 0.07038921286768032],
+              [0.0, 0.0747191299670762],
+              [0.5, 0.07833457073386484],
+              [1.0, 0.08106072033492356],
+              [2.0, 0.08333333333333333],
+              [4.0, 0.07471912996707619],
+              [8.0, 0.03499786180116883]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.03444519566621117],
+              [-4.0, 0.11920292202211755],
+              [-2.0, 0.20860852732604496],
+              [-1.0, 0.2689414213699951],
+              [-0.5, 0.3029407160345927],
+              [0.0, 0.33924363123418283],
+              [0.5, 0.3775406687981454],
+              [1.0, 0.4174297935376853],
+              [2.0, 0.5],
+              [4.0, 0.6607563687658172],
+              [8.0, 0.8807970779778823]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.2689414213699951 },
+          "b": { "type": "number", "defined": true, "value": 0.08333333333333333 },
+          "c": { "type": "number", "defined": true, "value": 0.7310585786300049 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.03444519566621117],
+              [-4.0, 0.11920292202211755],
+              [-2.0, 0.20860852732604496],
+              [-1.0, 0.2689414213699951],
+              [-0.5, 0.3029407160345927],
+              [0.0, 0.33924363123418283],
+              [0.5, 0.3775406687981454],
+              [1.0, 0.4174297935376853],
+              [2.0, 0.5],
+              [4.0, 0.6607563687658172],
+              [8.0, 0.8807970779778823]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.011086241387242532],
+              [-4.0, 0.03499786180116884],
+              [-2.0, 0.055030336550967895],
+              [-1.0, 0.06553731108049396],
+              [-0.5, 0.07038921286768032],
+              [0.0, 0.0747191299670762],
+              [0.5, 0.07833457073386484],
+              [1.0, 0.08106072033492356],
+              [2.0, 0.08333333333333333],
+              [4.0, 0.07471912996707619],
+              [8.0, 0.03499786180116883]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.011086241387242532],
+              [-4.0, 0.03499786180116884],
+              [-2.0, 0.055030336550967895],
+              [-1.0, 0.06553731108049396],
+              [-0.5, 0.07038921286768032],
+              [0.0, 0.0747191299670762],
+              [0.5, 0.07833457073386484],
+              [1.0, 0.08106072033492356],
+              [2.0, 0.08333333333333333],
+              [4.0, 0.07471912996707619],
+              [8.0, 0.03499786180116883]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.2689414213699951 },
+          "b": { "type": "number", "defined": true, "value": 0.08333333333333333 },
+          "c": { "type": "number", "defined": true, "value": 0.06553731108049396 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.08333333333333333 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": -3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.03444519566621117],
+              [-4.0, 0.11920292202211755],
+              [-2.0, 0.20860852732604496],
+              [-1.0, 0.2689414213699951],
+              [-0.5, 0.3029407160345927],
+              [0.0, 0.33924363123418283],
+              [0.5, 0.3775406687981454],
+              [1.0, 0.4174297935376853],
+              [2.0, 0.5],
+              [4.0, 0.6607563687658172],
+              [8.0, 0.8807970779778823]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.011086241387242532],
+              [-4.0, 0.03499786180116884],
+              [-2.0, 0.055030336550967895],
+              [-1.0, 0.06553731108049396],
+              [-0.5, 0.07038921286768032],
+              [0.0, 0.0747191299670762],
+              [0.5, 0.07833457073386484],
+              [1.0, 0.08106072033492356],
+              [2.0, 0.08333333333333333],
+              [4.0, 0.07471912996707619],
+              [8.0, 0.03499786180116883]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.011086241387242532],
+              [-4.0, 0.03499786180116884],
+              [-2.0, 0.055030336550967895],
+              [-1.0, 0.06553731108049396],
+              [-0.5, 0.07038921286768032],
+              [0.0, 0.0747191299670762],
+              [0.5, 0.07833457073386484],
+              [1.0, 0.08106072033492356],
+              [2.0, 0.08333333333333333],
+              [4.0, 0.07471912996707619],
+              [8.0, 0.03499786180116883]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.2689414213699951 },
+          "b": { "type": "number", "defined": true, "value": 0.08333333333333333 },
+          "c": { "type": "number", "defined": true, "value": 0.06553731108049396 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.08333333333333333 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, null],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, null],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -2.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0024726231566347743],
+              [-4.0, 0.11920292202211755],
+              [-2.0, 0.5],
+              [-1.0, 0.7310585786300049],
+              [-0.5, 0.8175744761936437],
+              [0.0, 0.8807970779778823],
+              [0.5, 0.9241418199787566],
+              [1.0, 0.9525741268224334],
+              [2.0, 0.9820137900379085],
+              [4.0, 0.9975273768433653],
+              [8.0, 0.9999546021312976]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.002466509291360048],
+              [-4.0, 0.10499358540350652],
+              [-2.0, 0.25],
+              [-1.0, 0.19661193324148188],
+              [-0.5, 0.14914645207033284],
+              [0.0, 0.1049935854035065],
+              [0.5, 0.07010371654510818],
+              [1.0, 0.045176659730912144],
+              [2.0, 0.017662706213291114],
+              [4.0, 0.0024665092913600485],
+              [8.0, 4.539580773595167E-5]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.002466509291360048],
+              [-4.0, 0.10499358540350652],
+              [-2.0, 0.25],
+              [-1.0, 0.19661193324148188],
+              [-0.5, 0.14914645207033284],
+              [0.0, 0.1049935854035065],
+              [0.5, 0.07010371654510818],
+              [1.0, 0.045176659730912144],
+              [2.0, 0.017662706213291114],
+              [4.0, 0.0024665092913600485],
+              [8.0, 4.539580773595167E-5]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.7310585786300049 },
+          "b": { "type": "number", "defined": true, "value": 0.017662706213291114 },
+          "c": { "type": "number", "defined": true, "value": 9.102211801218265E-4 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.017662706213291114 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -2.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0024726231566347743],
+              [-4.0, 0.11920292202211755],
+              [-2.0, 0.5],
+              [-1.0, 0.7310585786300049],
+              [-0.5, 0.8175744761936437],
+              [0.0, 0.8807970779778823],
+              [0.5, 0.9241418199787566],
+              [1.0, 0.9525741268224334],
+              [2.0, 0.9820137900379085],
+              [4.0, 0.9975273768433653],
+              [8.0, 0.9999546021312976]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.002466509291360048],
+              [-4.0, 0.10499358540350652],
+              [-2.0, 0.25],
+              [-1.0, 0.19661193324148188],
+              [-0.5, 0.14914645207033284],
+              [0.0, 0.1049935854035065],
+              [0.5, 0.07010371654510818],
+              [1.0, 0.045176659730912144],
+              [2.0, 0.017662706213291114],
+              [4.0, 0.0024665092913600485],
+              [8.0, 4.539580773595167E-5]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0024726231566347743],
+              [-4.0, 0.11920292202211755],
+              [-2.0, 0.5],
+              [-1.0, 0.7310585786300049],
+              [-0.5, 0.8175744761936437],
+              [0.0, 0.8807970779778823],
+              [0.5, 0.9241418199787566],
+              [1.0, 0.9525741268224334],
+              [2.0, 0.9820137900379085],
+              [4.0, 0.9975273768433653],
+              [8.0, 0.9999546021312976]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.7310585786300049 },
+          "b": { "type": "number", "defined": true, "value": 0.017662706213291114 },
+          "c": { "type": "number", "defined": true, "value": 0.9990889488055994 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.9820137900379085 }
+        }
+      ]
+    },
+    {
+      "id": "probability-logistic-003",
+      "group": "probability",
+      "script": [
+        "m = 2",
+        "s = 3",
+        "p = 0",
+        "a = InverseLogistic(m,s,p)",
+        "b = InverseLogistic(m,s,0.7-0.2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "p", "value": 1.0E-16 },
+        { "action": "set_number", "label": "p", "value": 0.25 },
+        { "action": "set_number", "label": "p", "value": 0.5 },
+        { "action": "set_number", "label": "p", "value": 0.75 },
+        { "action": "set_number", "label": "p", "value": 1.0 },
+        { "action": "set_number", "label": "p", "value": -0.1 },
+        { "action": "set_number", "label": "p", "value": 1.1 },
+        { "action": "set_number", "label": "p", "value": 0.75 },
+        { "action": "set_number", "label": "s", "value": 0.0 },
+        { "action": "set_number", "label": "s", "value": -3.0 },
+        { "action": "set_number", "label": "s", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 1.0E-16 },
+          "a": { "type": "number", "defined": true, "value": -108.5240844637142 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "a": { "type": "number", "defined": true, "value": -1.2958368660043291 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 5.29583686600433 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "infinity": 1 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": -0.1 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 1.1 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 5.29583686600433 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": -3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 4.19722457733622 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "probability-logistic-004",
+      "group": "probability",
+      "script": [
+        "s = 10^308",
+        "a = Logistic(0,1,1000)",
+        "b = Logistic(0,1,-1000)",
+        "c = Logistic(0,1,-1000,false)",
+        "d = Logistic(0,1,1000,false)",
+        "e1 = Logistic(0,s,s)",
+        "g1 = Logistic(-s,s,s,false)",
+        "h1 = Logistic(0,1,1/0)",
+        "k1 = Logistic(0,1,-1/0,false)",
+        "f = Logistic(0,1,x,false)",
+        "g = Logistic(0,s,x)",
+        "u = f(-1000)",
+        "v = f(1000)",
+        "w = g(s)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "number", "defined": true, "value": 1.0E308 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e1": { "type": "number", "defined": true, "value": 0.7310585786300049 },
+          "g1": { "type": "number", "defined": true, "value": 0.0 },
+          "h1": { "type": "number", "defined": true, "value": 1.0 },
+          "k1": { "type": "number", "defined": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.3523767075647424E-4],
+              [-4.0, 0.017662706213291118],
+              [-2.0, 0.10499358540350652],
+              [-1.0, 0.19661193324148185],
+              [-0.5, 0.2350037122015945],
+              [0.0, 0.25],
+              [0.5, 0.2350037122015945],
+              [1.0, 0.19661193324148188],
+              [2.0, 0.1049935854035065],
+              [4.0, 0.017662706213291114],
+              [8.0, 3.352376707564743E-4]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.5],
+              [-4.0, 0.5],
+              [-2.0, 0.5],
+              [-1.0, 0.5],
+              [-0.5, 0.5],
+              [0.0, 0.5],
+              [0.5, 0.5],
+              [1.0, 0.5],
+              [2.0, 0.5],
+              [4.0, 0.5],
+              [8.0, 0.5]
+            ]
+          },
+          "u": { "type": "number", "defined": false },
+          "v": { "type": "number", "defined": true, "value": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.7310585786300049 }
+        }
+      ]
+    },
+    {
+      "id": "probability-logistic-005",
+      "group": "probability",
+      "script": [
+        "L = Segment((0,0),(2,0))",
+        "a = Logistic(0,L,1)",
+        "b = InverseLogistic(0,L,0.75)",
+        "f = (Logistic(0,L,x))",
+        "g = 2*Logistic(0,L,x,false)",
+        "h = If(x>0,Logistic(0,L,x),0)",
+        "c = f(1)",
+        "d = g(1)",
+        "q = h(1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "L": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.6224593312018546 },
+          "b": { "type": "number", "defined": true, "value": 2.19722457733622 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.01798620996209156],
+              [-4.0, 0.11920292202211755],
+              [-2.0, 0.2689414213699951],
+              [-1.0, 0.3775406687981454],
+              [-0.5, 0.43782349911420193],
+              [0.0, 0.5],
+              [0.5, 0.5621765008857981],
+              [1.0, 0.6224593312018546],
+              [2.0, 0.7310585786300049],
+              [4.0, 0.8807970779778823],
+              [8.0, 0.9820137900379085]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.017662706213291118],
+              [-4.0, 0.10499358540350652],
+              [-2.0, 0.19661193324148185],
+              [-1.0, 0.2350037122015945],
+              [-0.5, 0.24613408273759835],
+              [0.0, 0.25],
+              [0.5, 0.24613408273759832],
+              [1.0, 0.2350037122015945],
+              [2.0, 0.19661193324148188],
+              [4.0, 0.1049935854035065],
+              [8.0, 0.017662706213291114]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.5621765008857981],
+              [1.0, 0.6224593312018546],
+              [2.0, 0.7310585786300049],
+              [4.0, 0.8807970779778823],
+              [8.0, 0.9820137900379085]
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 0.6224593312018546 },
+          "d": { "type": "number", "defined": true, "value": 0.2350037122015945 },
+          "q": { "type": "number", "defined": true, "value": 0.6224593312018546 }
+        }
+      ]
+    }
+  ]
+}
