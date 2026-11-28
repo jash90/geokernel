@@ -691,6 +691,15 @@ impl Writer<'_> {
             };
             return self.command(command, &args[..1], outputs);
         }
+        if let Some(("Normal", inputs)) = &call {
+            if let [mean, deviation, "x"] = inputs.as_slice() {
+                if c.kind(id) == Kind::Function {
+                    // The file reader needs the cumulative flag for this
+                    // form even though algebra input defaults to true.
+                    return self.command("Normal", &[mean, deviation, "x", "true"], outputs);
+                }
+            }
+        }
         if matches!(c.kind(id), Kind::Function | Kind::FunctionNVar) && lhs.ends_with(')') {
             return self.expression(id, &format!("{lhs} = {}", syntax(source)?));
         }

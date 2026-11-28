@@ -481,6 +481,9 @@ fn call_kinds(
     labels: &BTreeMap<String, Kind>,
 ) -> Vec<Option<Kind>> {
     let mut kinds: Vec<Option<Kind>> = args.iter().map(|a| arg_kind(a, labels)).collect();
+    if command == "Normal" && args.get(2).is_some_and(|argument| argument == "x") {
+        kinds[2] = Some(Kind::Function);
+    }
     if command == "Cubic" && matches!(kinds.as_slice(), [_, _, _, Some(Kind::Angle)]) {
         kinds[3] = Some(Kind::Number);
     }
@@ -552,6 +555,12 @@ fn call_kinds(
 
 /// Whether a call with these arguments shows `form` exactly.
 fn call_fits(command: &str, form: &str, args: &[String], kinds: &[Option<Kind>]) -> bool {
+    if command == "Normal"
+        && form.contains(",function")
+        && args.get(2).is_none_or(|argument| argument != "x")
+    {
+        return false;
+    }
     if matches!(
         command,
         "CellRange" | "Row" | "Column" | "ColumnName" | "FillCells"

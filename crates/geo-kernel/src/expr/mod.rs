@@ -285,6 +285,7 @@ pub(crate) enum Node {
     /// numbers; the argument roots fill the array from the front, the rest
     /// stays [`NONE`].
     Financial(Finance, [u32; 6]),
+    Probability(commands::probability::Probability, [u32; 4]),
     Relation {
         objects: [Id; 4],
         count: u8,
@@ -412,10 +413,6 @@ pub(crate) enum CallOp {
     Frequency,
     /// `Percentile(data, [frequencies,] probability)` (`AlgoPercentile`).
     Percentile,
-    /// Normal density, cumulative probability, interval or function.
-    Normal { function: bool },
-    /// Normal quantile from a mean, standard deviation and probability.
-    InverseNormal,
     /// `Zip(expression, variable, list, ...)` (`AlgoZip`): the expression,
     /// then a [`Node::Local`] and its list per variable.
     Zip,
@@ -1263,6 +1260,7 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         }
         Node::Seq(a, b, c, d, _) => fixed[..4].copy_from_slice(&[a, b, c, d]),
         Node::Financial(_, args) => fixed.copy_from_slice(&args),
+        Node::Probability(_, args) => fixed[..4].copy_from_slice(&args),
         Node::CellLookup(a, b, _) => fixed[..2].copy_from_slice(&[a, b]),
         Node::List(first, len)
         | Node::CellRange(first, len, _)
@@ -1351,6 +1349,7 @@ fn map_children(node: &mut Node, map: impl Fn(u32) -> u32) {
         | Node::TextCmd(_, first, _)
         | Node::Call(_, first, _) => shift(first),
         Node::Financial(_, args) => args.iter_mut().for_each(shift),
+        Node::Probability(_, args) => args.iter_mut().for_each(shift),
         _ => {}
     }
 }
@@ -2130,6 +2129,16 @@ fn update_lists(c: &mut Construction, d: ExprDef) -> ((Value, bool), bool) {
 fn inputs_defined(c: &Construction, e: &Entry) -> bool {
     if e.interval.is_some_and(|interval| !interval.defined) {
         return false;
+    }
+    // An undefined parameter affects the samples of a normal function.
+    if matches!(
+        e.nodes[e.root as usize],
+        Node::Probability(
+            commands::probability::Probability::Normal { function: true },
+            _
+        )
+    ) {
+        return true;
     }
     if e.checks_branches {
         let meter = eval::Lists::new(Vec::new());
@@ -3322,7 +3331,7 @@ fn add_parsed(
                 n,
                 Node::Cmd(..) | Node::If(IfMode::Algo, ..) | Node::Vector(_) | Node::Cas(..)
             )
-            || matches!(n, Node::Financial(..))
+            || matches!(n, Node::Financial(..) | Node::Probability(..))
             || is_list_node(n)
     });
     // a constant boolean (`b = 1 < 2`) or list stays an expression: there

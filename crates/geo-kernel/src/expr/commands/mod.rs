@@ -18,7 +18,7 @@ mod geometry;
 mod list;
 pub(super) mod logical;
 pub(crate) use logical::relation;
-mod probability;
+pub(super) mod probability;
 mod statistics;
 pub(super) mod text;
 

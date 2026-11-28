@@ -3706,6 +3706,25 @@ fn exported_xml(wb: &Workbench) -> String {
 }
 
 #[test]
+fn normal_function_archive_keeps_the_default_cumulative_flag() {
+    let wb = Workbench::from_script(
+        "m = 2\ns = 3\nf = Normal(m,s,x)\ng = Normal(m,s,x,false)\na = f(-1)\nb = g(-1)",
+    )
+    .unwrap();
+    let xml = exported_xml(&wb);
+    assert!(xml.contains("a0=\"m\" a1=\"s\" a2=\"x\" a3=\"true\""));
+    assert!(xml.contains("a0=\"m\" a1=\"s\" a2=\"x\" a3=\"false\""));
+    let (_, reopened) = round_trip("normal CDF and density", &wb, None);
+    for label in ["a", "b"] {
+        let value = |w: &Workbench| {
+            let c = w.construction();
+            c.value(c.id(label).unwrap())
+        };
+        assert_eq!(value(&reopened), value(&wb), "{label}");
+    }
+}
+
+#[test]
 fn reloaded_fit_lines_follow_point_edits() {
     let wb = Workbench::from_script(
         "A = (1, 2)\nB = (3, 4)\nC = (5, 1)\nL = {A, B, C}\ng = FitLine(L)\nh = FitLineX({A, B, C})",

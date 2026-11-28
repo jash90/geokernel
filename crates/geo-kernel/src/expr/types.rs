@@ -201,6 +201,19 @@ fn type_node(
             let vars = args.iter().map(|&a| state.vars[a]).sum();
             (Ty::Num(0), 1 + depth, cost, vars)
         }
+        Node::Probability(op, args) => {
+            let ty = commands::probability::value_type(op, args, &state.tys[..i])?;
+            let mut depth = 0;
+            let mut cost = op.cost();
+            let mut vars = 0u64;
+            for arg in args.into_iter().filter(|&arg| arg != super::NONE) {
+                let index = arg as usize;
+                depth = depth.max(state.depth[index]);
+                cost = cost.saturating_add(state.cost[index]);
+                vars = vars.saturating_add(state.vars[index]);
+            }
+            (ty, depth + 1, cost, vars)
+        }
         Node::Apply2(f, a, b) => {
             let (a, b) = (a as usize, b as usize);
             if !matches!((state.tys[a], state.tys[b]), (Ty::Num(_), Ty::Num(_))) {

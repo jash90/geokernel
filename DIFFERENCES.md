@@ -245,6 +245,12 @@ The 2D command dispatcher has no function–Cartesian curve overload.
 | Expanding a power with object coefficients, like `(a x + b)^300` | The structural expansion exhausts the reference harness heap. In `calculus-degree-010`, the native CAS fallback returns degree zero when `a = 0` and the other three snapshots remain undefined. | The coefficient trees share subtrees in one arena. Evaluating each shared subtree once gives the degree in every snapshot. | The kernel bounds its work and memory on each update. |
 | The coefficients of the function `Polynomial(f)` and the polynomial `Derivative(f)` build | The expanded function keeps the coefficient trees, symbolic in the objects they read. | The terms keep the evaluated numbers of the coefficients, recomputed whenever the source function's objects change (the definition's parents keep the dependency). | A result tree that kept the shared coefficient subtrees would evaluate each of them once per reference on every evaluation, unbounded work for a power like `(a x + b)^300`. Only the symbolic form of the definition differs; the values agree, as the golden cases record. |
 
+## Probability
+
+| Area | GeoGebra | GeoKernel | Remaining work |
+| --- | --- | --- | --- |
+| `Normal(mean, deviation, x)` and its cumulative flag | Constructs a function of `x` whose samples follow the live parameters. | The explicit function forms evaluate and update their samples, including the recorded zero and negative deviations. | The symbolic and tangent derivative paths do not yet handle the normal function. |
+
 ## Text objects and commands
 
 | Area | GeoGebra | geokernel | Reason |
@@ -996,7 +1002,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:2346` | **unsupported-command.** the kernel refuses the input: unknown command `InverseHyperGeometric` |
 | `commands/CommandsTest.java:2351` | **unsupported-command.** the kernel refuses the input: unknown command `InverseLogistic` |
 | `commands/CommandsTest.java:2356` | **unsupported-command.** the kernel refuses the input: unknown command `InverseLogNormal` |
-| `commands/CommandsTest.java:2361` | **unsupported-command.** the kernel refuses the input: unknown command `InverseNormal` |
 | `commands/CommandsTest.java:2366` | **unsupported-command.** the kernel refuses the input: unknown command `InversePascal` |
 | `commands/CommandsTest.java:2371` | **unsupported-command.** the kernel refuses the input: unknown command `InversePoisson` |
 | `commands/CommandsTest.java:2376` | **unsupported-command.** the kernel refuses the input: unknown command `InverseTDistribution` |

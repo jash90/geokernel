@@ -1383,6 +1383,9 @@ impl<const M: bool> Ctx<'_, M> {
             Node::RootList(_) | Node::FunctionAsymptotes(_) => Ex::plain(N(f64::NAN)),
             Node::Extremum(minimum, f, a, b) => Ex::plain(self.extremum(minimum, f, a, b)),
             Node::Financial(op, args) => Ex::plain(commands::financial::value(self, op, &args)),
+            Node::Probability(op, args) => {
+                Ex::plain(N(commands::probability::value(self, op, args)))
+            }
             Node::PolynomialPart(..) => Ex::plain(N(self.polynomial_value())),
             Node::Cas(op, a, b) => self.cas_scalar(i, op, a, b),
             Node::CasVariable(_) => Ex::plain(N(f64::NAN)),

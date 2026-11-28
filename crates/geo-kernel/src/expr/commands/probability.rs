@@ -1,10 +1,25 @@
 use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
 
 use super::{Ctx, Node, Parser, Ty, Val};
-use crate::expr::CallOp;
+use crate::expr::NONE;
 
 pub(super) const NAMES: &[&str] = &["Normal", "InverseNormal"];
 const QUANTILE_STEPS: u64 = 60;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Probability {
+    Normal { function: bool },
+    InverseNormal,
+}
+
+impl Probability {
+    pub(in crate::expr) fn cost(self) -> u64 {
+        match self {
+            Self::Normal { .. } => 1,
+            Self::InverseNormal => QUANTILE_STEPS + 1,
+        }
+    }
+}
 
 pub(super) fn parse(p: &mut Parser, name: &str) -> Result<Option<u32>, String> {
     if !NAMES.contains(&name) {
@@ -12,23 +27,30 @@ pub(super) fn parse(p: &mut Parser, name: &str) -> Result<Option<u32>, String> {
     }
     let args = p.arguments()?;
     let op = match (name, args.as_slice()) {
-        ("Normal", [_, _, x] | [_, _, x, _]) => CallOp::Normal {
+        ("Normal", [_, _, x] | [_, _, x, _]) => Probability::Normal {
             function: matches!(p.node(*x), Node::Var),
         },
-        ("InverseNormal", [_, _, _]) => CallOp::InverseNormal,
+        ("InverseNormal", [_, _, _]) => Probability::InverseNormal,
         _ => return Err(format!("wrong number of arguments to `{name}`")),
     };
-    let first = p.call_run(&args);
-    Ok(Some(p.push(Node::Call(op, first, args.len() as u32))))
+    let mut slots = [NONE; 4];
+    slots[..args.len()].copy_from_slice(&args);
+    Ok(Some(p.push(Node::Probability(op, slots))))
 }
 
-pub(super) fn call_type(op: CallOp, args: &[Ty]) -> Result<Ty, String> {
-    let valid = match args {
-        [Ty::Num(_), Ty::Num(_), Ty::Num(_)] => true,
-        [Ty::Num(_), Ty::Num(_), Ty::Num(_), Ty::Bool] => matches!(op, CallOp::Normal { .. }),
-        [Ty::Num(_), Ty::Num(_), Ty::Num(_), Ty::Num(_)] => {
-            matches!(op, CallOp::Normal { function: false })
-        }
+pub(in crate::expr) fn value_type(
+    op: Probability,
+    args: [u32; 4],
+    types: &[Ty],
+) -> Result<Ty, String> {
+    let [mean, scale, x, flag] = args.map(|arg| types.get(arg as usize).copied());
+    let valid = matches!(
+        (mean, scale, x),
+        (Some(Ty::Num(_)), Some(Ty::Num(_)), Some(Ty::Num(_)))
+    ) && match flag {
+        None => true,
+        Some(Ty::Bool) => matches!(op, Probability::Normal { .. }),
+        Some(Ty::Num(_)) => matches!(op, Probability::Normal { function: false }),
         _ => false,
     };
     if valid {
@@ -38,16 +60,20 @@ pub(super) fn call_type(op: CallOp, args: &[Ty]) -> Result<Ty, String> {
     }
 }
 
-pub(super) fn call_value<const M: bool>(ctx: &Ctx<'_, M>, op: CallOp, first: u32, len: u32) -> f64 {
-    let mean = ctx.fast(first);
-    let deviation = ctx.fast(first + 1);
-    let x = ctx.fast(first + 2);
-    let fourth = if len == 4 {
-        ctx.full(first + 3).val
+pub(in crate::expr) fn value<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    op: Probability,
+    [mean, deviation, x, flag]: [u32; 4],
+) -> f64 {
+    let mean = ctx.fast(mean);
+    let deviation = ctx.fast(deviation);
+    let x = ctx.fast(x);
+    let fourth = if flag != NONE {
+        ctx.full(flag).val
     } else {
         Val::B(true, true)
     };
-    if matches!(op, CallOp::Normal { function: true }) {
+    if matches!(op, Probability::Normal { function: true }) {
         let delta = x - mean;
         return if matches!(fourth, Val::B(true, _)) {
             (1.0 + libm::erf(delta / (SQRT_2 * deviation.abs()))) * 0.5
@@ -59,10 +85,12 @@ pub(super) fn call_value<const M: bool>(ctx: &Ctx<'_, M>, op: CallOp, first: u32
     if mean.is_nan() || x.is_nan() || deviation.is_nan() || deviation <= 0.0 {
         return f64::NAN;
     }
-    if op == CallOp::InverseNormal {
-        if !(0.0..=1.0).contains(&x) || !ctx.lists.is_some_and(|lists| lists.charge(QUANTILE_STEPS))
-        {
+    if op == Probability::InverseNormal {
+        if !(0.0..=1.0).contains(&x) || ctx.stop(QUANTILE_STEPS) {
             return f64::NAN;
+        }
+        if ctx.meter.is_none() {
+            crate::expr::charge(QUANTILE_STEPS);
         }
         return inverse(mean, deviation, x);
     }

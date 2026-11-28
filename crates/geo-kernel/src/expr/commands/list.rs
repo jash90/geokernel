@@ -712,9 +712,6 @@ pub(crate) fn call_type(
             }
             Ty::Num(0)
         }
-        CallOp::Normal { .. } | CallOp::InverseNormal => {
-            super::probability::call_type(op, &tys[first as usize..(first + len) as usize])?
-        }
         CallOp::Zip => Ty::List(elem_of(tys[first as usize])),
         // points and vectors fold to a point (`PointNDFold`)
         CallOp::Fold | CallOp::SumFold if tys[first as usize] == Ty::Vec => Ty::Vec,
@@ -772,9 +769,6 @@ pub(crate) fn call_value<const M: bool>(
     Some(match op {
         CallOp::IndexOf => Val::N(ctx.index_of(first, len)),
         CallOp::Percentile => Val::N(ctx.percentile(first, len).unwrap_or(f64::NAN)),
-        CallOp::Normal { .. } | CallOp::InverseNormal => {
-            Val::N(super::probability::call_value(ctx, op, first, len))
-        }
         CallOp::Fold => ctx.fold(first, len, true),
         CallOp::SumFold => ctx.fold(first, len, false),
         // a list: built by `list`
