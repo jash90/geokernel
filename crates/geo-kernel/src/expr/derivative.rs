@@ -131,7 +131,8 @@ impl Walker<'_> {
                 // `f'` applied to the argument, times the argument's own
                 // derivative (`Operation.FUNCTION` of the derivative).
                 let arg_value = self.value(arg);
-                let df = if let Some(e) = self.ctx.application_entry(f) {
+                let expanded = self.ctx.application_entry(f);
+                let df = if let Some(e) = expanded {
                     let env = Env::Value(arg_value);
                     Walker {
                         ctx: Ctx {
@@ -147,13 +148,18 @@ impl Walker<'_> {
                 } else {
                     return Some(f64::NAN);
                 };
-                // A horizontal line stays constant even where the argument
-                // itself has no derivative.
+                // A constant body can omit the argument derivative. A
+                // typed body with a live zero slope still differentiates it.
                 if df == 0.0 && self.ctx.c.kind(f) == crate::Kind::Line {
-                    df
-                } else {
-                    df * self.gradient(arg, depth)?
+                    if let Some(body) = expanded {
+                        if !self.line_body_reads_argument(body)? {
+                            return Some(df);
+                        }
+                    } else {
+                        return Some(df);
+                    }
                 }
+                df * self.gradient(arg, depth)?
             }
             Node::If(mode, cond, then, rest) => {
                 // `Operation.IF` and `IF_LIST` keep the condition and
@@ -394,6 +400,25 @@ impl Walker<'_> {
             (matches!(self.ctx.e.tys[i as usize], Ty::Num(_)) && !self.reads_variable(i)?)
                 .then(|| self.value(i)),
         )
+    }
+
+    fn line_body_reads_argument(&self, body: &Entry) -> Option<bool> {
+        if body.vars == 0 {
+            return Some(false);
+        }
+        let literal_zero = |i| matches!(body.nodes[i as usize], Node::Num(v) if v == 0.0);
+        let mut stack = vec![body.root];
+        while let Some(i) = stack.pop() {
+            if !self.budget.charge(1) {
+                return None;
+            }
+            match body.nodes[i as usize] {
+                Node::Var => return Some(true),
+                Node::Bin(Bin::Mul, a, b) if literal_zero(a) || literal_zero(b) => (),
+                node => stack.extend(children(&node)),
+            }
+        }
+        Some(false)
     }
 
     /// Whether the subtree at `i` reads the function variable or the
