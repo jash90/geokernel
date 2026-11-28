@@ -12,6 +12,7 @@ use super::Selection;
 const MAX_ANALYSIS_CELLS: usize = 256;
 const ROW_COUNT: usize = 11;
 const PAIRED_ROW_COUNT: usize = 9;
+pub const SAMPLE_STATISTIC_INDICES: [usize; 9] = [0, 1, 2, 3, 6, 7, 8, 9, 10];
 
 /// Shared model row identifiers and their equivalent kernel expressions.
 pub const STATISTICS: [(&str, &str); ROW_COUNT] = [
@@ -46,6 +47,7 @@ pub enum AnalysisError {
     Range,
     Cells,
     PairedRange,
+    SampleRange,
     Pairs,
     Evaluation,
 }
@@ -63,8 +65,17 @@ pub struct PairedSummary {
 }
 
 #[derive(Debug)]
+pub struct SampleSummary {
+    pub first: Address,
+    pub last: Address,
+    pub values: Vec<f64>,
+    pub rows: [f64; SAMPLE_STATISTIC_INDICES.len()],
+}
+
+#[derive(Debug)]
 enum Data {
     Single(Option<Summary>),
+    Multiple(Vec<SampleSummary>),
     Paired {
         by_column: bool,
         swapped: bool,
@@ -128,6 +139,45 @@ impl Analysis {
         })
     }
 
+    pub fn new_multiple(selection: Selection) -> Result<Self, AnalysisError> {
+        let (first, last) = selection.bounds();
+        let width = usize::from(last.column - first.column) + 1;
+        let height = usize::from(last.row - first.row) + 1;
+        if width * height > MAX_ANALYSIS_CELLS
+            || Address::new(first.column, first.row).is_none()
+            || Address::new(last.column, last.row).is_none()
+        {
+            return Err(AnalysisError::SampleRange);
+        }
+        let empty_rows = evaluate_sample(&[]).ok_or(AnalysisError::Evaluation)?;
+        let samples = if first.row == last.row {
+            vec![SampleSummary {
+                first,
+                last,
+                values: Vec::new(),
+                rows: empty_rows,
+            }]
+        } else {
+            (first.column..=last.column)
+                .map(|column| SampleSummary {
+                    first: Address { column, ..first },
+                    last: Address { column, ..last },
+                    values: Vec::new(),
+                    rows: empty_rows,
+                })
+                .collect()
+        };
+        Ok(Self {
+            first,
+            last,
+            data: Data::Multiple(samples),
+        })
+    }
+
+    pub fn is_multiple(&self) -> bool {
+        matches!(self.data, Data::Multiple(_))
+    }
+
     pub fn endpoints(&self) -> (Address, Address) {
         (self.first, self.last)
     }
@@ -135,7 +185,7 @@ impl Analysis {
     pub fn summary(&self) -> Option<&Summary> {
         match &self.data {
             Data::Single(summary) => summary.as_ref(),
-            Data::Paired { .. } => None,
+            Data::Paired { .. } | Data::Multiple(_) => None,
         }
     }
 
@@ -193,11 +243,40 @@ impl Analysis {
     }
 
     pub fn refresh_active(&mut self, construction: &Construction) -> Result<(), AnalysisError> {
-        if self.is_paired() {
-            self.refresh_paired(construction).map(|_| ())
-        } else {
-            self.refresh(construction).map(|_| ())
+        match self.data {
+            Data::Single(_) => self.refresh(construction).map(|_| ()),
+            Data::Paired { .. } => self.refresh_paired(construction).map(|_| ()),
+            Data::Multiple(_) => self.refresh_multiple(construction).map(|_| ()),
         }
+    }
+
+    pub fn refresh_multiple(
+        &mut self,
+        construction: &Construction,
+    ) -> Result<&[SampleSummary], AnalysisError> {
+        let Data::Multiple(samples) = &mut self.data else {
+            return Err(AnalysisError::SampleRange);
+        };
+        let mut buffer = [0.0; MAX_ANALYSIS_CELLS];
+        for sample in samples.iter_mut() {
+            let count = numeric_cells(construction, sample.first, sample.last)
+                .zip(&mut buffer)
+                .map(|(value, slot)| *slot = value)
+                .count();
+            let values = &buffer[..count];
+            if sample.values.len() != values.len()
+                || sample
+                    .values
+                    .iter()
+                    .zip(values)
+                    .any(|(old, new)| old.to_bits() != new.to_bits())
+            {
+                sample.rows = evaluate_sample(values).ok_or(AnalysisError::Evaluation)?;
+                sample.values.clear();
+                sample.values.extend_from_slice(values);
+            }
+        }
+        Ok(samples)
     }
 
     pub fn refresh_paired(
@@ -216,24 +295,14 @@ impl Analysis {
         // The reference selects numeric cells by kind before pairing each axis.
         let by_column = *by_column;
         let axis = |offset| {
-            let (start, end) = if by_column {
-                (first.row, last.row)
+            let range = if by_column {
+                let column = first.column + offset;
+                (Address { column, ..first }, Address { column, ..last })
             } else {
-                (first.column, last.column)
+                let row = first.row + offset;
+                (Address { row, ..first }, Address { row, ..last })
             };
-            (start..=end).filter_map(move |index| {
-                let (column, row) = if by_column {
-                    (first.column + offset, index)
-                } else {
-                    (index, first.row + offset)
-                };
-                let id = construction.spreadsheet_cell(Address { column, row })?;
-                match (construction.kind(id), construction.value(id)) {
-                    (Kind::Number, Value::Number(value)) => Some(value),
-                    (Kind::Number, Value::Undefined) => Some(f64::NAN),
-                    _ => None,
-                }
-            })
+            numeric_cells(construction, range.0, range.1)
         };
         let start = u16::from(*swapped);
         let mut buffer = [[0.0; 2]; MAX_ANALYSIS_CELLS / 2];
@@ -263,21 +332,66 @@ impl Analysis {
     }
 }
 
-fn evaluate(values: &[f64]) -> Option<[f64; ROW_COUNT]> {
-    let mut scratch = Construction::new();
-    let mut list = String::from("data = {");
-    // Transfer the exact binary values without a display or decimal round trip.
-    for (index, &value) in values.iter().enumerate() {
-        let name = format!("v{index}");
-        scratch.add(&name, Def::Number(value)).ok()?;
+fn numeric_cells(
+    construction: &Construction,
+    first: Address,
+    last: Address,
+) -> impl Iterator<Item = f64> + '_ {
+    (first.column..=last.column)
+        .flat_map(move |column| (first.row..=last.row).map(move |row| Address { column, row }))
+        .filter_map(move |address| {
+            let id = construction.spreadsheet_cell(address)?;
+            match (construction.kind(id), construction.value(id)) {
+                (Kind::Number, Value::Number(value)) => Some(value),
+                (Kind::Number, Value::Undefined) => Some(f64::NAN),
+                _ => None,
+            }
+        })
+}
+
+fn add_numeric_list(
+    scratch: &mut Construction,
+    label: &str,
+    values: impl IntoIterator<Item = f64>,
+) -> Option<()> {
+    let mut list = format!("{label} = {{");
+    for (index, value) in values.into_iter().enumerate() {
         if index != 0 {
             list.push(',');
         }
-        write!(list, "{name}").ok()?;
+        // Bind finite values directly to avoid round-tripping through text.
+        if value.is_nan() {
+            list.push_str("0/0");
+        } else if value.is_infinite() {
+            list.push_str(if value.is_sign_positive() {
+                "1/0"
+            } else {
+                "-1/0"
+            });
+        } else {
+            let name = format!("{label}{index}");
+            scratch.add(&name, Def::Number(value)).ok()?;
+            write!(list, "{name}").ok()?;
+        }
     }
     list.push('}');
-    script::exec(&mut scratch, &list).ok()??;
+    script::exec(scratch, &list).ok()??;
+    Some(())
+}
+
+fn evaluate(values: &[f64]) -> Option<[f64; ROW_COUNT]> {
+    let mut scratch = Construction::new();
+    add_numeric_list(&mut scratch, "data", values.iter().copied())?;
     evaluate_rows(&mut scratch, STATISTICS.map(|(_, expression)| expression))
+}
+
+fn evaluate_sample(values: &[f64]) -> Option<[f64; SAMPLE_STATISTIC_INDICES.len()]> {
+    let mut scratch = Construction::new();
+    add_numeric_list(&mut scratch, "data", values.iter().copied())?;
+    evaluate_rows(
+        &mut scratch,
+        SAMPLE_STATISTIC_INDICES.map(|index| STATISTICS[index].1),
+    )
 }
 
 fn evaluate_pairs(pairs: &[[f64; 2]]) -> Option<[f64; PAIRED_ROW_COUNT]> {
@@ -289,26 +403,7 @@ fn evaluate_pairs(pairs: &[[f64; 2]]) -> Option<[f64; PAIRED_ROW_COUNT]> {
     let mut scratch = Construction::new();
     // Keep both coordinates of a pair even when one is infinite.
     for (label, axis) in [("xs", 0), ("ys", 1)] {
-        let mut line = format!("{label} = {{");
-        for (index, pair) in pairs.iter().enumerate() {
-            let value = pair[axis];
-            if index != 0 {
-                line.push(',');
-            }
-            if value.is_infinite() {
-                line.push_str(if value.is_sign_positive() {
-                    "1/0"
-                } else {
-                    "-1/0"
-                });
-            } else {
-                let name = format!("{label}{index}");
-                scratch.add(&name, Def::Number(value)).ok()?;
-                line.push_str(&name);
-            }
-        }
-        line.push('}');
-        script::exec(&mut scratch, &line).ok()??;
+        add_numeric_list(&mut scratch, label, pairs.iter().map(|pair| pair[axis]))?;
     }
     evaluate_rows(&mut scratch, PAIRED_STATISTICS)
 }
@@ -346,6 +441,58 @@ mod tests {
             pairs: summary.pairs.clone(),
             rows: summary.rows,
         }
+    }
+
+    #[test]
+    fn multiple_samples_keep_empty_columns_and_nonfinite_numeric_cells() {
+        let construction = script::load(
+            "B2 = 2\nB3 = 4\nB4 = 6\nB5 = 8\nC2 = 10\nC3 = \"label\"\nC5 = 14\nD2 = 90°\nD4 = 5\nF2 = 0/0\nG2 = 1/0\nG3 = 4\nH2 = -1/0\nH3 = 5",
+        )
+        .unwrap();
+        let mut analysis = Analysis::new_multiple(Selection {
+            anchor: Address::parse("H5").unwrap(),
+            end: Address::parse("B2").unwrap(),
+        })
+        .unwrap();
+        let rows = analysis.refresh_multiple(&construction).unwrap();
+        assert_eq!(rows.len(), 7);
+        assert_eq!(rows[0].values, [2.0, 4.0, 6.0, 8.0]);
+        assert_eq!(rows[1].values, [10.0, 14.0]);
+        assert_eq!(rows[2].values, [5.0]);
+        assert_eq!(rows[2].rows[4], 5.0);
+        assert!(rows[2].rows[3].is_nan());
+        assert_eq!(rows[3].rows[0], 0.0);
+        assert!(rows[3].rows[1..].iter().all(|value| value.is_nan()));
+        assert_eq!(rows[4].rows[0], 1.0);
+        assert!(rows[4].values[0].is_nan());
+        assert!(rows[4].rows[1..].iter().all(|value| value.is_nan()));
+        assert_eq!(rows[5].rows[1], f64::INFINITY);
+        assert_eq!(rows[6].rows[1], f64::NEG_INFINITY);
+        assert_eq!(rows[6].rows[8], 5.0);
+    }
+
+    #[test]
+    fn a_single_row_or_column_yields_one_sample() {
+        let construction = script::load("B2 = 2\nC2 = 4\nD2 = 6\nB3 = 4\nB4 = 6").unwrap();
+        for end in ["D2", "B4"] {
+            let mut analysis = Analysis::new_multiple(Selection {
+                anchor: Address::parse("B2").unwrap(),
+                end: Address::parse(end).unwrap(),
+            })
+            .unwrap();
+            let rows = analysis.refresh_multiple(&construction).unwrap();
+            assert_eq!(rows.len(), 1);
+            assert_eq!(rows[0].values, [2.0, 4.0, 6.0]);
+            assert_eq!(rows[0].rows[0], 3.0);
+            assert_eq!(rows[0].rows[1], 4.0);
+        }
+        assert!(matches!(
+            Analysis::new_multiple(Selection {
+                anchor: Address::parse("B2").unwrap(),
+                end: Address::parse("D100").unwrap(),
+            }),
+            Err(AnalysisError::SampleRange),
+        ));
     }
 
     #[test]

@@ -173,6 +173,55 @@ fn paired_analysis_swaps_axes_and_tracks_sheet_edits_and_undo() {
 }
 
 #[test]
+fn multiple_sample_analysis_keeps_separate_rows_through_edits_and_undo() {
+    let mut window = sheet(Profile::Desktop, (1000.0, 800.0));
+    for (cell, value) in [("B1", "10"), ("B3", "=A3 + 15"), ("C2", "=90°")] {
+        window
+            .app
+            .wb
+            .edit_spreadsheet_cell(Address::parse(cell).unwrap(), value)
+            .unwrap();
+    }
+    window.frame(DT, Vec::new());
+    activate(&mut window, "A1");
+    activate(&mut window, EXTEND);
+    activate(&mut window, "C3");
+    activate(&mut window, "Analiza wielu prób");
+    assert!(analysis(&window).is_multiple());
+    widget(&window, "B1:B3");
+    widget(&window, "C1:C3");
+    let means = |window: &mut Headless| {
+        let app = &mut window.app;
+        app.spreadsheet_analysis
+            .as_mut()
+            .unwrap()
+            .as_mut()
+            .unwrap()
+            .refresh_multiple(app.wb.construction())
+            .unwrap()
+            .iter()
+            .map(|sample| sample.rows[1])
+            .collect::<Vec<_>>()
+    };
+    let original = means(&mut window);
+    assert_eq!(original[..2], [3.0, 15.0]);
+    assert!(original[2].is_nan());
+
+    activate(&mut window, "A3");
+    window.frame(DT, vec![Event::Text("11".into())]);
+    press_key(&mut window, Key::Enter);
+    assert_eq!(means(&mut window)[..2], [5.0, 18.0]);
+    assert!(window.app.wb.undo());
+    window.frame(DT, Vec::new());
+    assert_eq!(means(&mut window)[..2], [3.0, 15.0]);
+    assert!(window.app.wb.redo());
+    window.frame(DT, Vec::new());
+    assert_eq!(means(&mut window)[..2], [5.0, 18.0]);
+    activate(&mut window, CLOSE);
+    assert!(window.app.spreadsheet_analysis.as_ref().unwrap().is_none());
+}
+
+#[test]
 fn selected_spreadsheet_cells_keep_their_gridlines() {
     use eframe::egui::Shape;
 

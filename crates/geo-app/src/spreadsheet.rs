@@ -5,7 +5,7 @@ use eframe::egui::{
     pos2, vec2, Align2, FontId, Key, Rect, Role, ScrollArea, Sense, Stroke, TextEdit, TextStyle,
     Ui, UiBuilder, WidgetInfo,
 };
-use geo_app_core::spreadsheet::{Analysis, AnalysisError};
+use geo_app_core::spreadsheet::{Analysis, AnalysisError, SAMPLE_STATISTIC_INDICES};
 use geo_app_core::text::{label, Label};
 use geo_kernel::spreadsheet::{Address, MAX_COLUMNS, MAX_INPUT_BYTES, MAX_ROWS};
 use geo_kernel::Construction;
@@ -35,7 +35,7 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
         .selection
         .bounds();
     let paired = first.column != last.column && first.row != last.row;
-    let (launch, close) = if Analysis::available() {
+    let (launch, multiple, close) = if Analysis::available() {
         ui.horizontal_wrapped(|ui| {
             let title = if paired {
                 "Analiza dwóch zmiennych"
@@ -45,6 +45,10 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
             let launch = ui.button("Analiza");
             launch.widget_info(|| WidgetInfo::labeled(Role::Button, true, title));
             let launch = launch.on_hover_text(title).clicked();
+            let multiple = ui.button("Próby");
+            let title = "Analiza wielu prób";
+            multiple.widget_info(|| WidgetInfo::labeled(Role::Button, true, title));
+            let multiple = multiple.on_hover_text(title).clicked();
             // Reserve the close slot so opening the summary cannot move the grid.
             let close = ui.add_visible(analysis_open, eframe::egui::Button::new("×"));
             let close = analysis_open && {
@@ -58,12 +62,12 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
                 .as_mut()
                 .expect("spreadsheet selection");
             ui.checkbox(&mut editor.range_extension_armed, "Zaznacz zakres");
-            (launch, close)
+            (launch, multiple, close)
         })
         .inner
     } else {
         ui.heading(label(Label::SpreadsheetView));
-        (false, false)
+        (false, false, false)
     };
     crate::app::file_notices(app, ui);
 
@@ -146,6 +150,9 @@ pub(crate) fn show(app: &mut App, ui: &mut Ui) {
     if enter {
         app.submit_spreadsheet_input();
         ui.ctx().request_repaint();
+    } else if multiple {
+        app.launch_multiple_spreadsheet_analysis();
+        ui.ctx().request_repaint();
     } else if launch {
         if paired {
             app.launch_paired_spreadsheet_analysis();
@@ -202,6 +209,7 @@ fn analysis_error(error: AnalysisError) -> &'static str {
         AnalysisError::PairedRange => {
             "Zaznacz zakres dwóch wierszy lub dwóch kolumn (do 256 komórek)."
         }
+        AnalysisError::SampleRange => "Zaznacz zakres do 256 komórek.",
         AnalysisError::Pairs => "Zaznacz zakres z co najmniej jedną parą liczb.",
         AnalysisError::Evaluation => "Nie udało się obliczyć statystyk.",
     }
@@ -215,6 +223,37 @@ fn show_analysis(analysis: &mut Analysis, c: &Construction, ui: &mut Ui) {
         format!("{}:{}", first.label(), last.label())
     };
     ui.heading(range);
+    if analysis.is_multiple() {
+        ScrollArea::both().min_scrolled_height(0.0).show(ui, |ui| {
+            match analysis.refresh_multiple(c) {
+                Ok(samples) => {
+                    eframe::egui::Grid::new("spreadsheet_samples").show(ui, |ui| {
+                        ui.label("Próba");
+                        for name in SAMPLE_STATISTIC_INDICES.map(|index| SUMMARY_NAMES[index]) {
+                            ui.label(name);
+                        }
+                        ui.end_row();
+                        for sample in samples {
+                            let first = sample.first.label();
+                            if sample.first != sample.last {
+                                ui.label(format!("{first}:{}", sample.last.label()));
+                            } else {
+                                ui.label(first);
+                            }
+                            for &value in &sample.rows {
+                                ui.label(c.format_display_number(value));
+                            }
+                            ui.end_row();
+                        }
+                    });
+                }
+                Err(error) => {
+                    ui.colored_label(theme::ERROR, analysis_error(error));
+                }
+            }
+        });
+        return;
+    }
     if analysis.is_paired() {
         if ui.button("Zamień X i Y").clicked() {
             analysis.swap_axes();
@@ -244,26 +283,27 @@ fn show_analysis(analysis: &mut Analysis, c: &Construction, ui: &mut Ui) {
         .min_scrolled_height(0.0)
         .show(ui, |ui| match analysis.refresh(c) {
             Ok(summary) => {
-                let names = [
-                    "Liczba danych",
-                    "Średnia",
-                    "Odchylenie standardowe",
-                    "Odchylenie standardowe próby",
-                    "Suma",
-                    "Suma kwadratów",
-                    "Minimum",
-                    "Pierwszy kwartyl",
-                    "Mediana",
-                    "Trzeci kwartyl",
-                    "Maksimum",
-                ];
-                show_statistic_rows(ui, c, &names, &summary.rows);
+                show_statistic_rows(ui, c, &SUMMARY_NAMES, &summary.rows);
             }
             Err(error) => {
                 ui.colored_label(theme::ERROR, analysis_error(error));
             }
         });
 }
+
+const SUMMARY_NAMES: [&str; 11] = [
+    "Liczba danych",
+    "Średnia",
+    "Odchylenie standardowe",
+    "Odchylenie standardowe próby",
+    "Suma",
+    "Suma kwadratów",
+    "Minimum",
+    "Pierwszy kwartyl",
+    "Mediana",
+    "Trzeci kwartyl",
+    "Maksimum",
+];
 
 fn show_statistic_rows(ui: &mut Ui, c: &Construction, names: &[&str], rows: &[f64]) {
     eframe::egui::Grid::new("spreadsheet_statistics").show(ui, |ui| {
