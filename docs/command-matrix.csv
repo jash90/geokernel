@@ -287,7 +287,7 @@ RandomUniform,,probability,,out_of_scope,,,
 RandomBinomial,,probability,,out_of_scope,,,
 RandomPoisson,,probability,,out_of_scope,,,
 Normal,,probability,P2,done,5,5,"Numeric density, cumulative probability and interval, and the explicit distribution function in x."
-LogNormal,,probability,,out_of_scope,,,
+LogNormal,,probability,P2,done,4,4,"Numeric density, cumulative probability and the explicit distribution function in x."
 Logistic,,probability,P2,done,4,4,"Numeric density, cumulative probability and the explicit distribution function in x."
 InverseLogistic,,probability,P2,done,1,1,Logistic quantile for a numeric probability.
 InverseNormal,,probability,P2,done,1,1,Normal quantile for a numeric probability.
@@ -323,7 +323,7 @@ InverseZipf,,probability,,out_of_scope,,,
 Triangular,,probability,,out_of_scope,,,
 Uniform,,probability,,out_of_scope,,,
 Erlang,,probability,,out_of_scope,,,
-InverseLogNormal,,probability,,out_of_scope,,,
+InverseLogNormal,,probability,P2,done,1,1,Log-normal quantile for a numeric probability.
 RandomPolynomial,,probability,,out_of_scope,,,
 RandomDiscrete,,probability,,out_of_scope,,,
 RandomPointIn,,probability,,out_of_scope,,,

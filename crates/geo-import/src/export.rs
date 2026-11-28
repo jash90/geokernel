@@ -691,7 +691,11 @@ impl Writer<'_> {
             };
             return self.command(command, &args[..1], outputs);
         }
-        if let Some((name @ ("Normal" | "Exponential" | "Cauchy" | "Logistic"), inputs)) = &call {
+        if let Some((
+            name @ ("Normal" | "Exponential" | "Cauchy" | "Logistic" | "LogNormal"),
+            inputs,
+        )) = &call
+        {
             let sample_slot = if *name == "Exponential" { 1 } else { 2 };
             if c.kind(id) == Kind::Function
                 && inputs
@@ -856,6 +860,7 @@ fn distribution_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
                             ("Exponential", 1),
                             ("Cauchy", 2),
                             ("Logistic", 2),
+                            ("LogNormal", 2),
                         ]
                         .into_iter()
                         .find_map(|(command, slot)| {

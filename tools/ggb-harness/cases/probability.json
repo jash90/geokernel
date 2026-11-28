@@ -1309,6 +1309,319 @@
           "action": "initial"
         }
       ]
+    },
+    {
+      "id": "probability-lognormal-001",
+      "group": "probability",
+      "script": [
+        "m = 0.5",
+        "s = 2",
+        "t = 3",
+        "a = LogNormal(m,s,t)",
+        "b = LogNormal(m,s,t,true)",
+        "c = LogNormal(m,s,t,false)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 0.2
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": -1
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": -1
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": -2
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 4
+        },
+        {
+          "action": "set_number",
+          "label": "m",
+          "value": -1
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 0.5
+        }
+      ]
+    },
+    {
+      "id": "probability-lognormal-002",
+      "group": "probability",
+      "script": [
+        "m = 0.5",
+        "s = 2",
+        "n = 1",
+        "p = n>0",
+        "f = LogNormal(m,s,x)",
+        "g = LogNormal(m,s,(x),false)",
+        "h = LogNormal(m,s,x,p)",
+        "a = f(3)",
+        "b = g(2)",
+        "c = h(5)",
+        "d = IsDefined(h)",
+        "e1 = h(0)",
+        "g1 = g(0)",
+        "h1 = f(-1)",
+        "k1 = g(-2)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": -2
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "m",
+          "value": -2
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "probability-lognormal-003",
+      "group": "probability",
+      "script": [
+        "m = 0.5",
+        "s = 2",
+        "p = 0",
+        "a = InverseLogNormal(m,s,p)",
+        "b = InverseLogNormal(m,s,0.7-0.2)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 1e-16
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.025
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.25
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.5
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.75
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.999
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": -0.1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 1.1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.75
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": -2
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "probability-lognormal-004",
+      "group": "probability",
+      "script": [
+        "s = 10^308",
+        "a = LogNormal(0,1,10^300)",
+        "b = LogNormal(0,1,10^(-300))",
+        "c = LogNormal(0,1,10^(-300),false)",
+        "d = LogNormal(0,1,10^300,false)",
+        "e1 = LogNormal(0,s,s)",
+        "g1 = LogNormal(-s,s,s,false)",
+        "h1 = LogNormal(0,1,1/0)",
+        "k1 = LogNormal(0,1,1/0,false)",
+        "l1 = LogNormal(0,1,-1/0)",
+        "f = LogNormal(0,1,x,false)",
+        "g = LogNormal(0,s,x)",
+        "u = f(10^(-300))",
+        "v = f(10^300)",
+        "w = g(s)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-lognormal-005",
+      "group": "probability",
+      "script": [
+        "L = Segment((0,0),(2,0))",
+        "a = LogNormal(0,L,1.5)",
+        "b = InverseLogNormal(0,L,0.75)",
+        "f = (LogNormal(0,L,x))",
+        "g = 2*LogNormal(0,L,x,false)",
+        "h = If(x>0,LogNormal(0,L,x),0)",
+        "c = f(1.5)",
+        "d = g(1.5)",
+        "q = h(1.5)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-lognormaledges-001",
+      "group": "probability",
+      "script": [
+        "a = InverseLogNormal(2,3,0)",
+        "b = InverseLogNormal(2,3,1)",
+        "c = InverseLogNormal(2,3,-0.5)",
+        "d = InverseLogNormal(2,3,1.5)",
+        "e1 = InverseLogNormal(2,3,0/0)",
+        "g1 = InverseLogNormal(0/0,3,0.5)",
+        "h1 = InverseLogNormal(2,0/0,0.5)",
+        "k1 = InverseLogNormal(1/0,1,0.5)",
+        "l1 = InverseLogNormal(10^308,10^308,10^(-300))",
+        "p1 = InverseLogNormal(0,1,10^(-300))",
+        "r1 = InverseLogNormal(0,1,1-10^(-16))",
+        "s1 = InverseLogNormal(1,0.5,0.3)",
+        "n1 = LogNormal(0/0,1,1)",
+        "o1 = LogNormal(0,1,0/0,false)",
+        "q1 = LogNormal(0/0,1,-1)",
+        "u1 = LogNormal(0,0/0,2)",
+        "f = LogNormal(2,3,x)",
+        "g = LogNormal(-2,-3,x,false)",
+        "m = 1",
+        "r = -4",
+        "q = LogNormal(m,r,x,false)",
+        "h = FormulaText(f)",
+        "j = FormulaText(g)",
+        "k = FormulaText(LogNormal(0,1,x),false)",
+        "t1 = FormulaText(q)",
+        "t2 = FormulaText(q,false)",
+        "t3 = FormulaText(LogNormal(m,r,x))"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-lognormaledges-002",
+      "group": "probability",
+      "script": [
+        "f = LogNormal(0,1,x)",
+        "g = LogNormal(0,1,x,false)",
+        "q = LogNormal(-1.5,2,x,false)",
+        "a = FormulaText(f)",
+        "b = FormulaText(g)",
+        "c = Text(f)",
+        "d = Text(g)",
+        "e1 = Text(q)",
+        "w = LogNormal(2,-3,x)",
+        "g1 = \"\" + w",
+        "h = FormulaText(q)",
+        "k = f(0)",
+        "l = g(0)",
+        "n = f(10^(-300))"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
     }
   ]
 }

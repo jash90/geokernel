@@ -115,6 +115,8 @@ PARTIAL = {
     "InverseCauchy": "Cauchy quantile for a numeric probability.",
     "Logistic": "Numeric density, cumulative probability and the explicit distribution function in x.",
     "InverseLogistic": "Logistic quantile for a numeric probability.",
+    "LogNormal": "Numeric density, cumulative probability and the explicit distribution function in x.",
+    "InverseLogNormal": "Log-normal quantile for a numeric probability.",
     "Locus": "Tracing point with a movable path point or slider, slope function with initial point, or slope field with initial point",
     "Line": "Line(point, point); Line(point, line, segment or ray); Line(point, vector)",
     "Segment": "Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output",
