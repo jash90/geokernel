@@ -5679,3 +5679,28 @@ cases = ["probability-cauchy-002"]
 command = "InverseCauchy"
 form = "number,number,number"
 cases = ["probability-cauchy-003"]
+
+[[form]]
+command = "Logistic"
+form = "number,number,number"
+cases = ["probability-logistic-001"]
+
+[[form]]
+command = "Logistic"
+form = "number,number,number,boolean"
+cases = ["probability-logistic-001"]
+
+[[form]]
+command = "Logistic"
+form = "number,number,function"
+cases = ["probability-logistic-002"]
+
+[[form]]
+command = "Logistic"
+form = "number,number,function,boolean"
+cases = ["probability-logistic-002"]
+
+[[form]]
+command = "InverseLogistic"
+form = "number,number,number"
+cases = ["probability-logistic-003"]

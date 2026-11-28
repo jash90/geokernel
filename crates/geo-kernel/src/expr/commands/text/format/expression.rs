@@ -302,7 +302,8 @@ impl Format {
             }
             Node::Probability(
                 op @ (Probability::Normal { function: true }
-                | Probability::Cauchy { function: true }),
+                | Probability::Cauchy { function: true }
+                | Probability::Logistic { function: true }),
                 [mean, deviation, x, flag],
             ) => {
                 let x = term(x, 0)?;
@@ -313,7 +314,11 @@ impl Format {
                     } else {
                         term(flag, 0)?
                     };
-                    let name = if cauchy { "Cauchy" } else { "Normal" };
+                    let name = match op {
+                        Probability::Cauchy { .. } => "Cauchy",
+                        Probability::Logistic { .. } => "Logistic",
+                        _ => "Normal",
+                    };
                     return Some(
                         self.command(name, &[term(mean, 0)?, term(deviation, 0)?, x, flag]),
                     );
@@ -328,7 +333,21 @@ impl Format {
                     format!("{x} - {mean}")
                 };
                 let cumulative = flag == NONE || matches!(ctx.full(flag).val, Val::B(true, _));
-                if cauchy {
+                if matches!(op, Probability::Logistic { .. }) {
+                    let tail = if self.latex {
+                        format!(r"\mathit{{e}}^{{-\frac{{{offset}}}{{\left|{sd}\right|}}}}")
+                    } else {
+                        format!("ℯ^(-({offset}) / abs({sd}))")
+                    };
+                    match (self.latex, cumulative) {
+                        (true, true) => format!(r"\left({tail} + 1 \right)^{{-1}}"),
+                        (false, true) => format!("({tail} + 1)⁻¹"),
+                        (true, false) => format!(
+                            r"\frac{{{tail}}}{{\left({tail} + 1 \right)^{{2}} \; \left|{sd}\right|}}"
+                        ),
+                        (false, false) => format!("{tail} / (({tail} + 1)² abs({sd}))"),
+                    }
+                } else if cauchy {
                     match (self.latex, cumulative) {
                         (true, true) => format!(
                             r"\frac{{\operatorname{{tan⁻¹}} \left( \frac{{{offset}}}{{\left|{sd}\right|}} \right)}}{{\pi }} + 0.5"

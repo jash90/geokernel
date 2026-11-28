@@ -1,0 +1,211 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-logisticedges-001",
+      "group": "probability",
+      "script": [
+        "a = InverseLogistic(2,3,0)",
+        "b = InverseLogistic(2,3,1)",
+        "c = InverseLogistic(2,3,-0.5)",
+        "d = InverseLogistic(2,3,1.5)",
+        "e1 = InverseLogistic(2,3,0/0)",
+        "g1 = InverseLogistic(0/0,3,0.5)",
+        "h1 = InverseLogistic(2,0/0,0.5)",
+        "k1 = InverseLogistic(1/0,1,0.5)",
+        "l1 = InverseLogistic(10^308,10^308,10^(-300))",
+        "n1 = Logistic(0/0,1,0)",
+        "o1 = Logistic(0,1,0/0,false)",
+        "f = Logistic(2,3,x)",
+        "g = Logistic(-2,-3,x,false)",
+        "m = 1",
+        "r = -4",
+        "q = Logistic(m,r,x,false)",
+        "h = FormulaText(f)",
+        "j = FormulaText(g)",
+        "k = FormulaText(Logistic(0,1,x),false)",
+        "t1 = FormulaText(q)",
+        "t2 = FormulaText(q,false)",
+        "t3 = FormulaText(Logistic(m,r,x))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e1": { "type": "number", "defined": false },
+          "g1": { "type": "number", "defined": false },
+          "h1": { "type": "number", "defined": false },
+          "k1": { "type": "number", "defined": true, "infinity": 1 },
+          "l1": { "type": "number", "defined": true, "infinity": -1 },
+          "n1": { "type": "number", "defined": false },
+          "o1": { "type": "number", "defined": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.03444519566621117],
+              [-4.0, 0.11920292202211755],
+              [-2.0, 0.20860852732604496],
+              [-1.0, 0.2689414213699951],
+              [-0.5, 0.3029407160345927],
+              [0.0, 0.33924363123418283],
+              [0.5, 0.3775406687981454],
+              [1.0, 0.4174297935376853],
+              [2.0, 0.5],
+              [4.0, 0.6607563687658172],
+              [8.0, 0.8807970779778823]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.03499786180116884],
+              [-4.0, 0.0747191299670762],
+              [-2.0, 0.08333333333333333],
+              [-1.0, 0.08106072033492359],
+              [-0.5, 0.07833457073386484],
+              [0.0, 0.07471912996707619],
+              [0.5, 0.07038921286768034],
+              [1.0, 0.06553731108049396],
+              [2.0, 0.0550303365509679],
+              [4.0, 0.03499786180116883],
+              [8.0, 0.011086241387242535]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": -4.0 },
+          "q": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.021564486110640744],
+              [-4.0, 0.04327619674812425],
+              [-2.0, 0.0544737484404535],
+              [-1.0, 0.058750928050398624],
+              [-0.5, 0.0603532253132381],
+              [0.0, 0.06153352068439959],
+              [0.5, 0.062256493753404384],
+              [1.0, 0.0625],
+              [2.0, 0.06153352068439958],
+              [4.0, 0.054473748440453496],
+              [8.0, 0.03153230629666381]
+            ]
+          },
+          "h": { "type": "text", "defined": true, "text": "\\left(\\mathit{e}^{-\\frac{x - 2}{\\left|3\\right|}} + 1 \\right)^{-1}" },
+          "j": { "type": "text", "defined": true, "text": "\\frac{\\mathit{e}^{-\\frac{x + 2}{\\left|-3\\right|}}}{\\left(\\mathit{e}^{-\\frac{x + 2}{\\left|-3\\right|}} + 1 \\right)^{2} \\; \\left|-3\\right|}" },
+          "k": { "type": "text", "defined": true, "text": "Logistic\\left(0, 1, x, true \\right)" },
+          "t1": { "type": "text", "defined": true, "text": "\\frac{\\mathit{e}^{-\\frac{x - 1}{\\left|-4\\right|}}}{\\left(\\mathit{e}^{-\\frac{x - 1}{\\left|-4\\right|}} + 1 \\right)^{2} \\; \\left|-4\\right|}" },
+          "t2": { "type": "text", "defined": true, "text": "Logistic\\left(m, r, x, false \\right)" },
+          "t3": { "type": "text", "defined": true, "text": "\\left(\\mathit{e}^{-\\frac{x - 1}{\\left|-4\\right|}} + 1 \\right)^{-1}" }
+        }
+      ]
+    },
+    {
+      "id": "probability-logisticedges-002",
+      "group": "probability",
+      "script": [
+        "f = Logistic(0,1,x)",
+        "g = Logistic(0,1,x,false)",
+        "q = Logistic(-1.5,2,x,false)",
+        "a = FormulaText(f)",
+        "b = FormulaText(g)",
+        "c = Text(f)",
+        "d = Text(g)",
+        "e1 = Text(q)",
+        "l = Logistic(2,-3,x)",
+        "g1 = \"\" + l",
+        "h = FormulaText(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.353501304664781E-4],
+              [-4.0, 0.01798620996209156],
+              [-2.0, 0.11920292202211755],
+              [-1.0, 0.2689414213699951],
+              [-0.5, 0.3775406687981454],
+              [0.0, 0.5],
+              [0.5, 0.6224593312018546],
+              [1.0, 0.7310585786300049],
+              [2.0, 0.8807970779778823],
+              [4.0, 0.9820137900379085],
+              [8.0, 0.9996646498695336]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.3523767075647424E-4],
+              [-4.0, 0.017662706213291118],
+              [-2.0, 0.10499358540350652],
+              [-1.0, 0.19661193324148185],
+              [-0.5, 0.2350037122015945],
+              [0.0, 0.25],
+              [0.5, 0.2350037122015945],
+              [1.0, 0.19661193324148188],
+              [2.0, 0.1049935854035065],
+              [4.0, 0.017662706213291114],
+              [8.0, 3.352376707564743E-4]
+            ]
+          },
+          "q": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.017966795412664063],
+              [-4.0, 0.0865523934962485],
+              [-2.0, 0.12306704136879917],
+              [-1.0, 0.12306704136879916],
+              [-0.5, 0.11750185610079725],
+              [0.0, 0.10894749688090699],
+              [0.5, 0.09830596662074094],
+              [1.0, 0.0865523934962485],
+              [2.0, 0.06306461259332762],
+              [4.0, 0.028238122322437026],
+              [8.0, 0.004251956078844772]
+            ]
+          },
+          "a": { "type": "text", "defined": true, "text": "\\left(\\mathit{e}^{-\\frac{x}{\\left|1\\right|}} + 1 \\right)^{-1}" },
+          "b": { "type": "text", "defined": true, "text": "\\frac{\\mathit{e}^{-\\frac{x}{\\left|1\\right|}}}{\\left(\\mathit{e}^{-\\frac{x}{\\left|1\\right|}} + 1 \\right)^{2} \\; \\left|1\\right|}" },
+          "c": { "type": "text", "defined": true, "text": "(ℯ^(-(x) / abs(1)) + 1)⁻¹" },
+          "d": { "type": "text", "defined": true, "text": "ℯ^(-(x) / abs(1)) / ((ℯ^(-(x) / abs(1)) + 1)² abs(1))" },
+          "e1": { "type": "text", "defined": true, "text": "ℯ^(-(x + 1.5) / abs(2)) / ((ℯ^(-(x + 1.5) / abs(2)) + 1)² abs(2))" },
+          "l": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.03444519566621117],
+              [-4.0, 0.11920292202211755],
+              [-2.0, 0.20860852732604496],
+              [-1.0, 0.2689414213699951],
+              [-0.5, 0.3029407160345927],
+              [0.0, 0.33924363123418283],
+              [0.5, 0.3775406687981454],
+              [1.0, 0.4174297935376853],
+              [2.0, 0.5],
+              [4.0, 0.6607563687658172],
+              [8.0, 0.8807970779778823]
+            ]
+          },
+          "g1": { "type": "text", "defined": true, "text": "(ℯ^(-(x - 2) / abs(-3)) + 1)⁻¹" },
+          "h": { "type": "text", "defined": true, "text": "\\frac{\\mathit{e}^{-\\frac{x + 1.5}{\\left|2\\right|}}}{\\left(\\mathit{e}^{-\\frac{x + 1.5}{\\left|2\\right|}} + 1 \\right)^{2} \\; \\left|2\\right|}" }
+        }
+      ]
+    }
+  ]
+}

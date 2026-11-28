@@ -10,6 +10,8 @@ pub(super) const NAMES: &[&str] = &[
     "InverseExponential",
     "Cauchy",
     "InverseCauchy",
+    "Logistic",
+    "InverseLogistic",
 ];
 const QUANTILE_STEPS: u64 = 60;
 
@@ -21,6 +23,8 @@ pub(crate) enum Probability {
     InverseExponential,
     Cauchy { function: bool },
     InverseCauchy,
+    Logistic { function: bool },
+    InverseLogistic,
 }
 
 impl Probability {
@@ -30,6 +34,7 @@ impl Probability {
             Self::Normal { function: true }
                 | Self::Exponential { function: true }
                 | Self::Cauchy { function: true }
+                | Self::Logistic { function: true }
         )
     }
 
@@ -59,6 +64,10 @@ pub(super) fn parse(p: &mut Parser, name: &str) -> Result<Option<u32>, String> {
             function: matches!(p.node(*x), Node::Var),
         },
         ("InverseCauchy", [_, _, _]) => Probability::InverseCauchy,
+        ("Logistic", [_, _, x] | [_, _, x, _]) => Probability::Logistic {
+            function: matches!(p.node(*x), Node::Var),
+        },
+        ("InverseLogistic", [_, _, _]) => Probability::InverseLogistic,
         _ => return Err(format!("wrong number of arguments to `{name}`")),
     };
     let mut slots = [NONE; 4];
@@ -88,6 +97,7 @@ pub(in crate::expr) fn value_type(
                 Probability::Normal { .. }
                     | Probability::Exponential { .. }
                     | Probability::Cauchy { .. }
+                    | Probability::Logistic { .. }
             ),
             Some(Ty::Num(_)) => matches!(op, Probability::Normal { function: false }),
             _ => false,
@@ -130,6 +140,16 @@ pub(in crate::expr) fn value<const M: bool>(
             );
         }
         Probability::InverseCauchy => return inverse_cauchy(mean, deviation, x),
+        Probability::Logistic { function } => {
+            return logistic(
+                mean,
+                deviation,
+                x,
+                matches!(fourth, Val::B(true, _)),
+                function,
+            );
+        }
+        Probability::InverseLogistic => return inverse_logistic(mean, deviation, x),
         _ => {}
     }
     if matches!(op, Probability::Normal { function: true }) {
@@ -234,6 +254,32 @@ fn inverse_cauchy(location: f64, scale: f64, probability: f64) -> f64 {
     }
 }
 
+fn logistic(mean: f64, scale: f64, x: f64, cumulative: bool, function: bool) -> f64 {
+    let scale = scale.abs();
+    let tail = libm::exp(-(x - mean) / scale);
+    let plus_one = tail + 1.0;
+    if cumulative {
+        1.0 / plus_one
+    } else if function {
+        // The function multiplies the scale into the denominator. The
+        // scalar density divides by it first.
+        tail / (scale * (plus_one * plus_one))
+    } else {
+        tail / scale / (plus_one * plus_one)
+    }
+}
+
+fn inverse_logistic(mean: f64, scale: f64, probability: f64) -> f64 {
+    if mean.is_nan() || scale.is_nan() || probability.is_nan() {
+        return f64::NAN;
+    }
+    // The reference returns 0, not undefined, outside its domain.
+    if scale <= 0.0 || probability <= 0.0 || probability > 1.0 {
+        return 0.0;
+    }
+    mean - libm::log(1.0 / probability - 1.0) * scale
+}
+
 fn cdf(mean: f64, deviation: f64, x: f64) -> f64 {
     libm::erfc(-(x - mean) / (deviation * SQRT_2)) * 0.5
 }
@@ -288,6 +334,11 @@ mod tests {
             "f = Cauchy(0,x,x)",
             "f = Cauchy(0,1,2,3)",
             "f = InverseCauchy(0,1,x)",
+            "f = Logistic(0,1,x+1)",
+            "f = Logistic(0,x,x)",
+            "f = Logistic(0,1,2,3)",
+            "f = Logistic(0,1,x,2)",
+            "f = InverseLogistic(0,1,x)",
         ] {
             assert!(crate::script::load(source).is_err(), "{source}");
         }

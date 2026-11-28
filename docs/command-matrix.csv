@@ -288,8 +288,8 @@ RandomBinomial,,probability,,out_of_scope,,,
 RandomPoisson,,probability,,out_of_scope,,,
 Normal,,probability,P2,done,5,5,"Numeric density, cumulative probability and interval, and the explicit distribution function in x."
 LogNormal,,probability,,out_of_scope,,,
-Logistic,,probability,,out_of_scope,,,
-InverseLogistic,,probability,,out_of_scope,,,
+Logistic,,probability,P2,done,4,4,"Numeric density, cumulative probability and the explicit distribution function in x."
+InverseLogistic,,probability,P2,done,1,1,Logistic quantile for a numeric probability.
 InverseNormal,,probability,P2,done,1,1,Normal quantile for a numeric probability.
 Binomial,nCr,english,P2,done,,,
 BinomialDist,,probability,,out_of_scope,,,

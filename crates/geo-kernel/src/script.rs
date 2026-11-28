@@ -857,6 +857,8 @@ fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
                     | "InverseExponential"
                     | "Cauchy"
                     | "InverseCauchy"
+                    | "Logistic"
+                    | "InverseLogistic"
             ) && split_call(arg).is_some_and(|(name, args)| {
                 name == "Segment" && args.iter().any(|point| point.starts_with('('))
             });
@@ -1718,7 +1720,7 @@ fn resolve_text_argument(c: &mut Construction, rhs: &str) -> Result<Option<Strin
         return Ok(None);
     };
     let label = format!("\0textarg{}", c.len());
-    let id = if matches!(command, "Normal" | "Exponential" | "Cauchy") {
+    let id = if matches!(command, "Normal" | "Exponential" | "Cauchy" | "Logistic") {
         let Some(function) = crate::expr::argument_function(c, first, &label) else {
             return Ok(None);
         };
