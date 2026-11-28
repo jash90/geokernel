@@ -5,7 +5,10 @@ use crate::app::App;
 use geo_kernel::spreadsheet::{self, Address, MAX_ROWS};
 
 mod analysis;
-pub use analysis::{Analysis, AnalysisError, PairedSummary, Summary, STATISTICS};
+pub use analysis::{
+    Analysis, AnalysisError, PairedSummary, SampleSummary, Summary, SAMPLE_STATISTIC_INDICES,
+    STATISTICS,
+};
 
 #[derive(Debug)]
 pub struct Editor {
@@ -64,6 +67,10 @@ impl App {
 
     pub fn launch_paired_spreadsheet_analysis(&mut self) {
         self.launch_analysis(Analysis::new_paired);
+    }
+
+    pub fn launch_multiple_spreadsheet_analysis(&mut self) {
+        self.launch_analysis(Analysis::new_multiple);
     }
 
     fn launch_analysis(&mut self, new: fn(Selection) -> Result<Analysis, AnalysisError>) {

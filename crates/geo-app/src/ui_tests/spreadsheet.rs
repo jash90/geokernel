@@ -173,6 +173,128 @@ fn paired_analysis_swaps_axes_and_tracks_sheet_edits_and_undo() {
 }
 
 #[test]
+fn multiple_sample_analysis_keeps_separate_rows_through_edits_and_undo() {
+    let mut window = sheet(Profile::Desktop, (1000.0, 800.0));
+    for (cell, value) in [
+        ("B1", "10"),
+        ("B3", "=A3 + 15"),
+        ("C2", "=90°"),
+        ("C3", "7"),
+    ] {
+        window
+            .app
+            .wb
+            .edit_spreadsheet_cell(Address::parse(cell).unwrap(), value)
+            .unwrap();
+    }
+    window.frame(DT, Vec::new());
+    activate(&mut window, "A1");
+    activate(&mut window, EXTEND);
+    activate(&mut window, "C3");
+    activate(&mut window, "Analiza wielu prób");
+    assert!(analysis(&window).is_multiple());
+    let shapes = &window.last_output().unwrap().shapes;
+    for title in ["B1:B3", "C1:C3"] {
+        assert!(shapes.iter().any(|shape| {
+            matches!(&shape.shape, eframe::egui::Shape::Text(text) if text.galley.text() == title)
+        }), "sample title {title} was not drawn");
+    }
+    let means = |window: &mut Headless| {
+        let app = &mut window.app;
+        app.spreadsheet_analysis
+            .as_mut()
+            .unwrap()
+            .as_mut()
+            .unwrap()
+            .refresh_multiple(app.wb.construction())
+            .unwrap()
+            .iter()
+            .map(|sample| sample.rows[1])
+            .collect::<Vec<_>>()
+    };
+    let original = means(&mut window);
+    assert_eq!(original[..2], [3.0, 15.0]);
+    assert_eq!(original[2], 7.0);
+
+    activate(&mut window, "A3");
+    window.frame(DT, vec![Event::Text("11".into())]);
+    press_key(&mut window, Key::Enter);
+    assert_eq!(means(&mut window)[..2], [5.0, 18.0]);
+    assert!(window.app.wb.undo());
+    window.frame(DT, Vec::new());
+    assert_eq!(means(&mut window)[..2], [3.0, 15.0]);
+    assert!(window.app.wb.redo());
+    window.frame(DT, Vec::new());
+    assert_eq!(means(&mut window)[..2], [5.0, 18.0]);
+    activate(&mut window, CLOSE);
+    assert!(window.app.spreadsheet_analysis.as_ref().unwrap().is_none());
+}
+
+#[test]
+fn sample_headings_stay_visible_and_follow_the_table_when_scrolling() {
+    use eframe::egui::{self, Pos2, Shape, Vec2};
+
+    let wb = Workbench::from_script("FillCells(A1:DX2, 1)").unwrap();
+    let mut window = Headless::new(wb, None, Profile::Desktop, (1000.0, 700.0), 1.0);
+    window.app.show_spreadsheet = true;
+    window
+        .app
+        .select_spreadsheet_cell(Address::parse("A1").unwrap());
+    window
+        .app
+        .extend_spreadsheet_selection(Address::parse("DX2").unwrap());
+    window.app.launch_multiple_spreadsheet_analysis();
+    for _ in 0..3 {
+        window.frame(DT, Vec::new());
+    }
+    let painted = |window: &Headless, label| -> Option<Pos2> {
+        window
+            .last_output()
+            .unwrap()
+            .shapes
+            .iter()
+            .find_map(|clipped| {
+                let Shape::Text(text) = &clipped.shape else {
+                    return None;
+                };
+                (text.galley.text() == label && clipped.clip_rect.contains(text.pos))
+                    .then_some(text.pos)
+            })
+    };
+    let heading = painted(&window, "Próba").unwrap();
+    let first = painted(&window, "A1:A2").unwrap();
+    let pointer = first + egui::vec2(30.0, 20.0);
+    let scroll = |window: &mut Headless, delta: Vec2| {
+        window.frame(
+            DT,
+            vec![
+                Event::PointerMoved(pointer),
+                Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta,
+                    modifiers: Modifiers::NONE,
+                    phase: TouchPhase::Move,
+                    source: egui::MouseWheelSource::Wheel,
+                },
+            ],
+        );
+        for _ in 0..20 {
+            window.frame(DT, Vec::new());
+        }
+    };
+    scroll(&mut window, egui::vec2(-24.0, 0.0));
+    let shifted_heading = painted(&window, "Próba").unwrap();
+    let shifted_first = painted(&window, "A1:A2").unwrap();
+    assert!(shifted_heading.x < heading.x - 10.0);
+    assert!(((shifted_heading.x - heading.x) - (shifted_first.x - first.x)).abs() < 1.0);
+
+    scroll(&mut window, egui::vec2(0.0, -180.0));
+    assert_eq!(painted(&window, "Próba"), Some(shifted_heading));
+    assert!(painted(&window, "A1:A2").is_none());
+    assert!(painted(&window, "P1:P2").is_some());
+}
+
+#[test]
 fn selected_spreadsheet_cells_keep_their_gridlines() {
     use eframe::egui::Shape;
 
