@@ -1003,7 +1003,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:2294` | **unsupported-command.** the kernel refuses the input: unknown command `InverseBinomial` |
 | `commands/CommandsTest.java:2299`, `commands/CommandsTest.java:2300`, `commands/CommandsTest.java:2301`, `commands/CommandsTest.java:2302`, `commands/CommandsTest.java:2303`, `commands/CommandsTest.java:2304`, `commands/CommandsTest.java:2305`, `commands/CommandsTest.java:2306`, `commands/CommandsTest.java:2307`, `commands/CommandsTest.java:2308`, `commands/CommandsTest.java:2309`, `commands/CommandsTest.java:2310`, `commands/CommandsTest.java:2311` | **unsupported-command.** the kernel refuses the input: unknown command `InverseBinomialMinimumTrials` |
 | `commands/CommandsTest.java:2346` | **unsupported-command.** the kernel refuses the input: unknown command `InverseHyperGeometric` |
-| `commands/CommandsTest.java:2356` | **unsupported-command.** the kernel refuses the input: unknown command `InverseLogNormal` |
 | `commands/CommandsTest.java:2366` | **unsupported-command.** the kernel refuses the input: unknown command `InversePascal` |
 | `commands/CommandsTest.java:2371` | **unsupported-command.** the kernel refuses the input: unknown command `InversePoisson` |
 | `commands/CommandsTest.java:2376` | **unsupported-command.** the kernel refuses the input: unknown command `InverseTDistribution` |
