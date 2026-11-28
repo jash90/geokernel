@@ -358,14 +358,12 @@ impl Format {
                 // Plain text shows the function's value string either way.
                 let x = term(x, 0)?;
                 let number = |i| self.number(ctx.full_number(i));
-                let (shape, lowered, quotient, scale) = if substitute || !self.latex {
+                let (shape, lowered, scale) = if substitute || !self.latex {
                     let (shape, scale) = (number(shape), number(scale));
-                    (shape.clone(), shape.clone(), shape, scale)
+                    (shape.clone(), shape, scale)
                 } else {
                     // LaTeX fractions need no parentheses around either part.
-                    let operand = if self.latex { 0 } else { 6 };
-                    let (quotient, scale) = (term(shape, operand)?, term(scale, operand)?);
-                    (term(shape, 0)?, term(shape, 4)?, quotient, scale)
+                    (term(shape, 0)?, term(shape, 4)?, term(scale, 0)?)
                 };
                 let cumulative = flag == NONE || matches!(ctx.full(flag).val, Val::B(true, _));
                 let branch = if self.latex {
@@ -380,7 +378,7 @@ impl Format {
                         format!("1 - {survival}")
                     } else {
                         format!(
-                            r"\frac{{{quotient}}}{{{scale}}} \; {ratio}^{{{lowered} - 1}} \; {survival}"
+                            r"\frac{{{shape}}}{{{scale}}} \; {ratio}^{{{lowered} - 1}} \; {survival}"
                         )
                     }
                 } else {
@@ -393,7 +391,7 @@ impl Format {
                     if cumulative {
                         format!("1 - {survival}")
                     } else {
-                        format!("{quotient} / {scale} {ratio}^({lowered} - 1) {survival}")
+                        format!("{shape} / {scale} {ratio}^({lowered} - 1) {survival}")
                     }
                 };
                 if self.latex {
