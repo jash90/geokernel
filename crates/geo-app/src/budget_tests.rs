@@ -1584,6 +1584,59 @@ FillCells(B1:M62, 1)",
 }
 
 #[test]
+fn multiple_sample_spreadsheet_analysis_fits_the_frame_budget() {
+    use geo_kernel::spreadsheet::Address;
+
+    let mut w = Window::with("FillCells(A1:DX2, 1)", String::new());
+    w.app.show_spreadsheet = true;
+    assert_eq!(w.app.wb.construction().spreadsheet_cells().count(), 256);
+    let first = Address::parse("A1").unwrap();
+    w.app.select_spreadsheet_cell(first);
+    w.app
+        .extend_spreadsheet_selection(Address::parse("DX2").unwrap());
+    w.app.launch_multiple_spreadsheet_analysis();
+    assert!(w
+        .app
+        .spreadsheet_analysis
+        .as_ref()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .is_multiple());
+    w.ctx
+        .global_style_mut(|style| style.visuals.text_cursor.blink = false);
+
+    let settled = w.settled(5);
+    let start = std::time::Instant::now();
+    for _ in 0..60 {
+        assert_eq!(w.step(Vec::new()), settled);
+    }
+    let idle_ms = start.elapsed().as_secs_f64() * 1000.0 / 60.0;
+    assert!(settled.texts < 350 && settled.shapes < 1000, "{settled:?}");
+
+    let mut refresh_times = [0.0; 15];
+    for (index, time) in refresh_times.iter_mut().enumerate() {
+        let value = (index + 2).to_string();
+        w.app.wb.edit_spreadsheet_cell(first, &value).unwrap();
+        let start = std::time::Instant::now();
+        let updated = w.step(Vec::new());
+        *time = start.elapsed().as_secs_f64() * 1000.0;
+        assert!(updated.texts < 350 && updated.shapes < 1000, "{updated:?}");
+    }
+    refresh_times.sort_unstable_by(f64::total_cmp);
+    let refresh_ms = refresh_times[refresh_times.len() / 2];
+    println!(
+        "Spreadsheet sample analysis: {idle_ms:.2} ms idle, {refresh_ms:.2} ms refresh median"
+    );
+    if !cfg!(debug_assertions) {
+        assert!(
+            idle_ms <= 4.0 && refresh_ms <= 4.0,
+            "exceeds the 4 ms frame budget"
+        );
+    }
+}
+
+#[test]
 fn canvas_list_points_are_drawn_with_a_frame_limit() {
     let mut w = Window::with("l = Sequence((k / 100, 1), k, 1, 3000)", String::new());
     let drawn = w.settled(2);
