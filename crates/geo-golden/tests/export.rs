@@ -3708,14 +3708,18 @@ fn exported_xml(wb: &Workbench) -> String {
 #[test]
 fn normal_function_archive_keeps_the_default_cumulative_flag() {
     let wb = Workbench::from_script(
-        "m = 2\ns = 3\nf = Normal(m,s,x)\ng = Normal(m,s,x,false)\na = f(-1)\nb = g(-1)",
+        "m = 2\ns = 3\nf = Normal(m,s,x)\ng = Normal(m,s,(( x )),false)\nh = Normal(m,s,(x))\na = f(-1)\nb = g(-1)\ni = h(-1)",
     )
     .unwrap();
     let xml = exported_xml(&wb);
-    assert!(xml.contains("a0=\"m\" a1=\"s\" a2=\"x\" a3=\"true\""));
+    assert_eq!(
+        xml.matches("a0=\"m\" a1=\"s\" a2=\"x\" a3=\"true\"")
+            .count(),
+        2
+    );
     assert!(xml.contains("a0=\"m\" a1=\"s\" a2=\"x\" a3=\"false\""));
     let (_, reopened) = round_trip("normal CDF and density", &wb, None);
-    for label in ["a", "b"] {
+    for label in ["a", "b", "i"] {
         let value = |w: &Workbench| {
             let c = w.construction();
             c.value(c.id(label).unwrap())

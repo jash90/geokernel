@@ -692,11 +692,14 @@ impl Writer<'_> {
             return self.command(command, &args[..1], outputs);
         }
         if let Some(("Normal", inputs)) = &call {
-            if let [mean, deviation, "x"] = inputs.as_slice() {
-                if c.kind(id) == Kind::Function {
-                    // The file reader needs the cumulative flag for this
-                    // form even though algebra input defaults to true.
-                    return self.command("Normal", &[mean, deviation, "x", "true"], outputs);
+            if let [mean, deviation, x] | [mean, deviation, x, _] = inputs.as_slice() {
+                if c.kind(id) == Kind::Function
+                    && x.trim_matches(|ch: char| ch == '(' || ch == ')' || ch.is_whitespace())
+                        == "x"
+                {
+                    // The file reader needs an explicit cumulative flag.
+                    let cumulative = inputs.get(3).copied().unwrap_or("true");
+                    return self.command("Normal", &[mean, deviation, "x", cumulative], outputs);
                 }
             }
         }

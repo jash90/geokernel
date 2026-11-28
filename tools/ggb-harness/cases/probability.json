@@ -249,6 +249,72 @@
           "action": "initial"
         }
       ]
+    },
+    {
+      "id": "probability-normaledges-001",
+      "group": "probability",
+      "script": [
+        "s = 10^20",
+        "a = InverseNormal(0,s,0.5000000000000001)",
+        "b = InverseNormal(0,s,0.49999999999999994)",
+        "c = InverseNormal(0,s,0.5)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normaledges-002",
+      "group": "probability",
+      "script": [
+        "m = 1/0",
+        "a = InverseNormal(m,1,0)",
+        "b = InverseNormal(m,1,1)",
+        "c = InverseNormal(-m,1,1)",
+        "d = InverseNormal(-m,1,0)",
+        "u = IsDefined(a)",
+        "v = IsDefined(c)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normaledges-003",
+      "group": "probability",
+      "script": [
+        "s = 10^308",
+        "a = Normal(0,s,0,false) * s",
+        "t = 1.4*10^(-162)",
+        "f = Normal(0,t,x,false)",
+        "b = f(t)",
+        "g = Normal(0,s,x,false)",
+        "c = g(0) * s"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normaledges-004",
+      "group": "probability",
+      "script": [
+        "f = Normal(2,3,(x))",
+        "g = Normal(2,3,(( x )),false)",
+        "a = f(-1)",
+        "b = g(-1)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
     }
   ]
 }

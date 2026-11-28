@@ -78,7 +78,7 @@ pub(in crate::expr) fn value<const M: bool>(
         return if matches!(fourth, Val::B(true, _)) {
             (1.0 + libm::erf(delta / (SQRT_2 * deviation.abs()))) * 0.5
         } else {
-            libm::exp(-delta * delta / (2.0 * deviation * deviation))
+            libm::exp(-(delta * delta) / (2.0 * (deviation * deviation)))
                 / ((2.0 * PI).sqrt() * deviation.abs())
         };
     }
@@ -98,7 +98,8 @@ pub(in crate::expr) fn value<const M: bool>(
         Val::B(true, _) => cdf(mean, deviation, x),
         Val::B(false, _) => {
             let z = (x - mean) / deviation;
-            libm::exp(-0.5 * z * z) / (deviation * (2.0 * PI).sqrt())
+            let log_normalizer = libm::log(deviation) + 0.5 * libm::log(2.0 * PI);
+            libm::exp(-0.5 * z * z - log_normalizer)
         }
         Val::N(upper) if upper >= x => cdf(mean, deviation, upper) - cdf(mean, deviation, x),
         _ => f64::NAN,
@@ -118,12 +119,21 @@ fn inverse(mean: f64, deviation: f64, probability: f64) -> f64 {
     }
     let tail = (1.0 - centered.abs()) * 0.5;
     if tail == 0.0 {
-        return f64::INFINITY.copysign(centered);
+        return mean + deviation * f64::INFINITY.copysign(centered);
     }
-    let (mut lo, mut hi) = (0.0, 40.0);
+    // Near the median, compare erf directly to avoid rounding away the
+    // deviation from 0.5. Use the complementary tail farther out.
+    let magnitude = centered.abs();
+    let central = magnitude <= 0.5;
+    let (mut lo, mut hi) = (0.0, if central { 2.0 * magnitude } else { 40.0 });
     for _ in 0..QUANTILE_STEPS {
         let mid = (lo + hi) * 0.5;
-        if cdf(0.0, 1.0, -mid) > tail {
+        let below = if central {
+            libm::erf(mid * FRAC_1_SQRT_2) < magnitude
+        } else {
+            cdf(0.0, 1.0, -mid) > tail
+        };
+        if below {
             lo = mid;
         } else {
             hi = mid;
