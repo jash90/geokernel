@@ -691,6 +691,15 @@ impl Writer<'_> {
             };
             return self.command(command, &args[..1], outputs);
         }
+        if let Some(("Normal", inputs)) = &call {
+            if let [mean, deviation, x] | [mean, deviation, x, _] = inputs.as_slice() {
+                if c.kind(id) == Kind::Function && is_variable_x(x) {
+                    // The file reader needs an explicit cumulative flag.
+                    let cumulative = inputs.get(3).copied().unwrap_or("true");
+                    return self.command("Normal", &[mean, deviation, "x", cumulative], outputs);
+                }
+            }
+        }
         if matches!(c.kind(id), Kind::Function | Kind::FunctionNVar) && lhs.ends_with(')') {
             return self.expression(id, &format!("{lhs} = {}", syntax(source)?));
         }
@@ -774,6 +783,15 @@ impl Writer<'_> {
     }
 
     fn expression(&mut self, id: Id, source: &str) -> Result<(), ExportError> {
+        let normalized;
+        let source = if matches!(self.c.kind(id), Kind::Function | Kind::FunctionNVar)
+            && source.contains("Normal")
+        {
+            normalized = normal_function_defaults(source);
+            normalized.as_ref()
+        } else {
+            source
+        };
         self.xml.tag(
             "expression",
             &[
@@ -796,13 +814,102 @@ impl Writer<'_> {
             "input",
             inputs
                 .iter()
-                .map(|input| syntax(input))
+                .map(|input| syntax(input).map(normal_function_defaults))
                 .collect::<Result<Vec<_>, _>>()?,
         )?;
         self.xml
             .numbered("output", outputs.iter().map(|&id| self.c.label(id)))?;
         self.xml.buffer.push_str("</command>\n");
         Ok(())
+    }
+}
+
+/// GeoGebra's archive reader needs an explicit cumulative flag even when the
+/// defaulted Normal function is nested in a larger expression.
+fn normal_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
+    if !source.contains("Normal") {
+        return source.into();
+    }
+    struct Group {
+        normal: bool,
+        commas: usize,
+        third: usize,
+    }
+    let mut groups: Vec<Group> = Vec::new();
+    let mut replacements = Vec::new();
+    for (index, ch) in script::unquoted(source) {
+        match ch {
+            '(' | '[' | '{' => {
+                let normal = ch != '{'
+                    && source[..index]
+                        .trim_end()
+                        .strip_suffix("Normal")
+                        .is_some_and(|prefix| {
+                            !prefix.chars().next_back().is_some_and(|c| {
+                                c.is_alphanumeric() || matches!(c, '_' | '$' | '\'')
+                            })
+                        });
+                groups.push(Group {
+                    normal,
+                    commas: 0,
+                    third: 0,
+                });
+            }
+            ',' => {
+                if let Some(group) = groups.last_mut().filter(|group| group.normal) {
+                    group.commas += 1;
+                    if group.commas == 2 {
+                        group.third = index + 1;
+                    }
+                }
+            }
+            ')' | ']' | '}' => {
+                if let Some(group) = groups
+                    .pop()
+                    .filter(|group| group.normal && group.commas == 2)
+                {
+                    let argument = &source[group.third..index];
+                    if is_variable_x(argument) {
+                        replacements.push((group.third, index));
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    if replacements.is_empty() {
+        return source.into();
+    }
+    let mut normalized = String::with_capacity(source.len());
+    let mut start = 0;
+    for (argument, end) in replacements {
+        normalized.push_str(&source[start..argument]);
+        normalized.push_str("x, true");
+        start = end;
+    }
+    normalized.push_str(&source[start..]);
+    normalized.into()
+}
+
+/// Whether a distribution argument parses to the bare variable `x`.
+///
+/// The parser drops a leading `+`, an even run of leading `-` signs and
+/// redundant brackets, so `+x`, `--x` and `(+(x))` all select the function
+/// form. `-(-x)` does not, because it keeps the multiplications by -1.
+fn is_variable_x(argument: &str) -> bool {
+    let compact: String = argument.chars().filter(|ch| !ch.is_whitespace()).collect();
+    let mut rest = compact.as_str();
+    loop {
+        let next = if let Some(inner) = rest.strip_prefix('(').and_then(|r| r.strip_suffix(')')) {
+            inner
+        } else if let Some(inner) = rest.strip_prefix("--") {
+            inner
+        } else if let Some(inner) = rest.strip_prefix('+') {
+            inner
+        } else {
+            return rest == "x";
+        };
+        rest = next;
     }
 }
 

@@ -1,0 +1,129 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-inverse-001",
+      "group": "probability",
+      "script": [
+        "p = 0.25",
+        "m = 2",
+        "s = 3",
+        "a = InverseNormal(m,s,p)",
+        "b = InverseNormal(0,1,0)",
+        "c = InverseNormal(0,1,1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "p", "value": 0.75 },
+        { "action": "set_number", "label": "p", "value": 0.0 },
+        { "action": "set_number", "label": "p", "value": 1.0 },
+        { "action": "set_number", "label": "p", "value": -0.1 },
+        { "action": "set_number", "label": "p", "value": 1.1 },
+        { "action": "set_number", "label": "p", "value": 0.25 },
+        { "action": "set_number", "label": "s", "value": 0.0 },
+        { "action": "set_number", "label": "s", "value": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "a": { "type": "number", "defined": true, "value": -0.023469250588245227 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "a": { "type": "number", "defined": true, "value": 4.023469250588246 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "p": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "a": { "type": "number", "defined": true, "infinity": -1 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "p": { "type": "number", "defined": true, "value": 1.0 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "a": { "type": "number", "defined": true, "infinity": 1 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "p": { "type": "number", "defined": true, "value": -0.1 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "p": { "type": "number", "defined": true, "value": 1.1 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "a": { "type": "number", "defined": true, "value": -0.023469250588245227 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": -3.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "probability-inverse-002",
+      "group": "probability",
+      "script": [
+        "a = InverseNormal(0,1,1e-10)",
+        "b = InverseNormal(0,1,1e-20)",
+        "c = InverseNormal(0,1,0.9999999999)",
+        "d = InverseNormal(1,1,0.5)",
+        "p = InverseNormal(0,1,0/0)",
+        "q = InverseNormal(0,1/0,0.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 6.361340889697421 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}

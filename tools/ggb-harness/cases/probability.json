@@ -1,0 +1,574 @@
+{
+  "cases": [
+    {
+      "id": "probability-normal-001",
+      "group": "probability",
+      "script": [
+        "m = 2",
+        "s = 3",
+        "t = -1",
+        "c = true",
+        "a = Normal(m,s,t)",
+        "b = Normal(m,s,t,c)",
+        "d = Normal(m,s,t,false)",
+        "i = Normal(m,s,t,5)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": -3
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 3
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 9
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "probability-normal-002",
+      "group": "probability",
+      "script": [
+        "u = 1/0",
+        "v = -1/0",
+        "a = Normal(0,1,u)",
+        "b = Normal(0,1,v)",
+        "c = Normal(0,1,u,false)",
+        "d = Normal(0,1,v,false)",
+        "i = Normal(0,1,v,u)",
+        "j = Normal(0,1,u,u)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normal-003",
+      "group": "probability",
+      "script": [
+        "u = 0/0",
+        "v = 1/0",
+        "a = Normal(0,1,u)",
+        "b = Normal(u,1,0)",
+        "c = Normal(0,u,0)",
+        "d = Normal(v,1,0)",
+        "i = Normal(0,v,0)",
+        "j = Normal(0,v,0,false)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normal-004",
+      "group": "probability",
+      "script": [
+        "a = Normal(0,1,-40)",
+        "b = Normal(0,1,-38)",
+        "c = Normal(0,1,-10)",
+        "d = Normal(0,1,10)",
+        "i = Normal(0,1,8,9)",
+        "j = Normal(0,1,-9,-8)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-inverse-001",
+      "group": "probability",
+      "script": [
+        "p = 0.25",
+        "m = 2",
+        "s = 3",
+        "a = InverseNormal(m,s,p)",
+        "b = InverseNormal(0,1,0)",
+        "c = InverseNormal(0,1,1)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.75
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": -0.1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 1.1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.25
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": -3
+        }
+      ]
+    },
+    {
+      "id": "probability-inverse-002",
+      "group": "probability",
+      "script": [
+        "a = InverseNormal(0,1,1e-10)",
+        "b = InverseNormal(0,1,1e-20)",
+        "c = InverseNormal(0,1,0.9999999999)",
+        "d = InverseNormal(1,1,0.5)",
+        "p = InverseNormal(0,1,0/0)",
+        "q = InverseNormal(0,1/0,0.5)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normalfunction-001",
+      "group": "probability",
+      "script": [
+        "m = 2",
+        "s = 3",
+        "f = Normal(m,s,x)",
+        "g = Normal(m,s,x,false)",
+        "h = Normal(m,s,x,true)",
+        "a = f(-1)",
+        "b = g(-1)",
+        "i = h(2)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": -3
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 3
+        },
+        {
+          "action": "set_number",
+          "label": "m",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "probability-normalfunction-002",
+      "group": "probability",
+      "script": [
+        "u = 0/0",
+        "f = Normal(0,u,x)",
+        "g = Normal(0,u,x,false)",
+        "a = f(1)",
+        "b = g(1)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normalprecision-001",
+      "group": "probability",
+      "script": [
+        "l = 1e-10",
+        "u = 1E-10",
+        "v = 10^(-10)",
+        "a = InverseNormal(0,1,u)",
+        "b = InverseNormal(0,1,v)",
+        "c = InverseNormal(0,1,10^(-17))",
+        "d = InverseNormal(0,1,10^(-18))",
+        "i = InverseNormal(0,1,0.0000000000000001)",
+        "j = InverseNormal(0,1,1-0.0000000000000001)",
+        "k = InverseNormal(0,1,0.000001)",
+        "n = InverseNormal(0,1,0.999999)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normaledges-001",
+      "group": "probability",
+      "script": [
+        "s = 10^20",
+        "a = InverseNormal(0,s,0.5000000000000001)",
+        "b = InverseNormal(0,s,0.49999999999999994)",
+        "c = InverseNormal(0,s,0.5)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normaledges-002",
+      "group": "probability",
+      "script": [
+        "m = 1/0",
+        "a = InverseNormal(m,1,0)",
+        "b = InverseNormal(m,1,1)",
+        "c = InverseNormal(-m,1,1)",
+        "d = InverseNormal(-m,1,0)",
+        "u = IsDefined(a)",
+        "v = IsDefined(c)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normaledges-003",
+      "group": "probability",
+      "script": [
+        "s = 10^308",
+        "a = Normal(0,s,0,false) * s",
+        "t = 1.4*10^(-162)",
+        "f = Normal(0,t,x,false)",
+        "b = f(t)",
+        "g = Normal(0,s,x,false)",
+        "c = g(0) * s"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normaledges-004",
+      "group": "probability",
+      "script": [
+        "f = Normal(2,3,(x))",
+        "g = Normal(2,3,(( x )),false)",
+        "a = f(-1)",
+        "b = g(-1)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normalreview-001",
+      "group": "probability",
+      "script": [
+        "s = 1.4*10^308",
+        "a = Normal(0,s,s)",
+        "b = Normal(0,s,-s,s)",
+        "c = Normal(-s,s,s)",
+        "d = InverseNormal(0,10^20,0.7-0.2)",
+        "e = Normal(1.1-1,10^(-16),0.1)",
+        "j = Normal(0,1,1/0)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normalreview-002",
+      "group": "probability",
+      "script": [
+        "f = (Normal(2,3,x))",
+        "g = 2*Normal(2,3,x)",
+        "h = Normal(2,3,x,false)",
+        "a = f(-1)",
+        "b = g(-1)",
+        "c = IsDefined(f)",
+        "d = IsDefined(g)",
+        "e = IsDefined(h)",
+        "t = FormulaText(f)",
+        "u = FormulaText(h)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normalreview-003",
+      "group": "probability",
+      "script": [
+        "s = Segment((0,0),(1,0))",
+        "a = Normal(0,s,1)",
+        "b = InverseNormal(0,s,0.75)",
+        "c = Normal(0,1,0,s)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normalformat-001",
+      "group": "probability",
+      "script": [
+        "f = Normal(0,1,x)",
+        "g = Normal(0,1,x,false)",
+        "h = Normal(-2,-3,x,false)",
+        "m = -2",
+        "s = 3",
+        "q = Normal(m,s,x)",
+        "a = FormulaText(f)",
+        "b = FormulaText(g)",
+        "c = FormulaText(h)",
+        "d = FormulaText(q)",
+        "k = FormulaText(q,false)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normalround-001",
+      "group": "probability",
+      "script": [
+        "s = 0",
+        "p = 2",
+        "a = round(1.25,Normal(0,s,0))",
+        "b = round(1.25,InverseNormal(0,1,p))",
+        "c = round(1.25,Normal(0,s,0)+0)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.5
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "probability-normaldefinedness-001",
+      "group": "probability",
+      "script": [
+        "n = 0",
+        "u = 0/n",
+        "s = 0",
+        "f = 2*Normal(0,u,x)",
+        "g = x + Normal(0,s,0)",
+        "h = u*x + Normal(0,1,x)",
+        "a = IsDefined(f)",
+        "b = IsDefined(g)",
+        "c = IsDefined(h)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "probability-normalinline-001",
+      "group": "probability",
+      "script": [
+        "A = (0,0)",
+        "B = (1,0)",
+        "a = Normal(0,Segment(A,B),1)",
+        "b = InverseNormal(0,Segment(A,B),0.75)",
+        "c = Normal(0,1,0,Segment(A,B))"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "move",
+          "label": "B",
+          "x": 2,
+          "y": 0
+        },
+        {
+          "action": "move",
+          "label": "B",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "probability-normalinline-002",
+      "group": "probability",
+      "script": [
+        "m = 2",
+        "s = 3",
+        "a = FormulaText(Normal(0,1,x))",
+        "b = FormulaText(Normal(m,s,x,false))",
+        "c = FormulaText(Normal(m,s,x),false)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": -2
+        }
+      ]
+    },
+    {
+      "id": "probability-normalfunctionguards-001",
+      "group": "probability",
+      "script": [
+        "s = 0",
+        "f = round(1.25,Normal(0,s,x))",
+        "g = (x > 0) && !IsDefined(Normal(0,s,0))",
+        "h(x,y) = x+y+Normal(0,s,0)",
+        "a = f(0)",
+        "b = IsDefined(g)",
+        "c = g(1)",
+        "d = IsDefined(h)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "probability-normalgroupedtext-001",
+      "group": "probability",
+      "script": [
+        "a = FormulaText((Normal(0,1,x)))",
+        "b = FormulaText(((Normal(0,1,x,false))))"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-normalliteralsegment-001",
+      "group": "probability",
+      "script": [
+        "A = (0,0)",
+        "a = Normal(0,Segment(A,(2,0)),1)",
+        "b = InverseNormal(0,Segment((0,0),(2,0)),0.75)",
+        "c = Normal(0,1,0,Segment(A,(2,0)))"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "move",
+          "label": "A",
+          "x": 1,
+          "y": 0
+        }
+      ]
+    }
+  ]
+}

@@ -201,6 +201,37 @@ fn type_node(
             let vars = args.iter().map(|&a| state.vars[a]).sum();
             (Ty::Num(0), 1 + depth, cost, vars)
         }
+        Node::Probability(op, args) => {
+            let numeric_types = args.map(|arg| {
+                let index = arg as usize;
+                let ty = *state.tys.get(index)?;
+                Some(match nodes[index] {
+                    Node::Obj(id) if c.kind(id) == Kind::Segment => Ty::Num(0),
+                    Node::Cmd(def, _) if def.kind() == Kind::Segment => Ty::Num(0),
+                    _ => ty,
+                })
+            });
+            let ty = commands::probability::value_type(op, numeric_types)?;
+            let function = matches!(
+                op,
+                commands::probability::Probability::Normal { function: true }
+            );
+            let mut depth = 0;
+            let mut cost = op.cost();
+            for (slot, arg) in args
+                .into_iter()
+                .enumerate()
+                .filter(|&(_, arg)| arg != super::NONE)
+            {
+                let index = arg as usize;
+                if !(function && slot == 2) && state.vars[index] != 0 {
+                    return Err("a distribution parameter cannot contain a free variable".into());
+                }
+                depth = depth.max(state.depth[index]);
+                cost = cost.saturating_add(state.cost[index].saturating_mul(3));
+            }
+            (ty, depth + 1, cost, u64::from(function))
+        }
         Node::Apply2(f, a, b) => {
             let (a, b) = (a as usize, b as usize);
             if !matches!((state.tys[a], state.tys[b]), (Ty::Num(_), Ty::Num(_))) {

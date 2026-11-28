@@ -1,0 +1,54 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-normalround-001",
+      "group": "probability",
+      "script": [
+        "s = 0",
+        "p = 2",
+        "a = round(1.25,Normal(0,s,0))",
+        "b = round(1.25,InverseNormal(0,1,p))",
+        "c = round(1.25,Normal(0,s,0)+0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "s", "value": 1.0 },
+        { "action": "set_number", "label": "p", "value": 0.5 },
+        { "action": "set_number", "label": "s", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-normalreview-001",
+      "group": "probability",
+      "script": [
+        "s = 1.4*10^308",
+        "a = Normal(0,s,s)",
+        "b = Normal(0,s,-s,s)",
+        "c = Normal(-s,s,s)",
+        "d = InverseNormal(0,10^20,0.7-0.2)",
+        "e = Normal(1.1-1,10^(-16),0.1)",
+        "j = Normal(0,1,1/0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "number", "defined": true, "value": 1.4E308 },
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e": { "type": "number", "defined": true, "value": 0.5 },
+          "j": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "probability-normalreview-002",
+      "group": "probability",
+      "script": [
+        "f = (Normal(2,3,x))",
+        "g = 2*Normal(2,3,x)",
+        "h = Normal(2,3,x,false)",
+        "a = f(-1)",
+        "b = g(-1)",
+        "c = IsDefined(f)",
+        "d = IsDefined(g)",
+        "e = IsDefined(h)",
+        "t = FormulaText(f)",
+        "u = FormulaText(h)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 4.290603331968401E-4],
+              [-4.0, 0.022750131948179153],
+              [-2.0, 0.09121121972586804],
+              [-1.0, 0.15865525393145702],
+              [-0.5, 0.20232838096364308],
+              [0.0, 0.25249253754692297],
+              [0.5, 0.308537538725987],
+              [1.0, 0.36944134018176367],
+              [2.0, 0.5],
+              [4.0, 0.7475074624530771],
+              [8.0, 0.9772498680518209]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 8.581206663936802E-4],
+              [-4.0, 0.045500263896358306],
+              [-2.0, 0.18242243945173608],
+              [-1.0, 0.31731050786291404],
+              [-0.5, 0.40465676192728617],
+              [0.0, 0.5049850750938459],
+              [0.5, 0.617075077451974],
+              [1.0, 0.7388826803635273],
+              [2.0, 1.0],
+              [4.0, 1.4950149249061542],
+              [8.0, 1.9544997361036418]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 5.140929987637022E-4],
+              [-4.0, 0.017996988837729353],
+              [-2.0, 0.054670024891997876],
+              [-1.0, 0.08065690817304778],
+              [-0.5, 0.09397062513676752],
+              [0.0, 0.10648266850745075],
+              [0.5, 0.11735510892143317],
+              [1.0, 0.12579440923099772],
+              [2.0, 0.1329807601338109],
+              [4.0, 0.10648266850745075],
+              [8.0, 0.017996988837729353]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.15865525393145702 },
+          "b": { "type": "number", "defined": true, "value": 0.31731050786291404 },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e": { "type": "boolean", "defined": true, "value": true },
+          "t": { "type": "text", "defined": true, "text": "\\frac{\\operatorname{erf}\\left(\\frac{x - 2}{\\left|3\\right| \\; \\sqrt{2}} \\right) + 1}{2}" },
+          "u": { "type": "text", "defined": true, "text": "\\frac{\\mathit{e}^{\\frac{-\\left(x - 2 \\right)^{2}}{3^{2} \\cdot 2}}}{\\left|3\\right| \\; \\sqrt{2 \\; \\pi }}" }
+        }
+      ]
+    },
+    {
+      "id": "probability-normalreview-003",
+      "group": "probability",
+      "script": [
+        "s = Segment((0,0),(1,0))",
+        "a = Normal(0,s,1)",
+        "b = InverseNormal(0,s,0.75)",
+        "c = Normal(0,1,0,s)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.841344746068543 },
+          "b": { "type": "number", "defined": true, "value": 0.6744897501960816 },
+          "c": { "type": "number", "defined": true, "value": 0.34134474606854304 }
+        }
+      ]
+    }
+  ]
+}

@@ -286,11 +286,11 @@ RandomNormal,,probability,,out_of_scope,,,
 RandomUniform,,probability,,out_of_scope,,,
 RandomBinomial,,probability,,out_of_scope,,,
 RandomPoisson,,probability,,out_of_scope,,,
-Normal,,probability,,out_of_scope,,,
+Normal,,probability,P2,done,5,5,"Numeric density, cumulative probability and interval, and the explicit distribution function in x."
 LogNormal,,probability,,out_of_scope,,,
 Logistic,,probability,,out_of_scope,,,
 InverseLogistic,,probability,,out_of_scope,,,
-InverseNormal,,probability,,out_of_scope,,,
+InverseNormal,,probability,P2,done,1,1,Normal quantile for a numeric probability.
 Binomial,nCr,english,P2,done,,,
 BinomialDist,,probability,,out_of_scope,,,
 Bernoulli,,probability,,out_of_scope,,,

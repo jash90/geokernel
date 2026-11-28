@@ -202,6 +202,7 @@ impl Walker<'_> {
             | Node::Text
             | Node::TextCmd(..)
             | Node::Base { .. }
+            | Node::Probability(..)
             | Node::FunctionObject(_)
             | Node::Extremum(..)
             | Node::SystemFunction(..)

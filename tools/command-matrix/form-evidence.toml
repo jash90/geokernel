@@ -5599,3 +5599,33 @@ cases = ["statistics-centeredmoments-001", "statistics-centeredmoments-002", "st
 command = "SigmaXX"
 form = "list,list"
 cases = ["statistics-centeredmoments-001", "statistics-centeredmoments-002", "statistics-momentsedges-001", "statistics-momentsangles-001", "statistics-momentsgeometry-001"]
+
+[[form]]
+command = "Normal"
+form = "number,number,number"
+cases = ["probability-normal-001", "probability-normal-002", "probability-normal-003", "probability-normal-004"]
+
+[[form]]
+command = "Normal"
+form = "number,number,number,boolean"
+cases = ["probability-normal-001", "probability-normal-002"]
+
+[[form]]
+command = "Normal"
+form = "number,number,number,number"
+cases = ["probability-normal-001", "probability-normal-002", "probability-normal-004"]
+
+[[form]]
+command = "Normal"
+form = "number,number,function"
+cases = ["probability-normalfunction-001", "probability-normalfunction-002"]
+
+[[form]]
+command = "Normal"
+form = "number,number,function,boolean"
+cases = ["probability-normalfunction-001", "probability-normalfunction-002"]
+
+[[form]]
+command = "InverseNormal"
+form = "number,number,number"
+cases = ["probability-inverse-001", "probability-inverse-002", "probability-normalprecision-001"]

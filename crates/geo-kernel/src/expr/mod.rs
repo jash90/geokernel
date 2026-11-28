@@ -285,6 +285,7 @@ pub(crate) enum Node {
     /// numbers; the argument roots fill the array from the front, the rest
     /// stays [`NONE`].
     Financial(Finance, [u32; 6]),
+    Probability(commands::probability::Probability, [u32; 4]),
     Relation {
         objects: [Id; 4],
         count: u8,
@@ -1040,18 +1041,22 @@ impl Entry {
     }
 
     fn new(c: &Construction, p: parse::Parsed, function: bool) -> Self {
-        let checks_branches = function
-            && p.nodes.iter().any(|n| {
-                matches!(
-                    n,
-                    Node::If(..)
-                        | Node::Inverse(_)
-                        | Node::Dilate(..)
-                        | Node::PolynomialPart(..)
-                        | Node::Cas(..)
-                        | Node::Un(Un::Length, _)
-                )
-            });
+        let multivariate = matches!(p.nodes[p.root as usize], Node::SystemFunction(..));
+        let checks_branches = p.nodes.iter().any(|n| match n {
+            Node::Probability(..) => function || multivariate,
+            _ => {
+                function
+                    && matches!(
+                        n,
+                        Node::If(..)
+                            | Node::Inverse(_)
+                            | Node::Dilate(..)
+                            | Node::PolynomialPart(..)
+                            | Node::Cas(..)
+                            | Node::Un(Un::Length, _)
+                    )
+            }
+        });
         let inverts = p.nodes.iter().any(|node| match *node {
             Node::Inverse(_) | Node::Cas(..) => true,
             Node::Apply(f, _) | Node::Apply2(f, ..) => {
@@ -1259,6 +1264,7 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         }
         Node::Seq(a, b, c, d, _) => fixed[..4].copy_from_slice(&[a, b, c, d]),
         Node::Financial(_, args) => fixed.copy_from_slice(&args),
+        Node::Probability(_, args) => fixed[..4].copy_from_slice(&args),
         Node::CellLookup(a, b, _) => fixed[..2].copy_from_slice(&[a, b]),
         Node::List(first, len)
         | Node::CellRange(first, len, _)
@@ -1347,6 +1353,7 @@ fn map_children(node: &mut Node, map: impl Fn(u32) -> u32) {
         | Node::TextCmd(_, first, _)
         | Node::Call(_, first, _) => shift(first),
         Node::Financial(_, args) => args.iter_mut().for_each(shift),
+        Node::Probability(_, args) => args.iter_mut().for_each(shift),
         _ => {}
     }
 }
@@ -2181,6 +2188,12 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
         Node::Cmd(def, hint) => {
             eval::with_command_budget(ctx.meter, || command_defined(ctx.c, def, hint))
         }
+        // A normal function stays defined even when its parameters make
+        // the samples undefined. A scalar distribution is a numeric helper.
+        Node::Probability(commands::probability::Probability::Normal { function: true }, _) => true,
+        Node::Probability(..) => !ctx.full_number(i).is_nan(),
+        // The predicate returns a boolean even when its operand is undefined.
+        Node::Defined(..) | Node::ObjectDefined(_) => true,
         // CmdLength supplies a numeric helper for a point or vector.
         Node::Un(Un::Length, a) => defined_below(ctx, a) && !ctx.full_number(i).is_nan(),
         Node::Inverse(a) => defined_below(ctx, a) && inverse::sample(ctx, a, 1.0).is_some(),
@@ -3318,7 +3331,7 @@ fn add_parsed(
                 n,
                 Node::Cmd(..) | Node::If(IfMode::Algo, ..) | Node::Vector(_) | Node::Cas(..)
             )
-            || matches!(n, Node::Financial(..))
+            || matches!(n, Node::Financial(..) | Node::Probability(..))
             || is_list_node(n)
     });
     // a constant boolean (`b = 1 < 2`) or list stays an expression: there

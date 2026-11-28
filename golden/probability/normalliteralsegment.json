@@ -1,0 +1,35 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-normalliteralsegment-001",
+      "group": "probability",
+      "script": [
+        "A = (0,0)",
+        "a = Normal(0,Segment(A,(2,0)),1)",
+        "b = InverseNormal(0,Segment((0,0),(2,0)),0.75)",
+        "c = Normal(0,1,0,Segment(A,(2,0)))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.691462461274013 },
+          "b": { "type": "number", "defined": true, "value": 1.3489795003921632 },
+          "c": { "type": "number", "defined": true, "value": 0.4772498680518208 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.841344746068543 },
+          "b": { "type": "number", "defined": true, "value": 1.3489795003921632 },
+          "c": { "type": "number", "defined": true, "value": 0.34134474606854304 }
+        }
+      ]
+    }
+  ]
+}

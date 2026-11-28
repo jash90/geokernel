@@ -1,0 +1,24 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-normalgroupedtext-001",
+      "group": "probability",
+      "script": [
+        "a = FormulaText((Normal(0,1,x)))",
+        "b = FormulaText(((Normal(0,1,x,false))))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "text", "defined": true, "text": "\\frac{\\operatorname{erf}\\left(\\frac{x}{\\left|1\\right| \\; \\sqrt{2}} \\right) + 1}{2}" },
+          "b": { "type": "text", "defined": true, "text": "\\frac{\\mathit{e}^{\\frac{-\\left(x \\right)^{2}}{1^{2} \\cdot 2}}}{\\left|1\\right| \\; \\sqrt{2 \\; \\pi }}" }
+        }
+      ]
+    }
+  ]
+}

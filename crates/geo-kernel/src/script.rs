@@ -849,9 +849,14 @@ fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
     let args = args
         .iter()
         .map(|&arg| {
+            let distribution_segment = matches!(command, "Normal" | "InverseNormal")
+                && split_call(arg).is_some_and(|(name, args)| {
+                    name == "Segment" && args.iter().any(|point| point.starts_with('('))
+                });
             let inline = c.id(arg).is_none()
                 && (equations && crate::expr::equation::split_equation(arg).is_ok()
                     || point_arguments && arg.starts_with('(')
+                    || distribution_segment
                     || conic_reader.is_some() && split_call(arg).is_some()
                     || matches!(
                         (command, split_call(arg).map(|(name, _)| name)),
@@ -1535,7 +1540,8 @@ pub fn find_unquoted(text: &str, ch: char) -> Option<usize> {
     unquoted(text).find_map(|(i, c)| (c == ch).then_some(i))
 }
 
-fn unquoted(text: &str) -> impl Iterator<Item = (usize, char)> + '_ {
+/// Characters outside double-quoted strings, with their source byte positions.
+pub fn unquoted(text: &str) -> impl Iterator<Item = (usize, char)> + '_ {
     let mut quoted = false;
     let mut escaped = false;
     text.char_indices().filter(move |&(_, c)| {
@@ -1700,14 +1706,21 @@ fn resolve_text_argument(c: &mut Construction, rhs: &str) -> Result<Option<Strin
     let Some((first, rest)) = args.split_first() else {
         return Ok(None);
     };
+    let first = ungroup(first);
     let Some((command, args)) = split_call(first) else {
         return Ok(None);
     };
-    if crate::expr::is_expression_command(command) || crate::expr::accepts_text_argument(c, first) {
-        return Ok(None);
-    }
     let label = format!("\0textarg{}", c.len());
-    let id = if command == "Polygon" && args.len() >= 2 {
+    let id = if command == "Normal" {
+        let Some(function) = crate::expr::argument_function(c, first, &label) else {
+            return Ok(None);
+        };
+        function
+    } else if crate::expr::is_expression_command(command)
+        || command != "Segment" && crate::expr::accepts_text_argument(c, first)
+    {
+        return Ok(None);
+    } else if command == "Polygon" && args.len() >= 2 {
         inline_polygon(c, &label, &args)?
     } else {
         define_after_label(c, &label, first)?.ok_or("the text argument has no value")?

@@ -1,0 +1,174 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-normal-001",
+      "group": "probability",
+      "script": [
+        "m = 2",
+        "s = 3",
+        "t = -1",
+        "c = true",
+        "a = Normal(m,s,t)",
+        "b = Normal(m,s,t,c)",
+        "d = Normal(m,s,t,false)",
+        "i = Normal(m,s,t,5)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "s", "value": 0.0 },
+        { "action": "set_number", "label": "s", "value": -3.0 },
+        { "action": "set_number", "label": "s", "value": 3.0 },
+        { "action": "set_number", "label": "t", "value": 9.0 },
+        { "action": "set_number", "label": "t", "value": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "a": { "type": "number", "defined": true, "value": 0.15865525393145702 },
+          "b": { "type": "number", "defined": true, "value": 0.15865525393145702 },
+          "d": { "type": "number", "defined": true, "value": 0.0806569081730478 },
+          "i": { "type": "number", "defined": true, "value": 0.6826894921370861 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false },
+          "i": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": -3.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": false },
+          "i": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "a": { "type": "number", "defined": true, "value": 0.15865525393145702 },
+          "b": { "type": "number", "defined": true, "value": 0.15865525393145702 },
+          "d": { "type": "number", "defined": true, "value": 0.0806569081730478 },
+          "i": { "type": "number", "defined": true, "value": 0.6826894921370861 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 9.0 },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "a": { "type": "number", "defined": true, "value": 0.9901846713713547 },
+          "b": { "type": "number", "defined": true, "value": 0.9901846713713547 },
+          "d": { "type": "number", "defined": true, "value": 0.008740629697903166 },
+          "i": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "a": { "type": "number", "defined": true, "value": 0.841344746068543 },
+          "b": { "type": "number", "defined": true, "value": 0.841344746068543 },
+          "d": { "type": "number", "defined": true, "value": 0.0806569081730478 },
+          "i": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "probability-normal-002",
+      "group": "probability",
+      "script": [
+        "u = 1/0",
+        "v = -1/0",
+        "a = Normal(0,1,u)",
+        "b = Normal(0,1,v)",
+        "c = Normal(0,1,u,false)",
+        "d = Normal(0,1,v,false)",
+        "i = Normal(0,1,v,u)",
+        "j = Normal(0,1,u,u)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "number", "defined": true, "infinity": 1 },
+          "v": { "type": "number", "defined": true, "infinity": -1 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "i": { "type": "number", "defined": true, "value": 1.0 },
+          "j": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "probability-normal-003",
+      "group": "probability",
+      "script": [
+        "u = 0/0",
+        "v = 1/0",
+        "a = Normal(0,1,u)",
+        "b = Normal(u,1,0)",
+        "c = Normal(0,u,0)",
+        "d = Normal(v,1,0)",
+        "i = Normal(0,v,0)",
+        "j = Normal(0,v,0,false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "number", "defined": false },
+          "v": { "type": "number", "defined": true, "infinity": 1 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "i": { "type": "number", "defined": true, "value": 0.5 },
+          "j": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "probability-normal-004",
+      "group": "probability",
+      "script": [
+        "a = Normal(0,1,-40)",
+        "b = Normal(0,1,-38)",
+        "c = Normal(0,1,-10)",
+        "d = Normal(0,1,10)",
+        "i = Normal(0,1,8,9)",
+        "j = Normal(0,1,-9,-8)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 2.88542835E-316 },
+          "c": { "type": "number", "defined": true, "value": 7.619853024160555E-24 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "i": { "type": "number", "defined": true, "value": 6.661338147750939E-16 },
+          "j": { "type": "number", "defined": true, "value": 6.219831985865882E-16 }
+        }
+      ]
+    }
+  ]
+}

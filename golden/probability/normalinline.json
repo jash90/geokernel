@@ -1,0 +1,77 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-normalinline-001",
+      "group": "probability",
+      "script": [
+        "A = (0,0)",
+        "B = (1,0)",
+        "a = Normal(0,Segment(A,B),1)",
+        "b = InverseNormal(0,Segment(A,B),0.75)",
+        "c = Normal(0,1,0,Segment(A,B))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.841344746068543 },
+          "b": { "type": "number", "defined": true, "value": 0.6744897501960816 },
+          "c": { "type": "number", "defined": true, "value": 0.34134474606854304 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.691462461274013 },
+          "b": { "type": "number", "defined": true, "value": 1.3489795003921632 },
+          "c": { "type": "number", "defined": true, "value": 0.4772498680518208 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "probability-normalinline-002",
+      "group": "probability",
+      "script": [
+        "m = 2",
+        "s = 3",
+        "a = FormulaText(Normal(0,1,x))",
+        "b = FormulaText(Normal(m,s,x,false))",
+        "c = FormulaText(Normal(m,s,x),false)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "s", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "a": { "type": "text", "defined": true, "text": "\\frac{\\operatorname{erf}\\left(\\frac{x}{\\left|1\\right| \\; \\sqrt{2}} \\right) + 1}{2}" },
+          "b": { "type": "text", "defined": true, "text": "\\frac{\\mathit{e}^{\\frac{-\\left(x - 2 \\right)^{2}}{3^{2} \\cdot 2}}}{\\left|3\\right| \\; \\sqrt{2 \\; \\pi }}" },
+          "c": { "type": "text", "defined": true, "text": "Normal\\left(m, s, x, true \\right)" }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "number", "defined": true, "value": -2.0 },
+          "a": { "type": "text", "defined": true, "text": "\\frac{\\operatorname{erf}\\left(\\frac{x}{\\left|1\\right| \\; \\sqrt{2}} \\right) + 1}{2}" },
+          "b": { "type": "text", "defined": true, "text": "\\frac{\\mathit{e}^{\\frac{-\\left(x - 2 \\right)^{2}}{\\left(-2 \\right)^{2} \\cdot 2}}}{\\left|-2\\right| \\; \\sqrt{2 \\; \\pi }}" },
+          "c": { "type": "text", "defined": true, "text": "Normal\\left(m, s, x, true \\right)" }
+        }
+      ]
+    }
+  ]
+}
