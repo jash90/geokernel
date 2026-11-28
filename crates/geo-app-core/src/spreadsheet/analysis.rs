@@ -4,7 +4,7 @@ use std::fmt::Write;
 use std::sync::OnceLock;
 
 use geo_kernel::spreadsheet::Address;
-use geo_kernel::{script, Construction, Def, Value};
+use geo_kernel::{script, Construction, Def, Kind, Value};
 
 use super::Selection;
 
@@ -34,11 +34,11 @@ const PAIRED_STATISTICS: [&str; PAIRED_ROW_COUNT] = [
     "Mean(ys)",
     "SampleSD(xs)",
     "SampleSD(ys)",
-    "PMCC(points)",
-    "Spearman(points)",
-    "Sxx(points)",
-    "Syy(points)",
-    "Sxy(points)",
+    "PMCC(xs, ys)",
+    "Spearman(xs, ys)",
+    "Sxx(xs)",
+    "Sxx(ys)",
+    "Sxy(xs, ys)",
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -213,7 +213,7 @@ impl Analysis {
         else {
             return Err(AnalysisError::PairedRange);
         };
-        // A blank or text cell is skipped on its own axis before pairing.
+        // The reference selects numeric cells by kind before pairing each axis.
         let by_column = *by_column;
         let axis = |offset| {
             let (start, end) = if by_column {
@@ -228,8 +228,9 @@ impl Analysis {
                     (index, first.row + offset)
                 };
                 let id = construction.spreadsheet_cell(Address { column, row })?;
-                match construction.value(id) {
-                    Value::Number(value) if value.is_finite() => Some(value),
+                match (construction.kind(id), construction.value(id)) {
+                    (Kind::Number, Value::Number(value)) => Some(value),
+                    (Kind::Number, Value::Undefined) => Some(f64::NAN),
                     _ => None,
                 }
             })
@@ -245,6 +246,10 @@ impl Analysis {
         if pairs.is_empty() {
             *summary = None;
             return Err(AnalysisError::Pairs);
+        }
+        if pairs.iter().flatten().any(|value| value.is_nan()) {
+            *summary = None;
+            return Err(AnalysisError::Evaluation);
         }
         let unchanged = summary.as_ref().is_some_and(|summary| {
             summary.pairs.len() == pairs.len()
@@ -281,22 +286,27 @@ fn evaluate(values: &[f64]) -> Option<[f64; ROW_COUNT]> {
 
 fn evaluate_pairs(pairs: &[[f64; 2]]) -> Option<[f64; PAIRED_ROW_COUNT]> {
     let mut scratch = Construction::new();
-    let mut xs = Vec::with_capacity(pairs.len());
-    let mut ys = Vec::with_capacity(pairs.len());
-    let mut points = Vec::with_capacity(pairs.len());
-    for (i, &[x, y]) in pairs.iter().enumerate() {
-        let x_name = format!("a{i}");
-        let y_name = format!("b{i}");
-        let point_name = format!("P{i}");
-        scratch.add(&x_name, Def::Number(x)).ok()?;
-        scratch.add(&y_name, Def::Number(y)).ok()?;
-        scratch.add(&point_name, Def::FreePoint { x, y }).ok()?;
-        xs.push(x_name);
-        ys.push(y_name);
-        points.push(point_name);
-    }
-    for (label, values) in [("xs", xs), ("ys", ys), ("points", points)] {
-        let line = format!("{label} = {{{}}}", values.join(","));
+    // Keep both coordinates of a pair even when one is infinite.
+    for (label, axis) in [("xs", 0), ("ys", 1)] {
+        let mut line = format!("{label} = {{");
+        for (index, pair) in pairs.iter().enumerate() {
+            let value = pair[axis];
+            if index != 0 {
+                line.push(',');
+            }
+            if value.is_infinite() {
+                line.push_str(if value.is_sign_positive() {
+                    "1/0"
+                } else {
+                    "-1/0"
+                });
+            } else {
+                let name = format!("{label}{index}");
+                scratch.add(&name, Def::Number(value)).ok()?;
+                line.push_str(&name);
+            }
+        }
+        line.push('}');
         script::exec(&mut scratch, &line).ok()??;
     }
     evaluate_rows(&mut scratch, PAIRED_STATISTICS)
@@ -372,6 +382,57 @@ mod tests {
         assert_eq!(swapped.pairs, [[20.0, 2.0], [40.0, 3.0]]);
         assert_eq!(swapped.rows[0], 30.0);
         assert_eq!(swapped.rows[1], 2.5);
+    }
+
+    #[test]
+    fn paired_statistics_skip_angles_and_keep_infinite_numbers() {
+        let angle = pair_table("B2 = 2\nB3 = 90°\nB4 = 4\nC2 = 20\nC3 = 30\nC4 = 40", "C4");
+        assert_eq!(angle.pairs, [[2.0, 20.0], [4.0, 30.0]]);
+        assert_eq!(angle.rows[1], 25.0);
+
+        let infinite = pair_table(
+            "B2 = 2\nB3 = 1 / 0\nB4 = 4\nC2 = 20\nC3 = 30\nC4 = 40",
+            "C4",
+        );
+        assert_eq!(
+            infinite.pairs,
+            [[2.0, 20.0], [f64::INFINITY, 30.0], [4.0, 40.0]]
+        );
+        for (actual, expected) in infinite.rows.into_iter().zip([
+            f64::INFINITY,
+            30.0,
+            f64::NAN,
+            10.0,
+            f64::NAN,
+            0.5,
+            f64::NAN,
+            200.0,
+            f64::NAN,
+        ]) {
+            assert!(actual == expected || (actual.is_nan() && expected.is_nan()));
+        }
+    }
+
+    #[test]
+    fn undefined_numeric_pair_clears_the_summary_without_shifting_the_axes() {
+        let mut construction = script::load("B2 = 2\nB3 = 3\nC2 = 20\nC3 = 30").unwrap();
+        let mut analysis = Analysis::new_paired(Selection {
+            anchor: Address::parse("B2").unwrap(),
+            end: Address::parse("C3").unwrap(),
+        })
+        .unwrap();
+        assert_eq!(
+            analysis.refresh_paired(&construction).unwrap().pairs.len(),
+            2
+        );
+        script::exec(&mut construction, "B2 = 0 / 0").unwrap();
+        assert!(matches!(
+            analysis.refresh_paired(&construction),
+            Err(AnalysisError::Evaluation)
+        ));
+        script::exec(&mut construction, "B2 = 4").unwrap();
+        let restored = analysis.refresh_paired(&construction).unwrap();
+        assert_eq!(restored.pairs, [[4.0, 20.0], [3.0, 30.0]]);
     }
 
     #[test]
