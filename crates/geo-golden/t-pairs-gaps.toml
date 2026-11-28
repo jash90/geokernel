@@ -1557,18 +1557,6 @@ reason = "the kernel refuses the input: unknown command `SetValue`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1730"
-category = "text-formatting"
-reason = "values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `y = -1.7259701492537307x + 6.467910447761192`"
-mismatches = ["f"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1737"
-category = "text-formatting"
-reason = "values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `y = -0.33500000000000013x + 2.2950000000000004`"
-mismatches = ["f"]
-
-[[gap]]
 id = "commands/CommandsTest.java:174"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `SetValue`"

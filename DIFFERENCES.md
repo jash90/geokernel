@@ -906,8 +906,6 @@ Each cascade names a recorded producer of the missing label. A failed inline ope
 | `commands/CommandsTest.java:1358` | **text-formatting.** values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `x - y = 0` |
 | `commands/CommandsTest.java:1459` | **text-formatting.** values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{x - 1, 1}` |
 | `commands/CommandsTest.java:1691` | **text-formatting.** values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `y = 0` |
-| `commands/CommandsTest.java:1730` | **text-formatting.** `FitLineX` agrees numerically; the replay formatter does not yet print the XML-template equation `y = -1.7259701492537307x + 6.467910447761192`. |
-| `commands/CommandsTest.java:1737` | **text-formatting.** `FitLine` agrees numerically; the replay formatter does not yet print the XML-template equation `y = -0.33500000000000013x + 2.2950000000000004`. |
 | `commands/CommandsTest.java:1875` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `DataFunction[{}, {},x]` |
 | `commands/CommandsTest.java:1876` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `If[4 ≤ x ≤ 13, sin(x)]` |
 | `commands/CommandsTest.java:1877`, `commands/CommandsTest.java:2588` | **text-formatting.** values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `freehand(x)` |
