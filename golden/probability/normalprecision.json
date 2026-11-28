@@ -1,0 +1,42 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-normalprecision-001",
+      "group": "probability",
+      "script": [
+        "l = 1e-10",
+        "u = 1E-10",
+        "v = 10^(-10)",
+        "a = InverseNormal(0,1,u)",
+        "b = InverseNormal(0,1,v)",
+        "c = InverseNormal(0,1,10^(-17))",
+        "d = InverseNormal(0,1,10^(-18))",
+        "i = InverseNormal(0,1,0.0000000000000001)",
+        "j = InverseNormal(0,1,1-0.0000000000000001)",
+        "k = InverseNormal(0,1,0.000001)",
+        "n = InverseNormal(0,1,0.999999)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": { "type": "number", "defined": true, "value": -7.2817181715409545 },
+          "u": { "type": "number", "defined": true, "value": 1.0E-10 },
+          "v": { "type": "number", "defined": true, "value": 1.0E-10 },
+          "a": { "type": "number", "defined": true, "value": -6.361340889697421 },
+          "b": { "type": "number", "defined": true, "value": -6.361340889697421 },
+          "c": { "type": "number", "defined": true, "infinity": -1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "i": { "type": "number", "defined": true, "value": -8.209536151601387 },
+          "j": { "type": "number", "defined": true, "value": 8.209536151601387 },
+          "k": { "type": "number", "defined": true, "value": -4.753424308828306 },
+          "n": { "type": "number", "defined": true, "value": 4.753424308817088 }
+        }
+      ]
+    }
+  ]
+}

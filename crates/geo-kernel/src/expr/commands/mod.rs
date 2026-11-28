@@ -18,6 +18,7 @@ mod geometry;
 mod list;
 pub(super) mod logical;
 pub(crate) use logical::relation;
+mod probability;
 mod statistics;
 pub(super) mod text;
 
@@ -46,6 +47,7 @@ pub(super) fn is_command(name: &str) -> bool {
         geometry::NAMES,
         text::NAMES,
         financial::NAMES,
+        probability::NAMES,
         geogebra::NAMES,
     ]
     .iter()
@@ -85,6 +87,9 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         return Ok(Some(node));
     }
     if let Some(node) = statistics::parse(p, text)? {
+        return Ok(Some(node));
+    }
+    if let Some(node) = probability::parse(p, text)? {
         return Ok(Some(node));
     }
     if let Some(node) = financial::parse(p, text)? {

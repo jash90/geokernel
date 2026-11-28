@@ -412,6 +412,10 @@ pub(crate) enum CallOp {
     Frequency,
     /// `Percentile(data, [frequencies,] probability)` (`AlgoPercentile`).
     Percentile,
+    /// Normal density, cumulative probability, interval or function.
+    Normal { function: bool },
+    /// Normal quantile from a mean, standard deviation and probability.
+    InverseNormal,
     /// `Zip(expression, variable, list, ...)` (`AlgoZip`): the expression,
     /// then a [`Node::Local`] and its list per variable.
     Zip,
