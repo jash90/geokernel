@@ -289,23 +289,27 @@ impl Format {
                     format!("{x} - {mean}")
                 };
                 let cumulative = flag == NONE || matches!(ctx.full(flag).val, Val::B(true, _));
-                if self.latex && cumulative {
-                    format!(
-                        r"\frac{{\operatorname{{erf}}\left(\frac{{{offset}}}{{\left|{sd}\right| \; \sqrt{{2}}}} \right) + 1}}{{2}}"
-                    )
-                } else if self.latex {
-                    format!(
-                        r"\frac{{\mathit{{e}}^{{\frac{{-\left({offset} \right)^{{2}}}}{{{sd}^{{2}} \cdot 2}}}}}}{{\left|{sd}\right| \; \sqrt{{2 \; \pi }}}}"
-                    )
-                } else if cumulative {
-                    format!("(erf(({offset}) / (abs({sd}) sqrt(2))) + 1) / 2")
+                if cumulative {
+                    if self.latex {
+                        format!(
+                            r"\frac{{\operatorname{{erf}}\left(\frac{{{offset}}}{{\left|{sd}\right| \; \sqrt{{2}}}} \right) + 1}}{{2}}"
+                        )
+                    } else {
+                        format!("(erf(({offset}) / (abs({sd}) sqrt(2))) + 1) / 2")
+                    }
                 } else {
                     let base = if sd.starts_with('-') {
                         self.parenthesize(&sd)
                     } else {
                         sd.clone()
                     };
-                    format!("exp(-({offset})² / ({base}² * 2)) / (abs({sd}) sqrt(2 π))")
+                    if self.latex {
+                        format!(
+                            r"\frac{{\mathit{{e}}^{{\frac{{-\left({offset} \right)^{{2}}}}{{{base}^{{2}} \cdot 2}}}}}}{{\left|{sd}\right| \; \sqrt{{2 \; \pi }}}}"
+                        )
+                    } else {
+                        format!("exp(-({offset})² / ({base}² * 2)) / (abs({sd}) sqrt(2 π))")
+                    }
                 }
             }
             Node::Item(a) => return term(a, outer),
