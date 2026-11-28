@@ -5,7 +5,7 @@ use eframe::egui::{
     pos2, vec2, Align2, FontId, Key, Rect, Role, ScrollArea, Sense, Stroke, TextEdit, TextStyle,
     Ui, UiBuilder, WidgetInfo,
 };
-use geo_app_core::spreadsheet::{Analysis, AnalysisError, SAMPLE_STATISTIC_INDICES};
+use geo_app_core::spreadsheet::{Analysis, AnalysisError, SampleSummary, SAMPLE_STATISTIC_INDICES};
 use geo_app_core::text::{label, Label};
 use geo_kernel::spreadsheet::{Address, MAX_COLUMNS, MAX_INPUT_BYTES, MAX_ROWS};
 use geo_kernel::Construction;
@@ -224,34 +224,12 @@ fn show_analysis(analysis: &mut Analysis, c: &Construction, ui: &mut Ui) {
     };
     ui.heading(range);
     if analysis.is_multiple() {
-        ScrollArea::both().min_scrolled_height(0.0).show(ui, |ui| {
-            match analysis.refresh_multiple(c) {
-                Ok(samples) => {
-                    eframe::egui::Grid::new("spreadsheet_samples").show(ui, |ui| {
-                        ui.label("Próba");
-                        for name in SAMPLE_STATISTIC_INDICES.map(|index| SUMMARY_NAMES[index]) {
-                            ui.label(name);
-                        }
-                        ui.end_row();
-                        for sample in samples {
-                            let first = sample.first.label();
-                            if sample.first != sample.last {
-                                ui.label(format!("{first}:{}", sample.last.label()));
-                            } else {
-                                ui.label(first);
-                            }
-                            for &value in &sample.rows {
-                                ui.label(c.format_display_number(value));
-                            }
-                            ui.end_row();
-                        }
-                    });
-                }
-                Err(error) => {
-                    ui.colored_label(theme::ERROR, analysis_error(error));
-                }
+        match analysis.refresh_multiple(c) {
+            Ok(samples) => show_samples(ui, c, samples),
+            Err(error) => {
+                ui.colored_label(theme::ERROR, analysis_error(error));
             }
-        });
+        }
         return;
     }
     if analysis.is_paired() {
@@ -304,6 +282,59 @@ const SUMMARY_NAMES: [&str; 11] = [
     "Trzeci kwartyl",
     "Maksimum",
 ];
+
+fn show_samples(ui: &mut Ui, c: &Construction, samples: &[SampleSummary]) {
+    let row_height = ui
+        .text_style_height(&TextStyle::Body)
+        .max(ui.spacing().interact_size.y);
+    let headings =
+        std::iter::once("Próba").chain(SAMPLE_STATISTIC_INDICES.map(|index| SUMMARY_NAMES[index]));
+    let font = TextStyle::Body.resolve(ui.style());
+    let mut widths: Vec<_> = headings
+        .clone()
+        .map(|heading| {
+            let text_width = ui
+                .painter()
+                .layout_no_wrap(heading.into(), font.clone(), ui.visuals().text_color())
+                .size()
+                .x;
+            (5.0 * row_height).max(text_width + ui.spacing().item_spacing.x)
+        })
+        .collect();
+    widths[0] = widths[0].max(7.0 * row_height);
+    ScrollArea::both().min_scrolled_height(0.0).show_rows(
+        ui,
+        row_height,
+        samples.len() + 1,
+        |ui, visible| {
+            for row in visible {
+                ui.horizontal(|ui| {
+                    if row == 0 {
+                        for (name, &width) in headings.clone().zip(&widths) {
+                            ui.add_sized([width, row_height], eframe::egui::Label::new(name));
+                        }
+                        return;
+                    }
+                    let sample = &samples[row - 1];
+                    let first = sample.first.label();
+                    let title = if sample.first == sample.last {
+                        first
+                    } else {
+                        format!("{first}:{}", sample.last.label())
+                    };
+                    let values = std::iter::once(title)
+                        .chain(sample.rows.map(|number| c.format_display_number(number)));
+                    for (value, &width) in values.zip(&widths) {
+                        ui.add_sized(
+                            [width, row_height],
+                            eframe::egui::Label::new(value).truncate(),
+                        );
+                    }
+                });
+            }
+        },
+    );
+}
 
 fn show_statistic_rows(ui: &mut Ui, c: &Construction, names: &[&str], rows: &[f64]) {
     eframe::egui::Grid::new("spreadsheet_statistics").show(ui, |ui| {
