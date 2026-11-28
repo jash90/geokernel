@@ -1678,10 +1678,14 @@ impl<const M: bool> Ctx<'_, M> {
     /// rounding to an integer, unless they are an object.
     fn round2(&self, a: u32, b: u32) -> Ex {
         let (x, digits) = (self.operand(a), self.operand(b));
-        let object = matches!(
-            self.node(b),
-            Node::Obj(_) | Node::Cmd(..) | Node::Probability(..)
-        );
+        let object = match self.node(b) {
+            Node::Obj(_) | Node::Cmd(..) => true,
+            Node::Probability(op, _) => !matches!(
+                op,
+                commands::probability::Probability::Normal { function: true }
+            ),
+            _ => false,
+        };
         match (x.val, digits.val) {
             (Val::N(v), Val::N(d)) => {
                 let d = if d.is_nan() && !object { 0.0 } else { d };

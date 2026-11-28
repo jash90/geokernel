@@ -1041,19 +1041,22 @@ impl Entry {
     }
 
     fn new(c: &Construction, p: parse::Parsed, function: bool) -> Self {
-        let checks_branches = function
-            && p.nodes.iter().any(|n| {
-                matches!(
-                    n,
-                    Node::If(..)
-                        | Node::Inverse(_)
-                        | Node::Dilate(..)
-                        | Node::PolynomialPart(..)
-                        | Node::Probability(..)
-                        | Node::Cas(..)
-                        | Node::Un(Un::Length, _)
-                )
-            });
+        let multivariate = matches!(p.nodes[p.root as usize], Node::SystemFunction(..));
+        let checks_branches = p.nodes.iter().any(|n| match n {
+            Node::Probability(..) => function || multivariate,
+            _ => {
+                function
+                    && matches!(
+                        n,
+                        Node::If(..)
+                            | Node::Inverse(_)
+                            | Node::Dilate(..)
+                            | Node::PolynomialPart(..)
+                            | Node::Cas(..)
+                            | Node::Un(Un::Length, _)
+                    )
+            }
+        });
         let inverts = p.nodes.iter().any(|node| match *node {
             Node::Inverse(_) | Node::Cas(..) => true,
             Node::Apply(f, _) | Node::Apply2(f, ..) => {
@@ -2189,6 +2192,8 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
         // the samples undefined. A scalar distribution is a numeric helper.
         Node::Probability(commands::probability::Probability::Normal { function: true }, _) => true,
         Node::Probability(..) => !ctx.full_number(i).is_nan(),
+        // The predicate returns a boolean even when its operand is undefined.
+        Node::Defined(..) | Node::ObjectDefined(_) => true,
         // CmdLength supplies a numeric helper for a point or vector.
         Node::Un(Un::Length, a) => defined_below(ctx, a) && !ctx.full_number(i).is_nan(),
         Node::Inverse(a) => defined_below(ctx, a) && inverse::sample(ctx, a, 1.0).is_some(),
