@@ -316,8 +316,8 @@ Pascal,,probability,,out_of_scope,,,
 InversePascal,,probability,,out_of_scope,,,
 Poisson,,probability,,out_of_scope,,,
 InversePoisson,,probability,,out_of_scope,,,
-Weibull,,probability,,out_of_scope,,,
-InverseWeibull,,probability,,out_of_scope,,,
+Weibull,,probability,P2,partial,4,2,The explicit distribution function in x. The numeric forms miss the reused distribution after an invalid edit.
+InverseWeibull,,probability,P2,todo,1,0,Weibull quantile for a numeric probability; misses the reused distribution after an invalid edit.
 Zipf,,probability,,out_of_scope,,,
 InverseZipf,,probability,,out_of_scope,,,
 Triangular,,probability,,out_of_scope,,,

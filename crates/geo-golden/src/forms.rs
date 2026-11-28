@@ -560,7 +560,7 @@ fn call_kinds(
 
 fn distribution_sample_slot(command: &str) -> Option<usize> {
     match command {
-        "Normal" | "Cauchy" | "Logistic" | "LogNormal" => Some(2),
+        "Normal" | "Cauchy" | "Logistic" | "LogNormal" | "Weibull" => Some(2),
         "Exponential" => Some(1),
         _ => None,
     }

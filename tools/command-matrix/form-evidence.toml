@@ -5729,3 +5729,13 @@ cases = ["probability-lognormal-002"]
 command = "InverseLogNormal"
 form = "number,number,number"
 cases = ["probability-lognormal-003"]
+
+[[form]]
+command = "Weibull"
+form = "number,number,function"
+cases = ["probability-weibull-002"]
+
+[[form]]
+command = "Weibull"
+form = "number,number,function,boolean"
+cases = ["probability-weibull-002"]

@@ -329,3 +329,5 @@ Logistic,probability,4,"number,number,number | number,number,number,boolean | nu
 InverseLogistic,probability,1,"number,number,number"
 LogNormal,probability,4,"number,number,number | number,number,number,boolean | number,number,function | number,number,function,boolean"
 InverseLogNormal,probability,1,"number,number,number"
+Weibull,probability,4,"number,number,number | number,number,number,boolean | number,number,function | number,number,function,boolean"
+InverseWeibull,probability,1,"number,number,number"

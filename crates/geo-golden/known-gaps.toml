@@ -3314,3 +3314,11 @@ mismatches = ["1:spreadsheet"]
 id = "spreadsheet-filldistinctbudget-001"
 reason = "GeoGebra fills A1 with ? and B1 with 0. geokernel rejects the entire fill before writing because the shifted formulas and destinations visit more than 1,024 distinct cells. See DIFFERENCES.md."
 mismatches = ["0:spreadsheet"]
+
+# probability
+
+[[gap]]
+id = "probability-weibull-006"
+reason = "AlgoDistribution.getDist records the parameters before it builds the distribution. When the build rejects a non-positive shape or scale, the next update with the same parameters reuses the last valid distribution, so a sample or probability move after an invalid edit shows the old distribution's value. The kernel keeps no distribution between updates and stays undefined."
+mismatches = ["2:a", "2:c", "3:a", "3:c", "3:q", "4:a", "4:c", "4:q", "7:a", "7:c"]
+undefined = true

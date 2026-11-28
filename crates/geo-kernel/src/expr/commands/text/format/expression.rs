@@ -352,6 +352,56 @@ impl Format {
                     format!("If({x} ≤ 0, 0, {branch})")
                 }
             }
+            Node::Probability(Probability::Weibull { function: true }, [shape, scale, x, flag]) => {
+                // The reference builds the expression from the live inputs,
+                // so unsubstituted LaTeX keeps their names, not the command.
+                // Plain text shows the function's value string either way.
+                let x = term(x, 0)?;
+                let number = |i| self.number(ctx.full_number(i));
+                let (shape, lowered, scale) = if substitute || !self.latex {
+                    let (shape, scale) = (number(shape), number(scale));
+                    (shape.clone(), shape, scale)
+                } else {
+                    // LaTeX fractions need no parentheses around either part.
+                    (term(shape, 0)?, term(shape, 4)?, term(scale, 0)?)
+                };
+                let cumulative = flag == NONE || matches!(ctx.full(flag).val, Val::B(true, _));
+                let branch = if self.latex {
+                    let ratio = format!(r"\left(\frac{{{x}}}{{{scale}}} \right)");
+                    let power = if shape == "1" {
+                        ratio.clone()
+                    } else {
+                        format!("{ratio}^{{{shape}}}")
+                    };
+                    let survival = format!(r"\mathit{{e}}^{{-{power}}}");
+                    if cumulative {
+                        format!("1 - {survival}")
+                    } else {
+                        format!(
+                            r"\frac{{{shape}}}{{{scale}}} \; {ratio}^{{{lowered} - 1}} \; {survival}"
+                        )
+                    }
+                } else {
+                    let ratio = format!("({x} / {scale})");
+                    let power = match superscript(&shape) {
+                        Some(digits) => format!("{ratio}{digits}"),
+                        None => format!("{ratio}^({shape})"),
+                    };
+                    let survival = format!("ℯ^(-{power})");
+                    if cumulative {
+                        format!("1 - {survival}")
+                    } else {
+                        format!("{shape} / {scale} {ratio}^({lowered} - 1) {survival}")
+                    }
+                };
+                if self.latex {
+                    format!(
+                        r"\left\{{\begin{{array}}{{ll}} 0& : {x} < 0\\ {branch}& : \text{{otherwise}} \end{{array}}\right. "
+                    )
+                } else {
+                    format!("If({x} < 0, 0, {branch})")
+                }
+            }
             Node::Probability(
                 op @ (Probability::Normal { function: true }
                 | Probability::Cauchy { function: true }
