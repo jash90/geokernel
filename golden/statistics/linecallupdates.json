@@ -1,0 +1,54 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-linecallupdates-001",
+      "group": "statistics",
+      "script": [
+        "n = 0",
+        "g: y = (x+n)-n",
+        "f(x) = g(x)",
+        "a = f(1)"
+      ],
+      "observe": [
+        "g",
+        "a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 9.007199254740992E15 }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -0.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-linecallupdates-002",
+      "group": "statistics",
+      "script": [
+        "g: y = x+x",
+        "a = g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(1))))))))))))))))))"
+      ],
+      "observe": [
+        "a"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 262144.0 }
+        }
+      ]
+    }
+  ]
+}

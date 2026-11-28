@@ -677,6 +677,7 @@ impl EquationDef {
 pub struct EquationRecord {
     pub(crate) coeffs: Vec<u32>,
     pub(crate) sides: [u32; 2],
+    pub(crate) has_explicit_body: bool,
 }
 
 /// The presentation of a line or conic, independent of its coefficients.
@@ -5098,7 +5099,8 @@ impl Construction {
 
     /// Recomputes the equation object `i` from its coefficients; tells
     /// whether its children must follow: whether any coefficient changed,
-    /// bit for bit, or its display uses the original expression sides.
+    /// bit for bit, its display uses the original expression sides, or a
+    /// function can expand the original right-hand side of the equation.
     /// A conic is classified again from its record, as
     /// `AlgoDependentConic.compute` calls `setCoeffs`. Out of line like
     /// [`Self::update_expr`].
@@ -5120,7 +5122,7 @@ impl Construction {
                 false
             };
         if !changed {
-            return user_form;
+            return user_form || self.equations[d.index as usize].1.has_explicit_body;
         }
         if let Some(record) = record {
             if let Some(slot) = self.conic_slot(i) {

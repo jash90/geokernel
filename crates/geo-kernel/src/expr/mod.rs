@@ -1055,7 +1055,10 @@ impl Entry {
         let inverts = p.nodes.iter().any(|node| match *node {
             Node::Inverse(_) | Node::Cas(..) => true,
             Node::Apply(f, _) | Node::Apply2(f, ..) => {
-                matches!(c.def(f), Def::Expr(d) if entry(c, d).inverts)
+                // A redefined line can acquire a different equation body.
+                // Meter its expansion even if the parsed body was small.
+                function && c.kind(f) == Kind::Line
+                    || matches!(c.def(f), Def::Expr(d) if entry(c, d).inverts)
             }
             _ => false,
         });
@@ -1667,7 +1670,7 @@ fn reparse(
                 read(f, true);
             }
             Node::Apply(f, _) => {
-                (f.0 < c.len() && c.kind(f) == Kind::Function).then_some(())?;
+                (f.0 < c.len() && matches!(c.kind(f), Kind::Function | Kind::Line)).then_some(())?;
                 read(f, true);
             }
             Node::Cmd(def, _) => {
@@ -1687,7 +1690,8 @@ fn reparse(
             _ => {}
         }
     }
-    let (tys, depth, cost, vars) = types::check(c, &nodes, root).ok()?;
+    let (tys, depth, cost, vars) =
+        types::check_line_calls(c, &nodes, root, kind == Kind::Function).ok()?;
     let r = root as usize;
     if depth[r] > parse::MAX_DEPTH || cost[r] > parse::MAX_COST {
         return None;
@@ -1714,6 +1718,10 @@ fn reparse(
 
 /// Depth, cost and variable count of a function object's tree.
 pub(crate) fn function_metrics(c: &Construction, f: Id) -> (u32, u64, u64) {
+    if c.kind(f) == Kind::Line {
+        return equation::line_function_entry(c, f)
+            .map_or((1, 1, 1), |e| (e.depth, e.cost, e.vars));
+    }
     match c.def(f) {
         Def::Expr(d) => {
             let e = entry(c, d);
@@ -3106,7 +3114,7 @@ pub(crate) fn define_function(
     let parsed = if of_y {
         parse::parse_parameter(c, rhs, "y")?
     } else {
-        parse::parse(c, rhs)?
+        parse::parse_function(c, rhs)?
     };
     function(c, name, parsed, of_y)
 }

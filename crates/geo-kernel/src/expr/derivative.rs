@@ -131,21 +131,34 @@ impl Walker<'_> {
                 // `f'` applied to the argument, times the argument's own
                 // derivative (`Operation.FUNCTION` of the derivative).
                 let arg_value = self.value(arg);
-                let (Def::Expr(def), Value::Function) = (self.ctx.c.def(f), self.ctx.c.value(f))
-                else {
+                let expanded = self.ctx.application_entry(f);
+                let df = if let Some(e) = expanded {
+                    let env = Env::Value(arg_value);
+                    Walker {
+                        ctx: Ctx {
+                            meter: Some(self.budget),
+                            ..Ctx::new(self.ctx.c, e, &env)
+                        },
+                        x: arg_value,
+                        budget: self.budget,
+                    }
+                    .gradient(e.root, depth)?
+                } else if let Some((a, b, _)) = self.ctx.c.raw_line(f) {
+                    -a / b
+                } else {
                     return Some(f64::NAN);
                 };
-                let e = entry(self.ctx.c, def);
-                let env = Env::Value(arg_value);
-                let df = Walker {
-                    ctx: Ctx {
-                        meter: Some(self.budget),
-                        ..Ctx::new(self.ctx.c, e, &env)
-                    },
-                    x: arg_value,
-                    budget: self.budget,
+                // A constant body can omit the argument derivative. A
+                // typed body with a live zero slope still differentiates it.
+                if df == 0.0 && self.ctx.c.kind(f) == crate::Kind::Line {
+                    if let Some(body) = expanded {
+                        if !self.line_body_reads_argument(body)? {
+                            return Some(df);
+                        }
+                    } else {
+                        return Some(df);
+                    }
                 }
-                .gradient(e.root, depth)?;
                 df * self.gradient(arg, depth)?
             }
             Node::If(mode, cond, then, rest) => {
@@ -387,6 +400,26 @@ impl Walker<'_> {
             (matches!(self.ctx.e.tys[i as usize], Ty::Num(_)) && !self.reads_variable(i)?)
                 .then(|| self.value(i)),
         )
+    }
+
+    fn line_body_reads_argument(&self, body: &Entry) -> Option<bool> {
+        if body.vars == 0 {
+            return Some(false);
+        }
+        let literal_zero = |i| matches!(body.nodes[i as usize], Node::Num(v) if v == 0.0);
+        let mut stack = vec![body.root];
+        while let Some(i) = stack.pop() {
+            if !self.budget.charge(1) {
+                return None;
+            }
+            match body.nodes[i as usize] {
+                Node::Var => return Some(true),
+                Node::Bin(Bin::Mul, a, b) if literal_zero(a) || literal_zero(b) => (),
+                Node::Bin(Bin::Pow, _, exponent) if literal_zero(exponent) => (),
+                node => stack.extend(children(&node)),
+            }
+        }
+        Some(false)
     }
 
     /// Whether the subtree at `i` reads the function variable or the

@@ -1488,7 +1488,7 @@ impl<const M: bool> Ctx<'_, M> {
     /// The fast path for `f(a)` inside a function, with the argument
     /// substituted into the body.
     fn apply_fast(&self, f: Id, a: u32) -> f64 {
-        let Some(e) = function_entry(self.c, f) else {
+        let Some(e) = self.application_entry(f) else {
             return self
                 .sample_application(f, || self.fast(a))
                 .unwrap_or(f64::NAN);
@@ -1506,7 +1506,7 @@ impl<const M: bool> Ctx<'_, M> {
     /// `f(a)` in the full evaluation: inside a function the expanded tree
     /// keeps its decimals; elsewhere `f` is sampled at the value of `a`.
     fn apply_full(&self, f: Id, a: u32) -> Ex {
-        let Some(e) = function_entry(self.c, f) else {
+        let Some(e) = self.application_entry(f) else {
             if let Some(value) = self.sample_application(f, || self.full_number(a)) {
                 return Ex::plain(Val::N(value));
             }
@@ -1534,12 +1534,31 @@ impl<const M: bool> Ctx<'_, M> {
         }
     }
 
+    pub(super) fn application_entry(&self, f: Id) -> Option<&Entry> {
+        if self.e.function && matches!(self.c.value(f), Value::Line { .. }) {
+            return super::equation::line_function_entry(self.c, f);
+        }
+        function_entry(self.c, f)
+    }
+
     fn sample_application(&self, source: Id, argument: impl FnOnce() -> f64) -> Option<f64> {
         if self.c.kind(source) == Kind::Line {
-            let Value::Line { a, b, c } = self.c.value(source) else {
+            let (a, b, c) = self.c.raw_line(source)?;
+            if self.stop(1) {
                 return None;
-            };
-            return (b != 0.0 && !self.stop(1)).then(|| -(a * argument() + c) / b);
+            }
+            // GeoLine.getFunction supplies slope and intercept separately
+            // when expanding a function. A direct call uses GeoLine.value.
+            if self.e.function {
+                let term = (-a / b) * argument();
+                let intercept = -c / b;
+                return Some(if intercept == 0.0 {
+                    term
+                } else {
+                    term + intercept
+                });
+            }
+            return (b.abs() >= STANDARD_PRECISION).then(|| (-a * argument() - c) / b);
         }
         if super::is_sampled_function(self.c, source) && !self.stop(32) {
             return super::function_value(self.c, source, argument());

@@ -1159,6 +1159,8 @@ fn add(
         c.exprs.entries.push(entry);
         indices.push(index);
     }
+    let [lhs, rhs] = &sides;
+    let has_explicit_body = !conic && lhs.nodes[lhs.root as usize] == Node::VarY && !rhs.uses_y;
     let sides = sides.map(|parsed| {
         let index = c.exprs.entries.len() as u32;
         let entry = Entry::new(c, parsed, true);
@@ -1171,6 +1173,7 @@ fn add(
         EquationRecord {
             coeffs: indices,
             sides,
+            has_explicit_body,
         },
     ));
     match c.add(name, Def::Equation(EquationDef { conic, index })) {
@@ -1244,6 +1247,18 @@ pub(super) fn side_entry(c: &Construction, equation: Id, left: bool) -> Option<&
 
 pub(super) fn side_parents(c: &Construction, equation: Id, left: bool) -> &[Id] {
     side_entry(c, equation, left).map_or(&[], |entry| &entry.parents)
+}
+
+/// GeoLine.definitionAsFunction uses the typed right-hand side of y = f(x).
+pub(super) fn line_function_entry(c: &Construction, line: Id) -> Option<&Entry> {
+    let Def::Equation(def) = c.def(line) else {
+        return None;
+    };
+    let record = &c.equations.get(def.index as usize)?.1;
+    if !record.has_explicit_body {
+        return None;
+    }
+    c.exprs.entries.get(record.sides[1] as usize)
 }
 
 /// Evaluate a side object at a pair of coordinates.
@@ -1379,16 +1394,9 @@ fn evaluate_number(c: &Construction, index: u32) -> f64 {
     }
 }
 
-/// `GeoLine.isDefined`: the coefficients are numbers and `(a, b)` is not
-/// both zero at the standard precision.
 fn line_value(v: &[f64]) -> Value {
     let [a, b, c] = v.try_into().unwrap_or([f64::NAN; 3]);
-    let is_zero = |x: f64| -STANDARD_PRECISION < x && x < STANDARD_PRECISION;
-    if a.is_finite() && b.is_finite() && c.is_finite() && !(is_zero(a) && is_zero(b)) {
-        Value::Line { a, b, c }
-    } else {
-        Value::Undefined
-    }
+    algo::line_value(a, b, c).unwrap_or(Value::Undefined)
 }
 
 /// `GeoConic.setCoeffs`: the matrix of the coefficients of
@@ -1472,6 +1480,29 @@ mod tests {
 
     fn conic(c: &Construction, label: &str) -> ConicData {
         c.conic(c.id(label).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn an_explicitly_displayed_line_updates_its_expanded_calls() {
+        let mut c = load("n = 0\ng: y = (x+n)-n\nf(x) = g(x)\na = f(1)").unwrap();
+        let [g, n, a] = ["g", "n", "a"].map(|label| c.id(label).unwrap());
+        c.set_equation_form(g, EquationForm::Explicit).unwrap();
+        assert_eq!(c.value(a), Value::Number(1.0));
+        let coefficients = c.raw_line(g).unwrap();
+        c.set_number(n, 9_007_199_254_740_992.0).unwrap();
+        assert_eq!(c.raw_line(g).unwrap(), coefficients);
+        assert_eq!(c.value(a), Value::Number(0.0));
+    }
+
+    #[test]
+    fn repeated_line_expansion_in_a_constant_function_still_has_a_work_limit() {
+        let mut c = load("g: y = x+x").unwrap();
+        let source = format!("f(x) = {}1{}", "g(".repeat(24), ")".repeat(24));
+        let error = exec(&mut c, &source).unwrap_err();
+        assert!(
+            error.to_string().contains("too large to evaluate"),
+            "{error}"
+        );
     }
 
     #[test]

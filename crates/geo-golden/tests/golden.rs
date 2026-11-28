@@ -5,13 +5,13 @@ use geo_kernel::{script, Construction, Def, Error, Kind, Value};
 
 /// Number of cases recorded by `ggb-harness` so far. Raise it when adding cases,
 /// so that losing a file is noticed.
-const MIN_GOLDEN_CASES: usize = 7610;
+const MIN_GOLDEN_CASES: usize = 7628;
 
 #[test]
 fn fit_lines_match_raw_geogebra_coefficients() {
     let mut cases = model::load_all(&repo_root()).unwrap();
     cases.retain(|case| case.id.starts_with("statistics-fitline"));
-    assert_eq!(cases.len(), 15);
+    assert_eq!(cases.len(), 17);
     let report = report::evaluate(&cases, &gaps::Gaps::new());
     assert!(report.failures.is_empty(), "{}", report.failures.join("\n"));
     assert!(report.scale_agree > 0);

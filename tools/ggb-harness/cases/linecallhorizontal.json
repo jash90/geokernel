@@ -1,0 +1,108 @@
+{
+  "cases": [
+    {
+      "id": "statistics-linecallhorizontal-001",
+      "group": "statistics",
+      "script": [
+        "g: y = 2",
+        "f(x) = g(abs(x))",
+        "T = Tangent(0,f)"
+      ],
+      "observe": [
+        "T"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "statistics-linecallhorizontal-002",
+      "group": "statistics",
+      "script": [
+        "g = Line((0,2),(2,2))",
+        "f(x) = g(abs(x))",
+        "T = Tangent(0,f)"
+      ],
+      "observe": [
+        "T"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "statistics-linecallhorizontal-003",
+      "group": "statistics",
+      "script": [
+        "n = 0",
+        "g: y = 1/n",
+        "a = g(0)"
+      ],
+      "observe": [
+        "a"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "statistics-linecallhorizontal-004",
+      "group": "statistics",
+      "script": [
+        "n = 0",
+        "g: y = x/n",
+        "a = g(-1)",
+        "b = g(0)",
+        "d = g(1)",
+        "valid = IsDefined(g)"
+      ],
+      "observe": [
+        "a",
+        "b",
+        "d",
+        "valid"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "statistics-linecallhorizontal-005",
+      "group": "statistics",
+      "script": [
+        "n = 2",
+        "c = 1/n",
+        "g: x + y = c",
+        "a = g(0)",
+        "d = IsDefined(g)"
+      ],
+      "observe": [
+        "a",
+        "d"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 2
+        }
+      ]
+    }
+  ]
+}

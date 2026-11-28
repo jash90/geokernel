@@ -1,0 +1,33 @@
+{
+  "cases": [
+    {
+      "id": "statistics-linecallreference-001",
+      "group": "statistics",
+      "script": [
+        "A = (0,1)",
+        "B = (2,5)",
+        "m = Line(A,B)",
+        "u = Line((2,0),(2,4))",
+        "h = Line((0,4),(2,4))",
+        "a = m(3)",
+        "b = u(3)",
+        "c = h(3)",
+        "d = u(2)",
+        "f = 4",
+        "e = f(3)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ],
+      "observe": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e"
+      ]
+    }
+  ]
+}

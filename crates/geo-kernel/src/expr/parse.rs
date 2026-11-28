@@ -130,6 +130,10 @@ pub(super) fn parse_parameter(c: &Construction, src: &str, name: &str) -> Result
     parse_in(c, src, Mode::Parameter(name))
 }
 
+pub(super) fn parse_function(c: &Construction, src: &str) -> Result<Parsed, String> {
+    parse_in(c, src, Mode::Function)
+}
+
 pub(super) fn parse_system(
     c: &Construction,
     src: &str,
@@ -163,6 +167,7 @@ pub(super) fn parse_scoped_equation(
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Mode<'a> {
     Expression,
+    Function,
     Argument,
     PointIncrement,
     Equation,
@@ -273,7 +278,11 @@ fn parse_in_with_work(
     if let Some(t) = p.toks.get(p.pos) {
         return Err(format!("unexpected `{}`", &src[t.start..t.end]));
     }
-    let (tys, depth, cost, vars) = check(c, &p.nodes, root)?;
+    let expand_line_calls = p.uses_var
+        || equation
+        || matches!(mode, Mode::Function | Mode::Parameter(_) | Mode::System(_));
+    let (tys, depth, cost, vars) =
+        super::types::check_line_calls(c, &p.nodes, root, expand_line_calls)?;
     let r = root as usize;
     if depth[r] > MAX_DEPTH {
         return Err("the expression is nested too deeply".into());
@@ -1300,10 +1309,10 @@ impl Parser<'_> {
                     _ => Err(format!("the function `{text}` takes two arguments")),
                 };
             }
-            if self.c.kind(id) == Kind::Function {
-                if !call {
-                    return Ok(self.push(Node::FunctionObject(id)));
-                }
+            if !call && self.c.kind(id) == Kind::Function {
+                return Ok(self.push(Node::FunctionObject(id)));
+            }
+            if call && matches!(self.c.kind(id), Kind::Function | Kind::Line) {
                 return match self.arguments()?[..] {
                     [a] => Ok(self.push(Node::Apply(id, a))),
                     _ => Err(format!("the function `{text}` takes one argument")),

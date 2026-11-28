@@ -1,0 +1,101 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-linecalltangent-001",
+      "group": "statistics",
+      "script": [
+        "n = 0",
+        "g: y = n*x+2",
+        "f(x) = g(abs(x))",
+        "T = Tangent(0,f)",
+        "a = f(1)"
+      ],
+      "observe": [
+        "T",
+        "a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "T": { "type": "line", "defined": false },
+          "a": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "T": { "type": "line", "defined": false },
+          "a": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "T": { "type": "line", "defined": false },
+          "a": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-linecalltangent-002",
+      "group": "statistics",
+      "script": [
+        "g: y = 0*x+2",
+        "f(x) = g(abs(x))",
+        "T = Tangent(0,f)"
+      ],
+      "observe": [
+        "T"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "T": { "type": "line", "defined": true, "a": -0.0, "b": 1.0, "c": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "statistics-linecalltangent-003",
+      "group": "statistics",
+      "script": [
+        "g: y = x-x+2",
+        "f(x) = g(abs(x))",
+        "T = Tangent(0,f)"
+      ],
+      "observe": [
+        "T"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "T": { "type": "line", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "statistics-linecalltangent-004",
+      "group": "statistics",
+      "script": [
+        "g: y = x^0+2",
+        "f(x) = g(abs(x))",
+        "T = Tangent(0,f)"
+      ],
+      "observe": [
+        "T"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "T": { "type": "line", "defined": true, "a": -0.0, "b": 1.0, "c": -3.0 }
+        }
+      ]
+    }
+  ]
+}

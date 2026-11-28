@@ -1,0 +1,57 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "statistics-linecalllimits-001",
+      "group": "statistics",
+      "script": [
+        "width = 0.00000002",
+        "g = Line((0,0),(width,1))",
+        "direct = g(2)",
+        "f(x) = 1 + g(x)",
+        "nested = f(2)"
+      ],
+      "observe": [
+        "g",
+        "direct",
+        "nested"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "width", "value": 1.0E-9 },
+        { "action": "set_number", "label": "width", "value": 1.0E-8 },
+        { "action": "set_number", "label": "width", "value": 0.0 },
+        { "action": "set_number", "label": "width", "value": -2.0E-8 }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 2.0E-8, "c": 0.0 },
+          "direct": { "type": "number", "defined": true, "value": 1.0E8 },
+          "nested": { "type": "number", "defined": true, "value": 1.00000001E8 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0E-9, "c": 0.0 },
+          "direct": { "type": "number", "defined": false },
+          "nested": { "type": "number", "defined": true, "value": 2.0000000009999998E9 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0E-8, "c": 0.0 },
+          "direct": { "type": "number", "defined": true, "value": 2.0E8 },
+          "nested": { "type": "number", "defined": true, "value": 2.00000001E8 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "direct": { "type": "number", "defined": false },
+          "nested": { "type": "number", "defined": false }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": -2.0E-8, "c": 0.0 },
+          "direct": { "type": "number", "defined": true, "value": -1.0E8 },
+          "nested": { "type": "number", "defined": true, "value": -9.9999999E7 }
+        }
+      ]
+    }
+  ]
+}

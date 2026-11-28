@@ -3728,6 +3728,51 @@ fn reloaded_fit_lines_follow_point_edits() {
 }
 
 #[test]
+fn reloaded_line_calls_follow_point_edits() {
+    let wb = Workbench::from_script(
+        "A = (0, 1)\nB = (2, 5)\ng = Line(A, B)\na = g(3)\nf(x) = 1 + g(x)\nb = f(3)",
+    )
+    .unwrap();
+    let (_, mut reloaded) = round_trip("a line applied as a function", &wb, None);
+    let values = |w: &Workbench| {
+        let c = w.construction();
+        ["a", "b"].map(|label| c.value(c.id(label).unwrap()))
+    };
+    let point = reloaded.construction().id("B").unwrap();
+    let number = geo_kernel::Value::Number;
+    assert_eq!(values(&reloaded), [number(7.0), number(8.0)]);
+    assert!(reloaded.move_point(point, 0.0, 5.0));
+    assert!(values(&reloaded).iter().all(|v| !v.is_defined()));
+    assert!(reloaded.move_point(point, 2.0, 3.0));
+    assert_eq!(values(&reloaded), [number(4.0), number(5.0)]);
+}
+
+#[test]
+fn reloaded_line_expansion_keeps_the_typed_equation() {
+    let wb = Workbench::from_script("g: y = (x + 1)/3\nf(x) = g(x)\na = 1/(f(5)-2)").unwrap();
+    let (_, reloaded) = round_trip("a line with a typed right-hand side", &wb, None);
+    let construction = reloaded.construction();
+    assert_eq!(
+        construction.value(construction.id("a").unwrap()),
+        geo_kernel::Value::Number(f64::INFINITY)
+    );
+}
+
+#[test]
+fn reloaded_typed_line_calls_keep_infinite_coefficients() {
+    let wb = Workbench::from_script("n = 0\ng: y = 1/n\nh: y = x/n\na = g(0)\nb = h(1)").unwrap();
+    let (_, mut reloaded) = round_trip("typed lines with infinite coefficients", &wb, None);
+    let [n, a, b] = ["n", "a", "b"].map(|label| reloaded.construction().id(label).unwrap());
+    let outputs = |w: &Workbench| [a, b].map(|id| w.construction().value(id));
+    let number = geo_kernel::Value::Number;
+    assert_eq!(outputs(&reloaded), [number(f64::INFINITY); 2]);
+    assert!(reloaded.set_number(n, -2.0));
+    assert_eq!(outputs(&reloaded), [number(-0.5); 2]);
+    assert!(reloaded.set_number(n, 0.0));
+    assert_eq!(outputs(&reloaded), [number(f64::INFINITY); 2]);
+}
+
+#[test]
 fn fit_line_archive_checks_definedness_before_the_coefficient_tolerance() {
     for (x, defined, replacement) in [
         ("0.00007", false, "-1.02e-8"),
