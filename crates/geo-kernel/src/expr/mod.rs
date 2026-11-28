@@ -1049,6 +1049,7 @@ impl Entry {
                         | Node::Inverse(_)
                         | Node::Dilate(..)
                         | Node::PolynomialPart(..)
+                        | Node::Probability(..)
                         | Node::Cas(..)
                         | Node::Un(Un::Length, _)
                 )
@@ -2130,16 +2131,6 @@ fn inputs_defined(c: &Construction, e: &Entry) -> bool {
     if e.interval.is_some_and(|interval| !interval.defined) {
         return false;
     }
-    // An undefined parameter affects the samples of a normal function.
-    if matches!(
-        e.nodes[e.root as usize],
-        Node::Probability(
-            commands::probability::Probability::Normal { function: true },
-            _
-        )
-    ) {
-        return true;
-    }
     if e.checks_branches {
         let meter = eval::Lists::new(Vec::new());
         let ctx = eval::Ctx::<true> {
@@ -2194,6 +2185,10 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
         Node::Cmd(def, hint) => {
             eval::with_command_budget(ctx.meter, || command_defined(ctx.c, def, hint))
         }
+        // A normal function stays defined even when its parameters make
+        // the samples undefined. A scalar distribution is a numeric helper.
+        Node::Probability(commands::probability::Probability::Normal { function: true }, _) => true,
+        Node::Probability(..) => !ctx.full_number(i).is_nan(),
         // CmdLength supplies a numeric helper for a point or vector.
         Node::Un(Un::Length, a) => defined_below(ctx, a) && !ctx.full_number(i).is_nan(),
         Node::Inverse(a) => defined_below(ctx, a) && inverse::sample(ctx, a, 1.0).is_some(),

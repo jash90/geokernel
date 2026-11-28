@@ -1,0 +1,202 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-normaldefinedness-001",
+      "group": "probability",
+      "script": [
+        "n = 0",
+        "u = 0/n",
+        "s = 0",
+        "f = 2*Normal(0,u,x)",
+        "g = x + Normal(0,s,0)",
+        "h = u*x + Normal(0,1,x)",
+        "a = IsDefined(f)",
+        "b = IsDefined(g)",
+        "c = IsDefined(h)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "s", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "u": { "type": "number", "defined": false },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "g": { "type": "function", "defined": false },
+          "h": { "type": "function", "defined": false },
+          "a": { "type": "boolean", "defined": true, "value": true },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "u": { "type": "number", "defined": false },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.5],
+              [-4.0, -3.5],
+              [-2.0, -1.5],
+              [-1.0, -0.5],
+              [-0.5, 0.0],
+              [0.0, 0.5],
+              [0.5, 1.0],
+              [1.0, 1.5],
+              [2.0, 2.5],
+              [4.0, 4.5],
+              [8.0, 8.5]
+            ]
+          },
+          "h": { "type": "function", "defined": false },
+          "a": { "type": "boolean", "defined": true, "value": true },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "u": { "type": "number", "defined": true, "value": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, null],
+              [0.5, 2.0],
+              [1.0, 2.0],
+              [2.0, 2.0],
+              [4.0, 2.0],
+              [8.0, 2.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.5],
+              [-4.0, -3.5],
+              [-2.0, -1.5],
+              [-1.0, -0.5],
+              [-0.5, 0.0],
+              [0.0, 0.5],
+              [0.5, 1.0],
+              [1.0, 1.5],
+              [2.0, 2.5],
+              [4.0, 4.5],
+              [8.0, 8.5]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 6.106226635438361E-16],
+              [-4.0, 3.167124183311998E-5],
+              [-2.0, 0.022750131948179153],
+              [-1.0, 0.15865525393145702],
+              [-0.5, 0.308537538725987],
+              [0.0, 0.5],
+              [0.5, 0.691462461274013],
+              [1.0, 0.841344746068543],
+              [2.0, 0.9772498680518209],
+              [4.0, 0.9999683287581669],
+              [8.0, 0.9999999999999993]
+            ]
+          },
+          "a": { "type": "boolean", "defined": true, "value": true },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "u": { "type": "number", "defined": false },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.5],
+              [-4.0, -3.5],
+              [-2.0, -1.5],
+              [-1.0, -0.5],
+              [-0.5, 0.0],
+              [0.0, 0.5],
+              [0.5, 1.0],
+              [1.0, 1.5],
+              [2.0, 2.5],
+              [4.0, 4.5],
+              [8.0, 8.5]
+            ]
+          },
+          "h": { "type": "function", "defined": false },
+          "a": { "type": "boolean", "defined": true, "value": true },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    }
+  ]
+}

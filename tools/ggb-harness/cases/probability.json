@@ -422,6 +422,41 @@
           "value": 0
         }
       ]
+    },
+    {
+      "id": "probability-normaldefinedness-001",
+      "group": "probability",
+      "script": [
+        "n = 0",
+        "u = 0/n",
+        "s = 0",
+        "f = 2*Normal(0,u,x)",
+        "g = x + Normal(0,s,0)",
+        "h = u*x + Normal(0,1,x)",
+        "a = IsDefined(f)",
+        "b = IsDefined(g)",
+        "c = IsDefined(h)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "s",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 0
+        }
+      ]
     }
   ]
 }
