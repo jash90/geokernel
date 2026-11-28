@@ -18,7 +18,7 @@ cases = [
         ],
     },
 ]
-for i, expression in enumerate(["0*x+2", "x-x+2"], 2):
+for i, expression in enumerate(["0*x+2", "x-x+2", "x^0+2"], 2):
     cases.append({
         "id": f"statistics-linecalltangent-{i:03d}",
         "group": "statistics",

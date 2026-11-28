@@ -63,6 +63,23 @@
           "action": "initial"
         }
       ]
+    },
+    {
+      "id": "statistics-linecalltangent-004",
+      "group": "statistics",
+      "script": [
+        "g: y = x^0+2",
+        "f(x) = g(abs(x))",
+        "T = Tangent(0,f)"
+      ],
+      "observe": [
+        "T"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
     }
   ]
 }

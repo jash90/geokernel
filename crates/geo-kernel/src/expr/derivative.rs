@@ -415,6 +415,7 @@ impl Walker<'_> {
             match body.nodes[i as usize] {
                 Node::Var => return Some(true),
                 Node::Bin(Bin::Mul, a, b) if literal_zero(a) || literal_zero(b) => (),
+                Node::Bin(Bin::Pow, _, exponent) if literal_zero(exponent) => (),
                 node => stack.extend(children(&node)),
             }
         }
