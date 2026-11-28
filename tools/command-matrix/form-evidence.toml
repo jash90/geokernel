@@ -5629,3 +5629,28 @@ cases = ["probability-normalfunction-001", "probability-normalfunction-002"]
 command = "InverseNormal"
 form = "number,number,number"
 cases = ["probability-inverse-001", "probability-inverse-002", "probability-normalprecision-001"]
+
+[[form]]
+command = "Exponential"
+form = "number,number"
+cases = ["probability-exponential-001"]
+
+[[form]]
+command = "Exponential"
+form = "number,number,boolean"
+cases = ["probability-exponential-001"]
+
+[[form]]
+command = "Exponential"
+form = "number,function"
+cases = ["probability-exponential-002"]
+
+[[form]]
+command = "Exponential"
+form = "number,function,boolean"
+cases = ["probability-exponential-002"]
+
+[[form]]
+command = "InverseExponential"
+form = "number,number"
+cases = ["probability-exponential-003"]

@@ -308,8 +308,8 @@ Cauchy,,probability,,out_of_scope,,,
 InverseCauchy,,probability,,out_of_scope,,,
 ChiSquared,,probability,,out_of_scope,,,
 InverseChiSquared,,probability,,out_of_scope,,,
-Exponential,,probability,,out_of_scope,,,
-InverseExponential,,probability,,out_of_scope,,,
+Exponential,,probability,P2,done,4,4,"Numeric density, cumulative probability and the explicit distribution function in x."
+InverseExponential,,probability,P2,done,1,1,Exponential quantile for a numeric probability.
 HyperGeometric,,probability,,out_of_scope,,,
 InverseHyperGeometric,,probability,,out_of_scope,,,
 Pascal,,probability,,out_of_scope,,,

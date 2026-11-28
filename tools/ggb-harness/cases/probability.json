@@ -506,6 +506,241 @@
           "value": -2
         }
       ]
+    },
+    {
+      "id": "probability-exponential-001",
+      "group": "probability",
+      "script": [
+        "r = 2",
+        "t = -1",
+        "a = Exponential(r,t)",
+        "b = Exponential(r,t,true)",
+        "c = Exponential(r,t,false)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "r",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "r",
+          "value": -2
+        },
+        {
+          "action": "set_number",
+          "label": "r",
+          "value": 0.5
+        }
+      ]
+    },
+    {
+      "id": "probability-exponential-002",
+      "group": "probability",
+      "script": [
+        "r = 2",
+        "n = 1",
+        "p = n > 0",
+        "f = Exponential(r,x)",
+        "g = Exponential(r,(x),false)",
+        "h = Exponential(r,x,p)",
+        "a = f(-1)",
+        "b = g(0)",
+        "c = h(1)",
+        "d = IsDefined(h)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "r",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "r",
+          "value": -2
+        },
+        {
+          "action": "set_number",
+          "label": "r",
+          "value": 0.5
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "probability-exponential-003",
+      "group": "probability",
+      "script": [
+        "r = 2",
+        "p = 0",
+        "a = InverseExponential(r,p)",
+        "b = InverseExponential(r,0.7-0.2)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 1e-16
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.5
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": -0.1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 1.1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.5
+        },
+        {
+          "action": "set_number",
+          "label": "r",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "r",
+          "value": -2
+        },
+        {
+          "action": "set_number",
+          "label": "r",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "probability-exponential-004",
+      "group": "probability",
+      "script": [
+        "s = Segment((0,0),(2,0))",
+        "a = Exponential(s,1)",
+        "b = InverseExponential(s,0.5)",
+        "c = Exponential(2,1/0)",
+        "d = Exponential(2,1/0,false)",
+        "k = Exponential(1/0,1)",
+        "m = Exponential(1/0,0,false)",
+        "p = InverseExponential(1/0,1)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-exponential-005",
+      "group": "probability",
+      "script": [
+        "a = Exponential(10^(-300),1)",
+        "b = InverseExponential(10^(-300),10^(-10))",
+        "c = Exponential(10^300,10^(-300),false)",
+        "d = Exponential(0.7-0.2,1)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-exponentialformat-001",
+      "group": "probability",
+      "script": [
+        "r = 2",
+        "f = Exponential(r,x)",
+        "g = Exponential(r,x,false)",
+        "a = FormulaText(f)",
+        "b = FormulaText(g)",
+        "c = FormulaText(f,false)",
+        "d = FormulaText(Exponential(r,x))"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "r",
+          "value": -2
+        }
+      ]
+    },
+    {
+      "id": "probability-exponentialformatedges-001",
+      "group": "probability",
+      "script": [
+        "r = 1",
+        "n = 0",
+        "p = n > 0",
+        "f = Exponential(r,x,p)",
+        "g = Exponential(0,x)",
+        "h = Exponential(-1,x,false)",
+        "a = FormulaText(f)",
+        "b = FormulaText(g)",
+        "c = FormulaText(h)",
+        "d = FormulaText(f,false)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "r",
+          "value": 0
+        }
+      ]
     }
   ]
 }

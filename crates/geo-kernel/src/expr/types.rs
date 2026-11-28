@@ -212,10 +212,7 @@ fn type_node(
                 })
             });
             let ty = commands::probability::value_type(op, numeric_types)?;
-            let function = matches!(
-                op,
-                commands::probability::Probability::Normal { function: true }
-            );
+            let function = op.is_function();
             let mut depth = 0;
             let mut cost = op.cost();
             for (slot, arg) in args

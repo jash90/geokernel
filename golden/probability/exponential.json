@@ -1,0 +1,590 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-exponential-001",
+      "group": "probability",
+      "script": [
+        "r = 2",
+        "t = -1",
+        "a = Exponential(r,t)",
+        "b = Exponential(r,t,true)",
+        "c = Exponential(r,t,false)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 0.0 },
+        { "action": "set_number", "label": "t", "value": 1.0 },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": -2.0 },
+        { "action": "set_number", "label": "r", "value": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.8646647167633873 },
+          "b": { "type": "number", "defined": true, "value": 0.8646647167633873 },
+          "c": { "type": "number", "defined": true, "value": 0.2706705664732254 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -2.0 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.3934693402873666 },
+          "b": { "type": "number", "defined": true, "value": 0.3934693402873666 },
+          "c": { "type": "number", "defined": true, "value": 0.3032653298563167 }
+        }
+      ]
+    },
+    {
+      "id": "probability-exponential-002",
+      "group": "probability",
+      "script": [
+        "r = 2",
+        "n = 1",
+        "p = n > 0",
+        "f = Exponential(r,x)",
+        "g = Exponential(r,(x),false)",
+        "h = Exponential(r,x,p)",
+        "a = f(-1)",
+        "b = g(0)",
+        "c = h(1)",
+        "d = IsDefined(h)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": -2.0 },
+        { "action": "set_number", "label": "r", "value": 0.5 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.6321205588285577],
+              [1.0, 0.8646647167633873],
+              [2.0, 0.9816843611112658],
+              [4.0, 0.9996645373720975],
+              [8.0, 0.9999998874648253]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 2.0],
+              [0.5, 0.7357588823428847],
+              [1.0, 0.2706705664732254],
+              [2.0, 0.03663127777746836],
+              [4.0, 6.709252558050237E-4],
+              [8.0, 2.2507034943851823E-7]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.6321205588285577],
+              [1.0, 0.8646647167633873],
+              [2.0, 0.9816843611112658],
+              [4.0, 0.9996645373720975],
+              [8.0, 0.9999998874648253]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.8646647167633873 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.6321205588285577],
+              [1.0, 0.8646647167633873],
+              [2.0, 0.9816843611112658],
+              [4.0, 0.9996645373720975],
+              [8.0, 0.9999998874648253]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 2.0],
+              [0.5, 0.7357588823428847],
+              [1.0, 0.2706705664732254],
+              [2.0, 0.03663127777746836],
+              [4.0, 6.709252558050237E-4],
+              [8.0, 2.2507034943851823E-7]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 2.0],
+              [0.5, 0.7357588823428847],
+              [1.0, 0.2706705664732254],
+              [2.0, 0.03663127777746836],
+              [4.0, 6.709252558050237E-4],
+              [8.0, 2.2507034943851823E-7]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.2706705664732254 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -2.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, -1.718281828459045],
+              [1.0, -6.38905609893065],
+              [2.0, -53.598150033144236],
+              [4.0, -2979.9579870417283],
+              [8.0, -8886109.520507872]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, -2.0],
+              [0.5, -5.43656365691809],
+              [1.0, -14.7781121978613],
+              [2.0, -109.19630006628847],
+              [4.0, -5961.915974083457],
+              [8.0, -1.7772221041015744E7]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, -2.0],
+              [0.5, -5.43656365691809],
+              [1.0, -14.7781121978613],
+              [2.0, -109.19630006628847],
+              [4.0, -5961.915974083457],
+              [8.0, -1.7772221041015744E7]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -14.7781121978613 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.22119921692859512],
+              [1.0, 0.3934693402873666],
+              [2.0, 0.6321205588285577],
+              [4.0, 0.8646647167633873],
+              [8.0, 0.9816843611112658]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.5],
+              [0.5, 0.38940039153570244],
+              [1.0, 0.3032653298563167],
+              [2.0, 0.18393972058572117],
+              [4.0, 0.06766764161830635],
+              [8.0, 0.00915781944436709]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.5],
+              [0.5, 0.38940039153570244],
+              [1.0, 0.3032653298563167],
+              [2.0, 0.18393972058572117],
+              [4.0, 0.06766764161830635],
+              [8.0, 0.00915781944436709]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 0.3032653298563167 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.22119921692859512],
+              [1.0, 0.3934693402873666],
+              [2.0, 0.6321205588285577],
+              [4.0, 0.8646647167633873],
+              [8.0, 0.9816843611112658]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.5],
+              [0.5, 0.38940039153570244],
+              [1.0, 0.3032653298563167],
+              [2.0, 0.18393972058572117],
+              [4.0, 0.06766764161830635],
+              [8.0, 0.00915781944436709]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.22119921692859512],
+              [1.0, 0.3934693402873666],
+              [2.0, 0.6321205588285577],
+              [4.0, 0.8646647167633873],
+              [8.0, 0.9816843611112658]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 0.3934693402873666 },
+          "d": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "probability-exponential-003",
+      "group": "probability",
+      "script": [
+        "r = 2",
+        "p = 0",
+        "a = InverseExponential(r,p)",
+        "b = InverseExponential(r,0.7-0.2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "p", "value": 1.0E-16 },
+        { "action": "set_number", "label": "p", "value": 0.5 },
+        { "action": "set_number", "label": "p", "value": 1.0 },
+        { "action": "set_number", "label": "p", "value": -0.1 },
+        { "action": "set_number", "label": "p", "value": 1.1 },
+        { "action": "set_number", "label": "p", "value": 0.5 },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": -2.0 },
+        { "action": "set_number", "label": "r", "value": 10.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": -0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.34657359027997264 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 1.0E-16 },
+          "a": { "type": "number", "defined": true, "value": 5.551115123125783E-17 },
+          "b": { "type": "number", "defined": true, "value": 0.34657359027997264 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": true, "value": 0.34657359027997264 },
+          "b": { "type": "number", "defined": true, "value": 0.34657359027997264 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "infinity": 1 },
+          "b": { "type": "number", "defined": true, "value": 0.34657359027997264 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": -0.1 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "value": 0.34657359027997264 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 1.1 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "value": 0.34657359027997264 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": true, "value": 0.34657359027997264 },
+          "b": { "type": "number", "defined": true, "value": 0.34657359027997264 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": true, "infinity": 1 },
+          "b": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 10.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": true, "value": 0.06931471805599453 },
+          "b": { "type": "number", "defined": true, "value": 0.06931471805599453 }
+        }
+      ]
+    },
+    {
+      "id": "probability-exponential-004",
+      "group": "probability",
+      "script": [
+        "s = Segment((0,0),(2,0))",
+        "a = Exponential(s,1)",
+        "b = InverseExponential(s,0.5)",
+        "c = Exponential(2,1/0)",
+        "d = Exponential(2,1/0,false)",
+        "k = Exponential(1/0,1)",
+        "m = Exponential(1/0,0,false)",
+        "p = InverseExponential(1/0,1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.8646647167633873 },
+          "b": { "type": "number", "defined": true, "value": 0.34657359027997264 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "k": { "type": "number", "defined": false },
+          "m": { "type": "number", "defined": false },
+          "p": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "probability-exponential-005",
+      "group": "probability",
+      "script": [
+        "a = Exponential(10^(-300),1)",
+        "b = InverseExponential(10^(-300),10^(-10))",
+        "c = Exponential(10^300,10^(-300),false)",
+        "d = Exponential(0.7-0.2,1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.000000082790371E290 },
+          "c": { "type": "number", "defined": true, "value": 3.678794411714336E299 },
+          "d": { "type": "number", "defined": true, "value": 0.3934693402873666 }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-exponentialformat-001",
+      "group": "probability",
+      "script": [
+        "r = 2",
+        "f = Exponential(r,x)",
+        "g = Exponential(r,x,false)",
+        "a = FormulaText(f)",
+        "b = FormulaText(g)",
+        "c = FormulaText(f,false)",
+        "d = FormulaText(Exponential(r,x))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.6321205588285577],
+              [1.0, 0.8646647167633873],
+              [2.0, 0.9816843611112658],
+              [4.0, 0.9996645373720975],
+              [8.0, 0.9999998874648253]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 2.0],
+              [0.5, 0.7357588823428847],
+              [1.0, 0.2706705664732254],
+              [2.0, 0.03663127777746836],
+              [4.0, 6.709252558050237E-4],
+              [8.0, 2.2507034943851823E-7]
+            ]
+          },
+          "a": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 1 - \\mathit{e}^{-2 \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "b": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 2 \\; \\mathit{e}^{-2 \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "c": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 1 - \\mathit{e}^{-r \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "d": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 1 - \\mathit{e}^{-2 \\; x}& : \\text{otherwise} \\end{array}\\right. " }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, -1.718281828459045],
+              [1.0, -6.38905609893065],
+              [2.0, -53.598150033144236],
+              [4.0, -2979.9579870417283],
+              [8.0, -8886109.520507872]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, -2.0],
+              [0.5, -5.43656365691809],
+              [1.0, -14.7781121978613],
+              [2.0, -109.19630006628847],
+              [4.0, -5961.915974083457],
+              [8.0, -1.7772221041015744E7]
+            ]
+          },
+          "a": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 1 - \\mathit{e}^{--2 \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "b": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ -2 \\; \\mathit{e}^{--2 \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "c": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 1 - \\mathit{e}^{-r \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "d": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x < 0\\\\ 1 - \\mathit{e}^{--2 \\; x}& : \\text{otherwise} \\end{array}\\right. " }
+        }
+      ]
+    }
+  ]
+}

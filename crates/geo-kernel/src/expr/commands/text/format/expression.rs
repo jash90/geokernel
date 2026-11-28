@@ -44,6 +44,7 @@ impl Format {
         }
         let node = ctx.node(i);
         match node {
+            Node::Probability(op, _) if op.is_function() => return Some(Printed::Other),
             Node::Un(Un::X | Un::Y, _) if ctx.e.vars == 0 => {
                 if ctx.stop(1) {
                     return None;
@@ -76,7 +77,6 @@ impl Format {
             | Node::Polar(..)
             | Node::Text
             | Node::If(..)
-            | Node::Probability(Probability::Normal { function: true }, _)
             | Node::List(..)
             | Node::Un(..)
             | Node::Apply2(..) => {
@@ -264,6 +264,42 @@ impl Format {
                 Some(command) => command,
                 None => self.value(ctx, i)?,
             },
+            Node::Probability(Probability::Exponential { function: true }, [_, rate, x, flag]) => {
+                let x = term(x, 0)?;
+                let rate = if substitute {
+                    self.number(ctx.full_number(rate))
+                } else {
+                    term(rate, 6)?
+                };
+                let cumulative = flag == NONE || matches!(ctx.full(flag).val, Val::B(true, _));
+                let product = if self.latex { r" \; " } else { " * " };
+                let exponent = match rate.as_str() {
+                    "1" => format!("-{x}"),
+                    "-1" => x.clone(),
+                    _ => format!("-{rate}{product}{x}"),
+                };
+                let survival = if self.latex {
+                    format!(r"\mathit{{e}}^{{{exponent}}}")
+                } else {
+                    format!("exp({exponent})")
+                };
+                let branch = if cumulative {
+                    format!("1 - {survival}")
+                } else {
+                    match rate.as_str() {
+                        "1" => survival,
+                        "-1" => format!("-{survival}"),
+                        _ => format!("{rate}{product}{survival}"),
+                    }
+                };
+                if self.latex {
+                    format!(
+                        r"\left\{{\begin{{array}}{{ll}} 0& : {x} < 0\\ {branch}& : \text{{otherwise}} \end{{array}}\right. "
+                    )
+                } else {
+                    format!("If({x} < 0, 0, {branch})")
+                }
+            }
             Node::Probability(
                 Probability::Normal { function: true },
                 [mean, deviation, x, flag],
