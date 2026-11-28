@@ -1,0 +1,227 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-lognormaledges-001",
+      "group": "probability",
+      "script": [
+        "a = InverseLogNormal(2,3,0)",
+        "b = InverseLogNormal(2,3,1)",
+        "c = InverseLogNormal(2,3,-0.5)",
+        "d = InverseLogNormal(2,3,1.5)",
+        "e1 = InverseLogNormal(2,3,0/0)",
+        "g1 = InverseLogNormal(0/0,3,0.5)",
+        "h1 = InverseLogNormal(2,0/0,0.5)",
+        "k1 = InverseLogNormal(1/0,1,0.5)",
+        "l1 = InverseLogNormal(10^308,10^308,10^(-300))",
+        "p1 = InverseLogNormal(0,1,10^(-300))",
+        "r1 = InverseLogNormal(0,1,1-10^(-16))",
+        "s1 = InverseLogNormal(1,0.5,0.3)",
+        "n1 = LogNormal(0/0,1,1)",
+        "o1 = LogNormal(0,1,0/0,false)",
+        "q1 = LogNormal(0/0,1,-1)",
+        "u1 = LogNormal(0,0/0,2)",
+        "f = LogNormal(2,3,x)",
+        "g = LogNormal(-2,-3,x,false)",
+        "m = 1",
+        "r = -4",
+        "q = LogNormal(m,r,x,false)",
+        "h = FormulaText(f)",
+        "j = FormulaText(g)",
+        "k = FormulaText(LogNormal(0,1,x),false)",
+        "t1 = FormulaText(q)",
+        "t2 = FormulaText(q,false)",
+        "t3 = FormulaText(LogNormal(m,r,x))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e1": { "type": "number", "defined": false },
+          "g1": { "type": "number", "defined": false },
+          "h1": { "type": "number", "defined": false },
+          "k1": { "type": "number", "defined": true, "infinity": 1 },
+          "l1": { "type": "number", "defined": true, "value": 0.0 },
+          "p1": { "type": "number", "defined": true, "value": 0.0 },
+          "r1": { "type": "number", "defined": true, "value": 3675.837039642672 },
+          "s1": { "type": "number", "defined": true, "value": 2.091328988688217 },
+          "n1": { "type": "number", "defined": false },
+          "o1": { "type": "number", "defined": false },
+          "q1": { "type": "number", "defined": false },
+          "u1": { "type": "number", "defined": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.18466856142006355],
+              [1.0, 0.25249253754692297],
+              [2.0, 0.33155709720516946],
+              [4.0, 0.4189546160417625],
+              [8.0, 0.5105629620951785]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.24188690643210775],
+              [1.0, 0.10648266850745075],
+              [2.0, 0.044438691201638646],
+              [4.0, 0.01758163908620674],
+              [8.0, 0.006594368754870537]
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": -4.0 },
+          "q": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.18237841097412916],
+              [1.0, 0.09666702920071232],
+              [2.0, 0.04972126685962254],
+              [4.0, 0.02481789075178847],
+              [8.0, 0.012021161188819839]
+            ]
+          },
+          "h": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x ≤ 0\\\\ \\operatorname{erf}\\left(\\frac{\\ln\\left(x \\right) - 2}{\\sqrt{2} \\; \\left|3\\right|} \\right) \\cdot 0.5 + 0.5& : \\text{otherwise} \\end{array}\\right. " },
+          "j": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x ≤ 0\\\\ \\frac{\\mathit{e}^{-\\frac{\\left(\\ln\\left(x \\right) + 2 \\right)^{2}}{\\left(-3 \\right)^{2} \\cdot 2}}}{\\left|-3\\right| \\; \\sqrt{2 \\; \\pi } \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "k": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x ≤ 0\\\\ \\operatorname{erf}\\left(\\frac{\\ln\\left(x \\right)}{\\sqrt{2} \\; \\left|1\\right|} \\right) \\cdot 0.5 + 0.5& : \\text{otherwise} \\end{array}\\right. " },
+          "t1": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x ≤ 0\\\\ \\frac{\\mathit{e}^{-\\frac{\\left(\\ln\\left(x \\right) - 1 \\right)^{2}}{\\left(-4 \\right)^{2} \\cdot 2}}}{\\left|-4\\right| \\; \\sqrt{2 \\; \\pi } \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "t2": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x ≤ 0\\\\ \\frac{\\mathit{e}^{-\\frac{\\left(\\ln\\left(x \\right) - m \\right)^{2}}{r^{2} \\cdot 2}}}{\\left|r\\right| \\; \\sqrt{2 \\; \\pi } \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "t3": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x ≤ 0\\\\ \\operatorname{erf}\\left(\\frac{\\ln\\left(x \\right) - 1}{\\sqrt{2} \\; \\left|-4\\right|} \\right) \\cdot 0.5 + 0.5& : \\text{otherwise} \\end{array}\\right. " }
+        }
+      ]
+    },
+    {
+      "id": "probability-lognormaledges-002",
+      "group": "probability",
+      "script": [
+        "f = LogNormal(0,1,x)",
+        "g = LogNormal(0,1,x,false)",
+        "q = LogNormal(-1.5,2,x,false)",
+        "a = FormulaText(f)",
+        "b = FormulaText(g)",
+        "c = Text(f)",
+        "d = Text(g)",
+        "e1 = Text(q)",
+        "w = LogNormal(2,-3,x)",
+        "g1 = \"\" + w",
+        "h = FormulaText(q)",
+        "k = f(0)",
+        "l = g(0)",
+        "n = f(10^(-300))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.2441085957855828],
+              [1.0, 0.5],
+              [2.0, 0.7558914042144171],
+              [4.0, 0.9171714809983014],
+              [8.0, 0.9812116071859449]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.6274960771159244],
+              [1.0, 0.3989422804014327],
+              [2.0, 0.1568740192789811],
+              [4.0, 0.03815345651188645],
+              [8.0, 0.005739296497825193]
+            ]
+          },
+          "q": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.36776358944694515],
+              [1.0, 0.15056871607740221],
+              [2.0, 0.05466838465115586],
+              [4.0, 0.017602453781306992],
+              [8.0, 0.005026268222805053]
+            ]
+          },
+          "a": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x ≤ 0\\\\ \\operatorname{erf}\\left(\\frac{\\ln\\left(x \\right)}{\\sqrt{2} \\; \\left|1\\right|} \\right) \\cdot 0.5 + 0.5& : \\text{otherwise} \\end{array}\\right. " },
+          "b": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x ≤ 0\\\\ \\frac{\\mathit{e}^{-\\frac{\\left(\\ln\\left(x \\right) \\right)^{2}}{1^{2} \\cdot 2}}}{\\left|1\\right| \\; \\sqrt{2 \\; \\pi } \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "c": { "type": "text", "defined": true, "text": "If(x ≤ 0, 0, erf((ln(x)) / (sqrt(2) abs(1))) * 0.5 + 0.5)" },
+          "d": { "type": "text", "defined": true, "text": "If(x ≤ 0, 0, ℯ^(-(ln(x))² / (1² * 2)) / (abs(1) sqrt(2π) x))" },
+          "e1": { "type": "text", "defined": true, "text": "If(x ≤ 0, 0, ℯ^(-(ln(x) + 1.5)² / (2² * 2)) / (abs(2) sqrt(2π) x))" },
+          "w": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.18466856142006355],
+              [1.0, 0.25249253754692297],
+              [2.0, 0.33155709720516946],
+              [4.0, 0.4189546160417625],
+              [8.0, 0.5105629620951785]
+            ]
+          },
+          "g1": { "type": "text", "defined": true, "text": "If(x ≤ 0, 0, erf((ln(x) - 2) / (sqrt(2) abs(-3))) * 0.5 + 0.5)" },
+          "h": { "type": "text", "defined": true, "text": "\\left\\{\\begin{array}{ll} 0& : x ≤ 0\\\\ \\frac{\\mathit{e}^{-\\frac{\\left(\\ln\\left(x \\right) + 1.5 \\right)^{2}}{2^{2} \\cdot 2}}}{\\left|2\\right| \\; \\sqrt{2 \\; \\pi } \\; x}& : \\text{otherwise} \\end{array}\\right. " },
+          "k": { "type": "number", "defined": true, "value": 0.0 },
+          "l": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    }
+  ]
+}

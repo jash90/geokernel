@@ -1,0 +1,890 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-lognormal-001",
+      "group": "probability",
+      "script": [
+        "m = 0.5",
+        "s = 2",
+        "t = 3",
+        "a = LogNormal(m,s,t)",
+        "b = LogNormal(m,s,t,true)",
+        "c = LogNormal(m,s,t,false)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 0.2 },
+        { "action": "set_number", "label": "t", "value": 0.0 },
+        { "action": "set_number", "label": "t", "value": -1.0 },
+        { "action": "set_number", "label": "t", "value": 1.0 },
+        { "action": "set_number", "label": "s", "value": 0.0 },
+        { "action": "set_number", "label": "t", "value": -1.0 },
+        { "action": "set_number", "label": "s", "value": -2.0 },
+        { "action": "set_number", "label": "t", "value": 4.0 },
+        { "action": "set_number", "label": "m", "value": -1.0 },
+        { "action": "set_number", "label": "s", "value": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "number", "defined": true, "value": 3.0 },
+          "a": { "type": "number", "defined": true, "value": 0.617646766569543 },
+          "b": { "type": "number", "defined": true, "value": 0.617646766569543 },
+          "c": { "type": "number", "defined": true, "value": 0.06357785338779413 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "number", "defined": true, "value": 0.2 },
+          "a": { "type": "number", "defined": true, "value": 0.14577693974604305 },
+          "b": { "type": "number", "defined": true, "value": 0.14577693974604305 },
+          "c": { "type": "number", "defined": true, "value": 0.5718584177640649 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.4012936743170763 },
+          "b": { "type": "number", "defined": true, "value": 0.4012936743170763 },
+          "c": { "type": "number", "defined": true, "value": 0.19333405840142465 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": -2.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": -2.0 },
+          "t": { "type": "number", "defined": true, "value": 4.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -1.0 },
+          "s": { "type": "number", "defined": true, "value": -2.0 },
+          "t": { "type": "number", "defined": true, "value": 4.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -1.0 },
+          "s": { "type": "number", "defined": true, "value": 0.5 },
+          "t": { "type": "number", "defined": true, "value": 4.0 },
+          "a": { "type": "number", "defined": true, "value": 0.9999990906352691 },
+          "b": { "type": "number", "defined": true, "value": 0.9999990906352691 },
+          "c": { "type": "number", "defined": true, "value": 2.2583247748913827E-6 }
+        }
+      ]
+    },
+    {
+      "id": "probability-lognormal-002",
+      "group": "probability",
+      "script": [
+        "m = 0.5",
+        "s = 2",
+        "n = 1",
+        "p = n>0",
+        "f = LogNormal(m,s,x)",
+        "g = LogNormal(m,s,(x),false)",
+        "h = LogNormal(m,s,x,p)",
+        "a = f(3)",
+        "b = g(2)",
+        "c = h(5)",
+        "d = IsDefined(h)",
+        "e1 = h(0)",
+        "g1 = g(0)",
+        "h1 = f(-1)",
+        "k1 = g(-2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "s", "value": -2.0 },
+        { "action": "set_number", "label": "s", "value": 0.0 },
+        { "action": "set_number", "label": "m", "value": -2.0 },
+        { "action": "set_number", "label": "s", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.2753960539809158],
+              [1.0, 0.4012936743170763],
+              [2.0, 0.5384674848286237],
+              [4.0, 0.6711703595782288],
+              [8.0, 0.7851545708736105]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.33390840587739584],
+              [1.0, 0.19333405840142465],
+              [2.0, 0.09927156300715388],
+              [4.0, 0.04520399610253885],
+              [8.0, 0.018254261791526977]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.2753960539809158],
+              [1.0, 0.4012936743170763],
+              [2.0, 0.5384674848286237],
+              [4.0, 0.6711703595782288],
+              [8.0, 0.7851545708736105]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.617646766569543 },
+          "b": { "type": "number", "defined": true, "value": 0.09927156300715388 },
+          "c": { "type": "number", "defined": true, "value": 0.7104565459325528 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.0 },
+          "g1": { "type": "number", "defined": true, "value": 0.0 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.2753960539809158],
+              [1.0, 0.4012936743170763],
+              [2.0, 0.5384674848286237],
+              [4.0, 0.6711703595782288],
+              [8.0, 0.7851545708736105]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.33390840587739584],
+              [1.0, 0.19333405840142465],
+              [2.0, 0.09927156300715388],
+              [4.0, 0.04520399610253885],
+              [8.0, 0.018254261791526977]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.33390840587739584],
+              [1.0, 0.19333405840142465],
+              [2.0, 0.09927156300715388],
+              [4.0, 0.04520399610253885],
+              [8.0, 0.018254261791526977]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.617646766569543 },
+          "b": { "type": "number", "defined": true, "value": 0.09927156300715388 },
+          "c": { "type": "number", "defined": true, "value": 0.034205111521383606 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.0 },
+          "g1": { "type": "number", "defined": true, "value": 0.0 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": -2.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.2753960539809158],
+              [1.0, 0.4012936743170763],
+              [2.0, 0.5384674848286237],
+              [4.0, 0.6711703595782288],
+              [8.0, 0.7851545708736105]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.33390840587739584],
+              [1.0, 0.19333405840142465],
+              [2.0, 0.09927156300715388],
+              [4.0, 0.04520399610253885],
+              [8.0, 0.018254261791526977]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.33390840587739584],
+              [1.0, 0.19333405840142465],
+              [2.0, 0.09927156300715388],
+              [4.0, 0.04520399610253885],
+              [8.0, 0.018254261791526977]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.617646766569543 },
+          "b": { "type": "number", "defined": true, "value": 0.09927156300715388 },
+          "c": { "type": "number", "defined": true, "value": 0.034205111521383606 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.0 },
+          "g1": { "type": "number", "defined": true, "value": 0.0 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.0 },
+          "g1": { "type": "number", "defined": true, "value": 0.0 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -2.0 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.0 },
+          "g1": { "type": "number", "defined": true, "value": 0.0 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -2.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.9043686488210201],
+              [1.0, 0.9772498680518209],
+              [2.0, 0.9964609492239136],
+              [4.0, 0.9996457832553338],
+              [8.0, 0.9999774279899623]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.33968943730538803],
+              [1.0, 0.05399096651318806],
+              [2.0, 0.005307647457896686],
+              [4.0, 3.227193027182459E-4],
+              [8.0, 1.213639557987611E-5]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.33968943730538803],
+              [1.0, 0.05399096651318806],
+              [2.0, 0.005307647457896686],
+              [4.0, 3.227193027182459E-4],
+              [8.0, 1.213639557987611E-5]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.9990278536212878 },
+          "b": { "type": "number", "defined": true, "value": 0.005307647457896686 },
+          "c": { "type": "number", "defined": true, "value": 1.182869072193914E-4 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.0 },
+          "g1": { "type": "number", "defined": true, "value": 0.0 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": -2.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.9043686488210201],
+              [1.0, 0.9772498680518209],
+              [2.0, 0.9964609492239136],
+              [4.0, 0.9996457832553338],
+              [8.0, 0.9999774279899623]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.33968943730538803],
+              [1.0, 0.05399096651318806],
+              [2.0, 0.005307647457896686],
+              [4.0, 3.227193027182459E-4],
+              [8.0, 1.213639557987611E-5]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.9043686488210201],
+              [1.0, 0.9772498680518209],
+              [2.0, 0.9964609492239136],
+              [4.0, 0.9996457832553338],
+              [8.0, 0.9999774279899623]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.9990278536212878 },
+          "b": { "type": "number", "defined": true, "value": 0.005307647457896686 },
+          "c": { "type": "number", "defined": true, "value": 0.9998465693964455 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.0 },
+          "g1": { "type": "number", "defined": true, "value": 0.0 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "probability-lognormal-003",
+      "group": "probability",
+      "script": [
+        "m = 0.5",
+        "s = 2",
+        "p = 0",
+        "a = InverseLogNormal(m,s,p)",
+        "b = InverseLogNormal(m,s,0.7-0.2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "p", "value": 1.0E-16 },
+        { "action": "set_number", "label": "p", "value": 0.025 },
+        { "action": "set_number", "label": "p", "value": 0.25 },
+        { "action": "set_number", "label": "p", "value": 0.5 },
+        { "action": "set_number", "label": "p", "value": 0.75 },
+        { "action": "set_number", "label": "p", "value": 0.999 },
+        { "action": "set_number", "label": "p", "value": 1.0 },
+        { "action": "set_number", "label": "p", "value": -0.1 },
+        { "action": "set_number", "label": "p", "value": 1.1 },
+        { "action": "set_number", "label": "p", "value": 0.75 },
+        { "action": "set_number", "label": "s", "value": 0.0 },
+        { "action": "set_number", "label": "s", "value": -2.0 },
+        { "action": "set_number", "label": "s", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 1.0E-16 },
+          "a": { "type": "number", "defined": true, "value": 1.2202104547427067E-7 },
+          "b": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.025 },
+          "a": { "type": "number", "defined": true, "value": 0.032714791330665884 },
+          "b": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "a": { "type": "number", "defined": true, "value": 0.427851331354002 },
+          "b": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": true, "value": 1.6487212707001282 },
+          "b": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 6.353332639766762 },
+          "b": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.999 },
+          "a": { "type": "number", "defined": true, "value": 796.6891776603186 },
+          "b": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "infinity": 1 },
+          "b": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": -0.1 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 1.1 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 6.353332639766762 },
+          "b": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": -2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.5 },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 3.236491103497251 },
+          "b": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        }
+      ]
+    },
+    {
+      "id": "probability-lognormal-004",
+      "group": "probability",
+      "script": [
+        "s = 10^308",
+        "a = LogNormal(0,1,10^300)",
+        "b = LogNormal(0,1,10^(-300))",
+        "c = LogNormal(0,1,10^(-300),false)",
+        "d = LogNormal(0,1,10^300,false)",
+        "e1 = LogNormal(0,s,s)",
+        "g1 = LogNormal(-s,s,s,false)",
+        "h1 = LogNormal(0,1,1/0)",
+        "k1 = LogNormal(0,1,1/0,false)",
+        "l1 = LogNormal(0,1,-1/0)",
+        "f = LogNormal(0,1,x,false)",
+        "g = LogNormal(0,s,x)",
+        "u = f(10^(-300))",
+        "v = f(10^300)",
+        "w = g(s)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "number", "defined": true, "value": 1.0E308 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e1": { "type": "number", "defined": true, "value": 0.5 },
+          "g1": { "type": "number", "defined": false },
+          "h1": { "type": "number", "defined": true, "value": 1.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 },
+          "l1": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.6274960771159244],
+              [1.0, 0.3989422804014327],
+              [2.0, 0.1568740192789811],
+              [4.0, 0.03815345651188645],
+              [8.0, 0.005739296497825193]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 0.5],
+              [2.0, 0.5],
+              [4.0, 0.5],
+              [8.0, 0.5]
+            ]
+          },
+          "u": { "type": "number", "defined": true, "value": 0.0 },
+          "v": { "type": "number", "defined": true, "value": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "probability-lognormal-005",
+      "group": "probability",
+      "script": [
+        "L = Segment((0,0),(2,0))",
+        "a = LogNormal(0,L,1.5)",
+        "b = InverseLogNormal(0,L,0.75)",
+        "f = (LogNormal(0,L,x))",
+        "g = 2*LogNormal(0,L,x,false)",
+        "h = If(x>0,LogNormal(0,L,x),0)",
+        "c = f(1.5)",
+        "d = g(1.5)",
+        "q = h(1.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "L": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.5803279614760182 },
+          "b": { "type": "number", "defined": true, "value": 3.853491037371541 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.3644558447365357],
+              [1.0, 0.5],
+              [2.0, 0.6355441552634643],
+              [4.0, 0.7558914042144171],
+              [8.0, 0.8507651761532131]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.7513768320335424],
+              [1.0, 0.3989422804014327],
+              [2.0, 0.1878442080083856],
+              [4.0, 0.07843700963949055],
+              [8.0, 0.029045558017759612]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.3644558447365357],
+              [1.0, 0.5],
+              [2.0, 0.6355441552634643],
+              [4.0, 0.7558914042144171],
+              [8.0, 0.8507651761532131]
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 0.5803279614760182 },
+          "d": { "type": "number", "defined": true, "value": 0.26055172278247013 },
+          "q": { "type": "number", "defined": true, "value": 0.5803279614760182 }
+        }
+      ]
+    }
+  ]
+}

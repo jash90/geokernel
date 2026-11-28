@@ -327,3 +327,5 @@ Cauchy,probability,4,"number,number,number | number,number,number,boolean | numb
 InverseCauchy,probability,1,"number,number,number"
 Logistic,probability,4,"number,number,number | number,number,number,boolean | number,number,function | number,number,function,boolean"
 InverseLogistic,probability,1,"number,number,number"
+LogNormal,probability,4,"number,number,number | number,number,number,boolean | number,number,function | number,number,function,boolean"
+InverseLogNormal,probability,1,"number,number,number"

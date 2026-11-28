@@ -3800,6 +3800,28 @@ fn logistic_functions_round_trip_with_explicit_flags() {
 }
 
 #[test]
+fn log_normal_functions_round_trip_with_explicit_flags() {
+    let wb = Workbench::from_script(
+        "s = 2\nf = LogNormal(1,s,(x))\ng = 2*LogNormal(1,s,x)\nh = If(x>0,LogNormal(1,s,x),0)\nk = LogNormal(1,s,+x,false)\na = f(1.5)\nb = g(1.5)\nc = h(1.5)\nd = k(1.5)\ne = InverseLogNormal(1,s,0.25)\nr = LogNormal(1,s,1.5,false)",
+    )
+    .unwrap();
+    let xml = exported_xml(&wb);
+    assert!(xml.contains("a0=\"1\" a1=\"s\" a2=\"x\" a3=\"true\""));
+    assert!(xml.contains("2*LogNormal(1,s,x, true)"));
+    assert!(xml.contains("a1=\"LogNormal(1,s,x, true)\""));
+    assert!(xml.contains("a0=\"1\" a1=\"s\" a2=\"x\" a3=\"false\""));
+    assert!(!xml.contains("+x"));
+    let (_, reopened) = round_trip("LogNormal functions", &wb, None);
+    for label in ["a", "b", "c", "d", "e", "r"] {
+        let value = |w: &Workbench| {
+            let c = w.construction();
+            c.value(c.id(label).unwrap())
+        };
+        assert_eq!(value(&reopened), value(&wb), "{label}");
+    }
+}
+
+#[test]
 fn reloaded_fit_lines_follow_point_edits() {
     let wb = Workbench::from_script(
         "A = (1, 2)\nB = (3, 4)\nC = (5, 1)\nL = {A, B, C}\ng = FitLine(L)\nh = FitLineX({A, B, C})",

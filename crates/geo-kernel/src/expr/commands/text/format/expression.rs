@@ -300,6 +300,58 @@ impl Format {
                     format!("If({x} < 0, 0, {branch})")
                 }
             }
+            Node::Probability(Probability::LogNormal { function: true }, [mean, sd, x, flag]) => {
+                // The reference builds the expression from the live inputs,
+                // so unsubstituted text keeps their names, not the command.
+                let x = term(x, 0)?;
+                let (mean, sd, base) = if substitute {
+                    let mean = self.number(ctx.full_number(mean));
+                    let sd = self.number(ctx.full_number(sd));
+                    (mean, sd.clone(), sd)
+                } else {
+                    // The squared deviation needs power-level brackets, so
+                    // `s + 1` is written as `(s + 1)²`.
+                    (term(mean, 6)?, term(sd, 0)?, term(sd, 8)?)
+                };
+                // A negative number is not bracketed at power level.
+                let base = if base.starts_with('-') {
+                    self.parenthesize(&base)
+                } else {
+                    base
+                };
+                let log = if self.latex {
+                    format!(r"\ln\left({x} \right)")
+                } else {
+                    format!("ln({x})")
+                };
+                let offset = if mean == "0" {
+                    log
+                } else if let Some(positive) = mean.strip_prefix('-') {
+                    format!("{log} + {positive}")
+                } else {
+                    format!("{log} - {mean}")
+                };
+                let cumulative = flag == NONE || matches!(ctx.full(flag).val, Val::B(true, _));
+                let branch = match (self.latex, cumulative) {
+                    (true, true) => format!(
+                        r"\operatorname{{erf}}\left(\frac{{{offset}}}{{\sqrt{{2}} \; \left|{sd}\right|}} \right) \cdot 0.5 + 0.5"
+                    ),
+                    (false, true) => format!("erf(({offset}) / (sqrt(2) abs({sd}))) * 0.5 + 0.5"),
+                    (true, false) => format!(
+                        r"\frac{{\mathit{{e}}^{{-\frac{{\left({offset} \right)^{{2}}}}{{{base}^{{2}} \cdot 2}}}}}}{{\left|{sd}\right| \; \sqrt{{2 \; \pi }} \; {x}}}"
+                    ),
+                    (false, false) => {
+                        format!("ℯ^(-({offset})² / ({base}² * 2)) / (abs({sd}) sqrt(2π) {x})")
+                    }
+                };
+                if self.latex {
+                    format!(
+                        r"\left\{{\begin{{array}}{{ll}} 0& : {x} ≤ 0\\ {branch}& : \text{{otherwise}} \end{{array}}\right. "
+                    )
+                } else {
+                    format!("If({x} ≤ 0, 0, {branch})")
+                }
+            }
             Node::Probability(
                 op @ (Probability::Normal { function: true }
                 | Probability::Cauchy { function: true }

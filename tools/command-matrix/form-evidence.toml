@@ -5704,3 +5704,28 @@ cases = ["probability-logistic-002"]
 command = "InverseLogistic"
 form = "number,number,number"
 cases = ["probability-logistic-003"]
+
+[[form]]
+command = "LogNormal"
+form = "number,number,number"
+cases = ["probability-lognormal-001"]
+
+[[form]]
+command = "LogNormal"
+form = "number,number,number,boolean"
+cases = ["probability-lognormal-001"]
+
+[[form]]
+command = "LogNormal"
+form = "number,number,function"
+cases = ["probability-lognormal-002"]
+
+[[form]]
+command = "LogNormal"
+form = "number,number,function,boolean"
+cases = ["probability-lognormal-002"]
+
+[[form]]
+command = "InverseLogNormal"
+form = "number,number,number"
+cases = ["probability-lognormal-003"]
