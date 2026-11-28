@@ -3708,7 +3708,7 @@ fn exported_xml(wb: &Workbench) -> String {
 #[test]
 fn normal_function_archive_keeps_the_default_cumulative_flag() {
     let wb = Workbench::from_script(
-        "m = 2\ns = 3\nf = Normal(m,s,x)\ng = Normal(m,s,(( x )),false)\nh = Normal(m,s,(x))\na = f(-1)\nb = g(-1)\ni = h(-1)\nf2 = (Normal(m,s,x))\nf3 = 2*Normal(m,s,(x))\nu = f2(-1)\nv = f3(-1)\nf4 = If(x>0,Normal(0,1,(x)),0)\nw = f4(1)",
+        "m = 2\ns = 3\nf = Normal(m,s,x)\ng = Normal(m,s,(( x )),false)\nh = Normal(m,s,(x))\na = f(-1)\nb = g(-1)\ni = h(-1)\nf2 = (Normal(m,s,x))\nf3 = 2*Normal(m,s,(x))\nu = f2(-1)\nv = f3(-1)\nf4 = If(x>0,Normal(0,1,(x)),0)\nw = f4(1)\nf5 = Normal(0,1,+x)\nf6 = 2*Normal(0,1,--x)\nf7 = Normal(0,1,+(x),false)\np = f5(1)\nq = f6(1)\nr = f7(1)",
     )
     .unwrap();
     let xml = exported_xml(&wb);
@@ -3721,8 +3721,13 @@ fn normal_function_archive_keeps_the_default_cumulative_flag() {
     assert!(xml.contains("(Normal(m,s,x, true))"));
     assert!(xml.contains("2*Normal(m,s,x, true)"));
     assert!(xml.contains("a1=\"Normal(0,1,x, true)\""));
+    // A unary plus or an even run of minus signs still selects the function.
+    assert!(xml.contains("a0=\"0\" a1=\"1\" a2=\"x\" a3=\"true\""));
+    assert!(xml.contains("2*Normal(0,1,x, true)"));
+    assert!(xml.contains("a0=\"0\" a1=\"1\" a2=\"x\" a3=\"false\""));
+    assert!(!xml.contains("+x") && !xml.contains("--x"));
     let (_, reopened) = round_trip("normal CDF and density", &wb, None);
-    for label in ["a", "b", "i", "u", "v", "w"] {
+    for label in ["a", "b", "i", "u", "v", "w", "p", "q", "r"] {
         let value = |w: &Workbench| {
             let c = w.construction();
             c.value(c.id(label).unwrap())

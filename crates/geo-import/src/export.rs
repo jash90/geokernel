@@ -693,10 +693,7 @@ impl Writer<'_> {
         }
         if let Some(("Normal", inputs)) = &call {
             if let [mean, deviation, x] | [mean, deviation, x, _] = inputs.as_slice() {
-                if c.kind(id) == Kind::Function
-                    && x.trim_matches(|ch: char| ch == '(' || ch == ')' || ch.is_whitespace())
-                        == "x"
-                {
+                if c.kind(id) == Kind::Function && is_variable_x(x) {
                     // The file reader needs an explicit cumulative flag.
                     let cumulative = inputs.get(3).copied().unwrap_or("true");
                     return self.command("Normal", &[mean, deviation, "x", cumulative], outputs);
@@ -872,10 +869,7 @@ fn normal_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
                     .filter(|group| group.normal && group.commas == 2)
                 {
                     let argument = &source[group.third..index];
-                    if argument
-                        .trim_matches(|ch: char| ch == '(' || ch == ')' || ch.is_whitespace())
-                        == "x"
-                    {
+                    if is_variable_x(argument) {
                         replacements.push((group.third, index));
                     }
                 }
@@ -895,6 +889,28 @@ fn normal_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
     }
     normalized.push_str(&source[start..]);
     normalized.into()
+}
+
+/// Whether a distribution argument parses to the bare variable `x`.
+///
+/// The parser drops a leading `+`, an even run of leading `-` signs and
+/// redundant brackets, so `+x`, `--x` and `(+(x))` all select the function
+/// form. `-(-x)` does not, because it keeps the multiplications by -1.
+fn is_variable_x(argument: &str) -> bool {
+    let compact: String = argument.chars().filter(|ch| !ch.is_whitespace()).collect();
+    let mut rest = compact.as_str();
+    loop {
+        let next = if let Some(inner) = rest.strip_prefix('(').and_then(|r| r.strip_suffix(')')) {
+            inner
+        } else if let Some(inner) = rest.strip_prefix("--") {
+            inner
+        } else if let Some(inner) = rest.strip_prefix('+') {
+            inner
+        } else {
+            return rest == "x";
+        };
+        rest = next;
+    }
 }
 
 /// Lower journal-only inline arguments before writing the command parameters.
