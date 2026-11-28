@@ -247,10 +247,6 @@ impl Analysis {
             *summary = None;
             return Err(AnalysisError::Pairs);
         }
-        if pairs.iter().flatten().any(|value| value.is_nan()) {
-            *summary = None;
-            return Err(AnalysisError::Evaluation);
-        }
         let unchanged = summary.as_ref().is_some_and(|summary| {
             summary.pairs.len() == pairs.len()
                 && summary.pairs.iter().zip(pairs).all(|(old, new)| {
@@ -285,6 +281,11 @@ fn evaluate(values: &[f64]) -> Option<[f64; ROW_COUNT]> {
 }
 
 fn evaluate_pairs(pairs: &[[f64; 2]]) -> Option<[f64; PAIRED_ROW_COUNT]> {
+    if pairs.iter().flatten().any(|value| value.is_nan()) {
+        // An undefined singleton leaves every row undefined. With more
+        // pairs the reference errors while ranking undefined coordinates.
+        return (pairs.len() == 1).then_some([f64::NAN; PAIRED_ROW_COUNT]);
+    }
     let mut scratch = Construction::new();
     // Keep both coordinates of a pair even when one is infinite.
     for (label, axis) in [("xs", 0), ("ys", 1)] {
@@ -433,6 +434,26 @@ mod tests {
         script::exec(&mut construction, "B2 = 4").unwrap();
         let restored = analysis.refresh_paired(&construction).unwrap();
         assert_eq!(restored.pairs, [[4.0, 20.0], [3.0, 30.0]]);
+    }
+
+    #[test]
+    fn undefined_singleton_keeps_the_statistics_table() {
+        let construction = script::load("B2 = 0 / 0\nC2 = 20").unwrap();
+        let mut analysis = Analysis::new_paired(Selection {
+            anchor: Address::parse("B2").unwrap(),
+            end: Address::parse("C3").unwrap(),
+        })
+        .unwrap();
+        for axis in 0..2 {
+            let summary = analysis.refresh_paired(&construction).unwrap();
+            let [pair] = summary.pairs.as_slice() else {
+                panic!("expected one pair");
+            };
+            assert!(pair[axis].is_nan());
+            assert_eq!(pair[1 - axis], 20.0);
+            assert!(summary.rows.iter().all(|value| value.is_nan()));
+            analysis.swap_axes();
+        }
     }
 
     #[test]
