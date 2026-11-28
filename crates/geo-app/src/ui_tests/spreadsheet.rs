@@ -188,8 +188,12 @@ fn multiple_sample_analysis_keeps_separate_rows_through_edits_and_undo() {
     activate(&mut window, "C3");
     activate(&mut window, "Analiza wielu prób");
     assert!(analysis(&window).is_multiple());
-    widget(&window, "B1:B3");
-    widget(&window, "C1:C3");
+    let shapes = &window.last_output().unwrap().shapes;
+    for title in ["B1:B3", "C1:C3"] {
+        assert!(shapes.iter().any(|shape| {
+            matches!(&shape.shape, eframe::egui::Shape::Text(text) if text.galley.text() == title)
+        }), "sample title {title} was not drawn");
+    }
     let means = |window: &mut Headless| {
         let app = &mut window.app;
         app.spreadsheet_analysis
