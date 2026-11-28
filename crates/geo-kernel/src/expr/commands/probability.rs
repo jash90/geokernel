@@ -331,6 +331,8 @@ fn inverse_log_normal(mean: f64, deviation: f64, probability: f64) -> f64 {
 
 /// The inverse error function of the reference's math library, a piecewise
 /// polynomial in `-ln((1 - x)(1 + x))` (Giles 2010).
+/// Translated from Apache Commons Math `Erf.erfInv` (Apache License 2.0,
+/// see NOTICE), which the reference uses for the log-normal quantile.
 fn erf_inv(x: f64) -> f64 {
     const CENTRAL: [f64; 23] = [
         -3.64441206401782E-21,

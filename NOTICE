@@ -35,6 +35,17 @@ repository is https://github.com/jash90/geokernel.
 The packaged Giac source is in giac-70507-source.archive. The associated
 SHA-256 is recorded below in the Giac archive's copy of this notice.
 
+Apache Commons Math
+-------------------
+
+Some numerical routines used by the probability commands are translated from
+Apache Commons Math, which GeoGebra uses for its distributions:
+Erf.erfInv in crates/geo-kernel/src/expr/commands/probability.rs.
+Apache Commons Math is Copyright The Apache Software Foundation and is
+licensed under the Apache License, Version 2.0
+(https://www.apache.org/licenses/LICENSE-2.0). This product includes software
+developed at The Apache Software Foundation (https://www.apache.org/).
+
 Bundled fonts
 -------------
 
