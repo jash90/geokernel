@@ -305,20 +305,47 @@ fn show_samples(ui: &mut Ui, c: &Construction, samples: &[SampleSummary]) {
         })
         .collect();
     widths[0] = widths[0].max(7.0 * row_height);
-    ScrollArea::both().min_scrolled_height(0.0).show_rows(
-        ui,
-        row_height,
-        samples.len() + 1,
-        |ui, visible| {
-            for row in visible {
-                ui.horizontal(|ui| {
-                    if row == 0 {
-                        for (name, &width) in headings.clone().zip(&widths) {
-                            ui.add_sized([width, row_height], eframe::egui::Label::new(name));
-                        }
-                        return;
-                    }
-                    let sample = &samples[row - 1];
+    let spacing = ui.spacing().item_spacing;
+    let stride = row_height + spacing.y;
+    let width = widths.iter().sum::<f32>() + (widths.len() - 1) as f32 * spacing.x;
+    ScrollArea::both()
+        .id_salt("spreadsheet_samples")
+        .min_scrolled_height(0.0)
+        .show_viewport(ui, |ui, viewport| {
+            let origin = ui.max_rect().min;
+            let content_height = (samples.len() + 1) as f32 * stride - spacing.y;
+            ui.set_min_size(vec2(width, content_height));
+
+            // Cancel the vertical scroll offset for the header while keeping the shared x offset.
+            let header_top = origin.y + viewport.top();
+            let header = Rect::from_min_size(pos2(origin.x, header_top), vec2(width, stride));
+            let mut headings_ui =
+                ui.new_child(UiBuilder::new().id_salt("headings").max_rect(header));
+            headings_ui.set_clip_rect(header.intersect(ui.clip_rect()));
+            headings_ui.horizontal(|ui| {
+                for (name, &width) in headings.zip(&widths) {
+                    ui.add_sized([width, row_height], eframe::egui::Label::new(name));
+                }
+            });
+
+            let first = (viewport.top() / stride).floor() as usize;
+            let end = ((viewport.bottom() / stride).ceil() as usize).min(samples.len());
+            if first >= end {
+                return;
+            }
+            let row_top = origin.y + (first + 1) as f32 * stride;
+            let rows = Rect::from_min_max(
+                pos2(origin.x, row_top),
+                pos2(origin.x + width, origin.y + content_height),
+            );
+            let clip = ui.clip_rect();
+            let mut rows_ui = ui.new_child(UiBuilder::new().id_salt("rows").max_rect(rows));
+            rows_ui.set_clip_rect(Rect::from_min_max(
+                pos2(clip.left(), header.bottom().min(clip.bottom())),
+                clip.max,
+            ));
+            for sample in &samples[first..end] {
+                rows_ui.horizontal(|ui| {
                     let first = sample.first.label();
                     let title = if sample.first == sample.last {
                         first
@@ -335,8 +362,7 @@ fn show_samples(ui: &mut Ui, c: &Construction, samples: &[SampleSummary]) {
                     }
                 });
             }
-        },
-    );
+        });
 }
 
 fn show_statistic_rows(ui: &mut Ui, c: &Construction, names: &[&str], rows: &[f64]) {
