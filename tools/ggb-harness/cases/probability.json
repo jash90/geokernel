@@ -1622,6 +1622,455 @@
           "action": "initial"
         }
       ]
+    },
+    {
+      "id": "probability-weibull-001",
+      "group": "probability",
+      "script": [
+        "k = 2",
+        "l = 3",
+        "t = 1",
+        "a = Weibull(k,l,t)",
+        "b = Weibull(k,l,t,true)",
+        "c = Weibull(k,l,t,false)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": -1
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 4
+        },
+        {
+          "action": "set_number",
+          "label": "l",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "l",
+          "value": -3
+        },
+        {
+          "action": "set_number",
+          "label": "l",
+          "value": 3
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": 0.5
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 2
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": -1
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": 2.5
+        }
+      ]
+    },
+    {
+      "id": "probability-weibull-002",
+      "group": "probability",
+      "script": [
+        "k = 2",
+        "l = 3",
+        "n = 1",
+        "p = n>0",
+        "f = Weibull(k,l,x)",
+        "g = Weibull(k,l,(x),false)",
+        "h = Weibull(k,l,x,p)",
+        "a = f(1)",
+        "b = g(2)",
+        "c = h(5)",
+        "d = IsDefined(h)",
+        "e1 = h(0)",
+        "g1 = g(0)",
+        "h1 = f(-1)",
+        "k1 = g(-2)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "l",
+          "value": -3
+        },
+        {
+          "action": "set_number",
+          "label": "l",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": 0.5
+        },
+        {
+          "action": "set_number",
+          "label": "l",
+          "value": -3
+        },
+        {
+          "action": "set_number",
+          "label": "l",
+          "value": 3
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": -1
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": 2
+        },
+        {
+          "action": "set_number",
+          "label": "n",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "probability-weibull-003",
+      "group": "probability",
+      "script": [
+        "k = 2",
+        "l = 3",
+        "p = 0",
+        "a = InverseWeibull(k,l,p)",
+        "b = InverseWeibull(k,l,0.7-0.2)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 1e-16
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.025
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.25
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.5
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.75
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.999
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": -0.1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 1.1
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.75
+        },
+        {
+          "action": "set_number",
+          "label": "l",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "l",
+          "value": -3
+        },
+        {
+          "action": "set_number",
+          "label": "l",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": -2
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": 0.5
+        }
+      ]
+    },
+    {
+      "id": "probability-weibull-004",
+      "group": "probability",
+      "script": [
+        "s = 10^308",
+        "a = Weibull(2,1,10^300)",
+        "b = Weibull(2,1,10^(-300))",
+        "c = Weibull(2,1,10^(-300),false)",
+        "d = Weibull(2,1,10^300,false)",
+        "e1 = Weibull(s,s,s)",
+        "g1 = Weibull(0.5,s,s,false)",
+        "h1 = Weibull(2,1,1/0)",
+        "k1 = Weibull(2,1,1/0,false)",
+        "l1 = Weibull(2,1,-1/0)",
+        "m1 = Weibull(0.5,1,0,false)",
+        "n1 = Weibull(1,2,0,false)",
+        "o1 = InverseWeibull(2,s,0.999)",
+        "f = Weibull(2,1,x,false)",
+        "g = Weibull(s,s,x)",
+        "u = f(10^(-300))",
+        "v = f(10^300)",
+        "w = g(s)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-weibull-005",
+      "group": "probability",
+      "script": [
+        "L = Segment((0,0),(2,0))",
+        "a = Weibull(1.5,L,1)",
+        "b = InverseWeibull(1.5,L,0.75)",
+        "f = (Weibull(1.5,L,x))",
+        "g = 2*Weibull(1.5,L,x,false)",
+        "h = If(x>0,Weibull(1.5,L,x),0)",
+        "c = f(1)",
+        "d = g(1)",
+        "q = h(1)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-weibull-006",
+      "group": "probability",
+      "script": [
+        "k = 2",
+        "l = 3",
+        "t = 1",
+        "p = 0.5",
+        "a = Weibull(k,l,t)",
+        "c = Weibull(k,l,t,false)",
+        "q = InverseWeibull(k,l,p)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        },
+        {
+          "action": "set_number",
+          "label": "l",
+          "value": -1
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 2
+        },
+        {
+          "action": "set_number",
+          "label": "p",
+          "value": 0.25
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 3
+        },
+        {
+          "action": "set_number",
+          "label": "l",
+          "value": 3
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": 0
+        },
+        {
+          "action": "set_number",
+          "label": "t",
+          "value": 1
+        },
+        {
+          "action": "set_number",
+          "label": "k",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "probability-weibulledges-001",
+      "group": "probability",
+      "script": [
+        "a = InverseWeibull(2,3,0)",
+        "b = InverseWeibull(2,3,1)",
+        "c = InverseWeibull(2,3,-0.5)",
+        "d = InverseWeibull(2,3,1.5)",
+        "e1 = InverseWeibull(2,3,0/0)",
+        "g1 = InverseWeibull(0/0,3,0.5)",
+        "h1 = InverseWeibull(2,0/0,0.5)",
+        "k1 = InverseWeibull(1/0,1,0.5)",
+        "l1 = InverseWeibull(10^308,10^308,10^(-300))",
+        "n1 = Weibull(0/0,1,1)",
+        "o1 = Weibull(2,1,0/0,false)",
+        "p1 = Weibull(2,1/0,1)",
+        "f = Weibull(2,3,x)",
+        "g = Weibull(-2,-3,x,false)",
+        "m = 1.5",
+        "r = -4",
+        "q = Weibull(m,r,x,false)",
+        "h = FormulaText(f)",
+        "j = FormulaText(g)",
+        "k = FormulaText(Weibull(1,2,x),false)",
+        "t1 = FormulaText(q)",
+        "t2 = FormulaText(q,false)",
+        "t3 = FormulaText(Weibull(m,r,x))"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-weibulledges-002",
+      "group": "probability",
+      "script": [
+        "f = Weibull(1,1,x)",
+        "g = Weibull(1,1,x,false)",
+        "q = Weibull(1.5,2,x,false)",
+        "a = FormulaText(f)",
+        "b = FormulaText(g)",
+        "c = Text(f)",
+        "d = Text(g)",
+        "e1 = Text(q)",
+        "w = Weibull(2,-3,x)",
+        "g1 = \"\" + w",
+        "h = FormulaText(q)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
+    },
+    {
+      "id": "probability-weibulledges-003",
+      "group": "probability",
+      "script": [
+        "g = Weibull(-2,-3,x,false)",
+        "m = 1.5",
+        "r = -4",
+        "q = Weibull(m,r,x,false)",
+        "w = Weibull(m,r,x)",
+        "v = Weibull(0.5,2,x)",
+        "u = Weibull(12,2,x,false)",
+        "a = Text(g)",
+        "b = Text(q)",
+        "c = Text(q,false)",
+        "d = Text(w,false)",
+        "e1 = Text(v)",
+        "g1 = Text(u)",
+        "h = FormulaText(u)",
+        "j = FormulaText(v)",
+        "k = FormulaText(w,false)"
+      ],
+      "steps": [
+        {
+          "action": "initial"
+        }
+      ]
     }
   ]
 }

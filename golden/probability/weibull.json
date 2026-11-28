@@ -1,0 +1,1384 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "probability-weibull-001",
+      "group": "probability",
+      "script": [
+        "k = 2",
+        "l = 3",
+        "t = 1",
+        "a = Weibull(k,l,t)",
+        "b = Weibull(k,l,t,true)",
+        "c = Weibull(k,l,t,false)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 0.0 },
+        { "action": "set_number", "label": "t", "value": -1.0 },
+        { "action": "set_number", "label": "t", "value": 4.0 },
+        { "action": "set_number", "label": "l", "value": 0.0 },
+        { "action": "set_number", "label": "l", "value": -3.0 },
+        { "action": "set_number", "label": "l", "value": 3.0 },
+        { "action": "set_number", "label": "k", "value": 0.5 },
+        { "action": "set_number", "label": "t", "value": 0.0 },
+        { "action": "set_number", "label": "k", "value": 1.0 },
+        { "action": "set_number", "label": "t", "value": 2.0 },
+        { "action": "set_number", "label": "k", "value": 0.0 },
+        { "action": "set_number", "label": "k", "value": -1.0 },
+        { "action": "set_number", "label": "k", "value": 2.5 }
+      ],
+      "snapshots": [
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.10516068318563021 },
+          "b": { "type": "number", "defined": true, "value": 0.10516068318563021 },
+          "c": { "type": "number", "defined": true, "value": 0.1988531815143044 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 4.0 },
+          "a": { "type": "number", "defined": true, "value": 0.8309866845939339 },
+          "b": { "type": "number", "defined": true, "value": 0.8309866845939339 },
+          "c": { "type": "number", "defined": true, "value": 0.1502340581387254 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 4.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": -3.0 },
+          "t": { "type": "number", "defined": true, "value": 4.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 4.0 },
+          "a": { "type": "number", "defined": true, "value": 0.8309866845939339 },
+          "b": { "type": "number", "defined": true, "value": 0.8309866845939339 },
+          "c": { "type": "number", "defined": true, "value": 0.1502340581387254 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 0.5 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 4.0 },
+          "a": { "type": "number", "defined": true, "value": 0.6848481013277976 },
+          "b": { "type": "number", "defined": true, "value": 0.6848481013277976 },
+          "c": { "type": "number", "defined": true, "value": 0.045488258383504426 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 0.5 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.3333333333333333 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 0.486582880967408 },
+          "b": { "type": "number", "defined": true, "value": 0.486582880967408 },
+          "c": { "type": "number", "defined": true, "value": 0.17113903967753066 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 0.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": -1.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.5 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 0.304335217702675 },
+          "b": { "type": "number", "defined": true, "value": 0.304335217702675 },
+          "c": { "type": "number", "defined": true, "value": 0.3155599534542204 }
+        }
+      ]
+    },
+    {
+      "id": "probability-weibull-002",
+      "group": "probability",
+      "script": [
+        "k = 2",
+        "l = 3",
+        "n = 1",
+        "p = n>0",
+        "f = Weibull(k,l,x)",
+        "g = Weibull(k,l,(x),false)",
+        "h = Weibull(k,l,x,p)",
+        "a = f(1)",
+        "b = g(2)",
+        "c = h(5)",
+        "d = IsDefined(h)",
+        "e1 = h(0)",
+        "g1 = g(0)",
+        "h1 = f(-1)",
+        "k1 = g(-2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "l", "value": -3.0 },
+        { "action": "set_number", "label": "l", "value": 0.0 },
+        { "action": "set_number", "label": "k", "value": 0.5 },
+        { "action": "set_number", "label": "l", "value": -3.0 },
+        { "action": "set_number", "label": "l", "value": 3.0 },
+        { "action": "set_number", "label": "k", "value": 1.0 },
+        { "action": "set_number", "label": "k", "value": -1.0 },
+        { "action": "set_number", "label": "k", "value": 0.0 },
+        { "action": "set_number", "label": "k", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.027395522883651657],
+              [1.0, 0.10516068318563021],
+              [2.0, 0.3588196115700454],
+              [4.0, 0.8309866845939339],
+              [8.0, 0.9991840121649278]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.10806716412403869],
+              [1.0, 0.19885318151430437],
+              [2.0, 0.28496906152442425],
+              [4.0, 0.1502340581387254],
+              [8.0, 0.0014506450401282633]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.027395522883651657],
+              [1.0, 0.10516068318563021],
+              [2.0, 0.3588196115700454],
+              [4.0, 0.8309866845939339],
+              [8.0, 0.9991840121649278]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.10516068318563021 },
+          "b": { "type": "number", "defined": true, "value": 0.28496906152442425 },
+          "c": { "type": "number", "defined": true, "value": 0.9378234759778837 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.0 },
+          "g1": { "type": "number", "defined": true, "value": 0.0 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.027395522883651657],
+              [1.0, 0.10516068318563021],
+              [2.0, 0.3588196115700454],
+              [4.0, 0.8309866845939339],
+              [8.0, 0.9991840121649278]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.10806716412403869],
+              [1.0, 0.19885318151430437],
+              [2.0, 0.28496906152442425],
+              [4.0, 0.1502340581387254],
+              [8.0, 0.0014506450401282633]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.10806716412403869],
+              [1.0, 0.19885318151430437],
+              [2.0, 0.28496906152442425],
+              [4.0, 0.1502340581387254],
+              [8.0, 0.0014506450401282633]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.10516068318563021 },
+          "b": { "type": "number", "defined": true, "value": 0.28496906152442425 },
+          "c": { "type": "number", "defined": true, "value": 0.06908502669124032 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.0 },
+          "g1": { "type": "number", "defined": true, "value": 0.0 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": -3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.027395522883651657],
+              [1.0, 0.10516068318563021],
+              [2.0, 0.3588196115700454],
+              [4.0, 0.8309866845939339],
+              [8.0, 0.9991840121649278]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.10806716412403869],
+              [1.0, 0.19885318151430437],
+              [2.0, 0.28496906152442425],
+              [4.0, 0.1502340581387254],
+              [8.0, 0.0014506450401282633]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.10806716412403869],
+              [1.0, 0.19885318151430437],
+              [2.0, 0.28496906152442425],
+              [4.0, 0.1502340581387254],
+              [8.0, 0.0014506450401282633]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.10516068318563021 },
+          "b": { "type": "number", "defined": true, "value": 0.28496906152442425 },
+          "c": { "type": "number", "defined": true, "value": 0.06908502669124032 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.0 },
+          "g1": { "type": "number", "defined": true, "value": 0.0 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, null],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": false },
+          "g1": { "type": "number", "defined": false },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 0.5 },
+          "l": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, null],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": false },
+          "g1": { "type": "number", "defined": false },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 0.5 },
+          "l": { "type": "number", "defined": true, "value": -3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, { "infinity": -1 }],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, { "infinity": -1 }],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "infinity": -1 },
+          "g1": { "type": "number", "defined": true, "infinity": -1 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 0.5 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.33518620859621606],
+              [1.0, 0.43861608620107184],
+              [2.0, 0.5580226227593261],
+              [4.0, 0.6848481013277976],
+              [8.0, 0.804655998007455]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 0.27140909381739403],
+              [1.0, 0.16205757687526842],
+              [2.0, 0.0902182543411035],
+              [4.0, 0.04548825838350443],
+              [8.0, 0.019937213716456487]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 0.27140909381739403],
+              [1.0, 0.16205757687526842],
+              [2.0, 0.0902182543411035],
+              [4.0, 0.04548825838350443],
+              [8.0, 0.019937213716456487]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.43861608620107184 },
+          "b": { "type": "number", "defined": true, "value": 0.0902182543411035 },
+          "c": { "type": "number", "defined": true, "value": 0.03550198282458633 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "infinity": 1 },
+          "g1": { "type": "number", "defined": true, "infinity": 1 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.15351827510938587],
+              [1.0, 0.28346868942621073],
+              [2.0, 0.486582880967408],
+              [4.0, 0.7364028618842733],
+              [8.0, 0.9305165487771985]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.3333333333333333],
+              [0.5, 0.282160574963538],
+              [1.0, 0.23884377019126307],
+              [2.0, 0.17113903967753066],
+              [4.0, 0.08786571270524225],
+              [8.0, 0.023161150407600514]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.3333333333333333],
+              [0.5, 0.282160574963538],
+              [1.0, 0.23884377019126307],
+              [2.0, 0.17113903967753066],
+              [4.0, 0.08786571270524225],
+              [8.0, 0.023161150407600514]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.28346868942621073 },
+          "b": { "type": "number", "defined": true, "value": 0.17113903967753066 },
+          "c": { "type": "number", "defined": true, "value": 0.06295853427918727 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "g1": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": -1.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 1.0],
+              [0.5, 0.9975212478233336],
+              [1.0, 0.950212931632136],
+              [2.0, 0.7768698398515702],
+              [4.0, 0.5276334472589853],
+              [8.0, 0.31271072120902776]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, null],
+              [0.5, -0.029745026119996305],
+              [1.0, -0.14936120510359185],
+              [2.0, -0.16734762011132237],
+              [4.0, -0.08856872863894028],
+              [8.0, -0.03221668494332683]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, null],
+              [0.5, -0.029745026119996305],
+              [1.0, -0.14936120510359185],
+              [2.0, -0.16734762011132237],
+              [4.0, -0.08856872863894028],
+              [8.0, -0.03221668494332683]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.950212931632136 },
+          "b": { "type": "number", "defined": true, "value": -0.16734762011132237 },
+          "c": { "type": "number", "defined": true, "value": -0.06585739633128318 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": false },
+          "g1": { "type": "number", "defined": false },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 0.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.6321205588285577],
+              [0.5, 0.6321205588285577],
+              [1.0, 0.6321205588285577],
+              [2.0, 0.6321205588285577],
+              [4.0, 0.6321205588285577],
+              [8.0, 0.6321205588285577]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, null],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, null],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.6321205588285577 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": false },
+          "g1": { "type": "number", "defined": false },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.027395522883651657],
+              [1.0, 0.10516068318563021],
+              [2.0, 0.3588196115700454],
+              [4.0, 0.8309866845939339],
+              [8.0, 0.9991840121649278]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.10806716412403869],
+              [1.0, 0.19885318151430437],
+              [2.0, 0.28496906152442425],
+              [4.0, 0.1502340581387254],
+              [8.0, 0.0014506450401282633]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.10806716412403869],
+              [1.0, 0.19885318151430437],
+              [2.0, 0.28496906152442425],
+              [4.0, 0.1502340581387254],
+              [8.0, 0.0014506450401282633]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.10516068318563021 },
+          "b": { "type": "number", "defined": true, "value": 0.28496906152442425 },
+          "c": { "type": "number", "defined": true, "value": 0.06908502669124032 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.0 },
+          "g1": { "type": "number", "defined": true, "value": 0.0 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.027395522883651657],
+              [1.0, 0.10516068318563021],
+              [2.0, 0.3588196115700454],
+              [4.0, 0.8309866845939339],
+              [8.0, 0.9991840121649278]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.10806716412403869],
+              [1.0, 0.19885318151430437],
+              [2.0, 0.28496906152442425],
+              [4.0, 0.1502340581387254],
+              [8.0, 0.0014506450401282633]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.027395522883651657],
+              [1.0, 0.10516068318563021],
+              [2.0, 0.3588196115700454],
+              [4.0, 0.8309866845939339],
+              [8.0, 0.9991840121649278]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.10516068318563021 },
+          "b": { "type": "number", "defined": true, "value": 0.28496906152442425 },
+          "c": { "type": "number", "defined": true, "value": 0.9378234759778837 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "e1": { "type": "number", "defined": true, "value": 0.0 },
+          "g1": { "type": "number", "defined": true, "value": 0.0 },
+          "h1": { "type": "number", "defined": true, "value": 0.0 },
+          "k1": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "probability-weibull-003",
+      "group": "probability",
+      "script": [
+        "k = 2",
+        "l = 3",
+        "p = 0",
+        "a = InverseWeibull(k,l,p)",
+        "b = InverseWeibull(k,l,0.7-0.2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "p", "value": 1.0E-16 },
+        { "action": "set_number", "label": "p", "value": 0.025 },
+        { "action": "set_number", "label": "p", "value": 0.25 },
+        { "action": "set_number", "label": "p", "value": 0.5 },
+        { "action": "set_number", "label": "p", "value": 0.75 },
+        { "action": "set_number", "label": "p", "value": 0.999 },
+        { "action": "set_number", "label": "p", "value": 1.0 },
+        { "action": "set_number", "label": "p", "value": -0.1 },
+        { "action": "set_number", "label": "p", "value": 1.1 },
+        { "action": "set_number", "label": "p", "value": 0.75 },
+        { "action": "set_number", "label": "l", "value": 0.0 },
+        { "action": "set_number", "label": "l", "value": -3.0 },
+        { "action": "set_number", "label": "l", "value": 1.0 },
+        { "action": "set_number", "label": "k", "value": 0.0 },
+        { "action": "set_number", "label": "k", "value": -2.0 },
+        { "action": "set_number", "label": "k", "value": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 2.497663833473093 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 1.0E-16 },
+          "a": { "type": "number", "defined": true, "value": 3.0000000000000004E-8 },
+          "b": { "type": "number", "defined": true, "value": 2.497663833473093 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.025 },
+          "a": { "type": "number", "defined": true, "value": 0.4773471188334637 },
+          "b": { "type": "number", "defined": true, "value": 2.497663833473093 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "a": { "type": "number", "defined": true, "value": 1.6090800639079548 },
+          "b": { "type": "number", "defined": true, "value": 2.497663833473093 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": true, "value": 2.497663833473093 },
+          "b": { "type": "number", "defined": true, "value": 2.497663833473093 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 3.5322300675464238 },
+          "b": { "type": "number", "defined": true, "value": 2.497663833473093 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.999 },
+          "a": { "type": "number", "defined": true, "value": 7.884782654635397 },
+          "b": { "type": "number", "defined": true, "value": 2.497663833473093 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "infinity": 1 },
+          "b": { "type": "number", "defined": true, "value": 2.497663833473093 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": -0.1 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "value": 2.497663833473093 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 1.1 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "value": 2.497663833473093 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 3.5322300675464238 },
+          "b": { "type": "number", "defined": true, "value": 2.497663833473093 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": -3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 1.1774100225154747 },
+          "b": { "type": "number", "defined": true, "value": 0.8325546111576977 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 0.0 },
+          "l": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": -2.0 },
+          "l": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 0.5 },
+          "l": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "a": { "type": "number", "defined": true, "value": 1.9218120556728056 },
+          "b": { "type": "number", "defined": true, "value": 0.4804530139182014 }
+        }
+      ]
+    },
+    {
+      "id": "probability-weibull-004",
+      "group": "probability",
+      "script": [
+        "s = 10^308",
+        "a = Weibull(2,1,10^300)",
+        "b = Weibull(2,1,10^(-300))",
+        "c = Weibull(2,1,10^(-300),false)",
+        "d = Weibull(2,1,10^300,false)",
+        "e1 = Weibull(s,s,s)",
+        "g1 = Weibull(0.5,s,s,false)",
+        "h1 = Weibull(2,1,1/0)",
+        "k1 = Weibull(2,1,1/0,false)",
+        "l1 = Weibull(2,1,-1/0)",
+        "m1 = Weibull(0.5,1,0,false)",
+        "n1 = Weibull(1,2,0,false)",
+        "o1 = InverseWeibull(2,s,0.999)",
+        "f = Weibull(2,1,x,false)",
+        "g = Weibull(s,s,x)",
+        "u = f(10^(-300))",
+        "v = f(10^300)",
+        "w = g(s)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "number", "defined": true, "value": 1.0E308 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0E-300 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e1": { "type": "number", "defined": true, "value": 0.6321205588285577 },
+          "g1": { "type": "number", "defined": true, "value": 1.839397205857213E-309 },
+          "h1": { "type": "number", "defined": true, "value": 1.0 },
+          "k1": { "type": "number", "defined": false },
+          "l1": { "type": "number", "defined": true, "value": 0.0 },
+          "m1": { "type": "number", "defined": false },
+          "n1": { "type": "number", "defined": true, "value": 0.5 },
+          "o1": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.7788007830714049],
+              [1.0, 0.7357588823428847],
+              [2.0, 0.07326255555493671],
+              [4.0, 9.002813977540729E-7],
+              [8.0, 2.5660974248778207E-27]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "u": { "type": "number", "defined": true, "value": 2.0E-300 },
+          "v": { "type": "number", "defined": true, "value": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.6321205588285577 }
+        }
+      ]
+    },
+    {
+      "id": "probability-weibull-005",
+      "group": "probability",
+      "script": [
+        "L = Segment((0,0),(2,0))",
+        "a = Weibull(1.5,L,1)",
+        "b = InverseWeibull(1.5,L,0.75)",
+        "f = (Weibull(1.5,L,x))",
+        "g = 2*Weibull(1.5,L,x,false)",
+        "h = If(x>0,Weibull(1.5,L,x),0)",
+        "c = f(1)",
+        "d = g(1)",
+        "q = h(1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "L": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 0.29781149867344037 },
+          "b": { "type": "number", "defined": true, "value": 2.486567769750343 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.11750309741540454],
+              [1.0, 0.29781149867344037],
+              [2.0, 0.6321205588285577],
+              [4.0, 0.9408942534380438],
+              [8.0, 0.9996645373720975]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.6618726769384466],
+              [1.0, 0.7447833764388441],
+              [2.0, 0.5518191617571635],
+              [4.0, 0.12538222260315815],
+              [8.0, 0.0010063878837075356]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.11750309741540454],
+              [1.0, 0.29781149867344037],
+              [2.0, 0.6321205588285577],
+              [4.0, 0.9408942534380438],
+              [8.0, 0.9996645373720975]
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 0.29781149867344037 },
+          "d": { "type": "number", "defined": true, "value": 0.7447833764388441 },
+          "q": { "type": "number", "defined": true, "value": 0.29781149867344037 }
+        }
+      ]
+    },
+    {
+      "id": "probability-weibull-006",
+      "group": "probability",
+      "script": [
+        "k = 2",
+        "l = 3",
+        "t = 1",
+        "p = 0.5",
+        "a = Weibull(k,l,t)",
+        "c = Weibull(k,l,t,false)",
+        "q = InverseWeibull(k,l,p)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "l", "value": -1.0 },
+        { "action": "set_number", "label": "t", "value": 2.0 },
+        { "action": "set_number", "label": "p", "value": 0.25 },
+        { "action": "set_number", "label": "t", "value": 3.0 },
+        { "action": "set_number", "label": "l", "value": 3.0 },
+        { "action": "set_number", "label": "k", "value": 0.0 },
+        { "action": "set_number", "label": "t", "value": 1.0 },
+        { "action": "set_number", "label": "k", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": true, "value": 0.10516068318563021 },
+          "c": { "type": "number", "defined": true, "value": 0.1988531815143044 },
+          "q": { "type": "number", "defined": true, "value": 2.497663833473093 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": -1.0 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": -1.0 },
+          "t": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.5 },
+          "a": { "type": "number", "defined": true, "value": 0.3588196115700454 },
+          "c": { "type": "number", "defined": true, "value": 0.28496906152442425 },
+          "q": { "type": "number", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": -1.0 },
+          "t": { "type": "number", "defined": true, "value": 2.0 },
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "a": { "type": "number", "defined": true, "value": 0.3588196115700454 },
+          "c": { "type": "number", "defined": true, "value": 0.28496906152442425 },
+          "q": { "type": "number", "defined": true, "value": 1.6090800639079548 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": -1.0 },
+          "t": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "a": { "type": "number", "defined": true, "value": 0.6321205588285577 },
+          "c": { "type": "number", "defined": true, "value": 0.24525296078096154 },
+          "q": { "type": "number", "defined": true, "value": 1.6090800639079548 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "a": { "type": "number", "defined": true, "value": 0.6321205588285577 },
+          "c": { "type": "number", "defined": true, "value": 0.24525296078096154 },
+          "q": { "type": "number", "defined": true, "value": 1.6090800639079548 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 0.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 3.0 },
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "a": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 0.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "a": { "type": "number", "defined": true, "value": 0.10516068318563021 },
+          "c": { "type": "number", "defined": true, "value": 0.1988531815143044 },
+          "q": { "type": "number", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "number", "defined": true, "value": 0.25 },
+          "a": { "type": "number", "defined": true, "value": 0.10516068318563021 },
+          "c": { "type": "number", "defined": true, "value": 0.1988531815143044 },
+          "q": { "type": "number", "defined": true, "value": 1.6090800639079548 }
+        }
+      ]
+    }
+  ]
+}

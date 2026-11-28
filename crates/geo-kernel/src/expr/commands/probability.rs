@@ -1,7 +1,7 @@
 use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
 
 use super::{Ctx, Node, Parser, Ty, Val};
-use crate::expr::NONE;
+use crate::expr::{math, NONE};
 
 pub(super) const NAMES: &[&str] = &[
     "Normal",
@@ -14,6 +14,8 @@ pub(super) const NAMES: &[&str] = &[
     "InverseLogistic",
     "LogNormal",
     "InverseLogNormal",
+    "Weibull",
+    "InverseWeibull",
 ];
 const QUANTILE_STEPS: u64 = 60;
 
@@ -29,6 +31,8 @@ pub(crate) enum Probability {
     InverseLogistic,
     LogNormal { function: bool },
     InverseLogNormal,
+    Weibull { function: bool },
+    InverseWeibull,
 }
 
 impl Probability {
@@ -40,6 +44,7 @@ impl Probability {
                 | Self::Cauchy { function: true }
                 | Self::Logistic { function: true }
                 | Self::LogNormal { function: true }
+                | Self::Weibull { function: true }
         )
     }
 
@@ -77,6 +82,10 @@ pub(super) fn parse(p: &mut Parser, name: &str) -> Result<Option<u32>, String> {
             function: matches!(p.node(*x), Node::Var),
         },
         ("InverseLogNormal", [_, _, _]) => Probability::InverseLogNormal,
+        ("Weibull", [_, _, x] | [_, _, x, _]) => Probability::Weibull {
+            function: matches!(p.node(*x), Node::Var),
+        },
+        ("InverseWeibull", [_, _, _]) => Probability::InverseWeibull,
         _ => return Err(format!("wrong number of arguments to `{name}`")),
     };
     let mut slots = [NONE; 4];
@@ -108,6 +117,7 @@ pub(in crate::expr) fn value_type(
                     | Probability::Cauchy { .. }
                     | Probability::Logistic { .. }
                     | Probability::LogNormal { .. }
+                    | Probability::Weibull { .. }
             ),
             Some(Ty::Num(_)) => matches!(op, Probability::Normal { function: false }),
             _ => false,
@@ -170,6 +180,15 @@ pub(in crate::expr) fn value<const M: bool>(
             );
         }
         Probability::InverseLogNormal => return inverse_log_normal(mean, deviation, x),
+        Probability::Weibull { function } => {
+            let cumulative = matches!(fourth, Val::B(true, _));
+            return if function {
+                weibull_function(mean, deviation, x, cumulative)
+            } else {
+                weibull(mean, deviation, x, cumulative)
+            };
+        }
+        Probability::InverseWeibull => return inverse_weibull(mean, deviation, x),
         _ => {}
     }
     if matches!(op, Probability::Normal { function: true }) {
@@ -327,6 +346,62 @@ fn inverse_log_normal(mean: f64, deviation: f64, probability: f64) -> f64 {
         return 0.0;
     }
     libm::exp(erf_inv(2.0 * (probability - 0.5)) * SQRT_2 * deviation + mean)
+}
+
+/// The scalar forms follow the reference's distribution library, which
+/// rejects a non-positive shape or scale.
+fn weibull(shape: f64, scale: f64, x: f64, cumulative: bool) -> f64 {
+    if shape.is_nan() || scale.is_nan() || x.is_nan() || shape <= 0.0 || scale <= 0.0 {
+        return f64::NAN;
+    }
+    if cumulative {
+        // The support starts after 0, including 0 itself.
+        if x <= 0.0 {
+            return 0.0;
+        }
+        return 1.0 - libm::exp(-math::java_pow(x / scale, shape));
+    }
+    if x < 0.0 {
+        return 0.0;
+    }
+    let ratio = x / scale;
+    let power = math::java_pow(ratio, shape - 1.0);
+    shape / scale * power * libm::exp(-(power * ratio))
+}
+
+/// The function form evaluates the reference's expression tree without
+/// guards: `1 - e^(-(x/l)^k)` or `k/l ((x/l)^(k-1) e^(-(x/l)^k))`, and 0
+/// below x = 0.
+fn weibull_function(shape: f64, scale: f64, x: f64, cumulative: bool) -> f64 {
+    if x < 0.0 {
+        return 0.0;
+    }
+    let power = |base: f64, exponent: f64| {
+        if math::is_euler(base) {
+            exponent.exp()
+        } else {
+            math::my_pow(base, exponent)
+        }
+    };
+    let ratio = x / scale;
+    let survival = libm::exp(-power(ratio, shape));
+    if cumulative {
+        1.0 - survival
+    } else {
+        shape / scale * (power(ratio, shape - 1.0) * survival)
+    }
+}
+
+fn inverse_weibull(shape: f64, scale: f64, probability: f64) -> f64 {
+    if shape.is_nan() || scale.is_nan() || probability.is_nan() || shape <= 0.0 || scale <= 0.0 {
+        return f64::NAN;
+    }
+    match probability {
+        p if !(0.0..=1.0).contains(&p) => f64::NAN,
+        0.0 => 0.0,
+        1.0 => f64::INFINITY,
+        p => scale * math::java_pow(-libm::log1p(-p), 1.0 / shape),
+    }
 }
 
 /// The inverse error function of the reference's math library, a piecewise
@@ -505,6 +580,12 @@ mod tests {
             "f = LogNormal(0,1,2,3)",
             "f = LogNormal(0,1,x,2)",
             "f = InverseLogNormal(0,1,x)",
+            "f = Weibull(2,1,x+1)",
+            "f = Weibull(2,x,x)",
+            "f = Weibull(x,1,x)",
+            "f = Weibull(2,1,2,3)",
+            "f = Weibull(2,1,x,2)",
+            "f = InverseWeibull(2,1,x)",
         ] {
             assert!(crate::script::load(source).is_err(), "{source}");
         }

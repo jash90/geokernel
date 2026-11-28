@@ -692,7 +692,7 @@ impl Writer<'_> {
             return self.command(command, &args[..1], outputs);
         }
         if let Some((
-            name @ ("Normal" | "Exponential" | "Cauchy" | "Logistic" | "LogNormal"),
+            name @ ("Normal" | "Exponential" | "Cauchy" | "Logistic" | "LogNormal" | "Weibull"),
             inputs,
         )) = &call
         {
@@ -836,7 +836,7 @@ impl Writer<'_> {
 /// GeoGebra's archive reader needs an explicit cumulative flag even when the
 /// defaulted distribution function is nested in a larger expression.
 fn distribution_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
-    if !["Normal", "Exponential", "Cauchy", "Logistic"]
+    if !["Normal", "Exponential", "Cauchy", "Logistic", "Weibull"]
         .iter()
         .any(|command| source.contains(command))
     {
@@ -861,6 +861,7 @@ fn distribution_function_defaults(source: &str) -> std::borrow::Cow<'_, str> {
                             ("Cauchy", 2),
                             ("Logistic", 2),
                             ("LogNormal", 2),
+                            ("Weibull", 2),
                         ]
                         .into_iter()
                         .find_map(|(command, slot)| {
