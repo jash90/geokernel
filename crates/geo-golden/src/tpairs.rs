@@ -198,33 +198,12 @@ fn display_number(value: f64, template: &str) -> String {
 /// two-decimal setting. Display precision controls which terms are omitted,
 /// while retained coefficients are printed with their full precision.
 fn xml_fit_equation(a: f64, b: f64, c: f64) -> Option<String> {
-    if b.abs() < geo_kernel::tol::STANDARD_PRECISION {
-        let intercept = -c / a;
-        return intercept
-            .is_finite()
-            .then(|| format!("x = {}", ggb_double(intercept)));
-    }
-
-    let slope = -a / b;
-    let intercept = -c / b;
-    if !slope.is_finite() || !intercept.is_finite() {
-        return None;
-    }
-    const DISPLAY_ZERO: f64 = 0.005;
-    if slope.abs() <= DISPLAY_ZERO {
-        return Some(format!("y = {}", ggb_double(intercept)));
-    }
-    let coefficient = match slope {
-        1.0 => String::new(),
-        -1.0 => "-".into(),
-        _ => ggb_double(slope),
+    let finite = if b.abs() < geo_kernel::tol::STANDARD_PRECISION {
+        (-c / a).is_finite()
+    } else {
+        (-a / b).is_finite() && (-c / b).is_finite()
     };
-    let mut equation = format!("y = {coefficient}x");
-    if intercept.abs() > DISPLAY_ZERO {
-        let sign = if intercept < 0.0 { '-' } else { '+' };
-        write!(equation, " {sign} {}", ggb_double(intercept.abs())).expect("writing to a String");
-    }
-    Some(equation)
+    finite.then(|| geo_kernel::equation::explicit_line([a, b, c], false, &ggb_double))
 }
 
 fn object_template(c: &Construction, id: Id, template: &str) -> Option<String> {
