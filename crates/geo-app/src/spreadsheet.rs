@@ -209,7 +209,10 @@ fn analysis_error(error: AnalysisError) -> &'static str {
         AnalysisError::PairedRange => {
             "Zaznacz zakres dwóch wierszy lub dwóch kolumn (do 256 komórek)."
         }
-        AnalysisError::SampleRange => "Zaznacz zakres do 256 komórek.",
+        AnalysisError::SampleRange => {
+            "Zaznacz co najmniej dwa wiersze i dwie kolumny (do 256 komórek)."
+        }
+        AnalysisError::EmptySample => "Każda próba musi zawierać co najmniej jedną liczbę.",
         AnalysisError::Pairs => "Zaznacz zakres z co najmniej jedną parą liczb.",
         AnalysisError::Evaluation => "Nie udało się obliczyć statystyk.",
     }

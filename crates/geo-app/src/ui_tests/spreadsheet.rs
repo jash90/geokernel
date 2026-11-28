@@ -175,7 +175,12 @@ fn paired_analysis_swaps_axes_and_tracks_sheet_edits_and_undo() {
 #[test]
 fn multiple_sample_analysis_keeps_separate_rows_through_edits_and_undo() {
     let mut window = sheet(Profile::Desktop, (1000.0, 800.0));
-    for (cell, value) in [("B1", "10"), ("B3", "=A3 + 15"), ("C2", "=90°")] {
+    for (cell, value) in [
+        ("B1", "10"),
+        ("B3", "=A3 + 15"),
+        ("C2", "=90°"),
+        ("C3", "7"),
+    ] {
         window
             .app
             .wb
@@ -209,7 +214,7 @@ fn multiple_sample_analysis_keeps_separate_rows_through_edits_and_undo() {
     };
     let original = means(&mut window);
     assert_eq!(original[..2], [3.0, 15.0]);
-    assert!(original[2].is_nan());
+    assert_eq!(original[2], 7.0);
 
     activate(&mut window, "A3");
     window.frame(DT, vec![Event::Text("11".into())]);

@@ -48,6 +48,7 @@ pub enum AnalysisError {
     Cells,
     PairedRange,
     SampleRange,
+    EmptySample,
     Pairs,
     Evaluation,
 }
@@ -143,30 +144,22 @@ impl Analysis {
         let (first, last) = selection.bounds();
         let width = usize::from(last.column - first.column) + 1;
         let height = usize::from(last.row - first.row) + 1;
-        if width * height > MAX_ANALYSIS_CELLS
+        if width < 2
+            || height < 2
+            || width * height > MAX_ANALYSIS_CELLS
             || Address::new(first.column, first.row).is_none()
             || Address::new(last.column, last.row).is_none()
         {
             return Err(AnalysisError::SampleRange);
         }
-        let empty_rows = evaluate_sample(&[]).ok_or(AnalysisError::Evaluation)?;
-        let samples = if first.row == last.row {
-            vec![SampleSummary {
-                first,
-                last,
+        let samples = (first.column..=last.column)
+            .map(|column| SampleSummary {
+                first: Address { column, ..first },
+                last: Address { column, ..last },
                 values: Vec::new(),
-                rows: empty_rows,
-            }]
-        } else {
-            (first.column..=last.column)
-                .map(|column| SampleSummary {
-                    first: Address { column, ..first },
-                    last: Address { column, ..last },
-                    values: Vec::new(),
-                    rows: empty_rows,
-                })
-                .collect()
-        };
+                rows: [f64::NAN; SAMPLE_STATISTIC_INDICES.len()],
+            })
+            .collect();
         Ok(Self {
             first,
             last,
@@ -263,6 +256,9 @@ impl Analysis {
                 .zip(&mut buffer)
                 .map(|(value, slot)| *slot = value)
                 .count();
+            if count == 0 {
+                return Err(AnalysisError::EmptySample);
+            }
             let values = &buffer[..count];
             if sample.values.len() != values.len()
                 || sample
@@ -444,9 +440,9 @@ mod tests {
     }
 
     #[test]
-    fn multiple_samples_keep_empty_columns_and_nonfinite_numeric_cells() {
+    fn multiple_samples_keep_nonfinite_numeric_cells() {
         let construction = script::load(
-            "B2 = 2\nB3 = 4\nB4 = 6\nB5 = 8\nC2 = 10\nC3 = \"label\"\nC5 = 14\nD2 = 90°\nD4 = 5\nF2 = 0/0\nG2 = 1/0\nG3 = 4\nH2 = -1/0\nH3 = 5",
+            "B2 = 2\nB3 = 4\nB4 = 6\nB5 = 8\nC2 = 10\nC3 = \"label\"\nC5 = 14\nD2 = 90°\nD4 = 5\nE2 = 9\nF2 = 0/0\nG2 = 1/0\nG3 = 4\nH2 = -1/0\nH3 = 5",
         )
         .unwrap();
         let mut analysis = Analysis::new_multiple(Selection {
@@ -461,8 +457,7 @@ mod tests {
         assert_eq!(rows[2].values, [5.0]);
         assert_eq!(rows[2].rows[4], 5.0);
         assert!(rows[2].rows[3].is_nan());
-        assert_eq!(rows[3].rows[0], 0.0);
-        assert!(rows[3].rows[1..].iter().all(|value| value.is_nan()));
+        assert_eq!(rows[3].values, [9.0]);
         assert_eq!(rows[4].rows[0], 1.0);
         assert!(rows[4].values[0].is_nan());
         assert!(rows[4].rows[1..].iter().all(|value| value.is_nan()));
@@ -472,27 +467,35 @@ mod tests {
     }
 
     #[test]
-    fn a_single_row_or_column_yields_one_sample() {
-        let construction = script::load("B2 = 2\nC2 = 4\nD2 = 6\nB3 = 4\nB4 = 6").unwrap();
-        for end in ["D2", "B4"] {
-            let mut analysis = Analysis::new_multiple(Selection {
-                anchor: Address::parse("B2").unwrap(),
-                end: Address::parse(end).unwrap(),
-            })
-            .unwrap();
-            let rows = analysis.refresh_multiple(&construction).unwrap();
-            assert_eq!(rows.len(), 1);
-            assert_eq!(rows[0].values, [2.0, 4.0, 6.0]);
-            assert_eq!(rows[0].rows[0], 3.0);
-            assert_eq!(rows[0].rows[1], 4.0);
+    fn multiple_samples_require_at_least_two_nonempty_samples() {
+        let first = Address::parse("A1").unwrap();
+        for end in ["B1", "A2", "D100"] {
+            assert!(matches!(
+                Analysis::new_multiple(Selection {
+                    anchor: first,
+                    end: Address::parse(end).unwrap(),
+                }),
+                Err(AnalysisError::SampleRange),
+            ));
         }
+
+        let mut analysis = Analysis::new_multiple(Selection {
+            anchor: first,
+            end: Address::parse("B2").unwrap(),
+        })
+        .unwrap();
+        let only_one = script::load("A1 = 2\nA2 = 4").unwrap();
+        let both = script::load("A1 = 2\nA2 = 4\nB1 = 9").unwrap();
         assert!(matches!(
-            Analysis::new_multiple(Selection {
-                anchor: Address::parse("B2").unwrap(),
-                end: Address::parse("D100").unwrap(),
-            }),
-            Err(AnalysisError::SampleRange),
+            analysis.refresh_multiple(&only_one),
+            Err(AnalysisError::EmptySample)
         ));
+        assert_eq!(analysis.refresh_multiple(&both).unwrap()[1].values, [9.0]);
+        assert!(matches!(
+            analysis.refresh_multiple(&only_one),
+            Err(AnalysisError::EmptySample)
+        ));
+        assert_eq!(analysis.refresh_multiple(&both).unwrap()[1].values, [9.0]);
     }
 
     #[test]
